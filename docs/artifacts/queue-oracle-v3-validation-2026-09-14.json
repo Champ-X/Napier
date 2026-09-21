@@ -1,0 +1,340 @@
+{
+  "kind": "napier.queue-oracle-v3-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T08:15:06.063189+00:00",
+  "change": "Accept synchronous throw or asynchronous rejection of TypeError for settleJob nonfunction input, as the unchanged README permits. runJobs Promise rejection requirement is unchanged.",
+  "caseId": "bounded_async_queue_v3",
+  "sameTaskAs": ["bounded_async_queue_v1", "bounded_async_queue_v2"],
+  "newIndependentCases": 0,
+  "freshModelRuns": 0,
+  "apiRequestsThisAudit": 0,
+  "historicalFilesUnchanged": true,
+  "fixturePromptReferenceUnchanged": true,
+  "testsPassed": 10,
+  "mutationCoverage": [
+    "reference accepted; defective fixture rejected",
+    "synchronous helper TypeError accepted, legacy v2 rejects it",
+    "rejected result object, wrong error type and undefined rejected",
+    "synchronous runJobs validation, sparse-array omission and signal duck typing still rejected"
+  ],
+  "observations": [
+    {
+      "sourceDirectory": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-1",
+      "runId": "run_471803e6e7144f2b82f3",
+      "historicalTaskSuccess": false,
+      "historicalGraderExitCode": 1,
+      "unchangedWorkspaceInventory": {
+        "README.md": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+        "__napier_external_grader__.mjs": "2d566b51cd01b229adf87ea336ac18b962349beb39bd7b54f8116dd15673c231",
+        "src/job-result.mjs": "9f1ebc8de7b779a72c71edb641a74eae9e0b25a9929ce8b2f011973c26a79836",
+        "src/queue.mjs": "72e7f82e924a7884c301ede71b311291cc612a43f65623b77bc15663d400be77",
+        "test/public.test.mjs": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+      },
+      "offlineGrades": {
+        "v2": {
+          "exitCode": 1,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "04e971cfd5af84a044dbdb9a53abbc4d61fea0f5fa28c1b21fb928aa81eed2e7"
+        },
+        "v3": {
+          "exitCode": 1,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "04e971cfd5af84a044dbdb9a53abbc4d61fea0f5fa28c1b21fb928aa81eed2e7"
+        }
+      },
+      "scope": "Reassessment of the same retained output; not a new model observation or replacement report."
+    },
+    {
+      "sourceDirectory": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-2",
+      "runId": "run_3725af236f364cb2b4bb",
+      "historicalTaskSuccess": true,
+      "historicalGraderExitCode": 0,
+      "unchangedWorkspaceInventory": {
+        "README.md": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+        "__napier_external_grader__.mjs": "2d566b51cd01b229adf87ea336ac18b962349beb39bd7b54f8116dd15673c231",
+        "src/job-result.mjs": "a38f0af32012572529853b0b416b0d7c1f27657cb648b0a39b40a89b12ae685c",
+        "src/queue.mjs": "b842249a00af0a33f9e8ab6e8baa85508b3eea24019312c8e2783f1d12f023f1",
+        "test/public.test.mjs": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+      },
+      "offlineGrades": {
+        "v2": {
+          "exitCode": 1,
+          "stdoutSha256": "0c3c6a5f14f7b646a3eb148fea0844b7baa2d438b03871d6d9f1713b880a8fe8",
+          "stderrSha256": "8492435a8f6cdbd38e00cc5a9215b797dab6248ef6f4ca3f007b3ccebaf81f27"
+        },
+        "v3": {
+          "exitCode": 1,
+          "stdoutSha256": "0c3c6a5f14f7b646a3eb148fea0844b7baa2d438b03871d6d9f1713b880a8fe8",
+          "stderrSha256": "8492435a8f6cdbd38e00cc5a9215b797dab6248ef6f4ca3f007b3ccebaf81f27"
+        }
+      },
+      "scope": "Reassessment of the same retained output; not a new model observation or replacement report."
+    },
+    {
+      "sourceDirectory": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-3",
+      "runId": "run_b4dc63182f424baaaaa9",
+      "historicalTaskSuccess": false,
+      "historicalGraderExitCode": 1,
+      "unchangedWorkspaceInventory": {
+        "README.md": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+        "__napier_external_grader__.mjs": "2d566b51cd01b229adf87ea336ac18b962349beb39bd7b54f8116dd15673c231",
+        "src/job-result.mjs": "b1662f649679ff831ef9285e9dfa4434b7d59a2b876f88f814bcec60142e88d2",
+        "src/queue.mjs": "4e60187f19b65d95c3cd4b3be23ae609e30211e6641382f50f5197b279d2f146",
+        "test/public.test.mjs": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+      },
+      "offlineGrades": {
+        "v2": {
+          "exitCode": 1,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "26854bfccf886d1172c6ef3301a80ec4ecd2ede4b25c7153bd3ae1cf7b6d476f"
+        },
+        "v3": {
+          "exitCode": 1,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "26854bfccf886d1172c6ef3301a80ec4ecd2ede4b25c7153bd3ae1cf7b6d476f"
+        }
+      },
+      "scope": "Reassessment of the same retained output; not a new model observation or replacement report."
+    },
+    {
+      "sourceDirectory": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v2/candidate/trial-1",
+      "runId": "run_9d21167a1eb64698920a",
+      "historicalTaskSuccess": true,
+      "historicalGraderExitCode": 0,
+      "unchangedWorkspaceInventory": {
+        "README.md": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+        "__napier_external_grader__.mjs": "2d566b51cd01b229adf87ea336ac18b962349beb39bd7b54f8116dd15673c231",
+        "src/job-result.mjs": "971c1e8ab65bc5c8237d5f259d6e5b1df1b04f7daf1c34e7aea1f1458c8b9ee1",
+        "src/queue.mjs": "4d263ab6a9ead9e4fbc87edce522ce84336123192f8e57fb4bfb335462a710af",
+        "test/public.test.mjs": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+      },
+      "offlineGrades": {
+        "v2": {
+          "exitCode": 1,
+          "stdoutSha256": "0c3c6a5f14f7b646a3eb148fea0844b7baa2d438b03871d6d9f1713b880a8fe8",
+          "stderrSha256": "3d58836bf967a077d0874f2275024a5afe86863650ad55f02be77769eb54f407"
+        },
+        "v3": {
+          "exitCode": 1,
+          "stdoutSha256": "0c3c6a5f14f7b646a3eb148fea0844b7baa2d438b03871d6d9f1713b880a8fe8",
+          "stderrSha256": "3d58836bf967a077d0874f2275024a5afe86863650ad55f02be77769eb54f407"
+        }
+      },
+      "scope": "Reassessment of the same retained output; not a new model observation or replacement report."
+    },
+    {
+      "sourceDirectory": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/candidate/trial-1",
+      "runId": "run_36cdb48abdf64462a168",
+      "historicalTaskSuccess": true,
+      "historicalGraderExitCode": 0,
+      "unchangedWorkspaceInventory": {
+        "README.md": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+        "__napier_external_grader__.mjs": "505a6b596c19319dc50fd57c764a138f312aa0ceec6a645cbfcc3c803a001f0a",
+        "src/job-result.mjs": "5e12e41e47fada31e856874c0772ae0a03c0373719e3e8fa4366f94f016a2f10",
+        "src/queue.mjs": "aa69b7f3f25899f3adfbc48e329eaf393cb213e443be80e30c1524c2bc07bf53",
+        "test/public.test.mjs": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+      },
+      "offlineGrades": {
+        "v2": {
+          "exitCode": 0,
+          "stdoutSha256": "252d31a3e7ab6900625687e3670800f432c5b689e0a51effe7f7cea0144da298",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "v3": {
+          "exitCode": 0,
+          "stdoutSha256": "252d31a3e7ab6900625687e3670800f432c5b689e0a51effe7f7cea0144da298",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "scope": "Reassessment of the same retained output; not a new model observation or replacement report."
+    },
+    {
+      "sourceDirectory": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-baseline-v1/candidate/trial-1",
+      "runId": "run_dd60b6a8edea4f2cb301",
+      "historicalTaskSuccess": true,
+      "historicalGraderExitCode": 0,
+      "unchangedWorkspaceInventory": {
+        "README.md": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+        "__napier_external_grader__.mjs": "505a6b596c19319dc50fd57c764a138f312aa0ceec6a645cbfcc3c803a001f0a",
+        "src/job-result.mjs": "a5f9457deb9b0549d22a9d02880e6c8a60331d2c25f72032c3323258b16b0e18",
+        "src/queue.mjs": "a858d4a1a1ca886e98033378e1ecbf3109c25816e8814d6e2075786ac2e634bd",
+        "test/public.test.mjs": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+      },
+      "offlineGrades": {
+        "v2": {
+          "exitCode": 0,
+          "stdoutSha256": "252d31a3e7ab6900625687e3670800f432c5b689e0a51effe7f7cea0144da298",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "v3": {
+          "exitCode": 0,
+          "stdoutSha256": "252d31a3e7ab6900625687e3670800f432c5b689e0a51effe7f7cea0144da298",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "scope": "Reassessment of the same retained output; not a new model observation or replacement report."
+    }
+  ],
+  "conclusion": "The helper assertion correction changes none of these six outputs relative to v2. Historical runJobs validation and sparse-array failures remain real. Prior probe remains rejected for signal duck typing; successful current queue outputs remain accepted. No quality gate or frozen suite changed.",
+  "budget": {
+    "maxFen": 5000,
+    "committedFen": 555,
+    "remainingFen": 4445,
+    "requests": 84,
+    "reservedRequests": 0,
+    "denied": 0
+  },
+  "files": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-1/result.json",
+      "sha256": "f106a529ecefaa5ecf0697d4c54a93f0d13a05184d89b622b2ffa1cb7e06529f"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-2/result.json",
+      "sha256": "35ad34c3941ef79ce28223cbc71872aa0bd753d770f985171874ad2c2041a0ac"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-3/result.json",
+      "sha256": "82ed8ca7d4210c9b5f7070564091e0a73b4bc7292f6f1cf23839481d4e5bb51d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v2/candidate/trial-1/result.json",
+      "sha256": "00cecab0291e0e35bd10f19797a14202b88b2b0abfb55cecbb2853bfdc6c481b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/candidate/trial-1/result.json",
+      "sha256": "5c482e3fd5c406fc0a0ebe6ac4ca37dc62c0956e356e4b9233a6dfc2ceb519db"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-baseline-v1/candidate/trial-1/result.json",
+      "sha256": "4d94a4262fa15c6383b11e3c4762b7627afb6664462efd858bf67a8119996a6b"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/expected/src/job-result.mjs",
+      "sha256": "e7b146fc46de7b1611145e8f89a1147fc542cc6885f965941a2d713ab6c01bcb"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/expected/src/queue.mjs",
+      "sha256": "d073637f08a42e0acedd7eef8238fadeecac1839c3c953a138c686256dc9e9e4"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/fixture/README.md",
+      "sha256": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/fixture/src/job-result.mjs",
+      "sha256": "53b1e5ccc1dcc2046b5dfdac223f2c1bef03543189c6b7f89e8ddaa6594f1441"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/fixture/src/queue.mjs",
+      "sha256": "22021953186778f427d6154a29ca75c02fd70785ab84c8f83fe672fde1fc916e"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/fixture/test/public.test.mjs",
+      "sha256": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/manifest.json",
+      "sha256": "8d70b5b6da5dcc37b38d5271c043511baa57ebcbec91223823b3f6629549a397"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/outcome.mjs",
+      "sha256": "505a6b596c19319dc50fd57c764a138f312aa0ceec6a645cbfcc3c803a001f0a"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/prompt.md",
+      "sha256": "2e335728784b8d86367c1b842877ede68909c5adc33147080925ad2895a2141b"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/expected/src/job-result.mjs",
+      "sha256": "e7b146fc46de7b1611145e8f89a1147fc542cc6885f965941a2d713ab6c01bcb"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/expected/src/queue.mjs",
+      "sha256": "d073637f08a42e0acedd7eef8238fadeecac1839c3c953a138c686256dc9e9e4"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/fixture/README.md",
+      "sha256": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/fixture/src/job-result.mjs",
+      "sha256": "53b1e5ccc1dcc2046b5dfdac223f2c1bef03543189c6b7f89e8ddaa6594f1441"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/fixture/src/queue.mjs",
+      "sha256": "22021953186778f427d6154a29ca75c02fd70785ab84c8f83fe672fde1fc916e"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/fixture/test/public.test.mjs",
+      "sha256": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/manifest.json",
+      "sha256": "cc1a2553c2ac299278776389868605c04bc0641c0274c0b3b120953408768650"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/outcome.mjs",
+      "sha256": "bd1f291842adc01a96779470164e8ed34680952e152718e40c13f360355b67f3"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v3/prompt.md",
+      "sha256": "2e335728784b8d86367c1b842877ede68909c5adc33147080925ad2895a2141b"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-queue-signal-grader.test.mjs",
+      "sha256": "bd137b4370bbbddf1be1327323bfe21bf39af92068207deb3763fc166d59b687"
+    },
+    {
+      "path": "/tmp/napier-queue-oracle-v3-tests.log",
+      "sha256": "2b4f550b9c33af51330a1577ffc1ca68a3068937322531319c364707dd4b986e"
+    },
+    {
+      "path": "/tmp/napier-queue-oracle-v3-audit.py",
+      "sha256": "067e8ae132a348827ca7a2d9e54a06828c0be92c0cf367cecdd9ba3847a9e258"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-core-quality-suite-v2.json",
+      "sha256": "858182b0b56bf42cdc070923ca0840b711b8a4eb2ee351ada98632be586c38e2"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-core-quality-suite-v3.json",
+      "sha256": "cc61444f0399e8c0bad69dcc2c7874e2b32da255e7de3cadfbea42117e8fddaa"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-queue-oracle-corpus.test.mjs",
+      "sha256": "8d672cdae324ec52fcbc3093be16872e8e17e2a33ac9b9870fb1d9b9add3167c"
+    },
+    {
+      "path": "/tmp/napier-queue-oracle-v3-corpus-tests.log",
+      "sha256": "ec064c62daa03714c8ab5ad4e13dcc9bf11f7c4a429ce2f2d3fffaef66612424"
+    },
+    {
+      "path": "/tmp/napier-queue-contract-audit-v1.mjs",
+      "sha256": "3dd4e927a3338a5dddcb8d8871ddc0219a99a4e176f3ab790bdb20e9f2f5813b"
+    }
+  ],
+  "corpus": {
+    "path": "benchmarks/harness-core-quality-suite-v3.json",
+    "cases": 30,
+    "changedEntries": 1,
+    "queueCases": 1,
+    "testsPassed": 2,
+    "duplicateOracleVersionsRejected": true,
+    "paidCampaignLaunched": false
+  },
+  "historicalNullSignalFinding": {
+    "runId": "run_3725af236f364cb2b4bb",
+    "historicalGrader": "v1",
+    "historicalAccepted": true,
+    "v2AndV3Accepted": false,
+    "supplementalCheck": "Null signal is invalid before invoking any job",
+    "supplementalPassed": false,
+    "otherSupplementalChecksPassed": [
+      "invalid concurrency Promise rejection",
+      "sparse array before dispatch",
+      "AbortSignal-shaped objects"
+    ],
+    "evidence": "Read-only invocation of /tmp/napier-queue-contract-audit-v1.mjs in this turn; tool transcript retained. Source workspace inventory and original report are bound in observations."
+  }
+}

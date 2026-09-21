@@ -1,0 +1,53 @@
+{
+  "modelId": "deepseek-v4-flash",
+  "supportedLevels": [
+    "off",
+    "high",
+    "max"
+  ],
+  "minimalClampsTo": "high",
+  "shortRetry": {
+    "reasoningOption": "omit",
+    "maxTokens": 2048,
+    "thinkingType": "disabled"
+  },
+  "ordinaryCallChange": "none",
+  "verificationScope": "source-inspection-only",
+  "evidence": [
+    {
+      "id": "model-metadata",
+      "path": "sources/deepseek.json",
+      "startLine": 1,
+      "endLine": 1,
+      "quote": "{\"openai-completions\":{\"deepseek-v4-flash\":{\"id\":\"deepseek-v4-flash\",\"name\":\"DeepSeek V4 Flash\",\"api\":\"openai-completions\",\"baseUrl\":\"https://api.deepseek.com\",\"provider\":\"deepseek\",\"reasoning\":true,\"input\":[\"text\"],\"cost\":{\"input\":0.14,\"output\":0.28,\"cacheRead\":0.0028,\"cacheWrite\":0},\"contextWindow\":1000000,\"maxTokens\":384000,\"compat\":{\"supportsStore\":false,\"supportsDeveloperRole\":false,\"requiresReasoningContentOnAssistantMessages\":true,\"thinkingFormat\":\"deepseek\"},\"thinkingLevelMap\":{\"minimal\":null,\"low\":null,\"medium\":null,\"high\":\"high\",\"max\":\"max\"}},\"deepseek-v4-pro\":{\"id\":\"deepseek-v4-pro\",\"name\":\"DeepSeek V4 Pro\",\"api\":\"openai-completions\",\"baseUrl\":\"https://api.deepseek.com\",\"provider\":\"deepseek\",\"reasoning\":true,\"input\":[\"text\"],\"cost\":{\"input\":0.435,\"output\":0.87,\"cacheRead\":0.003625,\"cacheWrite\":0},\"contextWindow\":1000000,\"maxTokens\":384000,\"compat\":{\"supportsStore\":false,\"supportsDeveloperRole\":false,\"requiresReasoningContentOnAssistantMessages\":true,\"thinkingFormat\":\"deepseek\"},\"thinkingLevelMap\":{\"minimal\":null,\"low\":null,\"medium\":null,\"high\":\"high\",\"max\":\"max\"}}}}"
+    },
+    {
+      "id": "level-filter",
+      "path": "sources/models.js",
+      "startLine": 2,
+      "endLine": 13,
+      "quote": "export function getSupportedThinkingLevels(model) {\n    if (!model.reasoning)\n        return [\"off\"];\n    return EXTENDED_THINKING_LEVELS.filter((level) => {\n        const mapped = model.thinkingLevelMap?.[level];\n        if (mapped === null)\n            return false;\n        if (level === \"xhigh\" || level === \"max\")\n            return mapped !== undefined;\n        return true;\n    });\n}"
+    },
+    {
+      "id": "clamp-fallback",
+      "path": "sources/models.js",
+      "startLine": 14,
+      "endLine": 26,
+      "quote": "export function clampThinkingLevel(model, level) {\n    const availableLevels = getSupportedThinkingLevels(model);\n    if (availableLevels.includes(level))\n        return level;\n    const requestedIndex = EXTENDED_THINKING_LEVELS.indexOf(level);\n    if (requestedIndex === -1)\n        return availableLevels[0] ?? \"off\";\n    for (let i = requestedIndex; i < EXTENDED_THINKING_LEVELS.length; i++) {\n        const candidate = EXTENDED_THINKING_LEVELS[i];\n        if (availableLevels.includes(candidate))\n            return candidate;\n    }\n    for (let i = requestedIndex - 1; i >= 0; i--) {"
+    },
+    {
+      "id": "simple-wrapper",
+      "path": "sources/simple-wrapper.js",
+      "startLine": 1,
+      "endLine": 12,
+      "quote": "export const streamSimple = (model, context, options) => {\n    getClientApiKey(model.provider, options?.apiKey, options?.headers);\n    const base = buildBaseOptions(model, context, options, options?.apiKey);\n    const clampedReasoning = options?.reasoning ? clampThinkingLevel(model, options.reasoning) : undefined;\n    const reasoningEffort = clampedReasoning === \"off\" ? undefined : clampedReasoning;\n    const toolChoice = options?.toolChoice;\n    return stream(model, context, {\n        ...base,\n        reasoningEffort,\n        toolChoice,\n    });\n};"
+    },
+    {
+      "id": "wire-disable",
+      "path": "sources/deepseek-payload.js",
+      "startLine": 1,
+      "endLine": 14,
+      "quote": "    }\n    else if (compat.thinkingFormat === \"deepseek\" && model.reasoning) {\n        if (options?.reasoningEffort) {\n            params.thinking = { type: \"enabled\" };\n        }\n        else if (model.thinkingLevelMap?.off !== null) {\n            params.thinking = { type: \"disabled\" };\n        }\n        if (options?.reasoningEffort && compat.supportsReasoningEffort) {\n            params.reasoning_effort =\n                model.thinkingLevelMap?.[options.reasoningEffort] ?? options.reasoningEffort;\n        }\n    }\n    else if (compat.thinkingFormat === \"openrouter\" && model.reasoning) {"
+    }
+  ]
+}

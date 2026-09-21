@@ -1,0 +1,64 @@
+import assert from "node:assert/strict";
+import { parseRetryAfter } from "./src/retry-after.mjs";
+import { retryDelay } from "./src/retry.mjs";
+const now = Date.parse("2026-09-01T00:00:00Z"),
+  o = { method: "GET", status: 503, attempt: 1, nowMs: now };
+const saved = JSON.stringify(o);
+assert.equal(parseRetryAfter("Tue, 01 Sep 2026 00:00:03 GMT", now), 3000);
+assert.equal(parseRetryAfter("Mon, 31 Aug 2026 00:00:00 GMT", now), 0);
+for (const x of [
+  "-1",
+  "1.5",
+  "NaN",
+  "Infinity",
+  "999999999999999999999",
+  "2026-09-01",
+  "Tue, 31 Feb 2026 00:00:00 GMT",
+  null,
+])
+  assert.equal(parseRetryAfter(x, now), null);
+assert.equal(parseRetryAfter(" 0 ", now), 0);
+assert.equal(retryDelay(o), 200);
+assert.equal(retryDelay({ ...o, jitter: 0.25 }), 50);
+assert.equal(retryDelay({ ...o, retryAfter: "40" }), null);
+assert.equal(retryDelay({ ...o, method: "POST" }), null);
+assert.equal(
+  retryDelay({ ...o, method: "post", idempotencyKey: " key " }),
+  200,
+);
+assert.equal(
+  retryDelay({ ...o, method: "PATCH", idempotencyKey: "key" }),
+  null,
+);
+assert.equal(retryDelay({ ...o, status: 501 }), null);
+assert.equal(retryDelay({ ...o, attempt: 3 }), null);
+assert.equal(
+  retryDelay({ ...o, attempt: 10000, maxRetries: 10001, jitter: 0 }),
+  0,
+);
+assert.equal(JSON.stringify(o), saved);
+for (const patch of [
+  { jitter: NaN },
+  { attempt: -1 },
+  { maxMs: 0 },
+  { nowMs: -1 },
+  { status: 600 },
+  { method: "GET X" },
+  { idempotencyKey: 5 },
+])
+  assert.throws(() => retryDelay({ ...o, ...patch }));
+
+// The header parser explicitly specifies TypeError for invalid clocks.
+for (const clock of [-1, 0.5, NaN, Infinity, "0", Number.MAX_SAFE_INTEGER + 1])
+  assert.throws(() => parseRetryAfter(null, clock), TypeError);
+// Retry-option validation precedes status eligibility; its error class is unspecified.
+for (const patch of [
+  { jitter: NaN },
+  { attempt: -1 },
+  { maxMs: 0 },
+  { nowMs: -1 },
+  { method: "GET X" },
+  { idempotencyKey: 5 },
+])
+  assert.throws(() => retryDelay({ ...o, status: 200, ...patch }));
+console.log("Retry eligibility, server delay, backoff and validation passed");

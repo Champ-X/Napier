@@ -1,0 +1,27 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "interactive_python_shipping_v1",
+  "title": "Fix and exercise an interactive Python worker",
+  "maxTurns": 48,
+  "promptPath": "prompt.md",
+  "fixturePath": "fixture",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": ["shipping.py", "report.json"],
+  "requiredTools": ["workspace_process", "verify_workspace"],
+  "requiredCompletedTools": ["apply_patch", "workspace_process"],
+  "processAcceptance": {
+    "requiredActions": { "start": 1, "input": 2, "poll": 1, "cancel": 1 },
+    "noRunningSessions": true,
+    "jsonExchanges": [
+      {
+        "input": { "subtotal": 50, "expedited": false },
+        "output": { "subtotal": 50, "expedited": false, "shipping": 0 }
+      },
+      {
+        "input": { "subtotal": 50, "expedited": true },
+        "output": { "subtotal": 50, "expedited": true, "shipping": 8 }
+      }
+    ]
+  }
+}

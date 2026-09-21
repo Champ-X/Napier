@@ -1,0 +1,59 @@
+{
+  "kind": "napier.contract-guidance-runtime-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T20:01:36.033349+00:00",
+  "fullSuite": {
+    "passed": 2590,
+    "skipped": 59,
+    "failed": 3,
+    "files": 518,
+    "durationSeconds": 304.11,
+    "failures": [
+      "agent-capability-contract-v2.test.ts: baseline capability vector",
+      "agent-capability-contract.test.ts: baseline production Skill readiness",
+      "extension-package-updates.test.ts: lifecycle assumption when two manifests share a creation timestamp"
+    ]
+  },
+  "focusedUnchangedRerun": {
+    "passed": 7,
+    "failed": 0
+  },
+  "clockReproduction": {
+    "baselineSnapshot": "/tmp/napier-harness-baseline-c454a155",
+    "candidateSnapshot": "/tmp/napier-harness-contract-guidance-v1",
+    "sameClockOmitsLifecycleInBoth": true,
+    "explicitExpiryChangesLifecycleInBoth": true,
+    "initialAttempt": "Rejected 2099 expiry because expiry must be within ten years; original log retained; corrected to next day"
+  },
+  "fix": {
+    "file": "packages/runtime/test/extension-package-updates.test.ts",
+    "change": "Set explicit next-package expiry to exercise lifecycle difference regardless of creation-clock resolution; preserve all assertions",
+    "runtimeSourceChanged": false,
+    "activeCampaignSnapshotsChanged": false,
+    "focusedTestsPassed": 7,
+    "fullSuiteRerunAfterTestFixtureFix": false
+  },
+  "logs": [
+    {
+      "path": "/tmp/napier-contract-guidance-runtime-full-v1.log",
+      "sha256": "82f84b4295370f39cf9640cdde26c0cdd4bc1f62feb681803a685480dab2bd18"
+    },
+    {
+      "path": "/tmp/napier-contract-guidance-extension-rerun-v1.log",
+      "sha256": "a09ae3367a36875db188f616bc8563e08ab0aeadf15493cf9a8796713c51c3dd"
+    },
+    {
+      "path": "/tmp/napier-extension-lifecycle-clock-repro-v1.log",
+      "sha256": "c8593960bbcd0880d8c5c3dd4ce51ac0c455144f4079ea9134fb08b3720b5cd0"
+    },
+    {
+      "path": "/tmp/napier-extension-lifecycle-clock-repro-v2.log",
+      "sha256": "0320d0f39dbfb3b79ff71e0cfc4cb3c24020a4b24e332f2fe5b27d20dd47c5ba"
+    },
+    {
+      "path": "/tmp/napier-contract-guidance-extension-fix-v1.log",
+      "sha256": "f68144dc3e2b468a219df6baeb3d18e5ad95b69fc1bd7e9ee77d636502b643f9"
+    }
+  ],
+  "scope": "Full suite retained with three failures; isolated timing defect reproduced in both frozen runtimes and fixture corrected with seven focused checks. No fully green suite or overall task qualification claimed."
+}

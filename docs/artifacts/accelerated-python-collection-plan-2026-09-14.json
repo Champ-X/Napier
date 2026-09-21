@@ -1,0 +1,68 @@
+{
+  "kind": "napier.accelerated-bounded-python-collection-plan",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T13:36:25.164Z",
+  "plan": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-two-pair-batch-v1/plan.json",
+    "sha256": "6b58eadc93ce27d9cba563f1f2324997ca440392a9af74b64fde794b54c06907"
+  },
+  "budgetAuthorization": {
+    "path": "docs/artifacts/api-budget-increase-100cny-2026-09-14.json",
+    "sha256": "da4a26ed2d7e7afba80447a88adcd8dbb9541ebcc990681b141178b8c5c601ce"
+  },
+  "driverFreeze": {
+    "path": "/tmp/napier-cny-sandbox-quality-driver-v3/freeze.json",
+    "sha256": "f9937b1254d1f09c1b0e985d6dc2839061356e508571f2396f9b0891fc01c45c"
+  },
+  "tests": {
+    "path": "/tmp/napier-budget-increase-gate-tests-v1.json",
+    "sha256": "886072dbf0e46dd41be7a27d9b9d24a9953e55ae17e1abbab2ecc6beeee5efff"
+  },
+  "startingBudget": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 1804,
+    "remainingFen": 8196,
+    "requests": 238,
+    "reservedRequests": 0,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14"
+    }
+  },
+  "maxNewRuns": 4,
+  "maxNewRequests": 80,
+  "minimumIntervalMs": 30000,
+  "concurrency": 1,
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "taskCount": 30,
+  "scheduledJobs": 180,
+  "dispatchCases": [
+    "booking_calendar_v2",
+    "safe_csv_export_v1"
+  ],
+  "stopConditions": [
+    "quality regression",
+    "invalid evidence",
+    "unsuccessful candidate",
+    "insufficient shared budget"
+  ],
+  "collectionComplete": false,
+  "promotionReady": false
+}

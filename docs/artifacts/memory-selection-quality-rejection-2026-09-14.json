@@ -1,0 +1,75 @@
+{
+  "kind": "napier.memory-selection-quality-rejection",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:39:54.690Z",
+  "root": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-paired-v1",
+  "inputsSha256": "59bdf0a6b72635ffb43f09517484fe8dff2a879d5a6a078ea784a7bcda0cc274",
+  "driverSha256": "baed8a567a17cd1e002d136968bc38cef83ce068d11f237df74a92f5a291a8a4",
+  "rows": [
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_41ab8a9d8b954d88b7af",
+      "status": "completed",
+      "answer": {
+        "shippingFeeCents": 399
+      },
+      "taskSuccess": true,
+      "initialInputsSha256": "cb52a22df4aae52d75870c7c5381283db2dba9ed0ae8d9ef0dc07b02519ffab6",
+      "resultSha256": "7097b5221e1995fd647461052b529d487427d3c1880515bce10b06b5e113eb35",
+      "observations": [
+        {
+          "eventId": "event_f7308d78cd3a4719b169",
+          "capsuleSha256": "8eb58852bc33c7117ead10b604f17c4a63654395cf30f3323f81c3de1de81eca",
+          "eligibleRelevantFacts": 2,
+          "recalledRelevantFacts": 2,
+          "chineseRulePresentAnywhereInContext": true
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_c051184ce7a448e6902d",
+      "status": "completed",
+      "answer": {
+        "shippingFeeCents": 599
+      },
+      "taskSuccess": false,
+      "initialInputsSha256": "b179b1eec5c7aaa4251191e26bc8fc948dee03eb32f0557feb3d4149df646ad3",
+      "resultSha256": "c52055ef2ae1c8099dd8f38d17375a7c860669a1943f12f83ae655a4a5866443",
+      "observations": [
+        {
+          "eventId": "event_36a5b1c1448941229ca2",
+          "capsuleSha256": "5b7ac57ea6b754b8f24ec85f95c12ff1c54065b848e10c28d5cc3aca6800f4da",
+          "eligibleRelevantFacts": 2,
+          "recalledRelevantFacts": 1,
+          "chineseRulePresentAnywhereInContext": false
+        }
+      ],
+      "inputExport": {
+        "status": "unavailable",
+        "capture": {
+          "kind": "napier.run-input-capture",
+          "schemaVersion": 1,
+          "status": "unavailable",
+          "diagnosticSha256": "5b07afcb6d0cb5340627352580c637b3da24f204a525ea53f4cdbc34e29ba100",
+          "durationMs": 0
+        },
+        "exportExitCode": 1,
+        "exportErrorSha256": "88b6807b8031246833062907dd58efd3c7c17502583b39b136fb0989f26138b0",
+        "originalStateAndEventsUnchanged": true
+      }
+    }
+  ],
+  "quality": {
+    "status": "regressed",
+    "pairedTrials": 1,
+    "plannedTrials": 3,
+    "collectionComplete": false,
+    "stoppedAfterPairedRegression": true,
+    "promotionReady": false
+  },
+  "assessment": "The English request matches the English shipping rule. An equally authorized, reviewed Chinese member-discount decision has no lexical overlap and is dropped by selective-v2. Complete invocation-context inspection confirms it is absent, not merely omitted from a receipt. Baseline returns 599-200=399 cents; candidate returns 599 cents. This is an observed task-quality and relevant-memory-recall regression. A no-match fallback cannot protect partially matched multilingual rule sets. The earlier source-transition component success remains valid for that scenario but does not qualify this policy.",
+  "limits": "One diagnostic task and one retained paired trial. No inference about general failure frequency. Original results and earlier successful/failed campaigns are preserved. Runtime remains completed; external grader assessment is recorded separately. Initial input capture was unavailable for both empty-workspace Runs; production export was attempted and correctly rejected, while the external driver, initial memory seeds, prompts and hash-bound invocation capsules remain retained."
+}

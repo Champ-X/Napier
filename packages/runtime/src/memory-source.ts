@@ -14,6 +14,21 @@ export function normalizeMemorySource(source: MemorySource): MemorySource {
       )
     : undefined;
   const evidence = source.repositoryEvidence;
+  const fileDependencies = source.fileDependencies?.map((dependency) => {
+    if (
+      typeof dependency.path !== "string" ||
+      !dependency.path ||
+      dependency.path.length > 500 ||
+      /^(?:\/|[A-Za-z]:)/u.test(dependency.path) ||
+      dependency.path.split(/[\\/]/u).includes("..") ||
+      /[\u0000-\u001f\u007f]/u.test(dependency.path) ||
+      !/^[a-f0-9]{64}$/u.test(dependency.sha256)
+    )
+      throw new Error("Invalid memory file dependency");
+    return { path: dependency.path, sha256: dependency.sha256 };
+  });
+  if (fileDependencies && fileDependencies.length > 16)
+    throw new Error("Memory file dependencies exceed limit");
   const repositoryEvidence = evidence
     ? evidence.status === "linked" &&
       validSourceId(evidence.eventId) &&
@@ -39,6 +54,7 @@ export function normalizeMemorySource(source: MemorySource): MemorySource {
     ...(persistenceReason ? { persistenceReason } : {}),
     ...(differenceSummary ? { differenceSummary } : {}),
     ...(repositoryEvidence ? { repositoryEvidence } : {}),
+    ...(fileDependencies?.length ? { fileDependencies } : {}),
   };
 }
 

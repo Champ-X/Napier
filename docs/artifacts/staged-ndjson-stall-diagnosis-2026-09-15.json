@@ -1,0 +1,22 @@
+{
+  "kind": "napier.staged-candidate-stall-diagnosis",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T07:11:41.033465+00:00",
+  "runId": "run_d2d2215e7ae242e19125",
+  "tracePath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-4/trial-4/data/model-thinking-traces/67534c63978cd2f505d50d3fd9c5e21132306483eba93bfd63b0d7f7d2aa7d65.json",
+  "traceFileSha256": "601d67740b39d90fdcf590c0fb802264344e17164aa29ba83ea2f5c1f0c5bb6d",
+  "traceCapturedBytes": 86152,
+  "traceObservedBytes": 86152,
+  "traceComplete": true,
+  "reason": "semantic_stall",
+  "markerIsSemanticProgressTimeout": true,
+  "firstVerificationExecuted": false,
+  "implementationEdits": 0,
+  "SDKPayloadAudit": "docs/artifacts/staged-ndjson-sdk-budget-audit-2026-09-15.json",
+  "finding": "Staged guidance was present but did not elicit a tool action before the semantic progress deadline. The trace continues analyzing and revising implementation details; the reason is timeout, not a repeated code-signature match. Medium serializes to provider-supported high. The existing off/2048 retry was blocked by unsettled prior usage.",
+  "nextModule": "Per-invocation model reasoning/output budget before expensive thinking begins, preserving capability boundaries, original Run limits and original failures. Requires offline actual-SDK and Agent integration before deciding any new real-model test.",
+  "causalityProven": false,
+  "modelRequests": 0,
+  "candidateFailurePreserved": true,
+  "scope": "Diagnosis of one captured failed Run. No hidden reasoning text is copied into the artifact, no timeout guard is relaxed, and no prompt-only cure or future success is claimed."
+}

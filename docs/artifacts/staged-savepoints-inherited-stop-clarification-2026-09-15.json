@@ -1,0 +1,21 @@
+{
+  "kind": "napier.original-baseline-stop-clarification",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T05:44:42.776Z",
+  "priorResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl-original-pair-v1/result.json",
+  "priorResultSha256": "f55cdb74dcb1d5cc30de18949e41809dff77b56ab85d4604d48fc16a1d14bcdb",
+  "priorAuditPath": "/Users/champ/orca/Napier/docs/artifacts/staged-ttl-final-audit-2026-09-15.json",
+  "priorAuditSha256": "b22d91d6c8d8016f2eb53407c61b42bcd350e232368fe8a9cdc9e5e72c97710e",
+  "candidateRunId": "run_9a1d0aec74c646499a50",
+  "baselineRunId": "run_76af8c7911754698b595",
+  "originalStop": "aggregate_quality_or_evidence_failed",
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "originalObservationEligible": false,
+  "originalReservationsReleased": false,
+  "sourceChanged": false,
+  "qualityGateChanged": false,
+  "reason": "The original NDJSON candidate succeeded but its baseline failed after a thinking guard, with incomplete provider usage. That observation remains ineligible. All later original reports and aggregate blockers are retained. One different unobserved original pair may add independent evidence without clearing the inherited blocker or enabling promotion. Observe the original transactional savepoint contract on the current staged-verification source: real model handling of nested rollback, committed inner changes, value ownership, literal object keys and invalid-call atomicity requires actual tool execution and independent grading. This original current-source task has no prior observation; do not change fixtures or add an availability probe.",
+  "modelRequests": 0
+}

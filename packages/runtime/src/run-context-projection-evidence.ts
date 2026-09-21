@@ -1,5 +1,6 @@
 import type { ContextProjectionReceiptV1, RunEvent } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { boundRuntimeContextReceipt } from "./runtime-context-evidence.js";
 import {
   checkpointHasResponseBinding,
   contextEvidenceRecord,
@@ -47,6 +48,7 @@ export function assertRunContextProjectionBinding(
   )
     throw invalid();
   const { contentSha256, ...payload } = contextEvidenceRecord(stage.payload);
+  const delivery = boundRuntimeContextReceipt(events, event);
   if (
     sha256(canonicalJson(payload)) !== contentSha256 ||
     payload["kind"] !== "napier.run-context-projection" ||
@@ -54,8 +56,11 @@ export function assertRunContextProjectionBinding(
     payload["runId"] !== event.runId ||
     payload["modelAttempt"] !== receipt.modelAttempt ||
     payload["recoveryAttempt"] !== receipt.recoveryAttempt ||
-    payload["activeMessageCount"] !== receipt.preparedMessageCount ||
-    payload["activeMessageSetSha256"] !== receipt.preparedMessageSetSha256
+    payload["activeMessageCount"] !==
+      (delivery?.preparedBaseMessageCount ?? receipt.preparedMessageCount) ||
+    payload["activeMessageSetSha256"] !==
+      (delivery?.preparedBaseMessageSetSha256 ??
+        receipt.preparedMessageSetSha256)
   )
     throw invalid();
   const previous =
@@ -72,7 +77,11 @@ export function assertRunContextProjectionBinding(
   const expectedOriginal =
     receipt.recoveryAttempt === 0
       ? receipt.postPruningMessageSetSha256
-      : contextEvidenceRecord(previous?.payload)["activeMessageSetSha256"];
+      : ((previous
+          ? boundRuntimeContextReceipt(events, previous)
+              ?.activeBaseMessageSetSha256
+          : undefined) ??
+        contextEvidenceRecord(previous?.payload)["activeMessageSetSha256"]);
   if (payload["originalMessageSetSha256"] !== expectedOriginal) throw invalid();
   const checkpointEvent = events.find(
     (candidate) =>

@@ -1,0 +1,305 @@
+{
+  "kind": "napier.reproduction-source-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T02:16:58.556156+00:00",
+  "sourceArchive": {
+    "path": "/tmp/napier-reproduction-source-current-v1",
+    "scope": "Selected sources, test case and compiled exporter modules; not a complete executable environment.",
+    "matchesCurrentFiles": true
+  },
+  "files": [
+    {
+      "path": "packages/runtime/src/run-input-reproduction.ts",
+      "sha256": "a32a7b6771ec60585d71016c4f0625c998d2369c3085d17444da65d4dd463be4"
+    },
+    {
+      "path": "packages/runtime/src/run-input-reproduction-source.ts",
+      "sha256": "6d2bdfc6575d72ff8c0e50690f31587e9c94c4c2d72982b7b192416aad233c30"
+    },
+    {
+      "path": "packages/runtime/src/run-config.ts",
+      "sha256": "8d519e8275d9e0471a645d7f729da140c901bc0df5c70a6f5941d473c607c36c"
+    },
+    {
+      "path": "packages/runtime/src/model-invocation-capsule.ts",
+      "sha256": "b2d4e8a58948f8ed50c72ce32a66131d61844684808e915642cce65df1872a83"
+    },
+    {
+      "path": "packages/runtime/src/run-input-capsule.ts",
+      "sha256": "1f08f5278fc02e5f5d689f9fefe903d1e30836171e4e4cc2b376282b247ba2a2"
+    },
+    {
+      "path": "packages/runtime/src/external-outcome-review.ts",
+      "sha256": "88a0e616fba4886e53f186b8ceafa772ec6105857dd9f55860aa7abf42b7186f"
+    },
+    {
+      "path": "packages/runtime/test/run-input-reproduction-source.test.ts",
+      "sha256": "4b44b72ed18a804405608e337d114a3cb86a8f60b1dbd9242bafe40f7efed51f"
+    },
+    {
+      "path": "scripts/export-run-input-reproduction.mjs",
+      "sha256": "4274bdafe115fe7e5fc151c6d9f7ff31e892484878a65becb21f2a14f96edc92"
+    },
+    {
+      "path": "packages/runtime/dist/run-input-reproduction.js",
+      "sha256": "39316d1ff3c356097fd731a1bc41dfeb4d8a86cda0ff4b9b58a0c8992de84864"
+    },
+    {
+      "path": "packages/runtime/dist/run-input-reproduction.d.ts",
+      "sha256": "5982408b06df3f96e8558ed8f819f7262bf0b350a51b0d3ade570e54c4ca167d"
+    },
+    {
+      "path": "packages/runtime/dist/run-input-reproduction-source.js",
+      "sha256": "b4dd7d21d986b6a237d0ecd2a994a824d388db79edb25270487953a0f6978253"
+    },
+    {
+      "path": "packages/runtime/dist/run-input-reproduction-source.d.ts",
+      "sha256": "75d3278a9799d41616e566c850def8b2345ae58e77c08dc07ec3db86541147ad"
+    }
+  ],
+  "currentTrees": {
+    "packages/runtime/src": {
+      "fileCount": 1174,
+      "treeSha256": "1faea11b7dfe9214a882e2bf441433e4941110a127a8a99457dcd7738fe11ba3"
+    },
+    "packages/runtime/dist": {
+      "fileCount": 3534,
+      "treeSha256": "39ae6a1afbedf6db4fcfcf24969c3e84e9a657c64ecd2f444319f521df63c571"
+    },
+    "packages/contracts/src": {
+      "fileCount": 79,
+      "treeSha256": "f520cbe8441acac007a61f6b294ef7b7879062e854d855db25951f2a9591745a"
+    },
+    "packages/contracts/dist": {
+      "fileCount": 238,
+      "treeSha256": "410c28c9eab53de21f0c83e8500ad117d15edbed80958539c1829b667df518d2"
+    }
+  },
+  "evidenceFiles": [
+    {
+      "path": "/tmp/napier-reproduction-source-before-v1.log",
+      "sha256": "b758b9c7f49e76c3f0c2c67d85d4551741c409b80e252a9ca0058ce5822a185c"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-focused-v1.log",
+      "sha256": "81762b12101315cc05df6f5058f7b89f783152fa0ec428939c68cb360d5adbcd"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-focused-v2.log",
+      "sha256": "d29f7046f9f3ad11aa3976887ba8052ce185104f84d9a00e6b1ff2ae26945991"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-focused-v3.log",
+      "sha256": "b5f3d640e391c856e24aa48a7a36331c06c3e3c839871c875e6b41aed2f2617e"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-cli-tests-v1.log",
+      "sha256": "323a0cc735d2ee42015bc158c1e7455405817fce7ad69b07b0f051b0e7e63eac"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-cli-tests-v2.log",
+      "sha256": "cfb94597090fd35c1d75ff5da01a52f5e07814827e134c1b1612bf5c69cd308e"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-build-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-build-v2.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-architecture-v1.log",
+      "sha256": "6859520663a622fa3bf797afeb46c32579bee912a7f8b50b980140866d07bff1"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-architecture-v2.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-format-final-v2.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-diff-check-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/napier-reproduction-real-current-v1.py",
+      "sha256": "c717cae30510fa360f8b099d89c197cbc7ecc21abcb7abacde52883f86635d59"
+    },
+    {
+      "path": "/tmp/napier-reproduction-real-current-v1.log",
+      "sha256": "b06e734ab6c54b3426c6fd181dd1149224250a929afac505b15cd3757cb03556"
+    },
+    {
+      "path": "/tmp/napier-reproduction-real-current-v1.json",
+      "sha256": "1b5b07b8a99b8937c5dce19a34081b5da4e400a2304695aa92c2e94977550648"
+    },
+    {
+      "path": "/tmp/napier-reproduction-real-current-v2.py",
+      "sha256": "2899f61ab43dd6e2e118c51d109d0d36af08170920b94064bb153e0f1d456659"
+    },
+    {
+      "path": "/tmp/napier-reproduction-real-current-v2.log",
+      "sha256": "b06e734ab6c54b3426c6fd181dd1149224250a929afac505b15cd3757cb03556"
+    },
+    {
+      "path": "/tmp/napier-reproduction-real-current-v2.json",
+      "sha256": "847b8b4947c23b227a60d44bd79f9717b5fca4870ecb28daaa597df53b53e818"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-before-v1/manifest.json",
+      "sha256": "7753fc5c02669eea0b8c4e9031a65b3e0e7785a1d3df036e97d432b180aa9c29"
+    },
+    {
+      "path": "/tmp/napier-reproduction-source-current-v1/manifest.json",
+      "sha256": "400eb569eb04ac1e3165d79188ee784c074c38222ee007593557a0d5866baba8"
+    }
+  ],
+  "before": {
+    "failedAssertions": 9,
+    "acceptedInvalidVariants": 8,
+    "reverseOrderSelectedLaterInvocation": true,
+    "scope": "Actual local Runtime and SQLite with a scripted provider; malformed reader snapshots are test variants, not modifications of the source ledger."
+  },
+  "final": {
+    "focusedAssertionsPassed": 23,
+    "focusedAssertionsFailed": 0,
+    "cliExecuted": true,
+    "sourceScopeAndUniqueIdentitiesValidated": true,
+    "terminalEventMatchesRunState": true,
+    "configurationFingerprintValidated": true,
+    "initialInvocationOrderedBySequence": true,
+    "captureReceiptMatchesCapsule": true,
+    "invocationReceiptMatchesCapsule": true,
+    "promptPrecedesInvocation": true,
+    "interruptedVariant": "Coherently altered test-reader record; no new process-crash experiment.",
+    "runtimeCompile": "passed",
+    "format": "passed",
+    "diffWhitespace": "passed",
+    "architecture": {
+      "knownViolations": 7,
+      "newViolations": 0,
+      "budgetsRaised": false
+    },
+    "fullRuntimeSuiteRerun": false
+  },
+  "historicalExports": {
+    "sourceCampaign": "pre-edit-verification-queue-v1",
+    "freshExportDirectory": "/tmp/napier-reproduction-real-current-v2",
+    "count": 5,
+    "allFilesByteAndModeIdentical": true,
+    "sourceDatabaseFilesUnchanged": true,
+    "oldExportsUnchanged": true,
+    "runs": [
+      {
+        "runId": "run_932899ab946b41f6afcc",
+        "threadId": "thread_067ca85d265b48e5aa19",
+        "arm": "baseline",
+        "trial": 1,
+        "status": "completed",
+        "fileCount": 7,
+        "receipt": {
+          "runId": "run_932899ab946b41f6afcc",
+          "workspaceComplete": true,
+          "receiptSha256": "a2cec8e9863235539b35e28ef51eddb3b95de056ce8f02edec6a90a16053bed3"
+        }
+      },
+      {
+        "runId": "run_b530c756de8b4f98af39",
+        "threadId": "thread_44a6ca6f63a042ba9057",
+        "arm": "baseline",
+        "trial": 3,
+        "status": "completed",
+        "fileCount": 7,
+        "receipt": {
+          "runId": "run_b530c756de8b4f98af39",
+          "workspaceComplete": true,
+          "receiptSha256": "0237a19123a170c8b2e18b476292333842d203e244950beff7e2aabc24a7b09d"
+        }
+      },
+      {
+        "runId": "run_86205f26349e4956a8f4",
+        "threadId": "thread_a231123ed0df4f3f8e0a",
+        "arm": "candidate",
+        "trial": 1,
+        "status": "completed",
+        "fileCount": 7,
+        "receipt": {
+          "runId": "run_86205f26349e4956a8f4",
+          "workspaceComplete": true,
+          "receiptSha256": "a7268dbd9a0d3dba9a1ebaa1982bf3dc8df4b4ea47b0d3018f94db25f9fe22de"
+        }
+      },
+      {
+        "runId": "run_5681aa2c7b4848c09023",
+        "threadId": "thread_0b2ff0d7f497410ba857",
+        "arm": "candidate",
+        "trial": 2,
+        "status": "completed",
+        "fileCount": 7,
+        "receipt": {
+          "runId": "run_5681aa2c7b4848c09023",
+          "workspaceComplete": true,
+          "receiptSha256": "61a09fd9b93187f3a7e39e24c3db4e83a7df90c43cdbd8df1727189a8a421a02"
+        }
+      },
+      {
+        "runId": "run_22b3138433d84934a198",
+        "threadId": "thread_4e449830be774913a1ea",
+        "arm": "candidate",
+        "trial": 3,
+        "status": "completed",
+        "fileCount": 7,
+        "receipt": {
+          "runId": "run_22b3138433d84934a198",
+          "workspaceComplete": true,
+          "receiptSha256": "bba3caaf02788defc5465722f70949740340da4172b79b7f2899225ed83ec708"
+        }
+      }
+    ],
+    "scope": "Five retained real-model recovered-tool-failure Runs exported offline; no new model execution, failure recurrence, or current-task quality qualification."
+  },
+  "retainedReleaseReceipts": [
+    {
+      "path": "docs/artifacts/oci-crash-recovery-stage11.json",
+      "sha256": "794559d4d9aa89007d3376b412908ed9203f91f1af05b0dfc5d5c643216d50f6",
+      "unchangedFromHead": true
+    },
+    {
+      "path": "docs/artifacts/sandbox-portable-lsp-stage16.json",
+      "sha256": "ada65ff5049c7b15351cd3fb85515365a32784e1684726d14fdd1734bd5fe0ed",
+      "unchangedFromHead": true
+    },
+    {
+      "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
+      "sha256": "52db6c96c8c2a26ed8f0dfc2c2666835dce5e93183171a007e2d8b1860b31da9",
+      "unchangedFromHead": true
+    },
+    {
+      "path": "docs/artifacts/sandbox-portable-dap-stage17.json",
+      "sha256": "76b1b815daf215ebd4ffe47b8d61ebf0259cc7e002cb5ffbb3f29f1f3f1dfc8d",
+      "unchangedFromHead": true
+    }
+  ],
+  "scope": {
+    "newPaidModelCalls": 0,
+    "liveCampaignStarted": false,
+    "modelQualityQualified": false,
+    "promotionReady": false,
+    "qualityGate": "30 distinct cases x 3 paired trials unchanged",
+    "sourceLedgerRewritten": false,
+    "legacyExportSchemaChanged": false,
+    "defaultPolicyPromoted": false,
+    "serviceManaged": false,
+    "limits": [
+      "Coherence checks do not authenticate a caller-supplied ledger or prove no events were omitted.",
+      "Installed dependencies and external services are not restored.",
+      "Independent graders and environment qualification remain necessary.",
+      "Same initial inputs do not guarantee the same model failure.",
+      "Prior full Runtime totals predate this exporter-only change."
+    ]
+  },
+  "contentSha256": "71c77f0f8c84caff126059b8e6a658c5204949b5942b544036459a54471b854a"
+}

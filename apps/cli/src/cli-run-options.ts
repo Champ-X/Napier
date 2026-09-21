@@ -9,6 +9,11 @@ import { parseCredentialEnvironment } from "./cli-credential-options.js";
 import type { CliExecutionOptions } from "./cli-execution-options.js";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { RunEvent } from "@napier/contracts";
+import {
+  HARNESS_POLICY_PRESET_IDS,
+  type HarnessExperimentProfile,
+  type HarnessPolicyPresetId,
+} from "@napier/contracts/harness-experiments";
 
 const MAX_PROMPT_BYTES = 64 * 1_024;
 const MAX_TITLE_CHARS = 160;
@@ -21,6 +26,8 @@ export interface CliRunOptions extends CliExecutionOptions {
   title?: string;
   credentialEnv?: string;
   capabilityPreset?: AgentCapabilityPresetId;
+  harnessPolicyPreset?: HarnessPolicyPresetId;
+  harnessProfileFile?: string;
 }
 
 export const RUN_VALUE_OPTIONS = new Set([
@@ -31,6 +38,8 @@ export const RUN_VALUE_OPTIONS = new Set([
   "--credential-env",
   "--agent",
   "--preset",
+  "--harness-policy",
+  "--harness-profile-file",
   "--thread",
   "--source-run",
   "--title",
@@ -63,6 +72,23 @@ export function parseRunOptions(
   const model = optionalModelRef(values);
   const credentialEnv = parseCredentialEnvironment(values, model);
   const capabilityPreset = optionalCapabilityPreset(values);
+  const harnessPolicyPreset = values.get("--harness-policy");
+  const harnessProfileFile = values.has("--harness-profile-file")
+    ? requiredValue(values, "--harness-profile-file")
+    : undefined;
+  if (harnessPolicyPreset !== undefined && harnessProfileFile !== undefined)
+    throw new Error(
+      "--harness-policy and --harness-profile-file are mutually exclusive",
+    );
+  if (
+    harnessPolicyPreset !== undefined &&
+    !HARNESS_POLICY_PRESET_IDS.includes(
+      harnessPolicyPreset as HarnessPolicyPresetId,
+    )
+  )
+    throw new Error(
+      `--harness-policy must be one of ${HARNESS_POLICY_PRESET_IDS.join(", ")}`,
+    );
   return {
     kind: "run",
     options: {
@@ -75,7 +101,11 @@ export function parseRunOptions(
         : {}),
       ...(model ? { model } : {}),
       ...(credentialEnv ? { credentialEnv } : {}),
+      ...(harnessProfileFile ? { harnessProfileFile } : {}),
       ...(capabilityPreset ? { capabilityPreset } : {}),
+      ...(harnessPolicyPreset
+        ? { harnessPolicyPreset: harnessPolicyPreset as HarnessPolicyPresetId }
+        : {}),
       ...(agentId ? { agentId } : {}),
       ...(threadId ? { threadId } : {}),
       ...(sourceContinuityRunId ? { sourceContinuityRunId } : {}),
@@ -89,12 +119,17 @@ export function cliRunPromptOptions(
   threadId: string,
   signal: AbortSignal,
   onEvent?: (event: RunEvent) => Promise<void>,
+  harnessExperimentProfile?: HarnessExperimentProfile,
 ) {
   return {
     threadId,
     text: options.prompt,
     ...(options.model ? { model: options.model } : {}),
     capabilityPreset: options.capabilityPreset,
+    ...(harnessExperimentProfile ? { harnessExperimentProfile } : {}),
+    ...(options.harnessPolicyPreset
+      ? { harnessPolicyPreset: options.harnessPolicyPreset }
+      : {}),
     ...(options.sourceContinuityRunId
       ? { sourceContinuityRunId: options.sourceContinuityRunId }
       : {}),

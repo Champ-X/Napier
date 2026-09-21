@@ -1,0 +1,28 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_contract_guidance_v1",
+  "cases": [
+    {
+      "path": "harness-optimization/http-retry-policy-v1",
+      "coverage": [
+        "contract-expectation-grounding",
+        "http-retry-policy"
+      ]
+    },
+    {
+      "path": "harness-optimization/ttl-lru-cache-v1",
+      "coverage": [
+        "contract-expectation-grounding",
+        "ttl-lru-cache"
+      ]
+    },
+    {
+      "path": "harness-optimization/semantic-version-order-v1",
+      "coverage": [
+        "contract-expectation-grounding",
+        "semantic-version-order"
+      ]
+    }
+  ]
+}

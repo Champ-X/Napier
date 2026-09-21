@@ -1,0 +1,107 @@
+{
+  "kind": "napier.memory-selection-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:36:01.639843+00:00",
+  "snapshot": "/tmp/napier-harness-memory-selection-v2",
+  "policy": "task-aware-selective-v2",
+  "retrievalVersion": "sqlite-fts5-selective-v2",
+  "before": {
+    "tests": 9,
+    "failed": 9
+  },
+  "focused": {
+    "passed": 36,
+    "failed": 0
+  },
+  "runtime": {
+    "files": 522,
+    "passed": 2620,
+    "skipped": 59,
+    "failed": 2,
+    "durationSeconds": 299.22,
+    "failures": [
+      "capability-vector history/current V5",
+      "production Skill loader readiness"
+    ],
+    "assessment": "Same two original failures as prior node-freshness-v1 full Runtime run; no new failure observed."
+  },
+  "compilation": "passed",
+  "architecture": {
+    "existingViolations": 7,
+    "newViolations": 0,
+    "budgetRaised": false,
+    "initialAttempt": "One additional agent-runtime.ts line violation; resolved by passing the policy directly instead of duplicating activation logic."
+  },
+  "formatting": "passed",
+  "gitDiffCheck": "passed",
+  "realModelEvidence": "docs/artifacts/memory-selection-comparison-2026-09-14.json",
+  "auditCorrections": [
+    "First audit correctly rejected strict restart memory-store equality: each trajectory generated distinct unreviewed proposals. Revised audit verifies identical operator seed contents, initial workspace, prompts and budgets; rechecks that every delivered fact ID belongs to the approved original seed set. Restart stages are dependent within the three paired scenarios, not six independent trials.",
+    "A syntax error in the revised audit was corrected before successful read-only auditing; both logs retained. Original Runs, driver, inputs and results unchanged."
+  ],
+  "limits": [
+    "Lexical partial matches can still omit semantically relevant facts; no broad semantic recall qualification.",
+    "No-match fallback preserves legacy candidate recall but still injects unrelated approved context.",
+    "Three paired repetitions of one two-stage component do not satisfy the 30 distinct cases x 3 full quality gate.",
+    "No cache, cost, latency, browser or default-policy promotion claim."
+  ],
+  "promotionReady": false,
+  "files": [
+    {
+      "path": "/tmp/napier-memory-selection-before-v1.log",
+      "sha256": "b5487b5afea5637e6cd7a21699ac7455c3a4a37910f0201c6422beddc4a210fd"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-tests-v2.log",
+      "sha256": "5dd0e87e35e3b15d33b5ee5e488aa80ef5cf43776e87cce0ebc3c06c3a5c8b1a"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-compile-v2.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-architecture-v1.log",
+      "sha256": "99fc880efb97ea47c1f9f4d41ab3987ba1c5223d21f2cbcc2151294f86246a7b"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-architecture-v2.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-runtime-full-v1.log",
+      "sha256": "0282da24742db2ae6fb32ae0bc73a38f30c57750b2ea39401a9a3527ba2249c1"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-format-check-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-evidence-v1.log",
+      "sha256": "9b97cb5a4ac8a04eb0a69ed47705669fbd4364db1221aa27b2c5f918eade5015"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-evidence-v2.log",
+      "sha256": "b09203d0628991025c1255e4d441077c191aa17f5bb0a4d5151a2456f7e46159"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-evidence-v2-success.log",
+      "sha256": "ed5f79989a7c06ecab65905f2226f5e1478b5d24917b9d46bc6cc44a85bbeb06"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-paired-v1.mjs",
+      "sha256": "ddae0cd36cdff55974905071a19815b4770022b3cbcd04a278ec06cbb17bb51e"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-component-v1.mjs",
+      "sha256": "61f0b5bcd97064fc857e00214541e668235f03f5c66d44b9dae6d3759af2f8a7"
+    },
+    {
+      "path": "/tmp/napier-memory-selection-evidence-v2.mjs",
+      "sha256": "4fe5d05fd4fb1a517fc5a3a52fe4f58f593b3c5eb50bf483c4fb4173478a70e2"
+    },
+    {
+      "path": "/tmp/napier-harness-memory-selection-v2/freeze-receipt.json",
+      "sha256": "77a0dd00a3d2917905af3b5704fd4baf246627d4e15f791c3fe3965b10711f89"
+    }
+  ]
+}

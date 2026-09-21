@@ -6,6 +6,7 @@ import type {
 import { prepareModelHarnessCall } from "./model-harness-profile.js";
 import { toJsonValue } from "./agent-runtime-utils.js";
 import { modelHarnessExperimentProfileApplied } from "./model-harness-experiment-profile.js";
+import { observeHarnessModelStream } from "./model-stream-timing.js";
 
 export const MODEL_HARNESS_EXTENSION_ID = "napier.model-aware-harness";
 export const MODEL_HARNESS_EXTENSION_OWNER = "kernel.harness";
@@ -17,6 +18,10 @@ export function installModelHarnessExtension(
   const extension: AgentModelCallExtension = {
     id: MODEL_HARNESS_EXTENSION_ID,
     order: -500,
+    around: (call, next) =>
+      observeHarnessModelStream(call, next, (event) =>
+        store.appendEvent(event),
+      ),
     prepare: async (call) => {
       const prepared = prepareModelHarnessCall(call);
       if (call.harnessExperimentProfile) {

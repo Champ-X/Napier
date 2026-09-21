@@ -1,0 +1,168 @@
+{
+  "kind": "napier.user-reconciled-final-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T04:47:00.196Z",
+  "sourceFreezeSha256": "2c89b872dccb8b89492c3b36c96b7e3edc967b5489049538b159dbbbf23d28c7",
+  "profileFileSha256": "f5406ee1a169f1060ee7c1648c0332eb0b340dfcc9389ff64be0d3767fa2bb75",
+  "oldLedgerLogicalHashUnchanged": true,
+  "oldLedgerLogicalSha256": "38ba9c728635a172e5fdcfefdbd4b4fea42a7d2211b9deaf7190ef9d0b1314b2",
+  "reconciliation": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/user-reported-spending-checkpoint-2026-09-15.json",
+    "sha256": "50584e482d3cbf471cd688f12efcf3e11fef7090f73685500898ca1786a1b5cc"
+  },
+  "deliveries": [
+    {
+      "index": 50,
+      "caseId": "config_layers_v1",
+      "runId": "run_16241ed87ce145219b81",
+      "primaryInvocations": [
+        {
+          "capsuleSha256": "6fc164921071ecef04c67d7160fa1a145aa5350547696f0bac8523d5061c8033",
+          "contextEnvelopeSha256": "0972c63f97ebdee6c5317dc005d3ca73c1417fa4c6cd272a692ca83dc93d1088",
+          "turnIndex": 0,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "34ab281407bc2f2c0f166dc9c9bd66e055fdd045d9dc124921faeadadeeaf673",
+          "contextEnvelopeSha256": "a12b572529ce4ceacbfc2706527ea05c590f581b865a9a3ac0130b8514dc35c6",
+          "turnIndex": 1,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "dff25b9acffe54865c0e93c539aad68714ea5321742cb82dcffa72971b99774b",
+          "contextEnvelopeSha256": "f1a23cd8815bcaa5a170719c7a26d7b8aef53c50dbce211475f13985a59bf3d1",
+          "turnIndex": 2,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "0539c85f586747af7a025092355ac92bc643479b1b48c728a871de5d98cd3b67",
+          "contextEnvelopeSha256": "f6e292d26d9a63394985e50c83b76ff96b6f630799bd9844046880a7f9ad2c9b",
+          "turnIndex": 3,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "ffe6c5ef595893b9923df95baa86ede46d998a2b53c6c0774e8ede66312bc3fa",
+          "contextEnvelopeSha256": "bb3c32435d31fad03f898499d5584e829c11df1e7a13c4fa66aef65e1c1f4cf2",
+          "turnIndex": 4,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "2ff47e102788bbe4d1e0285a7bbedb6b1f29c33fe5dc8afe41f431aec2c4fc71",
+          "contextEnvelopeSha256": "0d227640087820bced56326fb03de9e2af4443e42cf8f79e907304f0d683b45b",
+          "turnIndex": 5,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "307ea77bc66acb0c6ea95db9415ae6a13d425ca576dd455d42294a3caf721809",
+          "contextEnvelopeSha256": "05663aa0324f9fcb0779558959d67ed95fdd67cad9de63fe99828050f972f76b",
+          "turnIndex": 6,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "5077d1da97c1d158ec645d4880aacad980f506f3fc21b83ff86070c3aec9edf3",
+          "contextEnvelopeSha256": "41f5df9c8a601081f20d530b388340b8dc01a87d6c6c3cbbf00a87e34ecfd538",
+          "turnIndex": 7,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        }
+      ],
+      "allResolutionsCoding": true,
+      "thinkingGuardEvents": 0,
+      "plansCreated": 0
+    },
+    {
+      "index": 53,
+      "caseId": "cursor_pagination_v1",
+      "runId": "run_10bf6897791945898eaa",
+      "primaryInvocations": [
+        {
+          "capsuleSha256": "a001f62c07d9ebac0b7ac0a26e0b7c9949e4fd4985f496380f610446a3ba3333",
+          "contextEnvelopeSha256": "2deb2a65b8cf0edd6aae81432706b7055cd048e46e95d2e61c6f9c883ffea513",
+          "turnIndex": 0,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "49c853db488473cab9b8b3b91364a578746de97b4dbfe692348f936bf2099506",
+          "contextEnvelopeSha256": "9ea06dfe78d57072ec97dbbddcc9003e654370fe32f7aa25b431ad5c1af3650f",
+          "turnIndex": 1,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "f595071112de7ab8fbcf5ef12f409ea4438c252dff62819f1215ae4312693b3b",
+          "contextEnvelopeSha256": "e738f4f76f021b06ea0ffe2aff71c545cd4268fdb261ad7c303d093b117cd0be",
+          "turnIndex": 2,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "a59bf806d98bb99c20e9b24493783ff2764bd807fcca7b0ea4b728a759d0989e",
+          "contextEnvelopeSha256": "cd0d4d80498832e3c73d44cbbfeb2aeabdb7538e9b4de78a863c12ca16876610",
+          "turnIndex": 3,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "fdd672446d6e962edd7f6a604779237cfb721c579f6d424c6c0ee59fddeab373",
+          "contextEnvelopeSha256": "1c78d86bf6caba5661d1d60f92e36b9355a822518c13e9388fa2d81005c88526",
+          "turnIndex": 4,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "3c9f320e009616641382a1deb2046bbeeb421bcb2df28801b6a8a8b790b76c04",
+          "contextEnvelopeSha256": "67fe2507279054f1404cab41806934fa08551c5d3fe81e86ea3d4dc2d77e1e30",
+          "turnIndex": 5,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "2c47fca647cbed43f8c405355ee50c1fa2c31d0756bc0296659538b9249a441e",
+          "contextEnvelopeSha256": "f68fa01180e2c9751e663dc54a704fc91ff45ef4227953f64a0ce1520360414e",
+          "turnIndex": 6,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "22e144af2267a27dddd8e14ebe966f30123149aa41e38d8509df1a826a6ffa28",
+          "contextEnvelopeSha256": "2326b045f4721d56f5eb6bd92a9104998dbc6128fca23bec32e1049b08f3f99a",
+          "turnIndex": 7,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        }
+      ],
+      "allResolutionsCoding": true,
+      "thinkingGuardEvents": 0,
+      "plansCreated": 0
+    }
+  ],
+  "financialEpoch": "/Users/champ/.cache/napier-seven-quality/budget-100cny-user-reconciled-2026-09-15.sqlite",
+  "newRequests": 63,
+  "newSettledFen": 211,
+  "newUnreceiptedReservedFen": 0,
+  "totalStartingFromUserReportedCheckpointFen": 2211,
+  "remainingFen": 7789,
+  "minimumAdmissionSpacingAcrossAllRunsMs": 15000,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 2,
+    "cases": 2,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 2",
+      "config_layers_v1: need 3 paired trials; observed 1",
+      "cursor_pagination_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "cff1b7c09db6096cc471680204285a2fea2367256dbf234ac7f7bfb9a59bf168"
+  },
+  "statusCounts": {
+    "completed": 4,
+    "notStarted": 176
+  },
+  "modelRequests": 0,
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Read-only final audit of the four terminal Runs. All 63 new requests have complete usage settlement. The cumulative starting amount is explicit user-reported aggregate consumption, not a reconstructed provider invoice. Historical rows and quality exclusions remain unchanged. Actual candidate guidance delivery and task classification verified; two cases do not establish causality, general gains or the full 30-case/3-trial gate."
+}

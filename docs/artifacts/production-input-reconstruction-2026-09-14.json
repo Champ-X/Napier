@@ -1,0 +1,205 @@
+{
+  "kind": "napier.production-input-reconstruction-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T18:21:32.536Z",
+  "snapshot": "/tmp/napier-harness-input-capture-v1",
+  "model": "deepseek/deepseek-v4-flash",
+  "original": {
+    "phase": "original",
+    "runId": "run_8d455c3ebdd64df5849e",
+    "threadId": "thread_bd348649b89842f486ba",
+    "status": "completed",
+    "passed": true,
+    "finalAnswer": "- Deployment target: staging\n- Retry limit: 4\n- missing.txt: does not exist (read failed with ENOENT; no such file or directory)\n\nNo files were modified.",
+    "capture": {
+      "eventId": "event_006d89752a6947e3b60a",
+      "kind": "napier.run-input-capture",
+      "schemaVersion": 1,
+      "status": "captured",
+      "capsuleSha256": "2c23faabafbe37d095ab8ca075e635eb485d0120bf0011629482225874cb7f58",
+      "fileCount": 1,
+      "byteCount": 44,
+      "omissionCount": 0,
+      "scope": "local workspace files; optimistic double scan; excludes dependencies and external services",
+      "durationMs": 6
+    },
+    "toolFailures": [
+      {
+        "eventId": "event_52028b7d1cef46489d44",
+        "toolName": "read_file"
+      }
+    ],
+    "promptSha256": "0a41cbc36b2416d6a3e61d741d36b428d0d30bc0fd2545732bfca315ca7b9dc6",
+    "workspaceSourceSha256": "b8f141eeb9f191d2c30084c8ffb9511bb7c6f06c64593bc0dae169ec2dda5053",
+    "usageEvidence": {
+      "kind": "napier.harness-usage-evidence",
+      "schemaVersion": 1,
+      "runId": "run_8d455c3ebdd64df5849e",
+      "scope": "recorded model and subagent usage; not external billing or cache/latency attribution",
+      "persistedUsage": {
+        "inputTokens": 8686,
+        "outputTokens": 199,
+        "cacheReadTokens": 1664,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0012764192
+      },
+      "observedUsage": {
+        "inputTokens": 8686,
+        "outputTokens": 199,
+        "cacheReadTokens": 1664,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0012764192
+      },
+      "legacyResponseOnlyUsage": {
+        "inputTokens": 8320,
+        "outputTokens": 194,
+        "cacheReadTokens": 1536,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0012234208
+      },
+      "receipts": [
+        {
+          "eventId": "event_19fe6fbce72242ee82d0",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 4547,
+            "outputTokens": 121,
+            "cacheReadTokens": 128,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0006708184000000001
+          },
+          "sourceReceiptSha256": "59b74c8d7ae535122fad15a489e7754b7f7a9a047b5c27f368b7e1877389fe35"
+        },
+        {
+          "eventId": "event_f867eaf6f2794a6e89a1",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 3773,
+            "outputTokens": 73,
+            "cacheReadTokens": 1408,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0005526024
+          },
+          "sourceReceiptSha256": "6b4f5c48151e1c3bafea5e9b4e36f253654dc9115c42a95e1ccef9073b1ce4c6"
+        },
+        {
+          "eventId": "event_b7fcbbc3025243f18b8e",
+          "type": "memory.extraction.completed",
+          "usage": {
+            "inputTokens": 366,
+            "outputTokens": 5,
+            "cacheReadTokens": 128,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.000052998400000000004
+          },
+          "sourceReceiptSha256": "f8497c0df7857f4604090dce2ce50b5aab4a6e2d2e40a549725a9f57cda37820"
+        }
+      ],
+      "blockers": [],
+      "eligibleForObservedUsageComparison": true,
+      "contentSha256": "ce7cabe6bd10f7d6ab74e0679e0ae710647392c57cee7de4237e5a139d169361"
+    }
+  },
+  "restored": {
+    "phase": "restored",
+    "runId": "run_bf5f524dccf04754abf0",
+    "threadId": "thread_2adc3bb8651c4e228390",
+    "status": "completed",
+    "passed": true,
+    "finalAnswer": "Deployment target: staging. Retry limit: 4.\n\nmissing.txt does not exist — the read failed with ENOENT (no such file or directory). No files were changed.",
+    "capture": {
+      "eventId": "event_222a99895a1e4375b660",
+      "kind": "napier.run-input-capture",
+      "schemaVersion": 1,
+      "status": "captured",
+      "capsuleSha256": "eccd7231075b0666666d6c434726a5b908bfbfe455480fe3e8a61ff2177e4b6b",
+      "fileCount": 1,
+      "byteCount": 44,
+      "omissionCount": 0,
+      "scope": "local workspace files; optimistic double scan; excludes dependencies and external services",
+      "durationMs": 6
+    },
+    "toolFailures": [
+      {
+        "eventId": "event_52272840baa64c088ab2",
+        "toolName": "read_file"
+      }
+    ],
+    "promptSha256": "0a41cbc36b2416d6a3e61d741d36b428d0d30bc0fd2545732bfca315ca7b9dc6",
+    "workspaceSourceSha256": "b8f141eeb9f191d2c30084c8ffb9511bb7c6f06c64593bc0dae169ec2dda5053",
+    "usageEvidence": {
+      "kind": "napier.harness-usage-evidence",
+      "schemaVersion": 1,
+      "runId": "run_bf5f524dccf04754abf0",
+      "scope": "recorded model and subagent usage; not external billing or cache/latency attribution",
+      "persistedUsage": {
+        "inputTokens": 8399,
+        "outputTokens": 170,
+        "cacheReadTokens": 1920,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.001228836
+      },
+      "observedUsage": {
+        "inputTokens": 8399,
+        "outputTokens": 170,
+        "cacheReadTokens": 1920,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.001228836
+      },
+      "legacyResponseOnlyUsage": {
+        "inputTokens": 8037,
+        "outputTokens": 165,
+        "cacheReadTokens": 1792,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0011763976
+      },
+      "receipts": [
+        {
+          "eventId": "event_71071a86635945a98626",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 4292,
+            "outputTokens": 121,
+            "cacheReadTokens": 384,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0006358352
+          },
+          "sourceReceiptSha256": "d434a03f6270bc22c2897f14e1dffe7b63deb4fd83568d039cdd0d9d35fc168d"
+        },
+        {
+          "eventId": "event_77c41356481444159e1d",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 3745,
+            "outputTokens": 44,
+            "cacheReadTokens": 1408,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0005405624
+          },
+          "sourceReceiptSha256": "11e07cc201d6e7a5cd5c35cf0a13244ed8dcdf5103ae4e2b7077a64764a9d3c4"
+        },
+        {
+          "eventId": "event_8eb051606ff44289835c",
+          "type": "memory.extraction.completed",
+          "usage": {
+            "inputTokens": 362,
+            "outputTokens": 5,
+            "cacheReadTokens": 128,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0000524384
+          },
+          "sourceReceiptSha256": "b2bda8cf9d3bdeed765cb6ee226038f9f5d7409399e4c3f565481a042cfa1d4f"
+        }
+      ],
+      "blockers": [],
+      "eligibleForObservedUsageComparison": true,
+      "contentSha256": "66dd037c2ea76afbe6b3c037ceae3b1d6227b207682851e42f6425e9eca6a0c5"
+    }
+  },
+  "workspaceRestoredExactly": true,
+  "originalCurrentWorkspacePreserved": true,
+  "freshNodeProcessForReplay": true,
+  "exportUsesReadOnlyDatabase": true,
+  "scope": "Real missing-file tool failure, private initial capture, source changes, export and fresh Agent replay; not broad task qualification",
+  "promotionReady": false
+}

@@ -40,6 +40,12 @@ export interface RunFinalizationReserve {
   reservedTokens: number;
   reservedTimeoutMs: number;
   message: string;
+  requestForecast?: {
+    strategy: "request-aware-v1";
+    sampleCount: number;
+    uncachedCallTokens: number;
+    callsReserved: number;
+  };
 }
 
 export class RunBudgetExceededError extends Error {
@@ -65,6 +71,7 @@ export class RunBudgetTracker {
   private budgetCostUsd = 0;
   private primaryTurns = 0;
   private inFlightPrimaryTurns = 0;
+  private readonly recentPrimaryTokens: number[] = [];
   private exhausted?: RunBudgetExhaustion;
 
   constructor(limits: RunLimits, startedAt: string | number = Date.now()) {
@@ -93,6 +100,8 @@ export class RunBudgetTracker {
     nowMs = Date.now(),
     accounting?: UsageAccounting,
   ): void {
+    this.recentPrimaryTokens.push(totalRawTokens(usage));
+    if (this.recentPrimaryTokens.length > 3) this.recentPrimaryTokens.shift();
     if (this.inFlightPrimaryTurns > 0) this.inFlightPrimaryTurns -= 1;
     else this.primaryTurns += 1;
     this.usage = addUsage(this.usage, usage);
@@ -138,7 +147,8 @@ export class RunBudgetTracker {
     return (
       !this.exhausted &&
       this.elapsedMs(nowMs) < this.limits.timeoutMs &&
-      this.budgetTokens < this.limits.maxTotalTokens &&
+      (this.limits.maxTotalTokens === 0 ||
+        this.budgetTokens < this.limits.maxTotalTokens) &&
       this.budgetCostUsd < this.limits.maxCostUsd
     );
   }
@@ -152,12 +162,30 @@ export class RunBudgetTracker {
 
   finalizationReserveBeforeNextPrimaryTurn(
     nowMs = Date.now(),
+    requestAware = false,
   ): RunFinalizationReserve | undefined {
     if (this.exhausted) return undefined;
     const observed = this.observed(nowMs);
     const reservedTurns = this.limits.maxTurns > 6 ? 6 : 0;
     const reservedTimeoutMs = this.limits.timeoutMs > 180_000 ? 180_000 : 0;
-    const reservedTokens = Math.floor(this.limits.maxTotalTokens * 0.1);
+    const requestForecast = requestAware
+      ? this.primaryRequestForecast()
+      : undefined;
+    const reservedTokens = Math.min(
+      this.limits.maxTotalTokens,
+      Math.max(
+        Math.floor(this.limits.maxTotalTokens * 0.1),
+        requestForecast
+          ? requestForecast.uncachedCallTokens * requestForecast.callsReserved
+          : 0,
+      ),
+    );
+    // Check before a normal request can spend into the finishing allowance.
+    // Waiting until remaining <= reserve can undershoot by one whole request.
+    const tokenTrigger = Math.min(
+      this.limits.maxTotalTokens,
+      reservedTokens + (requestForecast?.uncachedCallTokens ?? 0),
+    );
     const reasons: RunFinalizationReserveReason[] = [];
     if (
       reservedTurns > 0 &&
@@ -173,7 +201,7 @@ export class RunBudgetTracker {
     }
     if (
       reservedTokens > 0 &&
-      this.limits.maxTotalTokens - observed.totalTokens <= reservedTokens
+      this.limits.maxTotalTokens - observed.totalTokens <= tokenTrigger
     ) {
       reasons.push("tokens");
     }
@@ -184,8 +212,21 @@ export class RunBudgetTracker {
       reservedTurns,
       reservedTokens,
       reservedTimeoutMs,
+      ...(requestForecast ? { requestForecast } : {}),
       message: `Run entered deterministic finalization reserve: ${reasons.join(", ")}`,
     };
+  }
+
+  primaryRequestForecast(): RunFinalizationReserve["requestForecast"] {
+    const uncachedCallTokens = Math.max(0, ...this.recentPrimaryTokens);
+    return uncachedCallTokens > 0
+      ? {
+          strategy: "request-aware-v1",
+          sampleCount: this.recentPrimaryTokens.length,
+          uncachedCallTokens,
+          callsReserved: 3,
+        }
+      : undefined;
   }
 
   exhaustTimeout(nowMs = Date.now()): RunBudgetExhaustion {
@@ -225,7 +266,10 @@ export class RunBudgetTracker {
     const observed = this.observed(nowMs);
     if (observed.elapsedMs >= this.limits.timeoutMs) {
       this.exhaustTimeout(nowMs);
-    } else if (observed.totalTokens > this.limits.maxTotalTokens) {
+    } else if (
+      this.limits.maxTotalTokens > 0 &&
+      observed.totalTokens > this.limits.maxTotalTokens
+    ) {
       this.exhaust(
         "tokens",
         this.limits.maxTotalTokens,
@@ -244,7 +288,10 @@ export class RunBudgetTracker {
       this.exhaustTimeout(nowMs);
     } else if (includeTurns && observed.turns >= this.limits.maxTurns) {
       this.exhaust("turns", this.limits.maxTurns, observed.turns, nowMs);
-    } else if (observed.totalTokens >= this.limits.maxTotalTokens) {
+    } else if (
+      this.limits.maxTotalTokens > 0 &&
+      observed.totalTokens >= this.limits.maxTotalTokens
+    ) {
       this.exhaust(
         "tokens",
         this.limits.maxTotalTokens,

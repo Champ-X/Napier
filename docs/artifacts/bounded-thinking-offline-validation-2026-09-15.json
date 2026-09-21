@@ -1,0 +1,93 @@
+{
+  "kind": "napier.bounded-thinking-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T07:27:38.883Z",
+  "sourceFiles": {
+    "packages/contracts/src/harness-experiments.ts": "059506698ec4566b0bb13be9e58eeba476df8ef2aa158d9a71a47ba225507be7",
+    "packages/runtime/src/harness-policy-profile.ts": "bdc0dd92bb8ba797982991dc7b4669884eccf02a2503b4899b3b395d5da68728",
+    "packages/runtime/src/harness-model-call-budget.ts": "2744300d0d8dcea4ece038c2228260e5b8dcb4ee21d0290ff19ea5e8dfdc2102",
+    "packages/runtime/src/agent-model-stream-lifecycle.ts": "2346f2c0dd1b7c8139c45c2f39644a91e2934b166ef8e3a20822290d4269a1a1",
+    "packages/runtime/src/model-provider-wire-compatibility.ts": "67e07f44c96bcc0412c0c137cab5ef0bfa61c64cb4c0c2bdd5b6babdfef1bef3",
+    "packages/runtime/src/model-adapters.ts": "08b102d7cc7c1c63be63b21aead0dbc1ef105f0ce75aab474ea87dc0ec521bef"
+  },
+  "profilePath": "/Users/champ/orca/Napier/benchmarks/harness-profiles/current-integrated.v6.json",
+  "profileFileSha256": "68edc7d8664ba3b6d13f4db172d49a87ae88c4400662e774c3b683139a769db8",
+  "profileContentSha256": "c8da53421028f5e08a39571304ad8a9fddb3ea7cf349f33ad0bc7df1ab634a2d",
+  "tests": {
+    "path": "/tmp/napier-bounded-thinking-offline-tests-2026-09-15.json",
+    "sha256": "fe5b145db34fe3341718be1a657be5f9c401166df00302a34199acd9e7bf7eba",
+    "passed": 48,
+    "failed": 0,
+    "skipped": 0
+  },
+  "contractsCompile": "passed",
+  "runtimeCompile": "passed",
+  "runtimeReleaseBuild": "not_rerun_existing_source_manifest_drift",
+  "architecture": {
+    "path": "/tmp/napier-bounded-thinking-architecture-2026-09-15.log",
+    "inheritedViolations": 6,
+    "newViolations": 0
+  },
+  "sourceCapsulePath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-4/trial-4/data/model-invocations/00ebcb693b9eac669f35a95d79cf1c1dd0409d7bc588f9b8cb8da6191ce8bbc9.json",
+  "sourceCapsuleSha256": "898b6bc6b8a0db67b2961c1f8509388f4350d4176c3b8e911fa20e72b075129a",
+  "priorAuditPath": "/Users/champ/orca/Napier/docs/artifacts/staged-ndjson-sdk-budget-audit-2026-09-15.json",
+  "priorAuditSha256": "509f4c95f87806330d3ae2eb2f6ff08a493570edf6191f70216e3ae0b66a0090",
+  "correction": "Earlier audit incorrectly labeled the output token wire field max_tokens. Actual unchanged installed SDK emits max_completion_tokens. Historical server treatment of that undocumented field is unknown; this audit does not prove it was ignored.",
+  "officialReference": {
+    "url": "https://api-docs.deepseek.com/api/create-chat-completion",
+    "checkedOn": "2026-09-15",
+    "documentedField": "max_tokens",
+    "documentedDefaultThinking": 65536
+  },
+  "observations": [
+    {
+      "name": "unmodified_sdk_with_captured_options",
+      "requestedReasoning": "medium",
+      "requestedMaxTokens": 16384,
+      "wireMaxTokens": null,
+      "wireMaxCompletionTokens": 16384,
+      "wireReasoningEffort": "high",
+      "wireThinking": {
+        "type": "enabled"
+      }
+    },
+    {
+      "name": "native_field_only",
+      "requestedReasoning": "medium",
+      "requestedMaxTokens": 16384,
+      "wireMaxTokens": 16384,
+      "wireMaxCompletionTokens": null,
+      "wireReasoningEffort": "high",
+      "wireThinking": {
+        "type": "enabled"
+      }
+    },
+    {
+      "name": "v6_bounded_reasoning",
+      "requestedReasoning": "high",
+      "requestedMaxTokens": 8192,
+      "wireMaxTokens": 8192,
+      "wireMaxCompletionTokens": null,
+      "wireReasoningEffort": "high",
+      "wireThinking": {
+        "type": "enabled"
+      }
+    },
+    {
+      "name": "native_field_short_retry",
+      "requestedReasoning": "off",
+      "requestedMaxTokens": 2048,
+      "wireMaxTokens": 2048,
+      "wireMaxCompletionTokens": null,
+      "wireReasoningEffort": null,
+      "wireThinking": {
+        "type": "disabled"
+      }
+    }
+  ],
+  "networkCalls": 0,
+  "modelRequests": 0,
+  "scope": "Native DeepSeek wire compatibility applies to every runtime model call, including defaults and auxiliary calls. Only explicit v6 opts into an 8192 reasoning cap. Existing profile hashes and other providers are unchanged. Offline tests do not establish live success or server interpretation.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

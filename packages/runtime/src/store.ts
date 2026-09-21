@@ -342,7 +342,7 @@ import {
   type FinishRunOptions,
   RunLifecycleRepository,
 } from "./run-lifecycle-repository.js";
-import { aggregateRunUsage } from "./run-replay.js";
+import { aggregateRunUsage, RUN_USAGE_EVENT_TYPES } from "./run-replay.js";
 import { initialRunStatus } from "./run-state-machine.js";
 import { SerialQueue } from "./serial-queue.js";
 import { SignedPackageRepository } from "./signed-package-repository.js";
@@ -2865,16 +2865,7 @@ export class LocalStore {
     return aggregateRunUsage(
       await this.requireLedger()
         .eventReader()
-        .listRunEvents(runId, 0, [
-          "model.response",
-          "message.assistant",
-          "context.compaction.completed",
-          "context.compaction.failed",
-          "goal.evaluated",
-          "memory.extraction.completed",
-          "memory.extraction.failed",
-          "model.advisor.independent.reviewed",
-        ]),
+        .listRunEvents(runId, 0, [...RUN_USAGE_EVENT_TYPES]),
       this.listSubagentTasks(run.threadId, runId),
     );
   }

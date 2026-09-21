@@ -1,0 +1,24 @@
+{
+  "kind": "napier.pinned-provider-local-http-cancellation-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:16:08.513175+00:00",
+  "testSource": "scripts/harness-provider-cancellation.test.mjs",
+  "testSourceSha256": "d98632c6c7cdf8c20d60b1d3b83ccabff39c881251c343a87f0dd71464d2f084",
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/provider-cancellation-http-offline-tests-2026-09-15.json",
+    "sha256": "471b55c961d1fd656eaf89b8b7c98b907821abbccdb4520b8c94b29a5ac93ed0",
+    "passed": 2,
+    "failed": 0
+  },
+  "testedChain": "Napier modelStream, current ModelRegistry, pinned Pi provider and OpenAI SDK, spending transport, local HTTP socket",
+  "externalModelRequests": 0,
+  "localHttpRequests": 2,
+  "findings": [
+    "Caller abort and semantic watchdog abort both reach the SDK HTTP request signal and close the local socket.",
+    "Each cancelled request retains its conservative reservation and another provider request is refused without a second network dispatch."
+  ],
+  "limits": [
+    "Local success does not prove the cause of the earlier live cancellation delays.",
+    "No real model behavior, task quality or provider bill was verified by these local tests."
+  ]
+}

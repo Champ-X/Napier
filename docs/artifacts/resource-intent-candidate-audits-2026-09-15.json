@@ -1,0 +1,18 @@
+{
+  "kind": "napier.resource-intent-candidate-audits",
+  "artifacts": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-resource-intent-core-v13/audit-49.json",
+      "sha256": "0d76dfbb5f506adfae0f4d0af34d1953599b6914917d2f3d73de42f0f4098614"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-resource-intent-core-v13/budget-delivery-audit.json",
+      "sha256": "9f8083202675bf84103a3ca4df36ec9154c3bbb5640e4ba2a6ec20db46d8dba4"
+    }
+  ],
+  "modelRequests": 0,
+  "taskSuccess": true,
+  "comparablePairsAtCheckpoint": 0,
+  "baselineStillRunning": true,
+  "promotionReady": false
+}

@@ -1,0 +1,18 @@
+{
+  "evidence": {
+    "kind": "napier.harness-host-awake",
+    "schemaVersion": 1,
+    "platform": "darwin",
+    "observedAt": 1789434815584,
+    "lastTransition": {
+      "at": "2026-09-15 09:12:03 +0800",
+      "state": "Wake",
+      "detail": "DarkWake to FullWake from Deep Idle [CDNVA] : due to UserActivity Assertion Using AC (Charge:80%)"
+    },
+    "eligible": true,
+    "reason": "full_wake",
+    "contentSha256": "2e330fa02d99461fc2cb74144958bb5d8002b26cd16735491fddb56b05140719"
+  },
+  "refused": false,
+  "modelRequests": 0
+}

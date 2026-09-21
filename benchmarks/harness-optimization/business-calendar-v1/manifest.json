@@ -1,0 +1,18 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "business_calendar_v1",
+  "title": "Strict business-day offsets and half-open date counts",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": ["src/date.mjs", "src/calendar.mjs"],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": ["apply_patch", "run_command"]
+}

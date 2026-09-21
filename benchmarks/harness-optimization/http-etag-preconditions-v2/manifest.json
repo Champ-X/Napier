@@ -1,0 +1,24 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "http_etag_preconditions_v2",
+  "title": "HTTP entity preconditions",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": [
+    "src/etag.mjs",
+    "src/preconditions.mjs"
+  ],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": [
+    "apply_patch",
+    "run_command"
+  ]
+}

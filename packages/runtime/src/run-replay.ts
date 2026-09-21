@@ -145,6 +145,24 @@ export async function compareRuns(
   };
 }
 
+const AUXILIARY_USAGE_EVENT_TYPES = [
+  "context.compaction.completed",
+  "context.compaction.failed",
+  "goal.evaluated",
+  "memory.extraction.completed",
+  "memory.extraction.failed",
+  "model.thinking_loop.detected",
+  "model.context.overflow",
+  "model.advisor.independent.reviewed",
+];
+
+// The ledger query and replay must include the same usage-bearing receipts.
+export const RUN_USAGE_EVENT_TYPES: readonly string[] = Object.freeze([
+  "model.response",
+  "message.assistant",
+  ...AUXILIARY_USAGE_EVENT_TYPES,
+]);
+
 export function aggregateRunUsage(
   events: RunEvent[],
   subagents: SubagentTask[],
@@ -156,14 +174,8 @@ export function aggregateRunUsage(
     modelResponses.length > 0
       ? modelResponses
       : events.filter((event) => event.type === "message.assistant");
-  const auxiliaryUsageEvents = events.filter(
-    (event) =>
-      event.type === "context.compaction.completed" ||
-      event.type === "context.compaction.failed" ||
-      event.type === "goal.evaluated" ||
-      event.type === "memory.extraction.completed" ||
-      event.type === "memory.extraction.failed" ||
-      event.type === "model.advisor.independent.reviewed",
+  const auxiliaryUsageEvents = events.filter((event) =>
+    AUXILIARY_USAGE_EVENT_TYPES.includes(event.type),
   );
   return [
     ...primaryUsageEvents.map(eventUsage),

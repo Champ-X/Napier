@@ -1,0 +1,246 @@
+{
+  "kind": "napier.etag-failure-context-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T14:28:58.531Z",
+  "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/etag-failure-context-audit-v1.json",
+  "auditSha256": "4504304ff85acdbf9f8ad15ecf8d04754bcfaabc0d24ccadb792a05c096fed32",
+  "evidence": {
+    "kind": "napier.etag-invocation-failure-context-audit",
+    "schemaVersion": 1,
+    "createdAt": "2026-09-14T14:28:29.240Z",
+    "runId": "run_b2fce25e59f54f29bdad",
+    "reportSha256": "73d61f62cdbdf8435839bb896ce363c9b7a506cd300c55a74f3ab8d522846654",
+    "scriptSha256": "a4eba0aa4d937cbbdb17a2b215d47fef8991749510ac7108c9990fed402933b8",
+    "failureEvents": [
+      {
+        "eventId": "event_040047173c3746d9a5a2",
+        "callId": "call_04_6mxRsOINelZ18kFnkry97200",
+        "tool": "run_command",
+        "outputSha256": "a0e18bad314f6fa26e049ba984907588b21c1a380d1887bf6c311f23da523741",
+        "semantics": {
+          "kind": "napier.tool-failure-semantics",
+          "schemaVersion": 1,
+          "coverage": "legacy_fallback",
+          "class": "invalid_input",
+          "scope": "invocation",
+          "disposition": "correct_input",
+          "fatalToSession": false,
+          "failureDefinitionSha256": "726ff7897e39c1348c8fc7dd4d2cb82e5ae6cb13e6603d136cff3e0065fab68b",
+          "diagnosticSha256": "83553e81b2c09b93f8de00997fce88126dcc15ec02b4e9d1af0b7bf73f0389c0"
+        }
+      },
+      {
+        "eventId": "event_79d95e6178c747709c89",
+        "callId": "call_00_SMCEFUflxOupO3T0uIhb5745",
+        "tool": "update_plan_artifact",
+        "outputSha256": "954028f7c05580852b22ce9c29cbccae4d6613dc441dc2892b37f5f0fb79cb35",
+        "semantics": {
+          "kind": "napier.tool-failure-semantics",
+          "schemaVersion": 1,
+          "coverage": "legacy_fallback",
+          "class": "unknown",
+          "scope": "invocation",
+          "disposition": "alternate_route",
+          "fatalToSession": false,
+          "failureDefinitionSha256": "726ff7897e39c1348c8fc7dd4d2cb82e5ae6cb13e6603d136cff3e0065fab68b",
+          "diagnosticSha256": "2cc4da7483b7bb8b2987ca06662953c2de1971dd983bbc8a54e7bedaceb1d926"
+        }
+      },
+      {
+        "eventId": "event_515a9ddefcbf454597c6",
+        "callId": "call_01_t95l8LTp9voHablyPLnO5324",
+        "tool": "update_plan_artifact",
+        "outputSha256": "954028f7c05580852b22ce9c29cbccae4d6613dc441dc2892b37f5f0fb79cb35",
+        "semantics": {
+          "kind": "napier.tool-failure-semantics",
+          "schemaVersion": 1,
+          "coverage": "legacy_fallback",
+          "class": "unknown",
+          "scope": "invocation",
+          "disposition": "alternate_route",
+          "fatalToSession": false,
+          "failureDefinitionSha256": "726ff7897e39c1348c8fc7dd4d2cb82e5ae6cb13e6603d136cff3e0065fab68b",
+          "diagnosticSha256": "2cc4da7483b7bb8b2987ca06662953c2de1971dd983bbc8a54e7bedaceb1d926"
+        }
+      }
+    ],
+    "observations": [
+      {
+        "invocationEventId": "event_e45426863e5c46c0a95a",
+        "seq": 22,
+        "capsuleSha256": "4aa256aa075d8bdae7c2da0899582e9a28c1ebcc0faa3af3e156a3c048ec3965",
+        "workingStateSha256": "d25c27d1f59dbf2e3a02784bc7e2e3013ae1326a4ea1ef82c0c2da13e2881a80",
+        "rejectedAttempts": []
+      },
+      {
+        "invocationEventId": "event_3bb31d7b58224843882d",
+        "seq": 70,
+        "capsuleSha256": "af0365b5ae9bc31e5e7171492cc73644790984d9be67e92c254d1c9dbe40e742",
+        "workingStateSha256": "d25c27d1f59dbf2e3a02784bc7e2e3013ae1326a4ea1ef82c0c2da13e2881a80",
+        "rejectedAttempts": []
+      },
+      {
+        "invocationEventId": "event_f14b333c80194485abcf",
+        "seq": 130,
+        "capsuleSha256": "258eb9d7ae8c9a0c8982d4bbecc72fce1dad652125612f649cf6283e96c9609e",
+        "workingStateSha256": "d25c27d1f59dbf2e3a02784bc7e2e3013ae1326a4ea1ef82c0c2da13e2881a80",
+        "rejectedAttempts": []
+      },
+      {
+        "invocationEventId": "event_c186677b3f4c4398a9b8",
+        "seq": 220,
+        "capsuleSha256": "266bb7f1cd79acd57ba947c4dc8f7dcccdeeff9d11e03bf41f6982c6a101ffb5",
+        "workingStateSha256": "4e4beb9fa6110b7c38ad9f91731d5ee37365c078e07be5fa1cf5d6418158ef5d",
+        "rejectedAttempts": []
+      },
+      {
+        "invocationEventId": "event_a844964206874f63a164",
+        "seq": 284,
+        "capsuleSha256": "167fc025f85349e0db925ab18ceec91adad3d4534f1eb46573baae68d96209bd",
+        "workingStateSha256": "9c60a59d21661cd65dabfccd3e845a77600f807307f4d182d60edda785ab5ba8",
+        "rejectedAttempts": []
+      },
+      {
+        "invocationEventId": "event_2be1937c159e4cdabbff",
+        "seq": 338,
+        "capsuleSha256": "e903cc699e051b9bc934040104a68e12173601c45a84bea423fcab70f18270cd",
+        "workingStateSha256": "4bc0c3edb1a434aa8aa67baaa8f96cad848fa7169929a10dc87e8fca6c56ccdf",
+        "rejectedAttempts": []
+      },
+      {
+        "invocationEventId": "event_b02e71ad6de145e987e6",
+        "seq": 455,
+        "capsuleSha256": "07e53bafbd04129fb0b7f4efdcc358c6b362d20cda86df847fa4e14ee82d9669",
+        "workingStateSha256": "a127b7930e30febac631fce487256bacbc489ba9a54ea80acc71a436b6ca50e4",
+        "rejectedAttempts": [
+          {
+            "tool": "run_command",
+            "eventId": "event_040047173c3746d9a5a2",
+            "callId": "call_04_6mxRsOINelZ18kFnkry97200",
+            "disposition": "correct_input",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          }
+        ]
+      },
+      {
+        "invocationEventId": "event_90ff87965aac4d769993",
+        "seq": 528,
+        "capsuleSha256": "6f22c38733a8004535ba348d26d44487b28ef34fef9ec918431ee121b6b7f7bf",
+        "workingStateSha256": "a127b7930e30febac631fce487256bacbc489ba9a54ea80acc71a436b6ca50e4",
+        "rejectedAttempts": [
+          {
+            "tool": "run_command",
+            "eventId": "event_040047173c3746d9a5a2",
+            "callId": "call_04_6mxRsOINelZ18kFnkry97200",
+            "disposition": "correct_input",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          }
+        ]
+      },
+      {
+        "invocationEventId": "event_9e840052d5b14c789a07",
+        "seq": 588,
+        "capsuleSha256": "addd30f89891fc7e1c7a468338657b797bc9b33bd06f004f0ebf6c213f069f56",
+        "workingStateSha256": "e7dd01595a331cb32bdf3816f0d3e95545212457b40613164711b3becf137991",
+        "rejectedAttempts": [
+          {
+            "tool": "run_command",
+            "eventId": "event_040047173c3746d9a5a2",
+            "callId": "call_04_6mxRsOINelZ18kFnkry97200",
+            "disposition": "correct_input",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          },
+          {
+            "tool": "update_plan_artifact",
+            "eventId": "event_79d95e6178c747709c89",
+            "callId": "call_00_SMCEFUflxOupO3T0uIhb5745",
+            "disposition": "alternate_route",
+            "laterCompletionObserved": false,
+            "matchingCompletionObserved": false
+          },
+          {
+            "tool": "update_plan_artifact",
+            "eventId": "event_515a9ddefcbf454597c6",
+            "callId": "call_01_t95l8LTp9voHablyPLnO5324",
+            "disposition": "alternate_route",
+            "laterCompletionObserved": false,
+            "matchingCompletionObserved": false
+          }
+        ]
+      },
+      {
+        "invocationEventId": "event_2ccfcaa0de4d407a932f",
+        "seq": 639,
+        "capsuleSha256": "ce727bfa827ccf6d8251298a200432d0a4f7a6449d1b3b3c97edc69315367ced",
+        "workingStateSha256": "95792a8becbcba1d900269707be271f6a449f7a88385749bc6e6ef99d1d02cff",
+        "rejectedAttempts": [
+          {
+            "tool": "run_command",
+            "eventId": "event_040047173c3746d9a5a2",
+            "callId": "call_04_6mxRsOINelZ18kFnkry97200",
+            "disposition": "correct_input",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          },
+          {
+            "tool": "update_plan_artifact",
+            "eventId": "event_79d95e6178c747709c89",
+            "callId": "call_00_SMCEFUflxOupO3T0uIhb5745",
+            "disposition": "alternate_route",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          },
+          {
+            "tool": "update_plan_artifact",
+            "eventId": "event_515a9ddefcbf454597c6",
+            "callId": "call_01_t95l8LTp9voHablyPLnO5324",
+            "disposition": "alternate_route",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          }
+        ]
+      },
+      {
+        "invocationEventId": "event_13b634fe188c4cb0bb1c",
+        "seq": 711,
+        "capsuleSha256": "d916210123e825c776f38c3cfe7d9cb16b1d99bd24d51cdf48d43cad21e0cbcb",
+        "workingStateSha256": "f165135bea4b869a6836618f5b0e3f8bcd98222f39afab8dd32341cfc5f66c76",
+        "rejectedAttempts": [
+          {
+            "tool": "run_command",
+            "eventId": "event_040047173c3746d9a5a2",
+            "callId": "call_04_6mxRsOINelZ18kFnkry97200",
+            "disposition": "correct_input",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          },
+          {
+            "tool": "update_plan_artifact",
+            "eventId": "event_79d95e6178c747709c89",
+            "callId": "call_00_SMCEFUflxOupO3T0uIhb5745",
+            "disposition": "alternate_route",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          },
+          {
+            "tool": "update_plan_artifact",
+            "eventId": "event_515a9ddefcbf454597c6",
+            "callId": "call_01_t95l8LTp9voHablyPLnO5324",
+            "disposition": "alternate_route",
+            "laterCompletionObserved": true,
+            "matchingCompletionObserved": false
+          }
+        ]
+      }
+    ],
+    "duplicateDiagnosticFailuresRetained": true,
+    "matchingCompletionChecksPassed": true,
+    "modelRequests": 0,
+    "scope": "Read-only inspection of retained actual model inputs; distinct calls with equal diagnostic bytes stay distinct, and family completion cannot imply matching-input completion. This adds no trial or compaction/recovery evidence."
+  },
+  "qualityScope": "Successful candidate only; paired baseline still running. Actual failure-context preservation is observed, not a new independent trial or evidence of compaction/recovery.",
+  "promotionReady": false
+}

@@ -1,0 +1,64 @@
+{
+  "kind": "napier.harness-campaign-convergence",
+  "schemaVersion": 1,
+  "decision": "remediate_before_more_model_calls",
+  "allowQualificationDispatch": false,
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "currentQuality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 9,
+    "cases": 9,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 9",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+      "transaction_savepoints_v1: need 3 paired trials; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "config_layers_v1: need 3 paired trials; observed 1",
+      "cursor_pagination_v1: need 3 paired trials; observed 1",
+      "resumable_byte_upload_v1: need 3 paired trials; observed 1",
+      "atomic_json_patch_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "f130b34d9a8d1394c8fd882562a58f68419b249d9b9db276e53843a32cc81d64"
+  },
+  "persistentBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "irreparablePairs": [
+    {
+      "pairKey": "[\"incremental_ndjson_v1\",0]",
+      "caseId": "incremental_ndjson_v1",
+      "trial": 0,
+      "reasons": [
+        "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+        "Need 1 cases; observed 0"
+      ]
+    }
+  ],
+  "optimisticComparablePairs": 89,
+  "optimisticQualifiedCases": 29,
+  "schedulePositions": 180,
+  "unstartedPositions": 160,
+  "modelRequests": 0,
+  "scope": "Optimistic reachability only, not approval or promotion evidence. Preserve all observations and limits; no resampling or missing-usage settlement is authorized.",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic-original-pair-v1/plan.json",
+  "planSha256": "b8f885dd56b5854fc563e2768d5ce45a0814ca54f7edaf555a5b06908f3ea3fd",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic-original-pair-v1/result.json",
+  "resultSha256": "de68ed246764215199ef356936bae4fda037b2e59e7e14324c694dca6cfb5eb5"
+}

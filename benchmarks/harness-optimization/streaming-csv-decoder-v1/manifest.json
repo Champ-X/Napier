@@ -1,0 +1,18 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "streaming_csv_decoder_v1",
+  "title": "Streaming quoted CSV with strict state transitions",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": ["src/decoder.mjs", "src/parse.mjs"],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": ["apply_patch", "run_command"]
+}

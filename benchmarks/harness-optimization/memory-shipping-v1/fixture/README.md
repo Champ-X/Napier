@@ -1,0 +1,1 @@
+Shipping requirements (current): all totals are integer cents. Shipping is free for members and non-members at subtotal 6000 cents inclusive. Below 6000, members pay 299 cents and others 599 cents. Reject negative or non-integer subtotals.

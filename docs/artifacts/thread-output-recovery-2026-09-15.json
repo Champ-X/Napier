@@ -1,0 +1,136 @@
+{
+  "threadId": "thread_ea6e00122da54c378e06",
+  "platformFix": "implemented_and_locally_verified",
+  "applicationTests": {
+    "uniquePassed": 73,
+    "finalCooldownRerunPassed": 20
+  },
+  "pageVerification": {
+    "passed": 48,
+    "failed": 0,
+    "mouseDragVerified": false,
+    "finalFullVisualVerified": false
+  },
+  "liveRuns": [
+    {
+      "id": "run_850d33dad8874e76aeae",
+      "status": "failed",
+      "error": "Run made no measurable progress after one reroute: turns."
+    },
+    {
+      "id": "run_f16e27be87e6431ebfc5",
+      "status": "failed",
+      "error": "Run made no measurable progress after one reroute: turns."
+    },
+    {
+      "id": "run_4033b38f2d764d66ab2a",
+      "status": "cancelled",
+      "error": "Model call was aborted. Retry when the task is ready to continue."
+    },
+    {
+      "id": "run_3675960b10154c95b1d6",
+      "status": "failed",
+      "error": "Run budget exhausted: total tokens 1,258,691 / 1,000,000"
+    },
+    {
+      "id": "run_788f0f3740934b2daf92",
+      "status": "failed",
+      "error": "Run budget exhausted: total tokens 1,095,550 / 1,000,000"
+    }
+  ],
+  "assistedLiveValidation": true,
+  "planStatus": "active",
+  "artifacts": [
+    {
+      "id": "a1",
+      "path": "living-room/index.html",
+      "kind": "file",
+      "description": "可交互客厅改造实验室网页（平面图、拖拽/旋转/改尺寸/撤销、几何校验、三方案与预算）",
+      "status": "verified",
+      "evidence": "最终源码对应独立 verify.mjs 48 项通过；鼠标拖拽与最终整页视觉未验收。",
+      "createdAt": "2026-09-15T10:40:57.715Z",
+      "updatedAt": "2026-09-15T14:29:32.882Z",
+      "sizeBytes": 72782,
+      "sourceRunId": "run_788f0f3740934b2daf92",
+      "sha256": "34107dae32ba76af9e8a2cbd3236a8868465c1c66e3cb3ef4db415b64cc6ca0b"
+    },
+    {
+      "id": "a2",
+      "path": "living-room/room-geometry.mjs",
+      "kind": "file",
+      "description": "几何内核：房间常量、旋转矩形、重叠/越界/门扇区/通道净宽计算与方案数据",
+      "status": "verified",
+      "evidence": "仅绑定历史辅助文件的现有字节；当前网页和 verify.mjs 不使用它，不作为当前页面行为的验收证据。",
+      "createdAt": "2026-09-15T10:40:57.715Z",
+      "updatedAt": "2026-09-15T14:36:30.023Z",
+      "sourceRunId": "run_788f0f3740934b2daf92",
+      "sha256": "8a68e8d2c98313f1103c2959e75884b20ee29f4207df5b7b06176bbe6cd7aaeb",
+      "sizeBytes": 29610
+    },
+    {
+      "id": "a3",
+      "path": "living-room/verify.mjs",
+      "kind": "file",
+      "description": "自动化校验脚本：几何内核用例、三方案指标与预算断言",
+      "status": "verified",
+      "evidence": "最终独立运行 48 PASS / 0 FAIL，直接提取当前 index.html 函数。",
+      "createdAt": "2026-09-15T10:40:57.715Z",
+      "updatedAt": "2026-09-15T14:29:32.942Z",
+      "sizeBytes": 11707,
+      "sourceRunId": "run_788f0f3740934b2daf92",
+      "sha256": "29065f229ecbc25ea101bae2ad16f1780852158754c0760aa04bee0a01ca4490"
+    },
+    {
+      "id": "a4",
+      "path": "living-room/README.md",
+      "kind": "file",
+      "description": "使用说明、判断证据分级、预算估算口径与局限",
+      "status": "verified",
+      "evidence": "人工核对最终 README 的文件摘要、48 项检查与未验收范围。",
+      "createdAt": "2026-09-15T10:40:57.715Z",
+      "updatedAt": "2026-09-15T14:29:33.010Z",
+      "sourceRunId": "run_788f0f3740934b2daf92",
+      "sha256": "5f82138ded7f31badd6ab3976e88698e70bec4d8d8793de78e61dc518ac5b33f",
+      "sizeBytes": 9257
+    },
+    {
+      "id": "a5",
+      "path": "living-room/verification/",
+      "kind": "directory",
+      "description": "浏览器交互验证截图与检查记录",
+      "status": "verified",
+      "evidence": "最终独立 Node 日志和分版本浏览器观察记录；截图早于最终预算修复，不等于最终全部交互验收。",
+      "createdAt": "2026-09-15T10:40:57.715Z",
+      "updatedAt": "2026-09-15T14:29:33.071Z",
+      "sizeBytes": 13767,
+      "sourceRunId": "run_788f0f3740934b2daf92",
+      "sha256": "1481d87fac40ae50ee5f3bb0c7a71a2197dd209102ca34e7f7117fda4d58b0d2"
+    }
+  ],
+  "originalErrorsAvailable": 7,
+  "backfilledLocalDisplays": 4,
+  "committed": false,
+  "pushed": false,
+  "unlimitedTokens": {
+    "default": true,
+    "currentAgentLimits": {
+      "maxTurns": 64,
+      "maxTotalTokens": 0,
+      "maxCostUsd": 25,
+      "timeoutMs": 1800000
+    },
+    "freshLedgerLoad": "passed",
+    "testBatchesPassed": [
+      57,
+      28,
+      26
+    ],
+    "testBatchesOverlap": true,
+    "newLiveModelRunAfterRemoval": false
+  },
+  "artifactEventReloadRepair": {
+    "writerFixed": true,
+    "legacyOperatorSourceRequiresPriorBinding": true,
+    "ledgerRewritten": false
+  }
+}

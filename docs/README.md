@@ -1,6 +1,7 @@
 # Napier Documentation
 
-Maintained on **2026-09-09**, against source baseline `02ff34a5`.
+Index updated on **2026-09-21**. The latest working-tree review starts from
+`c454a155`; individual guides and evidence retain their own dates and baselines.
 
 ## Current guides and contracts
 
@@ -21,6 +22,8 @@ behavior is summarized in Architecture and Local development.
 
 - [Run progress and premature convergence](investigations/2026-09-08-run-progress-interruptions.md)
 - [Incremental context compaction within a Run](investigations/2026-09-08-run-context-compaction.md)
+- [Harness and working-tree code review](investigations/2026-09-21-code-review.md)
+- [Harness engineering delivery](harness-optimization-delivery.md)
 
 ## Machine-readable checks and evidence
 

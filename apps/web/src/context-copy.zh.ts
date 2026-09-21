@@ -215,7 +215,7 @@ export const contextZh: LocaleOverride<typeof contextCopyEn> = {
   },
   runBudget: "运行预算",
   runMaxTurns: "模型轮次",
-  runMaxTokens: "总 Token",
+  runMaxTokens: "总 Token（0 为不限）",
   runMaxCost: "最高成本（美元）",
   runTimeout: "总时限（秒）",
   delegationBudget: "委派预算",

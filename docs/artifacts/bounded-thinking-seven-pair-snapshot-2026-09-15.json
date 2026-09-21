@@ -1,0 +1,423 @@
+{
+  "kind": "napier.bounded-thinking-seven-pair-snapshot",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T08:28:25.347Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/plan.json",
+  "planSha256": "645072d1deb2c7714a8b4245f345cd39cc90c014d95347119a37058976524392",
+  "sourceFreezeSha256": "f1738687b1d40df52f6ff9ce4388a4fad638ce36ad4e8c4720c7560dad3850cc",
+  "profileFileSha256": "68edc7d8664ba3b6d13f4db172d49a87ae88c4400662e774c3b683139a769db8",
+  "checkpoints": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-1.json",
+      "sha256": "50e11ac725210b0575944f65b5b6c675240e04da7fa78711482d1d15689c6694"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-2.json",
+      "sha256": "e06f7041740419ad9d3009c34e09b24e6b44e55d4fdee0b366095444c92efc92"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-3.json",
+      "sha256": "f452d2721e2246d4001fc46cf92f2c6a617b785d3f527b7237ab1008101e0c3f"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-4.json",
+      "sha256": "dc3ebd54fe607f9b2beddaa1d64079665a2ccf6eb4d6733fafb56105b34ee027"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-5.json",
+      "sha256": "81506663dc87f4aedd5bc1f571862d36ead322afbc8e87009f9b450578b83d53"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-6.json",
+      "sha256": "57644eef777f83d7d47f9f1eb89f53b60e31e7b605ee96bf45ab91b7b677fff3"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-7.json",
+      "sha256": "3b34c5c1b7407fdb4951ad8f50018e46b4390dc2d3a18de4084e45cd7919cb42"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-8.json",
+      "sha256": "42d65f2e7c515a652dd3990d7fae84dd76cf30413af4d108fd66d031299df357"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-9.json",
+      "sha256": "ec6e9269102309d3d490fedb791e647821a397cca802ff928d3fa98a960686c5"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-10.json",
+      "sha256": "01f9175883228f422df7862bbb27fccdcb3f54fcc6c62af4e21167686db06c9d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-11.json",
+      "sha256": "a7aa119305420028dcdd43b643c1e37932ad1a713d65727e7240878106cb1be7"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/checkpoint-12.json",
+      "sha256": "8e32640c4c3b19c3190fc00d51389d6bc083111ea84466c9b2d2aca3e8862b8f"
+    }
+  ],
+  "reportBindings": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "0f4e86dbc6205834612b8bfb763b4151bf1c10cc94a9d9506eae5857ade20455"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "c77b837341c2a970f3819bf494faab758a1693d82436febdc4fc344242a5008d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/memory_shipping_current_source_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "d6b2c1c3582e92446551702206f83f27d964fcf21991988d879ab6c7a3e9c72d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/semantic_version_order_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "72fd1db43eb12338c31a0fb28229e4cdce550880770053c5a7b72df6d9b172e6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/semantic_version_order_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "560393a787a7451123bba60efb04f23b8fd59d3ed6161e32ee0939455300cca9"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/rollout_dependency_plan_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "6ff0aa362c16ac2091e14d470af6d14edbb732920afce8d860d187f63fec932b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/rollout_dependency_plan_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "e9c45835cce9d79d8f918f14273d3f08b84fd21d23ad3640f18d7c7d5849d8f9"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/http_retry_policy_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "c65b0253423eff48e9e3e856159d684d59f4371999d18b370b6213ecbca04b7e"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/http_retry_policy_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "f1f52db4fbfa8d445fad67c05fa4b9f57b098c5114dbb5fc06555e0c63d4e8a6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/access_rule_evaluation_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "023c8815b0beca992fe16693264be056b600a1c9becec97b95dd8611643a0132"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/access_rule_evaluation_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "068c1f7e1ed26bdbf0d159d66272813f92356e9c5ae0ace50c0c217b4fbca557"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/booking_calendar_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "ba6f95ad1e68fe6693be16b854bceaf7161badb85c371455f856e35e4b1b9d66"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/booking_calendar_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "3dc8c2910e03d78c7276576a1964efe0a962b04c3d0aa8ee3659c9b16830bfc3"
+    }
+  ],
+  "summaryModuleSha256": "754368852248c0f3465b7124e94a9f699ec4af18289efc65e02e103bf8f35c69",
+  "summary": {
+    "kind": "napier.harness-paired-descriptive-summary",
+    "schemaVersion": 1,
+    "quality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 7,
+      "cases": 7,
+      "regressions": [],
+      "evidenceBlockers": [],
+      "blockers": [
+        "Need 30 cases; observed 7",
+        "incremental_ndjson_v1: need 3 paired trials; observed 1",
+        "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+        "semantic_version_order_v1: need 3 paired trials; observed 1",
+        "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+        "http_retry_policy_v2: need 3 paired trials; observed 1",
+        "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+        "booking_calendar_v2: need 3 paired trials; observed 1"
+      ],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "a465db38db1ff852b2cf76ee6efad0ec502a71b8ab0abda5d7569413247568ad"
+    },
+    "rawObservations": 14,
+    "pairs": [
+      {
+        "key": "incremental_ndjson_v1:0",
+        "caseId": "incremental_ndjson_v1",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_c553965d6ff14131a763",
+          "taskSuccess": false,
+          "graderPassed": true,
+          "durationMs": 253387,
+          "admissions": 9,
+          "toolFailures": 0,
+          "originalCostFen": 47,
+          "inputTokens": 9325,
+          "outputTokens": 23762,
+          "cacheReadTokens": 119168
+        },
+        "candidate": {
+          "runId": "run_d0d7d0c37f5a4f59b195",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 268820,
+          "admissions": 13,
+          "toolFailures": 1,
+          "originalCostFen": 56,
+          "inputTokens": 102077,
+          "outputTokens": 35173,
+          "cacheReadTokens": 223104
+        },
+        "regressions": []
+      },
+      {
+        "key": "memory_shipping_current_source_v1:0",
+        "caseId": "memory_shipping_current_source_v1",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_569d84397d24401f893d",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 203005,
+          "admissions": 14,
+          "toolFailures": 1,
+          "originalCostFen": 30,
+          "inputTokens": 69831,
+          "outputTokens": 13011,
+          "cacheReadTokens": 127744
+        },
+        "candidate": {
+          "runId": "run_b975baf1b25e4c63835a",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 111822,
+          "admissions": 8,
+          "toolFailures": 0,
+          "originalCostFen": 15,
+          "inputTokens": 35133,
+          "outputTokens": 3771,
+          "cacheReadTokens": 45440
+        },
+        "regressions": []
+      },
+      {
+        "key": "semantic_version_order_v1:0",
+        "caseId": "semantic_version_order_v1",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_8ab5f0bbf220485eb0fc",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 235928,
+          "admissions": 12,
+          "toolFailures": 0,
+          "originalCostFen": 45,
+          "inputTokens": 63311,
+          "outputTokens": 31717,
+          "cacheReadTokens": 257536
+        },
+        "candidate": {
+          "runId": "run_65e9a552e12d4e6fbfa0",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 297709,
+          "admissions": 16,
+          "toolFailures": 4,
+          "originalCostFen": 78,
+          "inputTokens": 134979,
+          "outputTokens": 50408,
+          "cacheReadTokens": 361344
+        },
+        "regressions": []
+      },
+      {
+        "key": "rollout_dependency_plan_v2:0",
+        "caseId": "rollout_dependency_plan_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_a6be12f8ea8b42678559",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 234302,
+          "admissions": 14,
+          "toolFailures": 1,
+          "originalCostFen": 47,
+          "inputTokens": 95557,
+          "outputTokens": 24289,
+          "cacheReadTokens": 261504
+        },
+        "candidate": {
+          "runId": "run_44a410b844d44bd38500",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 211732,
+          "admissions": 13,
+          "toolFailures": 8,
+          "originalCostFen": 48,
+          "inputTokens": 86329,
+          "outputTokens": 31273,
+          "cacheReadTokens": 224384
+        },
+        "regressions": []
+      },
+      {
+        "key": "http_retry_policy_v2:0",
+        "caseId": "http_retry_policy_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_c8ca77f81302448cad02",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 288247,
+          "admissions": 16,
+          "toolFailures": 1,
+          "originalCostFen": 66,
+          "inputTokens": 128417,
+          "outputTokens": 36571,
+          "cacheReadTokens": 438016
+        },
+        "candidate": {
+          "runId": "run_25d9b1251fec41799900",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 469290,
+          "admissions": 19,
+          "toolFailures": 4,
+          "originalCostFen": 96,
+          "inputTokens": 126314,
+          "outputTokens": 73806,
+          "cacheReadTokens": 316032
+        },
+        "regressions": []
+      },
+      {
+        "key": "access_rule_evaluation_v2:0",
+        "caseId": "access_rule_evaluation_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_9ab9042343c24c19a2a8",
+          "taskSuccess": false,
+          "graderPassed": true,
+          "durationMs": 187410,
+          "admissions": 10,
+          "toolFailures": 0,
+          "originalCostFen": 28,
+          "inputTokens": 9802,
+          "outputTokens": 17253,
+          "cacheReadTokens": 125696
+        },
+        "candidate": {
+          "runId": "run_d4a31c956de64408a75a",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 167077,
+          "admissions": 9,
+          "toolFailures": 1,
+          "originalCostFen": 38,
+          "inputTokens": 53902,
+          "outputTokens": 27458,
+          "cacheReadTokens": 137856
+        },
+        "regressions": []
+      },
+      {
+        "key": "booking_calendar_v2:0",
+        "caseId": "booking_calendar_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_be8da810d6ae427c9e45",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 262168,
+          "admissions": 14,
+          "toolFailures": 1,
+          "originalCostFen": 62,
+          "inputTokens": 125266,
+          "outputTokens": 35115,
+          "cacheReadTokens": 265856
+        },
+        "candidate": {
+          "runId": "run_e672cb094ba74663ae8d",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 214934,
+          "admissions": 11,
+          "toolFailures": 1,
+          "originalCostFen": 45,
+          "inputTokens": 58878,
+          "outputTokens": 33899,
+          "cacheReadTokens": 208512
+        },
+        "regressions": []
+      }
+    ],
+    "excluded": [],
+    "armSummary": {
+      "baseline": {
+        "observations": 7,
+        "completedTasks": 5,
+        "passedGraders": 7,
+        "medianDurationMs": 235928,
+        "totalDurationMs": 1664447,
+        "totalAdmissions": 89,
+        "totalToolFailures": 4,
+        "originalObservationCostFen": 325,
+        "totalInputTokens": 501509,
+        "totalOutputTokens": 181718,
+        "totalCacheReadTokens": 1595520
+      },
+      "candidate": {
+        "observations": 7,
+        "completedTasks": 7,
+        "passedGraders": 7,
+        "medianDurationMs": 214934,
+        "totalDurationMs": 1741384,
+        "totalAdmissions": 89,
+        "totalToolFailures": 19,
+        "originalObservationCostFen": 376,
+        "totalInputTokens": 597612,
+        "totalOutputTokens": 255788,
+        "totalCacheReadTokens": 1516672
+      }
+    },
+    "pairedMedianDurationDifferenceMs": -20333,
+    "pairedMedianAdmissionDifference": -1,
+    "interpretation": "Descriptive observations only; trials share task families and reused baselines are not concurrent randomized controls. Original observation costs include reused evidence and are not newly spent campaign cost. Missing metrics are null, never zero. Quality qualification remains the unchanged 30-case/3-trial gate."
+  },
+  "newCohortSpendingFen": 671,
+  "budgetAtLastIncludedRun": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 5415,
+    "remainingFen": 4585,
+    "requests": 452,
+    "reservedRequests": 3,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "ongoingJobExcluded": "safe_csv_export_v1:candidate:0",
+  "collectionComplete": false,
+  "promotionReady": false
+}

@@ -1,0 +1,1409 @@
+{
+  "kind": "napier.pre-edit-verification-component",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T23:59:03.113Z",
+  "scenario": "ndjson",
+  "root": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1",
+  "inputs": {
+    "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/inputs.json",
+    "sha256": "596e4e41e0219f0388bdd4ed7c59e5d6c4e3baa893256c36c90b3e059a14d80a"
+  },
+  "settled": {
+    "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/settled.json",
+    "sha256": "43dd948ac9ab481c33f9e1d3278d762b5737155cac1c1392390b2db0fbf757cf"
+  },
+  "driverFreeze": {
+    "path": "/tmp/napier-pre-edit-driver-v1/freeze-receipt.json",
+    "sha256": "44a7a3e808f765e435346550cb257bb96653fcc7f920b336f6a3c1efd0b5402a"
+  },
+  "runtimeSnapshot": "/tmp/napier-harness-contract-first-v1",
+  "rows": [
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_e548980a301b48e39534",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/baseline/trial-1/result.json",
+        "sha256": "3ad693f68e2452b88e7a1ad1552a1bef1f743ef6973e94846d3daf51e5cf38ed"
+      },
+      "experimentalTurnPipeline": {
+        "promptAdapterId": "napier.prompt.default",
+        "toolAdapterId": "napier.tool.default",
+        "policyAdapterId": "napier.experiment.pre-edit-verification-control-v1",
+        "contentSha256": "77930b3eb6ecdea73efa14cda8e43316b9da6cbd10e3af1493917d9bd72744ec"
+      },
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "toolFailures": 2,
+      "guardBlocks": [],
+      "baselineChecks": [],
+      "protocol": {
+        "firstPatchStartEventId": "event_c92150ecc3724b719e2c",
+        "firstPatchStartSeq": 350,
+        "protocolSha256": "90f25d71b1db39ca7e3f39d500ed9c49c1ee19a6dbc466a00ff4829bf0af69f7",
+        "invocations": [
+          {
+            "eventId": "event_3718157f3725494bb52a",
+            "capsuleSha256": "cc98fdd6def8c2ae699897603b65727b5803e8f5695677bd46245417f939160e",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_54191d6231ad49c9a7fc",
+            "capsuleSha256": "883ceda9400e446878783f3e414d6474e8b2c8a88221f75012a1dbf947c52bd1",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_f20b95f3c56141138c18",
+            "capsuleSha256": "94a1ff380db58e03718f29a75a0f0bb77ad90d249e7b2650153ebaf1b2bfbc63",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_c31192d57c6f4eba95cf",
+            "capsuleSha256": "2c8214f5eab64e25b48a41a155b7df5c0b95ad242897139ccfae240ef4d4d7ff",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_4dcb83a064ae45389f1e",
+            "capsuleSha256": "6b1ee3bb94a4ecdd0feca89aac919674eb1d894e6b0f1fe2d23ab380b4e2e83b",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_60d6a67e586b4d809b27",
+            "capsuleSha256": "fa90aa4232bf261e9607bbcd28a83e3003693bb1618b80b936451c91db2a900a",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_2cd5b711aa8944f9a007",
+            "capsuleSha256": "2d884c1b902f006cbbd90b824ba54a83dd6f1721eb7ca12145f4cbcfd3f21b90",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_dbcf922af7dc4a63937e",
+            "capsuleSha256": "94f0f737cd3aae1bf7199e0755b87dbb1825172444d617919770c15ab04ae63a",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_5afa75a7d8824741aa5d",
+            "capsuleSha256": "07dc3d18399377987202865028ebff4685ba970fa43e21f1cc9f66eea285a38e",
+            "protocolPresent": true
+          }
+        ],
+        "executions": [
+          {
+            "runId": "run_e548980a301b48e39534",
+            "callId": "call_00_YhoLXhXOHN8vEgPFfIBW5162",
+            "toolName": "run_command",
+            "startedEventId": "event_f71b1c31f45c4a1a84f6",
+            "startedSeq": 287,
+            "phase": "before_first_patch",
+            "requestSha256": "644dba8d8485b92a6fc0377b6059b3ff6de67d036c754667d2c832ff67c3990a",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_eff38c718c3d41d2b43a",
+            "settledSeq": 290,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "07dc3d18399377987202865028ebff4685ba970fa43e21f1cc9f66eea285a38e",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_e548980a301b48e39534",
+            "callId": "call_01_2v1V36Z25c878OD8EIpR4358",
+            "toolName": "run_command",
+            "startedEventId": "event_93e5b0df85924847b6bc",
+            "startedSeq": 297,
+            "phase": "before_first_patch",
+            "requestSha256": "9bbd9fb62eb82bec314bdc5e135691a5609619a9f4808e7c0e102373461aa182",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_9c9b2d157a974bddb560",
+            "settledSeq": 300,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "07dc3d18399377987202865028ebff4685ba970fa43e21f1cc9f66eea285a38e",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_e548980a301b48e39534",
+            "callId": "call_00_onjjLilTv7UsmQ4i5XxN8996",
+            "toolName": "run_command",
+            "startedEventId": "event_0e998756d674427fb5cc",
+            "startedSeq": 410,
+            "phase": "after_first_patch",
+            "requestSha256": "644dba8d8485b92a6fc0377b6059b3ff6de67d036c754667d2c832ff67c3990a",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_fcc2c837f97240a0ac63",
+            "settledSeq": 413,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "07dc3d18399377987202865028ebff4685ba970fa43e21f1cc9f66eea285a38e",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_e548980a301b48e39534",
+            "callId": "call_01_ZAjC9poyFuxCSX2MvlSq8067",
+            "toolName": "run_command",
+            "startedEventId": "event_0885897547f345248b8c",
+            "startedSeq": 420,
+            "phase": "after_first_patch",
+            "requestSha256": "3330d71656d314709ceb5f18c314b6f9b5a78ec57bf37be53f7a24794853b47d",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_5db45172e3804d4581eb",
+            "settledSeq": 423,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "07dc3d18399377987202865028ebff4685ba970fa43e21f1cc9f66eea285a38e",
+            "settledBeforeFirstPatch": false
+          }
+        ],
+        "reusedRequests": [
+          {
+            "beforeCallId": "call_00_YhoLXhXOHN8vEgPFfIBW5162",
+            "requestSha256": "644dba8d8485b92a6fc0377b6059b3ff6de67d036c754667d2c832ff67c3990a",
+            "afterCallIds": [
+              "call_00_onjjLilTv7UsmQ4i5XxN8996"
+            ]
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true,
+        "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+      },
+      "initialInputCapsuleSha256": "1f7bfda36e00fa2b221bc0783fe25445a07371d9dbdf9015da3f283477143f66",
+      "failureBundle": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_e548980a301b48e39534/reproduction.json",
+        "sha256": "832a87ea027d2edf89d7b5bb3e94fb9cccc466e1884690d2de923266f0ce377c"
+      },
+      "inputExport": {
+        "runId": "run_e548980a301b48e39534",
+        "workspaceComplete": true,
+        "receiptSha256": "ff78ecadf044ac6f793ff4d8aba04ece7be560cd15e7022aa299a3d085e13df6",
+        "receipt": {
+          "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_e548980a301b48e39534-initial-input/reproduction.json",
+          "sha256": "a7df994273027545662d4c38c015760b0fa210b6674dea9ced81e5409efbe1d0"
+        },
+        "originalFilesRestored": 4
+      }
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_2d5c81851b72420e8027",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/baseline/trial-2/result.json",
+        "sha256": "c16369bcf3f541688d1540e6dda9b438e3edbf7ca1332df6e1e2ea8abd77acd9"
+      },
+      "experimentalTurnPipeline": {
+        "promptAdapterId": "napier.prompt.default",
+        "toolAdapterId": "napier.tool.default",
+        "policyAdapterId": "napier.experiment.pre-edit-verification-control-v1",
+        "contentSha256": "77930b3eb6ecdea73efa14cda8e43316b9da6cbd10e3af1493917d9bd72744ec"
+      },
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "toolFailures": 0,
+      "guardBlocks": [],
+      "baselineChecks": [],
+      "protocol": {
+        "firstPatchStartEventId": "event_a60d16ae1b5c4dea9cbe",
+        "firstPatchStartSeq": 404,
+        "protocolSha256": "90f25d71b1db39ca7e3f39d500ed9c49c1ee19a6dbc466a00ff4829bf0af69f7",
+        "invocations": [
+          {
+            "eventId": "event_32d6393a39834f15ba81",
+            "capsuleSha256": "4ffba06651198e50e25d51934ef2a87a016596f1c4c9394fffdec7e1b66f460f",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_9e7e623f19c74ea4aa6a",
+            "capsuleSha256": "cdd9a766763a956497a16a9af062825abbdbd5547c02752a3a3bcdbf4ac9a7e7",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_3e3277fec2434f6c9fce",
+            "capsuleSha256": "0da6a6c1ebdec0ed0ac9ad8001251117bd55e6db69eccdd6602d80b3214efa20",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_e54d17360fad47ec8636",
+            "capsuleSha256": "eb0e17ccb4c49268da46bf4702b103698525a27c6d300c1653c4b6693f025303",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_8e659bce96814b89b0d7",
+            "capsuleSha256": "412f4fadc45b5ce8a383b0c1296c717e4fc9b78a61fdd87a68d4c3476aac491f",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_51280ecd6cda4074b6f5",
+            "capsuleSha256": "a2da8af10495fbe3e878cc3362a5df39a64dc48676fe86a29efa7f371a7c89a2",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_1eb0c43d84bb4debbeed",
+            "capsuleSha256": "214c2541ad76973abc33a7ab94aa366cdacc7d91bcda4fe8d2e7973c14f6e192",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_6f0aa5b8b6a34f8faaf4",
+            "capsuleSha256": "8d9b399e94eed72bd593e7da761e63d9facc539c713e2daf771e499d3f0fda82",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_73997c2efdee4360a267",
+            "capsuleSha256": "db97287a1bdc957fd89d377d58376611c58b49d7cb8326e40ff9aa860e0a7967",
+            "protocolPresent": true
+          }
+        ],
+        "executions": [
+          {
+            "runId": "run_2d5c81851b72420e8027",
+            "callId": "call_01_fYk07vrlLJmPytPkHbjO6826",
+            "toolName": "run_command",
+            "startedEventId": "event_e2776e424290472ab803",
+            "startedSeq": 219,
+            "phase": "before_first_patch",
+            "requestSha256": "644dba8d8485b92a6fc0377b6059b3ff6de67d036c754667d2c832ff67c3990a",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_910f3b1dc6d448ee93c8",
+            "settledSeq": 222,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "db97287a1bdc957fd89d377d58376611c58b49d7cb8326e40ff9aa860e0a7967",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_2d5c81851b72420e8027",
+            "callId": "call_01_Qps6wMLvQi8xmfy0ub0G3293",
+            "toolName": "run_command",
+            "startedEventId": "event_3343e2bba6004ac3b80b",
+            "startedSeq": 279,
+            "phase": "before_first_patch",
+            "requestSha256": "dcc1c4c5b0b2ef55514173fd5ddcf948d53029edce674b3189a98ab286919fd5",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_305cf9595805451daf27",
+            "settledSeq": 282,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "db97287a1bdc957fd89d377d58376611c58b49d7cb8326e40ff9aa860e0a7967",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_2d5c81851b72420e8027",
+            "callId": "call_02_UyvrJ9VLTt4B4WZ9DzSJ7013",
+            "toolName": "run_command",
+            "startedEventId": "event_82760e29f6364248b456",
+            "startedSeq": 481,
+            "phase": "after_first_patch",
+            "requestSha256": "644dba8d8485b92a6fc0377b6059b3ff6de67d036c754667d2c832ff67c3990a",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_c559225737d34747aba8",
+            "settledSeq": 484,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "db97287a1bdc957fd89d377d58376611c58b49d7cb8326e40ff9aa860e0a7967",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_2d5c81851b72420e8027",
+            "callId": "call_03_Dh10oVRjaCn8Mh74XZMb6059",
+            "toolName": "run_command",
+            "startedEventId": "event_dc65f150cfb44c79a88c",
+            "startedSeq": 491,
+            "phase": "after_first_patch",
+            "requestSha256": "dcc1c4c5b0b2ef55514173fd5ddcf948d53029edce674b3189a98ab286919fd5",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_14de28bf7dc24bf083b4",
+            "settledSeq": 494,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "db97287a1bdc957fd89d377d58376611c58b49d7cb8326e40ff9aa860e0a7967",
+            "settledBeforeFirstPatch": false
+          }
+        ],
+        "reusedRequests": [
+          {
+            "beforeCallId": "call_01_fYk07vrlLJmPytPkHbjO6826",
+            "requestSha256": "644dba8d8485b92a6fc0377b6059b3ff6de67d036c754667d2c832ff67c3990a",
+            "afterCallIds": [
+              "call_02_UyvrJ9VLTt4B4WZ9DzSJ7013"
+            ]
+          },
+          {
+            "beforeCallId": "call_01_Qps6wMLvQi8xmfy0ub0G3293",
+            "requestSha256": "dcc1c4c5b0b2ef55514173fd5ddcf948d53029edce674b3189a98ab286919fd5",
+            "afterCallIds": [
+              "call_03_Dh10oVRjaCn8Mh74XZMb6059"
+            ]
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true,
+        "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+      },
+      "initialInputCapsuleSha256": "eea6974be16b51b048ab5bde56ea4df822c19756e080d0a45a13fa6621518593"
+    },
+    {
+      "arm": "baseline",
+      "trial": 3,
+      "runId": "run_46cf70c117924eec896a",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/baseline/trial-3/result.json",
+        "sha256": "6587b32f59072554c0572970bdea1d82f3c4a36e455a07a15a03ccc537b2e077"
+      },
+      "experimentalTurnPipeline": {
+        "promptAdapterId": "napier.prompt.default",
+        "toolAdapterId": "napier.tool.default",
+        "policyAdapterId": "napier.experiment.pre-edit-verification-control-v1",
+        "contentSha256": "77930b3eb6ecdea73efa14cda8e43316b9da6cbd10e3af1493917d9bd72744ec"
+      },
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "toolFailures": 0,
+      "guardBlocks": [],
+      "baselineChecks": [
+        {
+          "runId": "run_46cf70c117924eec896a",
+          "callId": "call_01_nZaGAj8RJO5whdwwA1fW9136",
+          "toolName": "verify_workspace",
+          "startedEventId": "event_88d0734968624185b1a1",
+          "startedSeq": 364,
+          "phase": "before_first_patch",
+          "requestSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+          "classification": "explicit_test_verification",
+          "status": "completed",
+          "exitCode": 1,
+          "settledEventId": "event_4fda929807fc49faa424",
+          "settledSeq": 367,
+          "verificationStatus": "failed",
+          "sourceCapsuleSha256": "1f9b31ec9ea1a2c7524714f7c3b2846552c4e10a49f80e0b6b69abfb50b78033",
+          "settledBeforeFirstPatch": true
+        }
+      ],
+      "protocol": {
+        "firstPatchStartEventId": "event_cfb03949d70d41818b1f",
+        "firstPatchStartSeq": 424,
+        "protocolSha256": "90f25d71b1db39ca7e3f39d500ed9c49c1ee19a6dbc466a00ff4829bf0af69f7",
+        "invocations": [
+          {
+            "eventId": "event_c9197b3d968d49ae8c82",
+            "capsuleSha256": "37a956d261e503e657f515b6dfe24ec0c928873dc926208e4774d39d8e6b8f11",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_b509fb443c4e43208fe8",
+            "capsuleSha256": "2ea65616287ceec50506e58de10991296e56a805a42d1b6454ea992a71f1ed95",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_469cb2825af54543a180",
+            "capsuleSha256": "599b29b7c778f20607371b141079a1108d5c733948899c93ae7b01f8112c0382",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_5310816ac7b34290b95a",
+            "capsuleSha256": "c076e489afbc1d3d34d5216da1c0c42a8937a116b1dca0d2c18c16b9b2204227",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_65461938d7204b36b58b",
+            "capsuleSha256": "856ebd82d5e75229c80f4dfbf485d105337be2f2603fe05fd285e649b45e2f77",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_acb7566be47341b491e8",
+            "capsuleSha256": "f1b312ea43be0230680a811c238bf9a899cf1dfdc383c7fc7ffe902b0135d087",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_35e992546b404f51a01d",
+            "capsuleSha256": "b37761ca70b6c903352b7725fbf95a4c68a8c82fd9b4dc232317fd6e7fc41937",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_5fe8833341c54229924e",
+            "capsuleSha256": "1f9b31ec9ea1a2c7524714f7c3b2846552c4e10a49f80e0b6b69abfb50b78033",
+            "protocolPresent": true
+          }
+        ],
+        "executions": [
+          {
+            "runId": "run_46cf70c117924eec896a",
+            "callId": "call_01_nZaGAj8RJO5whdwwA1fW9136",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_88d0734968624185b1a1",
+            "startedSeq": 364,
+            "phase": "before_first_patch",
+            "requestSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_4fda929807fc49faa424",
+            "settledSeq": 367,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "1f9b31ec9ea1a2c7524714f7c3b2846552c4e10a49f80e0b6b69abfb50b78033",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_46cf70c117924eec896a",
+            "callId": "call_02_3VZhBSeAbDnSHDjoezmL0177",
+            "toolName": "run_command",
+            "startedEventId": "event_194bff600630413095bd",
+            "startedSeq": 374,
+            "phase": "before_first_patch",
+            "requestSha256": "3b7a2f9e18eec3811225cb37b12d7703cf1793d44baa2eab475b09d34541c7f0",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_488f66fd40e94ac9bb33",
+            "settledSeq": 377,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "1f9b31ec9ea1a2c7524714f7c3b2846552c4e10a49f80e0b6b69abfb50b78033",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_46cf70c117924eec896a",
+            "callId": "call_00_SJz1CgF69SBBTp50e6Nh1438",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_02735a8af77a43b8a3e6",
+            "startedSeq": 504,
+            "phase": "after_first_patch",
+            "requestSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_3f8f2ac869c84e5193ea",
+            "settledSeq": 507,
+            "verificationStatus": "passed",
+            "sourceCapsuleSha256": "1f9b31ec9ea1a2c7524714f7c3b2846552c4e10a49f80e0b6b69abfb50b78033",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_46cf70c117924eec896a",
+            "callId": "call_01_eHF71ZtMH71Y4Jt9hh9r2170",
+            "toolName": "run_command",
+            "startedEventId": "event_258db2a01f154484a35c",
+            "startedSeq": 514,
+            "phase": "after_first_patch",
+            "requestSha256": "99f9753e70535ec18fb66e1795315e723747b694fe9f9a342884261b96139f0e",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_41f79610a9fb4c49a9f2",
+            "settledSeq": 517,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "1f9b31ec9ea1a2c7524714f7c3b2846552c4e10a49f80e0b6b69abfb50b78033",
+            "settledBeforeFirstPatch": false
+          }
+        ],
+        "reusedRequests": [
+          {
+            "beforeCallId": "call_01_nZaGAj8RJO5whdwwA1fW9136",
+            "requestSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+            "afterCallIds": [
+              "call_00_SJz1CgF69SBBTp50e6Nh1438"
+            ]
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true,
+        "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+      },
+      "initialInputCapsuleSha256": "247be7fd37744ccfaa97150f8d412f4529307e84be6a23db910900a45bbeda71"
+    },
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_29413e8336b04d6b8a03",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/candidate/trial-1/result.json",
+        "sha256": "5cb50c9bb8a14b59a3b224673220f8bb734933390e451c9ffa5e68a9c3df13ed"
+      },
+      "experimentalTurnPipeline": {
+        "promptAdapterId": "napier.prompt.default",
+        "toolAdapterId": "napier.tool.default",
+        "policyAdapterId": "napier.experiment.pre-edit-verification-v1",
+        "contentSha256": "790edb68d765f8595c2c04f6be77266efa0c9bffcca7ea7b741247d89f98a621"
+      },
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "toolFailures": 2,
+      "guardBlocks": [
+        {
+          "eventId": "event_108d185125b34a5abd5a",
+          "seq": 291,
+          "toolName": "apply_patch",
+          "callId": "call_00_o3NSBYgA9HexoixSdZM64932"
+        },
+        {
+          "eventId": "event_93b6ecd84ba248038192",
+          "seq": 293,
+          "toolName": "apply_patch",
+          "callId": "call_01_P37SarBcM5GI0UeN19ff9562"
+        }
+      ],
+      "baselineChecks": [
+        {
+          "runId": "run_29413e8336b04d6b8a03",
+          "callId": "call_00_AVu5vPzgyh9n1tkfQXlp7833",
+          "toolName": "verify_workspace",
+          "startedEventId": "event_4ff85e940940414c8401",
+          "startedSeq": 325,
+          "phase": "before_first_patch",
+          "requestSha256": "15e2245f6833e39333319313a28af30fb342e344f0794fa840ffe2019cc7be6d",
+          "classification": "explicit_test_verification",
+          "status": "completed",
+          "exitCode": 1,
+          "settledEventId": "event_a57949ecf8214a989854",
+          "settledSeq": 328,
+          "verificationStatus": "failed",
+          "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+          "settledBeforeFirstPatch": true
+        }
+      ],
+      "protocol": {
+        "firstPatchStartEventId": "event_19eea56598b64c8e9b3b",
+        "firstPatchStartSeq": 362,
+        "protocolSha256": "90f25d71b1db39ca7e3f39d500ed9c49c1ee19a6dbc466a00ff4829bf0af69f7",
+        "invocations": [
+          {
+            "eventId": "event_d63f1fc73aca455f87f9",
+            "capsuleSha256": "92680a0e2561f007cfe6037d117e5bada029382fd68bd3f2e1d1a8402f4b1eb8",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_857307d0a4364ad4881b",
+            "capsuleSha256": "4a2e1d89663464ea8c38b1d7077e25330462c59783ef4606b304407bdc1df74b",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_2d07a112efbc4bd3b922",
+            "capsuleSha256": "c193a48638031b198afa129088e7e78a8b3c29d5d5bdb99451ef0df99c63737f",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_80a4451cdb484e058284",
+            "capsuleSha256": "7e99ed6040c5d148d9cd4db010679049550c2946e225ede3eed4d328abab2196",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_da8ede03b9c24244a41f",
+            "capsuleSha256": "abbca8b7b62dbd0a351bf2c1c7420f51b487939f3780d41bbfd74b7db751d411",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_9738b0964c8e4294beab",
+            "capsuleSha256": "5724ffb49218a83e49f00327e77c267ecee843c7e57ef7087bcb46ea61d2bc47",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_b7dafa799ba04462a7dc",
+            "capsuleSha256": "b60a56345844daccaacd596f725825b7e1ff8cbbdede9b4d9b3da20447644f05",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_199c792c9dff431db291",
+            "capsuleSha256": "274e7dc839fcd5835378b11fcf1eb0e16efee9bdae655f71d6a708c68d809751",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_12f7c01a58ea4929a059",
+            "capsuleSha256": "921176403f039647cd17b9e36d99281a02d34f6df3552f387d2e00d031dcfcdc",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_6da399abb9c2492e9f77",
+            "capsuleSha256": "a65ed381e4298c478a7f6255903529c4a4f97110ff3aeb4c8467bf44b7102b01",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_d6ecb11591c6420c91d7",
+            "capsuleSha256": "8a82d1b448d43e37b551580ea3777878ef50991f8398a17247e319163b740856",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_fb47b82e6dd84aeba61a",
+            "capsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "protocolPresent": true
+          }
+        ],
+        "executions": [
+          {
+            "runId": "run_29413e8336b04d6b8a03",
+            "callId": "call_01_uxDQ8h2pVeAptKEBZWKa6890",
+            "toolName": "run_command",
+            "startedEventId": "event_c140359fec6e444fb2db",
+            "startedSeq": 260,
+            "phase": "before_first_patch",
+            "requestSha256": "907f8f5e4782cf86a20fb5931800ceb948f82b4140eadff094000aa7d13fd397",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_017e03c2e4ca496faf23",
+            "settledSeq": 263,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_29413e8336b04d6b8a03",
+            "callId": "call_00_AVu5vPzgyh9n1tkfQXlp7833",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_4ff85e940940414c8401",
+            "startedSeq": 325,
+            "phase": "before_first_patch",
+            "requestSha256": "15e2245f6833e39333319313a28af30fb342e344f0794fa840ffe2019cc7be6d",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_a57949ecf8214a989854",
+            "settledSeq": 328,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_29413e8336b04d6b8a03",
+            "callId": "call_00_Kuas4tbVJZCW2g73dDDX6430",
+            "toolName": "run_command",
+            "startedEventId": "event_1d015f277957469aa848",
+            "startedSeq": 424,
+            "phase": "after_first_patch",
+            "requestSha256": "907f8f5e4782cf86a20fb5931800ceb948f82b4140eadff094000aa7d13fd397",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_d6d44ee2af2345b0886f",
+            "settledSeq": 427,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_29413e8336b04d6b8a03",
+            "callId": "call_01_EFZJePvU3mGdcwtW4tzW5136",
+            "toolName": "run_command",
+            "startedEventId": "event_be4f778c11664697b135",
+            "startedSeq": 434,
+            "phase": "after_first_patch",
+            "requestSha256": "17aa0bdea2e5dd7317867a6fbd8f90e9c6a6a821aeabdeeb7795724230ca4890",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_56b7a07e3eee4668a493",
+            "settledSeq": 437,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_29413e8336b04d6b8a03",
+            "callId": "call_00_DGkntALFWTVt70wEbpVV0795",
+            "toolName": "run_command",
+            "startedEventId": "event_8e905eb3140b4a6b965b",
+            "startedSeq": 469,
+            "phase": "after_first_patch",
+            "requestSha256": "907f8f5e4782cf86a20fb5931800ceb948f82b4140eadff094000aa7d13fd397",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_8a9b12c0599f42f9a47a",
+            "settledSeq": 472,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_29413e8336b04d6b8a03",
+            "callId": "call_01_BFsiGPyvFUWUBXpX8Jc17462",
+            "toolName": "run_command",
+            "startedEventId": "event_f528fea618724d5c817d",
+            "startedSeq": 479,
+            "phase": "after_first_patch",
+            "requestSha256": "e0164e157eabc829479211526d239c7e09c05d09499c3c9253e6801d26bbbf22",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_dbff2951762b418e88f5",
+            "settledSeq": 482,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_29413e8336b04d6b8a03",
+            "callId": "call_00_iP6hHzUiQVZ8AIvLkBtE3602",
+            "toolName": "run_command",
+            "startedEventId": "event_4c63dd9226e246e9af92",
+            "startedSeq": 518,
+            "phase": "after_first_patch",
+            "requestSha256": "a9b44b536eab51c1fe15809095aa2b356a2a7b9b3ff9114a90ff0f23c42c793f",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_464e41592f824bed9a8f",
+            "settledSeq": 521,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_29413e8336b04d6b8a03",
+            "callId": "call_01_jebP5qrFuOMU0gz82zLU0254",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_f7b71db947ce43d4acce",
+            "startedSeq": 528,
+            "phase": "after_first_patch",
+            "requestSha256": "15e2245f6833e39333319313a28af30fb342e344f0794fa840ffe2019cc7be6d",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_21ec9a2e60dd49db9d35",
+            "settledSeq": 531,
+            "verificationStatus": "passed",
+            "sourceCapsuleSha256": "293ec2bbc752767406fbb748a5d16c4de4c91637c3a5cc27000577c304337e35",
+            "settledBeforeFirstPatch": false
+          }
+        ],
+        "reusedRequests": [
+          {
+            "beforeCallId": "call_01_uxDQ8h2pVeAptKEBZWKa6890",
+            "requestSha256": "907f8f5e4782cf86a20fb5931800ceb948f82b4140eadff094000aa7d13fd397",
+            "afterCallIds": [
+              "call_00_Kuas4tbVJZCW2g73dDDX6430",
+              "call_00_DGkntALFWTVt70wEbpVV0795"
+            ]
+          },
+          {
+            "beforeCallId": "call_00_AVu5vPzgyh9n1tkfQXlp7833",
+            "requestSha256": "15e2245f6833e39333319313a28af30fb342e344f0794fa840ffe2019cc7be6d",
+            "afterCallIds": [
+              "call_01_jebP5qrFuOMU0gz82zLU0254"
+            ]
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true,
+        "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+      },
+      "initialInputCapsuleSha256": "529f5939c9f4bbf09d1cd5ff8581628c71c2d773f8363df91134ee94a121296c",
+      "failureBundle": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_29413e8336b04d6b8a03/reproduction.json",
+        "sha256": "26550c84b67c8e9a56ab2e2e7867c7703b6f17cdeea1eb930b0bfe67328251f9"
+      },
+      "inputExport": {
+        "runId": "run_29413e8336b04d6b8a03",
+        "workspaceComplete": true,
+        "receiptSha256": "27b34281a99fdb1d4088a0cad244436f8bf4e546660f2a47e09c4f78247f60a2",
+        "receipt": {
+          "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_29413e8336b04d6b8a03-initial-input/reproduction.json",
+          "sha256": "6d787947b8d6448fd5295a3bf124f5cfe6116eb0cb11f2b45ecf8e7acfb64d7e"
+        },
+        "originalFilesRestored": 4
+      }
+    },
+    {
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_36a9b72bba9647e69926",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/candidate/trial-2/result.json",
+        "sha256": "e64672811cc4fd5f4e809684ed3d9e1e8b4267d5cedf83d63ae32330a451e098"
+      },
+      "experimentalTurnPipeline": {
+        "promptAdapterId": "napier.prompt.default",
+        "toolAdapterId": "napier.tool.default",
+        "policyAdapterId": "napier.experiment.pre-edit-verification-v1",
+        "contentSha256": "790edb68d765f8595c2c04f6be77266efa0c9bffcca7ea7b741247d89f98a621"
+      },
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "toolFailures": 2,
+      "guardBlocks": [
+        {
+          "eventId": "event_c634263806ba4831996d",
+          "seq": 317,
+          "toolName": "apply_patch",
+          "callId": "call_00_A0ztT4f2Al2sEWFsqiKx4379"
+        },
+        {
+          "eventId": "event_f04705553f5749c29d25",
+          "seq": 319,
+          "toolName": "apply_patch",
+          "callId": "call_01_G19txrP7FTgtv2GDsA1W5613"
+        }
+      ],
+      "baselineChecks": [
+        {
+          "runId": "run_36a9b72bba9647e69926",
+          "callId": "call_00_lKJ5HjMthpdOrGKXuFcw7577",
+          "toolName": "verify_workspace",
+          "startedEventId": "event_ea0e2fc4e97e4e829688",
+          "startedSeq": 352,
+          "phase": "before_first_patch",
+          "requestSha256": "6f5b45322091c0b6cab375533ce5958c880b170e08fa06b7f89f26b961a70425",
+          "classification": "explicit_test_verification",
+          "status": "completed",
+          "exitCode": 1,
+          "settledEventId": "event_1e141d987a2e464999cf",
+          "settledSeq": 355,
+          "verificationStatus": "failed",
+          "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+          "settledBeforeFirstPatch": true
+        },
+        {
+          "runId": "run_36a9b72bba9647e69926",
+          "callId": "call_00_MpuFrxfKlw7u7CXf1fJH7847",
+          "toolName": "verify_workspace",
+          "startedEventId": "event_01fa805b9ca0492a93c6",
+          "startedSeq": 386,
+          "phase": "before_first_patch",
+          "requestSha256": "e14dd834f6174fbc555761cd518bac61f4a0e85fab8b85f16c7b31c3784b585e",
+          "classification": "explicit_test_verification",
+          "status": "completed",
+          "exitCode": 1,
+          "settledEventId": "event_68966f4250eb47b2b699",
+          "settledSeq": 389,
+          "verificationStatus": "failed",
+          "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+          "settledBeforeFirstPatch": true
+        }
+      ],
+      "protocol": {
+        "firstPatchStartEventId": "event_2abb7e2338024810825a",
+        "firstPatchStartSeq": 422,
+        "protocolSha256": "90f25d71b1db39ca7e3f39d500ed9c49c1ee19a6dbc466a00ff4829bf0af69f7",
+        "invocations": [
+          {
+            "eventId": "event_52edf5bceb8543f7b6e4",
+            "capsuleSha256": "23d4ea7a9ca03395f2366fa83e51ee7814bc2404fc28f4c6faac7813696e80ae",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_ede750bf00854cadbb38",
+            "capsuleSha256": "2210d6a6f2fa98855bef61886639edf28ec3129b43ae6d7a39d349c28be9daaf",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_73283068c4fe422a8db1",
+            "capsuleSha256": "382a333b8121dacfb6e1c39bc50b08f64861a8b09c641abc91879e94a8202dc9",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_6b1891a763764cb4b93d",
+            "capsuleSha256": "6777d71866b4de3ce8d30dd42c0d6c3ff447e1d3b5294881ab5108ef9128c19b",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_f1d8f8952161421ea596",
+            "capsuleSha256": "e38b164e17a1fb38f0b4190662cae366b4ca285bd685f47fd6fc0b3b0d91641c",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_2643637cc0ed479491c4",
+            "capsuleSha256": "328461407e73a620183fdadf50624b8b902ccdfda24eec0b3517dea36f53029a",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_3226645ba3ab495eaea9",
+            "capsuleSha256": "a1b77dc6e5431b7d0d48d0cadda5c2fb63df131651f2808e2fe8bb5ab39b2787",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_c60525f70152429bb7c5",
+            "capsuleSha256": "4686a62195ec0e6d3773de81c7411a92b90b4d6649141e213059474d40a1a944",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_85be9e70f04d462bb5fd",
+            "capsuleSha256": "6e422f9a33384bd2fe28404ffe83a8159aeb1bf45792c54f86f8c086cfbfcc4f",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_43c082d054874f61914c",
+            "capsuleSha256": "22a2852d5added8eac79966e5e03fc5e5e95191dd5aaf24caf18ba80eeb6724e",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_c3d625be427642edae61",
+            "capsuleSha256": "2193235cc74d5048f1eeaa4f60b52174f424d5e3cb77507e9fe1ddfd1f3785cf",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_3c665fa4793d4c80a5ea",
+            "capsuleSha256": "0809a747c9ddc27f23a603476fcab6ef91e4a2d935ddd542788e953a5f7db916",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_0018463a1e9a4b06aee2",
+            "capsuleSha256": "8abe500b9a2da56e39e4339db8d6802eac0fdfd4f9c8ddc862510001e9eaeb44",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_8e079ebc9a2442488e78",
+            "capsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+            "protocolPresent": true
+          }
+        ],
+        "executions": [
+          {
+            "runId": "run_36a9b72bba9647e69926",
+            "callId": "call_00_VKeJAqhiFTuAAwHm8jzL9802",
+            "toolName": "run_command",
+            "startedEventId": "event_05ad6326df154903b65d",
+            "startedSeq": 203,
+            "phase": "before_first_patch",
+            "requestSha256": "644dba8d8485b92a6fc0377b6059b3ff6de67d036c754667d2c832ff67c3990a",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_37dcae8d6ef04f7aad91",
+            "settledSeq": 206,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_36a9b72bba9647e69926",
+            "callId": "call_00_lKJ5HjMthpdOrGKXuFcw7577",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_ea0e2fc4e97e4e829688",
+            "startedSeq": 352,
+            "phase": "before_first_patch",
+            "requestSha256": "6f5b45322091c0b6cab375533ce5958c880b170e08fa06b7f89f26b961a70425",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_1e141d987a2e464999cf",
+            "settledSeq": 355,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_36a9b72bba9647e69926",
+            "callId": "call_00_MpuFrxfKlw7u7CXf1fJH7847",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_01fa805b9ca0492a93c6",
+            "startedSeq": 386,
+            "phase": "before_first_patch",
+            "requestSha256": "e14dd834f6174fbc555761cd518bac61f4a0e85fab8b85f16c7b31c3784b585e",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_68966f4250eb47b2b699",
+            "settledSeq": 389,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_36a9b72bba9647e69926",
+            "callId": "call_00_WoLEUIHoYf1j2mCgh2q51763",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_dfb98e9e4f49439f9fcb",
+            "startedSeq": 477,
+            "phase": "after_first_patch",
+            "requestSha256": "e14dd834f6174fbc555761cd518bac61f4a0e85fab8b85f16c7b31c3784b585e",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_5bd6eef9f8074d99944f",
+            "settledSeq": 480,
+            "verificationStatus": "passed",
+            "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_36a9b72bba9647e69926",
+            "callId": "call_01_NP1if9MKRZ5lAHN5Vrne1802",
+            "toolName": "run_command",
+            "startedEventId": "event_dac9bec727b54497b994",
+            "startedSeq": 487,
+            "phase": "after_first_patch",
+            "requestSha256": "d4b08407c3777febd02109d4066112f8a5669ae82ec80fe352f9e95b93363633",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_2f1d70a585fc4ea9bb67",
+            "settledSeq": 490,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_36a9b72bba9647e69926",
+            "callId": "call_00_LxaPDMytWwlM9krScsr62391",
+            "toolName": "run_command",
+            "startedEventId": "event_adc66439f60646f4bf36",
+            "startedSeq": 535,
+            "phase": "after_first_patch",
+            "requestSha256": "3ae30dc974e7afa42fcec965b7b40df1cdf6a2d90697737cbde6f4b6bdb8fe61",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_6573c03e4aa7423db3e9",
+            "settledSeq": 538,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_36a9b72bba9647e69926",
+            "callId": "call_00_FGOKGp5xElJnW9GXj7Tr4152",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_a6bc323a8d9c464e9ed1",
+            "startedSeq": 623,
+            "phase": "after_first_patch",
+            "requestSha256": "e14dd834f6174fbc555761cd518bac61f4a0e85fab8b85f16c7b31c3784b585e",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_db0760b5c0734824ad77",
+            "settledSeq": 626,
+            "verificationStatus": "passed",
+            "sourceCapsuleSha256": "b1708f7bd937284c28e6f46ab0042b61c61146be2475059a721d6c8f91bd48a7",
+            "settledBeforeFirstPatch": false
+          }
+        ],
+        "reusedRequests": [
+          {
+            "beforeCallId": "call_00_MpuFrxfKlw7u7CXf1fJH7847",
+            "requestSha256": "e14dd834f6174fbc555761cd518bac61f4a0e85fab8b85f16c7b31c3784b585e",
+            "afterCallIds": [
+              "call_00_WoLEUIHoYf1j2mCgh2q51763",
+              "call_00_FGOKGp5xElJnW9GXj7Tr4152"
+            ]
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true,
+        "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+      },
+      "initialInputCapsuleSha256": "5d3d180834c7023925c219dfcd3d5796b11587d7bc1a0f06897c6fdbb002dd83",
+      "failureBundle": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_36a9b72bba9647e69926/reproduction.json",
+        "sha256": "5e3be0fb16eb2a455ec9ae292396a7d4e655b8145a5735af98a53fad52601080"
+      },
+      "inputExport": {
+        "runId": "run_36a9b72bba9647e69926",
+        "workspaceComplete": true,
+        "receiptSha256": "3c35c5eaa90bac1fe073b631d8611afcadd6442b0dbd23c3e43d92efef37d09b",
+        "receipt": {
+          "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_36a9b72bba9647e69926-initial-input/reproduction.json",
+          "sha256": "02d2b7360bd9e72ef38be1eaa801c3593f983555e6c17f755de4483142272bbc"
+        },
+        "originalFilesRestored": 4
+      }
+    },
+    {
+      "arm": "candidate",
+      "trial": 3,
+      "runId": "run_952d40fa847144be9a89",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/candidate/trial-3/result.json",
+        "sha256": "616782f5e93bbae3537934b9071a02aff427886b23e9237af7d87ca0301f35ed"
+      },
+      "experimentalTurnPipeline": {
+        "promptAdapterId": "napier.prompt.default",
+        "toolAdapterId": "napier.tool.default",
+        "policyAdapterId": "napier.experiment.pre-edit-verification-v1",
+        "contentSha256": "790edb68d765f8595c2c04f6be77266efa0c9bffcca7ea7b741247d89f98a621"
+      },
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "toolFailures": 1,
+      "guardBlocks": [
+        {
+          "eventId": "event_55cd5414cc514430998f",
+          "seq": 311,
+          "toolName": "apply_patch",
+          "callId": "call_00_Wz8KevefSxOcxZ5I2o2o7646"
+        }
+      ],
+      "baselineChecks": [
+        {
+          "runId": "run_952d40fa847144be9a89",
+          "callId": "call_00_c0GNcueM13QnSARNVjNf8926",
+          "toolName": "verify_workspace",
+          "startedEventId": "event_1e04b5ddd08442cb94f4",
+          "startedSeq": 344,
+          "phase": "before_first_patch",
+          "requestSha256": "b64b3bcc6c0f6bb02c4d70305a2860d9e1889a7045bab1329d5a0cf4dd08d637",
+          "classification": "explicit_test_verification",
+          "status": "completed",
+          "exitCode": 1,
+          "settledEventId": "event_1fa3fb18002e45f28c81",
+          "settledSeq": 347,
+          "verificationStatus": "failed",
+          "sourceCapsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+          "settledBeforeFirstPatch": true
+        },
+        {
+          "runId": "run_952d40fa847144be9a89",
+          "callId": "call_00_wDzeenDGzhe8Kq8OFFss6657",
+          "toolName": "verify_workspace",
+          "startedEventId": "event_1f077868ef584bc8bba0",
+          "startedSeq": 379,
+          "phase": "before_first_patch",
+          "requestSha256": "15e2245f6833e39333319313a28af30fb342e344f0794fa840ffe2019cc7be6d",
+          "classification": "explicit_test_verification",
+          "status": "completed",
+          "exitCode": 1,
+          "settledEventId": "event_38eb0b47803749d0b7c5",
+          "settledSeq": 382,
+          "verificationStatus": "failed",
+          "sourceCapsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+          "settledBeforeFirstPatch": true
+        }
+      ],
+      "protocol": {
+        "firstPatchStartEventId": "event_8cec3cc254d2472d973a",
+        "firstPatchStartSeq": 427,
+        "protocolSha256": "90f25d71b1db39ca7e3f39d500ed9c49c1ee19a6dbc466a00ff4829bf0af69f7",
+        "invocations": [
+          {
+            "eventId": "event_cc64e0d1c17340639383",
+            "capsuleSha256": "138258e56d2e25697e5db170ab8a4f7b6436d802e2e60fa59d133df8bf21106b",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_2ff5c1f6cf304e8ea95f",
+            "capsuleSha256": "122f69f0c2462a30702b5068fc1aeb3710806d4b2e56be4d5d876e65edc7e08f",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_bd69784995074af68859",
+            "capsuleSha256": "696e65375ead62390a904ab46258345abd7a375fef29ab12c2db78b74a8f0e52",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_f3c77bcd5dd8421caee4",
+            "capsuleSha256": "e128ef8e83a9dfffd8ddfd1fa90679dc1f95f317372920be59f4fc66e4d26d00",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_6118c156f0a44b8b8140",
+            "capsuleSha256": "7700a426155c501c7e2c38c2f613fd4ce24f357d45f35d56a5f3d0b13502906d",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_f9943c326b2442e6a735",
+            "capsuleSha256": "5fd8393c3a77fa125b9ed71f971597e0a11d796ef952f76e13259bb3b5f5bae2",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_dc6100b9707c422ea7b5",
+            "capsuleSha256": "19a60a6743ab4f15e76f703740b6790e8ec8f46e826c8e8461c555c3cb040b85",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_fcf43664bcd149b588c3",
+            "capsuleSha256": "0a16dcbb9105d598720e08f6cbc9ae884da6ba3ad79b6aab0872a835307add1e",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_bc93c3a0af9541b3a860",
+            "capsuleSha256": "eb89d09268159d4ba2033def66d9a997bd975bad321c4b555f7865823ec10cec",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_3e0f84fe32af4895989d",
+            "capsuleSha256": "d0b2c770cef5067d9896ace61cb71548a92f81d4915fa52027f55b1d16267d42",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_1e3c828b17b14a3fb7c7",
+            "capsuleSha256": "335a3c145b1f01c9415ccdcdd05c6e20e52617fd70c167a1f2694f01a75d5344",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_a0087b224498492e9b17",
+            "capsuleSha256": "abc1faf2dfc6b866e7a1b1663a3ed62fe0977099f168114ddd5a5cae71cb47d9",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_aaf855bdd6a64afcac91",
+            "capsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+            "protocolPresent": true
+          }
+        ],
+        "executions": [
+          {
+            "runId": "run_952d40fa847144be9a89",
+            "callId": "call_01_N07o2UU0qRZApxA4jiB03744",
+            "toolName": "run_command",
+            "startedEventId": "event_aea56c230e064d9e8856",
+            "startedSeq": 281,
+            "phase": "before_first_patch",
+            "requestSha256": "bae44c1e1241a8ed78f028c233ba8c5326fc13da17f3a5c94e14348e92b239bc",
+            "classification": "other_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_22a7530e35654a2b86da",
+            "settledSeq": 284,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_952d40fa847144be9a89",
+            "callId": "call_00_c0GNcueM13QnSARNVjNf8926",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_1e04b5ddd08442cb94f4",
+            "startedSeq": 344,
+            "phase": "before_first_patch",
+            "requestSha256": "b64b3bcc6c0f6bb02c4d70305a2860d9e1889a7045bab1329d5a0cf4dd08d637",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_1fa3fb18002e45f28c81",
+            "settledSeq": 347,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_952d40fa847144be9a89",
+            "callId": "call_00_wDzeenDGzhe8Kq8OFFss6657",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_1f077868ef584bc8bba0",
+            "startedSeq": 379,
+            "phase": "before_first_patch",
+            "requestSha256": "15e2245f6833e39333319313a28af30fb342e344f0794fa840ffe2019cc7be6d",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_38eb0b47803749d0b7c5",
+            "settledSeq": 382,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_952d40fa847144be9a89",
+            "callId": "call_00_1zPdKJcBJJxMhgUT5RHf7499",
+            "toolName": "run_command",
+            "startedEventId": "event_3c7e14e10abf401e9ec4",
+            "startedSeq": 516,
+            "phase": "after_first_patch",
+            "requestSha256": "60a02b6d623183c6eeca8ac0f04ace0a324f51795767b0344b77624740e04834",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 1,
+            "settledEventId": "event_d8141735ad3d42bcadd3",
+            "settledSeq": 519,
+            "verificationStatus": "failed",
+            "sourceCapsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_952d40fa847144be9a89",
+            "callId": "call_00_Rx94AHLZeLXL4v4GcsWv1871",
+            "toolName": "run_command",
+            "startedEventId": "event_ccd7b8cee53b4bec8427",
+            "startedSeq": 590,
+            "phase": "after_first_patch",
+            "requestSha256": "2a1c2772ad1bec3de157ff06dd0eced5741198e08e29a53523bcdf164b2291f9",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_3f9688049e6d48d2aadb",
+            "settledSeq": 593,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+            "settledBeforeFirstPatch": false
+          },
+          {
+            "runId": "run_952d40fa847144be9a89",
+            "callId": "call_01_ly3id8JlGmW4elANNVdk7426",
+            "toolName": "verify_workspace",
+            "startedEventId": "event_c8f47209da9846b88222",
+            "startedSeq": 600,
+            "phase": "after_first_patch",
+            "requestSha256": "15e2245f6833e39333319313a28af30fb342e344f0794fa840ffe2019cc7be6d",
+            "classification": "explicit_test_verification",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_aa6c37be2bb84b839ca7",
+            "settledSeq": 603,
+            "verificationStatus": "passed",
+            "sourceCapsuleSha256": "5e1c14e5f92ee736b27616c5b30fd5ad0059bd29e27fd950915bf06f43c8a8b5",
+            "settledBeforeFirstPatch": false
+          }
+        ],
+        "reusedRequests": [
+          {
+            "beforeCallId": "call_00_wDzeenDGzhe8Kq8OFFss6657",
+            "requestSha256": "15e2245f6833e39333319313a28af30fb342e344f0794fa840ffe2019cc7be6d",
+            "afterCallIds": [
+              "call_01_ly3id8JlGmW4elANNVdk7426"
+            ]
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true,
+        "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+      },
+      "initialInputCapsuleSha256": "46281383c46acc65fedf05325ebb096ee421e094becf32d1ea77ff9562779729",
+      "failureBundle": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_952d40fa847144be9a89/reproduction.json",
+        "sha256": "e9f1d787154cf5658f9bed6f5a103d5333fdb5b9278b6c803e9e7ad89cf9b935"
+      },
+      "inputExport": {
+        "runId": "run_952d40fa847144be9a89",
+        "workspaceComplete": true,
+        "receiptSha256": "fa8c5fa7732093471871e74195d460edc6ea48131a09c653c34d370c8fd55ff5",
+        "receipt": {
+          "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_952d40fa847144be9a89-initial-input/reproduction.json",
+          "sha256": "e3386a76d092188223a6f15d8858a36b55efed2040559e8e97bafcc3d8baa6f9"
+        },
+        "originalFilesRestored": 4
+      }
+    }
+  ],
+  "collectionComplete": true,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 3,
+    "cases": 1,
+    "regressions": [],
+    "blockers": [
+      "Need 30 cases; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "cee63fe51a931861cf37b63b68bbb0fd61051661e01137d75ea8912f198d0d50"
+  },
+  "scope": "New explicit Kernel-adapter component comparison on one frozen Runtime. Same static protocol in both arms. Chronology does not establish contract coverage, expected-value correctness, or causal quality gains. No pooling with previous static-protocol trials. Recovery, unavailable verifiers and other mutation paths remain unqualified.",
+  "promotionReady": false
+}

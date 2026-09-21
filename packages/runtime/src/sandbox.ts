@@ -195,6 +195,7 @@ export function buildMacOsSandboxProfile(
     '(allow mach-lookup (global-name "com.apple.system.logger"))',
     '(allow file-read-data (literal "/"))',
     "(allow file-read-metadata",
+    '  (literal "/")',
     ...metadataPaths.map(
       (directory) => `  (literal ${macProfile.literal(directory)})`,
     ),
@@ -203,6 +204,8 @@ export function buildMacOsSandboxProfile(
     '  (subpath "/System")',
     '  (subpath "/usr/lib")',
     '  (subpath "/private/etc")',
+    '  (literal "/private/var/select/sh")',
+    '  (literal "/dev/urandom")',
     `  (literal ${macProfile.literal(request.command)})`,
     ")",
     `(allow file-read* file-write* (subpath ${macProfile.literal(sandboxHome)}))`,

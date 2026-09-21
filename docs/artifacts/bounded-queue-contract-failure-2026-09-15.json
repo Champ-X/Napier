@@ -1,0 +1,141 @@
+{
+  "kind": "napier.bounded-queue-contract-failure-audit",
+  "createdAt": "2026-09-15T09:42:36.953Z",
+  "runId": "run_cef83d950d1c416096e2",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/bounded_async_queue_v4-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "8d320c0e26e98add05ded6fd82506d10624c901f5bed34e879c822ac5200d8e1",
+  "readmePath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/cases/bounded_async_queue_v4/fixture/README.md",
+  "readmeSha256": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+  "requirement": "signal if supplied is an AbortSignal. Validate ALL inputs before invoking ANY job, even when already aborted.",
+  "status": "completed",
+  "taskSuccess": false,
+  "graderExitCode": 1,
+  "graderOutput": "Concurrency, cancellation, error identity and ordering passed\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Missing expected rejection.\n    at async file:///Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/bounded_async_queue_v4-candidate-trial-1/trial-1/workspace/__napier_external_grader__.mjs:14:2 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: undefined,\n  expected: undefined,\n  operator: 'rejects',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n",
+  "changed": [
+    "src/job-result.mjs",
+    "src/queue.mjs"
+  ],
+  "allowedChanges": true,
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 6527,
+      "remainingFen": 3473,
+      "requests": 600,
+      "reservedRequests": 4,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 6577,
+      "remainingFen": 3423,
+      "requests": 612,
+      "reservedRequests": 4,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "admissions": 12,
+  "probeSha256": "2e7b3eb0ed76d248c45d19776b68f4d0a4d3465271a7f564d5bc6c7d0d2d8a76",
+  "observations": [
+    {
+      "arm": "candidate",
+      "exitCode": 0,
+      "results": [
+        {
+          "label": "null",
+          "rejected": false,
+          "errorName": null,
+          "started": 1
+        },
+        {
+          "label": "plain_shape",
+          "rejected": false,
+          "errorName": null,
+          "started": 1
+        },
+        {
+          "label": "aborted_plain_shape",
+          "rejected": false,
+          "errorName": null,
+          "started": 0
+        },
+        {
+          "label": "real_signal",
+          "rejected": false,
+          "errorName": null,
+          "started": 1
+        }
+      ]
+    },
+    {
+      "arm": "reference",
+      "exitCode": 0,
+      "results": [
+        {
+          "label": "null",
+          "rejected": true,
+          "errorName": "TypeError",
+          "started": 0
+        },
+        {
+          "label": "plain_shape",
+          "rejected": true,
+          "errorName": "TypeError",
+          "started": 0
+        },
+        {
+          "label": "aborted_plain_shape",
+          "rejected": true,
+          "errorName": "TypeError",
+          "started": 0
+        },
+        {
+          "label": "real_signal",
+          "rejected": false,
+          "errorName": null,
+          "started": 1
+        }
+      ]
+    }
+  ],
+  "diagnosis": "Candidate broadens the concrete AbortSignal contract to null and shaped plain objects. Existing tests and self-authored checks omit these inputs despite delivered general nominal-type guidance. The external behavioral failure is valid, not missing usage or infrastructure failure.",
+  "scope": "Zero model calls. Original workspace, reports, task, grader and reservations are unchanged. Boundary probes execute isolated copies and are diagnostic evidence, not replacement campaign observations."
+}

@@ -17,6 +17,9 @@ export function streamPrompt(
     {
       kind: "prompt",
       threadId,
+      ...(body.harnessPolicyPreset
+        ? { harnessPolicyPreset: body.harnessPolicyPreset }
+        : {}),
       ...(body.model ? { model: body.model } : {}),
       ...(body.capabilityPreset
         ? { capabilityPreset: body.capabilityPreset }

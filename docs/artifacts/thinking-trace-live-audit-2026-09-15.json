@@ -1,0 +1,95 @@
+{
+  "kind": "napier.thinking-trace-live-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:44:06.409Z",
+  "runId": "run_6a44394f1c49408990b8",
+  "sourceFreezeSha256": "61982c8f12e08f92016ea1e3fef8619da068645c64979dab675f3e187acfb5f0",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-thinking-trace-core-v14/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "e4260d751457f6448d1e9c4c9e8481c103ee9f8bac2ca0dd847b47ebcaf928ec",
+  "status": "failed",
+  "taskSuccess": false,
+  "graderExitCode": 1,
+  "changed": [],
+  "detections": [
+    {
+      "seq": 320,
+      "evidence": {
+        "kind": "napier.model-thinking-loop",
+        "schemaVersion": 1,
+        "action": "retry",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "reason": "semantic_stall",
+        "attempt": 1,
+        "observedBytes": 84349,
+        "observedThinkingChunks": 20957,
+        "repeatedUnitBytes": 25,
+        "repeatedUnitSha256": "2c52808de4278585855c579f9c533b9a234ac325592bf5cd3a20ab0a9cd4ce52",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 21088,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "costUsd": 0
+        },
+        "usageSource": "reasoning_bytes_estimate",
+        "usageAccounting": {
+          "schemaVersion": 1,
+          "model": "deepseek/deepseek-v4-flash",
+          "strategy": "deepseek_cache_discounted",
+          "rawTotalTokens": 21088,
+          "budgetTokens": 21088,
+          "reportedCostUsd": 0,
+          "estimatedCostUsd": 0.00590464,
+          "budgetCostUsd": 0.00590464,
+          "costStrategy": "price_table_estimate",
+          "priceTableId": "deepseek-default.v1",
+          "priceTableSha256": "6fd887e41de18caa4feec0b9398ce940a8dcc61f35cfab772daae2423ba1a120",
+          "inputWeight": 1,
+          "outputWeight": 1,
+          "cacheReadWeight": 0.02,
+          "cacheWriteWeight": 1,
+          "contentSha256": "f6d5572058197830a6a801a628eab9037a4b1d45cb27613d6dc58184822b1fe1"
+        },
+        "reasoningTrace": {
+          "status": "stored",
+          "storage": "local_only",
+          "capsuleSha256": "af16052723ffb908c00ced56c2b8516da4f1abb01407f216e03d39ac5dd41d55",
+          "capsuleBytes": 87445,
+          "observedBytes": 84349,
+          "capturedBytes": 84349,
+          "truncated": false
+        },
+        "modelContextEnvelopeSha256": "17878c68313b447aa4bf9380217e1cb218b3b1f10ed9ee82d32da38ae5c3c473",
+        "modelContextEnvelopeTurnIndex": 2,
+        "modelContextMessageSetSha256": "ad34546ed7688f0fddcb109b85920aed607175186e5e7e0598eb4cd0359180f2",
+        "modelContextToolDefinitionSetSha256": "23343a7f671d505906925be5823783ecfb6187e15475fe77acea759e2dc5b789",
+        "contentSha256": "eabf8f92faf648bed883fa950f23303bc08472082d45949f7ea96decf35e9f27"
+      },
+      "trace": {
+        "capsuleSha256": "af16052723ffb908c00ced56c2b8516da4f1abb01407f216e03d39ac5dd41d55",
+        "contextEnvelopeSha256": "17878c68313b447aa4bf9380217e1cb218b3b1f10ed9ee82d32da38ae5c3c473",
+        "turnIndex": 2,
+        "capturedBytes": 84349,
+        "capturedSha256": "4849bfde654efe8de27a57f2bcdcc14bd9a51c0ab50c97821fcf71a53e2cad98",
+        "encoding": "utf8_deltas",
+        "observedBytes": 84349,
+        "observedChunks": 20957,
+        "observedSha256": "4849bfde654efe8de27a57f2bcdcc14bd9a51c0ab50c97821fcf71a53e2cad98",
+        "truncated": false
+      },
+      "inputCapsuleSha256": "b72754651bffe4b7eeb4c748e3f0810cb979bf8417c05eb79bee229e4fd11aaf",
+      "permissionsVerified": true,
+      "publicRawTextAbsent": true,
+      "exact100CharacterBlockUniqueness": {
+        "blocks": 838,
+        "unique": 838,
+        "maxOccurrences": 1
+      }
+    }
+  ],
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Read-only source/input/trace binding audit. Raw reasoning stays in private local capsules. Block uniqueness is descriptive only; it does not prove productive reasoning or establish a historical watchdog false positive. Trace digests do not settle provider billing."
+}

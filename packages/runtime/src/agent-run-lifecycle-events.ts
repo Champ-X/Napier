@@ -3,6 +3,40 @@ import type { RunInvocationSource, RunRecord, Usage } from "@napier/contracts";
 import type { RunPromptOptions } from "./agent-runtime-options.js";
 import type { EventSink } from "./event-sink.js";
 import type { LocalStore } from "./store.js";
+import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
+import { captureRunInputs } from "./run-input-capture.js";
+
+export async function recordAgentRunStarted(input: {
+  store: LocalStore;
+  run: RunRecord;
+  started: Parameters<typeof createAgentRunStartedPayload>[0];
+  text: string;
+  captureInitialState?: boolean | undefined;
+  signal: AbortSignal;
+  onEvent?: EventSink | undefined;
+}): Promise<void> {
+  await record(
+    input.store,
+    {
+      threadId: input.run.threadId,
+      runId: input.run.id,
+      type: "run.started",
+      category: "lifecycle",
+      visibility: "debug",
+      payload: createAgentRunStartedPayload(input.started),
+    },
+    input.onEvent,
+  );
+  await captureRunInputs({
+    store: input.store,
+    run: input.run,
+    text: input.text,
+    ...(input.captureInitialState !== undefined
+      ? { enabled: input.captureInitialState }
+      : {}),
+    signal: input.signal,
+  });
+}
 
 export async function recordAgentRunRecoveryStarted(input: {
   store: LocalStore;

@@ -1,0 +1,354 @@
+{
+  "kind": "napier.harness-consumer-and-completion-audit",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T02:33:29.941022+00:00",
+  "paidApiCalls": 0,
+  "promotionReady": false,
+  "goalComplete": false,
+  "consumerTests": {
+    "files": 24,
+    "passed": 134,
+    "failed": 0,
+    "environment": "API keys, token/secret variables, live flags and NODE_OPTIONS removed; no live model driver started.",
+    "selection": [
+      "scripts/edit-format-calibration-evidence.test.mjs",
+      "scripts/harness-allocation-grader.test.mjs",
+      "scripts/harness-api-request-budget.test.mjs",
+      "scripts/harness-campaign-evidence.test.mjs",
+      "scripts/harness-core-corpus.test.mjs",
+      "scripts/harness-corpus-contracts.test.mjs",
+      "scripts/harness-debugger-evidence.test.mjs",
+      "scripts/harness-domain-cases.test.mjs",
+      "scripts/harness-environment-evidence.test.mjs",
+      "scripts/harness-mixed-service-case.test.mjs",
+      "scripts/harness-observed-workspace.test.mjs",
+      "scripts/harness-pre-edit-verification-policy.test.mjs",
+      "scripts/harness-process-evidence.test.mjs",
+      "scripts/harness-process-exchanges.test.mjs",
+      "scripts/harness-recovery-scenario-corpus.test.mjs",
+      "scripts/harness-report-grader.test.mjs",
+      "scripts/harness-research-grader.test.mjs",
+      "scripts/harness-runtime-dependencies.test.mjs",
+      "scripts/harness-sample-identity.test.mjs",
+      "scripts/harness-scenario-controller.test.mjs",
+      "scripts/harness-service-observation.test.mjs",
+      "scripts/harness-suite.test.mjs",
+      "scripts/harness-usage-evidence.test.mjs",
+      "scripts/harness-verification-protocol-evidence.test.mjs"
+    ],
+    "sourceBindings": [
+      {
+        "path": "benchmarks/harness-optimization/provider-reasoning-audit-v1/outcome.mjs",
+        "sha256": "071e81c91064a0fdbfa4da5fc4e0a32eb6b56a74607f1e641c76d00d22079433"
+      },
+      {
+        "path": "benchmarks/harness-optimization/requested-report-v1/outcome.mjs",
+        "sha256": "9acd7d67f6079b178ea67a291877d65440276f845d4ce5a7e7cf634ae3447334"
+      },
+      {
+        "path": "scripts/edit-format-calibration-evidence.mjs",
+        "sha256": "431c697a5666faa1c7c3bdaf4e053465473cb5759a53ae16aec3499c6252d162"
+      },
+      {
+        "path": "scripts/edit-format-calibration-evidence.test.mjs",
+        "sha256": "bed7ef81645bf6d25fc4d042c603cd35a0cc897cfa76ec867479d8977d5409aa"
+      },
+      {
+        "path": "scripts/harness-allocation-grader.test.mjs",
+        "sha256": "547aa620857b52909143bae43e44c133d0b014eed57c0bf444ec1e1742397f48"
+      },
+      {
+        "path": "scripts/harness-api-request-budget.mjs",
+        "sha256": "f6c601bd13379062f480db001084872d5b750a222a0ea5eadd1aced49286e727"
+      },
+      {
+        "path": "scripts/harness-api-request-budget.test.mjs",
+        "sha256": "303167ca26837063cdb7c75a90ced2a1a6cc8d418910aae9c09281964c0a8157"
+      },
+      {
+        "path": "scripts/harness-campaign-evidence.mjs",
+        "sha256": "52e53ebf5e3ff6fd99737a6bff17c06e41efba05b3ec179628793bae9baf228c"
+      },
+      {
+        "path": "scripts/harness-campaign-evidence.test.mjs",
+        "sha256": "9223c7bf0ef1f896e045cde6533f9d87b0d74478e4359bba81af146896dde0f5"
+      },
+      {
+        "path": "scripts/harness-core-corpus.test.mjs",
+        "sha256": "6e16cbefbf05d1923e87950cea6995b3b8458b49449d089b347f50d046addcb2"
+      },
+      {
+        "path": "scripts/harness-corpus-contracts.test.mjs",
+        "sha256": "8b255e50c7f3206f4c36d6ee4a9bb04d92e9db6f4dab161d6b7a20db9550d821"
+      },
+      {
+        "path": "scripts/harness-debugger-evidence.mjs",
+        "sha256": "ba3cbeaabbe0d8cf11079a141cbed2fc479d86f460383abf73a4a86e50a770af"
+      },
+      {
+        "path": "scripts/harness-debugger-evidence.test.mjs",
+        "sha256": "f969881345d7c9d36bc12977d4b96f4dbaef8a788c23d12c4deb47bc42ceabec"
+      },
+      {
+        "path": "scripts/harness-domain-cases.test.mjs",
+        "sha256": "7681d96a04678b37fd9d4c097db91bab8d946cafb2c965c6a815b015826d7758"
+      },
+      {
+        "path": "scripts/harness-edit-operation-evidence.mjs",
+        "sha256": "4716ac00c50b279eada3a2a9805d5ee0881bd7fcae651e7f26163aad4f609940"
+      },
+      {
+        "path": "scripts/harness-environment-evidence.mjs",
+        "sha256": "95e442b7634127b4083f6511303717f2bc7237b70e8aae58965d2749195c5228"
+      },
+      {
+        "path": "scripts/harness-environment-evidence.test.mjs",
+        "sha256": "ffe581efc0e8633f0bf02e7666f5ec42a78cd7e46477b0e66d2b4d3d0e4de256"
+      },
+      {
+        "path": "scripts/harness-mixed-service-case.test.mjs",
+        "sha256": "8673157315af49ac7378243dab06f17c43a25cf86cffbdc03c3abb6923ce5427"
+      },
+      {
+        "path": "scripts/harness-observed-workspace.mjs",
+        "sha256": "73955ea0d49f07aaad16b1483f73ef9528b79aa6e5695f136b84c5a22dfb87ae"
+      },
+      {
+        "path": "scripts/harness-observed-workspace.test.mjs",
+        "sha256": "41a84480a27c9e2925ec543eafbda774defd9425e7cc9e6e9ad85893d939f786"
+      },
+      {
+        "path": "scripts/harness-pre-edit-verification-policy.mjs",
+        "sha256": "1b1b9adf25b437ac221e246f30813425284067dd59f4317b7ee30323c61052f4"
+      },
+      {
+        "path": "scripts/harness-pre-edit-verification-policy.test.mjs",
+        "sha256": "7a9be79f612ac2dc834f84428594557c01e67a8e736ae089c8d67340ebcd990e"
+      },
+      {
+        "path": "scripts/harness-process-evidence.mjs",
+        "sha256": "77ef06ef5c2c68258574dddf787365a9baa3fca3288a885f960f555149f61aac"
+      },
+      {
+        "path": "scripts/harness-process-evidence.test.mjs",
+        "sha256": "c85eb1a85217a990c327e8bbca96407c2bcf4fcabc04fb49af8be70eaa0808bf"
+      },
+      {
+        "path": "scripts/harness-process-exchanges.mjs",
+        "sha256": "6d0cfb50f882ca0f40a1d06020d8f5c0f0dd86775581f44e15cf6c9a4cf48ed3"
+      },
+      {
+        "path": "scripts/harness-process-exchanges.test.mjs",
+        "sha256": "3f2f5b3b9ad89da4600549a241a7722fda556343faefda629de1859be368d12a"
+      },
+      {
+        "path": "scripts/harness-recovery-scenario-corpus.test.mjs",
+        "sha256": "a00252d3c7915458a430c56a3a3c774b793d2a0f13c3c941d73a43687c1a6606"
+      },
+      {
+        "path": "scripts/harness-report-grader.test.mjs",
+        "sha256": "71be773e6b3684d57f128d85fe1f291b8939d53b48722899d0dc56048fc28f42"
+      },
+      {
+        "path": "scripts/harness-research-grader.test.mjs",
+        "sha256": "60caf80d8033445076b91c86992f35f7b6362d8bca1c621f72c688528e6c407e"
+      },
+      {
+        "path": "scripts/harness-runtime-dependencies.mjs",
+        "sha256": "0b33de874d0e2b597af6b43c11de7fa2605040e83fe10b02ceb3ed19aa9a54df"
+      },
+      {
+        "path": "scripts/harness-runtime-dependencies.test.mjs",
+        "sha256": "3d48e6ca9997e04dadcef5121fa3805acc56d4daf863fad8fb87bcfe30009619"
+      },
+      {
+        "path": "scripts/harness-sample-identity.mjs",
+        "sha256": "112c2c8cf6d6c64121759d63ddf4f0d841eaf2182d76379ba974760980a8af82"
+      },
+      {
+        "path": "scripts/harness-sample-identity.test.mjs",
+        "sha256": "9189b87ecfc76cce4e72c65c357d24a5f7c7ec616ac11520738fa9c8ab488340"
+      },
+      {
+        "path": "scripts/harness-scenario-controller.mjs",
+        "sha256": "9342959326cb213b25585a4c1165005d80854e5345c747202e443f7f389fba54"
+      },
+      {
+        "path": "scripts/harness-scenario-controller.test.mjs",
+        "sha256": "8bd4ea8488be6c705e4c910fdc66a6d269ce9893526f8980d115a082e5ed6792"
+      },
+      {
+        "path": "scripts/harness-service-observation.mjs",
+        "sha256": "4134c460f444abc32e8ab1e7c24ae31274da910c118495279bd60138dfc4b262"
+      },
+      {
+        "path": "scripts/harness-service-observation.test.mjs",
+        "sha256": "5917b88922e870cdf2863cfa5500a5356f6e453c64e2cec0cc387f39c5b346e2"
+      },
+      {
+        "path": "scripts/harness-suite.mjs",
+        "sha256": "cd925c4c7513e3a06b24169296cb2293a06e6ea75b7f37f77ea36233bb7ecbcb"
+      },
+      {
+        "path": "scripts/harness-suite.test.mjs",
+        "sha256": "0fa7040840bac09fab43e6133eefe3db5599171082913fd677444cf1ce84228b"
+      },
+      {
+        "path": "scripts/harness-usage-evidence.mjs",
+        "sha256": "1373fbc08da19480c31dbd02542402787b615db16d662bcc136cb1be1f797fc7"
+      },
+      {
+        "path": "scripts/harness-usage-evidence.test.mjs",
+        "sha256": "4e75b6e3db50072255e8791fa9722bca33b9cbca0b3c072eed155e48ff8e9862"
+      },
+      {
+        "path": "scripts/harness-verification-protocol-evidence.mjs",
+        "sha256": "c464f5487d4aae967173550ccfefad51b05de2377efda74bc3494c85cef317e8"
+      },
+      {
+        "path": "scripts/harness-verification-protocol-evidence.test.mjs",
+        "sha256": "c95d5854ea66501fb587a8e3f623d7cbac4ac2f22cebced9f3341ff127082cef"
+      }
+    ],
+    "logs": [
+      {
+        "path": "/tmp/napier-harness-consumer-tests-v1.files.json",
+        "sha256": "45c6fd16bf063ecacee8c79189c80a287a41c586f7315c91017ed4c14de655c3"
+      },
+      {
+        "path": "/tmp/napier-harness-consumer-tests-v1.log",
+        "sha256": "f95e540d50e092f7f5cd1f141254fec268101754317a8a4ce6276ec4966dcce8"
+      },
+      {
+        "path": "/tmp/napier-harness-consumer-tests-v1.json",
+        "sha256": "9045051abb8c0683b3056b61b48cd65f2487b736c8e1e2794baf4cd4f02b2e16"
+      }
+    ]
+  },
+  "moduleAudit": [
+    {
+      "module": "edit_adaptation",
+      "completion": "unproven",
+      "implementationBindings": [
+        {
+          "path": "packages/runtime/src/edit-format-calibration.ts",
+          "sha256": "c17179a53beedf3a780ec0033506a4234248b845a3918197ec835bf4d835aad9"
+        },
+        {
+          "path": "packages/runtime/src/edit-format-preference.ts",
+          "sha256": "152a17a6b363bd6c419aadf61b19576132ef9db5f27490cf40f6b8616322842d"
+        },
+        {
+          "path": "scripts/edit-format-calibration-evidence.mjs",
+          "sha256": "431c697a5666faa1c7c3bdaf4e053465473cb5759a53ae16aec3499c6252d162"
+        }
+      ],
+      "remaining": "30 distinct cases x 3 paired trials with actual candidate format adoption; no qualified current catalog entry."
+    },
+    {
+      "module": "toolchains",
+      "completion": "unproven",
+      "implementationBindings": [
+        {
+          "path": "packages/runtime/src/toolchain-provider.ts",
+          "sha256": "eeb9e3de2cf0b95b148d16709c8e7b15b70e96feb776d8199ba56a85b4c3f31d"
+        },
+        {
+          "path": "packages/runtime/src/affected-test-verification.ts",
+          "sha256": "98431f8161a50e1aa5b784ceba0c26ea2505ec6929685dd7b1e0a32e250d2aac"
+        },
+        {
+          "path": "packages/runtime/src/verification-workspace-digest.ts",
+          "sha256": "cae0dd218feefe8c8692fadb72e4e7cf60a76e451a75ea02ca138ef7d00f59c0"
+        }
+      ],
+      "remaining": "Current OCI components have evidence; broad current provider, selection and lifecycle Agent quality remains unqualified."
+    },
+    {
+      "module": "prompt_cache",
+      "completion": "unproven",
+      "implementationBindings": [
+        {
+          "path": "packages/runtime/src/runtime-context-delivery.ts",
+          "sha256": "077da8eb0b71de926f63a51684c584aa132e1336c5e4e7c940e23bad5c62bdc1"
+        },
+        {
+          "path": "packages/runtime/src/prompt-cache-projection.ts",
+          "sha256": "c5f405b1db016484a6b500662e10e88322dc72a5eb2ad198e70b1fb579b92aaa"
+        }
+      ],
+      "remaining": "Current long-task comparison and controlled cache/cost attribution are missing."
+    },
+    {
+      "module": "task_working_state",
+      "completion": "unproven",
+      "implementationBindings": [
+        {
+          "path": "packages/runtime/src/task-working-state.ts",
+          "sha256": "bf5beea7de5ada32ea11036bd561d03ff3ac61aba13463020c1d099b129bc46d"
+        },
+        {
+          "path": "packages/runtime/src/task-requirement-revisions.ts",
+          "sha256": "ee0132563df93093278d1b70cd558233e17aeafd81141060c334eafbd3037d8c"
+        }
+      ],
+      "remaining": "Complete current composition requires broad quality comparison beyond deterministic source/freshness tests."
+    },
+    {
+      "module": "task_aware_memory",
+      "completion": "unproven",
+      "implementationBindings": [
+        {
+          "path": "packages/runtime/src/task-memory-context.ts",
+          "sha256": "6d751094c8549f83d136c59d086dc7cbfdf78b6c878ad378f810995df491e6c8"
+        },
+        {
+          "path": "packages/runtime/src/task-memory-grouping.ts",
+          "sha256": "7cc7f4e422deb8d098dfed9daa1055062c32182fc87ed61ae5199ae62e8df19c"
+        }
+      ],
+      "remaining": "Grouped-v3 has scoped recall evidence; broad semantic recall, long-task and budget-omission quality are unqualified."
+    },
+    {
+      "module": "harness_policies",
+      "completion": "unproven",
+      "implementationBindings": [
+        {
+          "path": "packages/runtime/src/harness-policy-profile.ts",
+          "sha256": "2e7bf0c18c0a9cf6fb635f922ad832550b8953a17302280db64f8112d03724ae"
+        },
+        {
+          "path": "packages/runtime/src/pre-edit-verification.ts",
+          "sha256": "1e597fee0dcfd69bc74953d2d2aeb76f618271a6556a79b6a64261a13c43f083"
+        }
+      ],
+      "remaining": "Each intended composition requires representative qualification; durable pre-edit has offline evidence but no current paid-model qualification."
+    },
+    {
+      "module": "failure_evaluation",
+      "completion": "unproven",
+      "implementationBindings": [
+        {
+          "path": "packages/runtime/src/run-input-reproduction.ts",
+          "sha256": "a32a7b6771ec60585d71016c4f0625c998d2369c3085d17444da65d4dd463be4"
+        },
+        {
+          "path": "packages/runtime/src/run-input-reproduction-source.ts",
+          "sha256": "6d2bdfc6575d72ff8c0e50690f31587e9c94c4c2d72982b7b192416aad233c30"
+        },
+        {
+          "path": "scripts/harness-campaign-evidence.mjs",
+          "sha256": "52e53ebf5e3ff6fd99737a6bff17c06e41efba05b3ec179628793bae9baf228c"
+        }
+      ],
+      "remaining": "Current source-coherent export and general evaluator are tested; broad context replay, dependency/service restoration and statistical/cost qualification remain incomplete."
+    }
+  ],
+  "nextQualificationConstraint": "Paid DeepSeek work remains paused. Establish request-count, interval and USD limits before any new model run. Do not pool current code with historical frozen observations.",
+  "limits": [
+    "This audit binds post-test local source bytes; it is not a hermetic execution snapshot.",
+    "134 deterministic tests cover evaluation consumers and corpus contracts, not current model task quality.",
+    "Historical whole-composition regression remains retained and unresolved at current qualification scope."
+  ],
+  "contentSha256": "653c393f3d2105ec1b99f7a6588642970608e4379ce340118a19a169eb471a1e"
+}

@@ -1,0 +1,47 @@
+{
+  "kind": "napier.bounded-thinking-pilot-plan",
+  "createdAt": "2026-09-15T07:28:46.251Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/plan.json",
+  "planSha256": "e76f4c900d0b43340cd3a8e5b61b9219e0e3417b45a1567091355c8bc1f323ef",
+  "source": "/tmp/napier-harness-bounded-thinking-v1",
+  "boundFiles": 5668,
+  "sourceFreezeSha256": "f1738687b1d40df52f6ff9ce4388a4fad638ce36ad4e8c4720c7560dad3850cc",
+  "profileFileSha256": "68edc7d8664ba3b6d13f4db172d49a87ae88c4400662e774c3b683139a769db8",
+  "validationPath": "/Users/champ/orca/Napier/docs/artifacts/bounded-thinking-offline-validation-2026-09-15.json",
+  "validationSha256": "a62e685ee91cf64bdc93a14c3cedb72cb05e565a013d2e619ff48c896916e7bd",
+  "dispatchIndices": [
+    5,
+    4
+  ],
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 4744,
+    "remainingFen": 5256,
+    "requests": 290,
+    "reservedRequests": 3,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "One original NDJSON candidate-first pair tests the first-call output-budget repair and native max_tokens wire compatibility. Actual provider adherence, first verification, editing and independently graded outcome require a real model. No prior candidate result is included in v18; old unsuccessful cohorts remain intact. This prospectively registered 30-case/3-trial cohort keeps all observations, including failures.",
+  "scope": "At most one pair initially. Stop on candidate failure, missing usage or regression. Original 180-job schedule, tasks, graders, model identity, driver v8, 64 admissions/Run, 15-second serial spacing, Run token/cost/timeout limits remain fixed. Global native DeepSeek max_tokens field fix plus explicit v6 8192 reasoning cap are the source differences. Do not promote before full 90 eligible pairs; do not reset spending.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

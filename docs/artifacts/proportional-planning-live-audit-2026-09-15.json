@@ -1,0 +1,21 @@
+{
+  "kind": "napier.thinking-trace-live-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:54:37.999Z",
+  "runId": "run_b34f6531cdd547cb9bcf",
+  "sourceFreezeSha256": "82d51ccaf77be2471c062ac5cef62be13b482317e0b47c9364c5211fbe4da78e",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-proportional-planning-core-v15/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "369e46b8bef9af0e0e6b28bf64a0435cb66791d2f8fce7d024a986f09d38f998",
+  "status": "completed",
+  "taskSuccess": true,
+  "graderExitCode": 0,
+  "changed": [
+    "src/patch.mjs",
+    "src/pointer.mjs"
+  ],
+  "detections": [],
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Read-only source/input/trace binding audit. Raw reasoning stays in private local capsules. Block uniqueness is descriptive only; it does not prove productive reasoning or establish a historical watchdog false positive. Trace digests do not settle provider billing."
+}

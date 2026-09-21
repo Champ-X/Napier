@@ -1,0 +1,70 @@
+{
+  "kind": "napier.thinking-trace-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:40:50.896Z",
+  "sourceFiles": {
+    "packages/runtime/src/model-thinking-trace.ts": "f0319e80011f7632f094b407eb4011eb17a6adb66ff088e4a22811e63c35273b",
+    "packages/runtime/src/model-thinking-trace-store.ts": "ffa6f403bf8c434e1effe9488cb668ea6f3bfb0b8a41709176144345d894f408",
+    "packages/runtime/src/model-thinking-loop-guard.ts": "b4f329912e12b5b1b14ae6e1bbe26e4ac3f89b34e2a4f453f51a0ca6e86ad064",
+    "packages/runtime/src/agent-model-stream-lifecycle.ts": "e0c96aa13276bada97edca03cf96f353dbacca8e07e69fc55fce726975e35464",
+    "packages/runtime/test/model-thinking-trace.test.ts": "fc998f6b809c0d62ad60e5063e3607bd6082a372bd956675d818c6ac0edb1fab",
+    "packages/runtime/test/agent-thinking-loop-guard.test.ts": "bea4924b081c0d0d2c7e27ebf9ff38cf1fa2fd85bacb587d4a3a130644f1b42d",
+    "scripts/harness-provider-cancellation.test.mjs": "c13c5442004ec0f68c476cd5e7f07f4b9a3a3a6892fc623f828106ffac48ffb1"
+  },
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/thinking-trace-offline-tests-2026-09-15.json",
+    "sha256": "18668a6e7b98f870e24a7c09110937aecfb9db7aa3ab1c134b6aae9c173d6edc",
+    "passed": 32,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runtimeCompilePassed": true,
+  "compileLogSha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560",
+  "architecture": {
+    "newViolations": 0,
+    "preexistingViolations": 6,
+    "fullyPassing": false,
+    "logSha256": "793b6cb6c53956baff6f6fb6adbd4187a8bbc88fde73e50eb81a1b066bd2dbce"
+  },
+  "storage": {
+    "maxTraceBytes": 131072,
+    "maxObjects": 512,
+    "maxStorageBytes": 67108864,
+    "fileMode": "0600",
+    "directoryMode": "0700",
+    "rawText": "local_only",
+    "inputBinding": "contextEnvelopeSha256",
+    "publicEvents": "hashes and receipt only"
+  },
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 8438,
+    "remainingFen": 1562,
+    "requests": 712,
+    "reservedRequests": 7,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Bounded rejected-thinking capture only. Existing watchdog, retry, prompt, usage and output commit behavior preserved. Local HTTP checks exercise pinned SDK cancellation and spending denial, without external model traffic. No semantic stall root cause established."
+}

@@ -1,7 +1,6 @@
 import type { StreamFn } from "@earendil-works/pi-agent-core";
 import type {
   Api,
-  AssistantMessage,
   AssistantMessageEventStream,
   Context,
   Model,
@@ -11,12 +10,17 @@ import type {
 import type { ModelContextEnvelopeReceipt, RunRecord } from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
+import { redirectTruncatedToolContext } from "./model-truncated-tool-context.js";
 import {
   guardModelThinkingLoop,
   shortThinkingLoopRetryOptions,
   thinkingLoopRetryMessage,
 } from "./model-thinking-loop-guard.js";
 import type { ModelThinkingLoopEvidence } from "./model-thinking-loop-policy.js";
+import {
+  recordContextOverflow,
+  recordDetection,
+} from "./agent-model-recovery-evidence.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import type { ModelRouteSession } from "./model-route.js";
@@ -26,13 +30,20 @@ import { modelStream, streamCtx } from "./model-stream-cancellation.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import type { LocalStore } from "./store.js";
-import { canonicalJson, sha256 } from "./ed25519.js";
 import { recoverModelContextOverflow } from "./model-context-overflow-recovery.js";
-import { mapModelUsage } from "./agent-model-projection.js";
-import { createUsageAccounting } from "./token-accounting.js";
 import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
 import { RunContextCompactor } from "./run-context-compaction.js";
 import type { RunContextCompactionPort } from "./run-context-compaction-types.js";
+import { prepareAgentInvocationContext } from "./agent-invocation-context.js";
+import { bindRunBudgetContext } from "./run-budget-context.js";
+import {
+  prepareHarnessModelCallBudget,
+  assertHarnessModelCallBudget,
+} from "./harness-model-call-budget.js";
+import {
+  runtimeContextDelivery,
+  stripRuntimeContext,
+} from "./runtime-context-delivery.js";
 
 export interface AgentModelCallPreparation {
   run: RunRecord;
@@ -79,6 +90,7 @@ export interface AgentModelStreamLifecycleInput {
       compiledPrompt: CompiledPromptArtifact;
       recoveryAttempt: 0 | 1;
       runContextCompaction?: RunContextCompactionPort;
+      refreshBudgetPrompt?: () => CompiledPromptArtifact;
     },
   ): PreparedAgentModelCall | Promise<PreparedAgentModelCall>;
   invokeCall?(
@@ -104,7 +116,13 @@ export function agentModelStreamLife(
     input.run,
     input.onEvent,
   );
+  // Give a recovered model a few calls to act before restoring the requested
+  // reasoning level. Neither each tool result nor one stall should cause an
+  // immediate reset or a permanent reasoning downgrade for the whole Run.
+  const shortReasoningThroughCall = new Map<string, number>();
+  let modelCallIndex = 0;
   return (model, context, options) => {
+    const callIndex = ++modelCallIndex;
     let currentEnvelope: ModelContextEnvelopeReceipt | undefined;
     let currentServingModel = model;
     const rootSignal = options?.signal ?? new AbortController().signal;
@@ -124,24 +142,30 @@ export function agentModelStreamLife(
         input.onEnvelope(undefined);
         const nextContext =
           attempt === 1
-            ? attemptContext
-            : redirectedContext(attemptContext, priorEvidence!);
-        const nextOptions =
-          attempt === 1
-            ? { ...attemptOptions, signal }
-            : {
-                ...shortThinkingLoopRetryOptions(model, attemptOptions),
-                signal,
-              };
+            ? redirectTruncatedToolContext(
+                stripRuntimeContext(input.run, attemptContext),
+              )
+            : redirectedContext(
+                stripRuntimeContext(input.run, attemptContext),
+                priorEvidence!,
+              );
+        const nextOptions = { ...attemptOptions, signal };
         const createCandidateSource = async (
           candidate: Model<Api>,
           routeContext?: ModelRouteAttemptContext,
         ) => {
           currentServingModel = candidate;
-          const routedOptions = routeContext
+          const routeOptions = routeContext
             ? mergeRouteStreamOptions(nextOptions, routeContext.streamOptions)
             : nextOptions;
-          const preparedCall = input.prepareCall
+          const routedOptions =
+            attempt === 1 &&
+            (shortReasoningThroughCall.get(
+              `${candidate.provider}/${candidate.id}`,
+            ) ?? 0) < callIndex
+              ? routeOptions
+              : shortThinkingLoopRetryOptions(candidate, routeOptions);
+          const extensionCall = input.prepareCall
             ? await input.prepareCall({
                 run: input.run,
                 attempt,
@@ -154,25 +178,61 @@ export function agentModelStreamLife(
                 ...(input.onEvent ? { onEvent: input.onEvent } : {}),
               })
             : { context: nextContext, options: routedOptions };
+          const modelCallPolicy =
+            input.harnessExperimentProfile?.policies?.modelCall;
+          const preparedCall = {
+            ...extensionCall,
+            options: prepareHarnessModelCallBudget(
+              candidate,
+              extensionCall.options,
+              modelCallPolicy,
+            ),
+          };
           const createInvocation = async (
             recoveryAttempt: 0 | 1,
             baseContext = preparedCall.context,
           ) => {
-            const compiledPrompt = input.buildCompiledPrompt(
+            baseContext = stripRuntimeContext(input.run, baseContext);
+            baseContext = await prepareAgentInvocationContext({
+              context: baseContext,
+              run: input.run,
+              store: input.host.store,
+              policy: input.harnessExperimentProfile?.policies?.context,
+              budget: input.budget,
+            });
+            let compiledPrompt = input.buildCompiledPrompt(
               candidate,
               preparedCall.options,
               baseContext,
             );
+            if (!input.finalizeCall && runtimeContextDelivery(compiledPrompt))
+              throw new Error(
+                "Runtime context delivery requires context projection finalization",
+              );
             const finalizedCall = input.finalizeCall
               ? await input.finalizeCall({
                   run: input.run,
                   attempt,
                   model: candidate,
                   context: baseContext,
-                  options: preparedCall.options,
+                  options: { ...preparedCall.options },
                   compiledPrompt,
                   recoveryAttempt,
                   runContextCompaction,
+                  ...(input.harnessExperimentProfile?.policies?.context
+                    .finalization === "request-aware-v2"
+                    ? {
+                        refreshBudgetPrompt: () => {
+                          bindRunBudgetContext(baseContext, input.budget);
+                          compiledPrompt = input.buildCompiledPrompt(
+                            candidate,
+                            preparedCall.options,
+                            baseContext,
+                          );
+                          return compiledPrompt;
+                        },
+                      }
+                    : {}),
                   ...(input.harnessExperimentProfile
                     ? {
                         harnessExperimentProfile:
@@ -181,7 +241,13 @@ export function agentModelStreamLife(
                     : {}),
                   ...(input.onEvent ? { onEvent: input.onEvent } : {}),
                 })
-              : preparedCall;
+              : { context: baseContext, options: preparedCall.options };
+            assertHarnessModelCallBudget(
+              candidate,
+              preparedCall.options,
+              finalizedCall.options,
+              modelCallPolicy,
+            );
             const captured = await captureCompiledModelInvocation({
               store: input.host.store,
               capsules: input.host.modelInvocationCapsules,
@@ -267,14 +333,24 @@ export function agentModelStreamLife(
         }
         return createCandidateSource(model);
       },
-      onDetected: (evidence, action) =>
-        recordDetection(
+      onDetected: async (evidence, action, terminalMessage, trace) => {
+        const result = await recordDetection(
           input,
           currentServingModel,
           evidence,
           action,
           currentEnvelope,
-        ),
+          terminalMessage,
+          trace,
+        );
+        if (result === "retry") {
+          shortReasoningThroughCall.set(
+            `${currentServingModel.provider}/${currentServingModel.id}`,
+            callIndex + 3,
+          );
+        }
+        return result;
+      },
     });
   };
 }
@@ -303,53 +379,6 @@ function mergeRouteStreamOptions(
   };
 }
 
-async function recordContextOverflow(
-  input: AgentModelStreamLifecycleInput,
-  model: Model<Api>,
-  error: AssistantMessage,
-  envelope: ModelContextEnvelopeReceipt,
-): Promise<"retry" | "budget_exhausted"> {
-  const usage = mapModelUsage(error.usage);
-  const usageAccounting = createUsageAccounting(
-    { provider: model.provider, id: model.id },
-    usage,
-  );
-  input.budget.observeAuxiliaryUsage(usage, Date.now(), usageAccounting);
-  const action = input.budget.exhaustion
-    ? ("budget_exhausted" as const)
-    : ("retry" as const);
-  const content = {
-    kind: "napier.model-context-overflow" as const,
-    schemaVersion: 1 as const,
-    action,
-    provider: model.provider,
-    model: model.id,
-    diagnosticSha256: sha256(error.errorMessage ?? ""),
-    usage,
-    usageAccounting,
-    modelContextEnvelopeSha256: envelope.contentSha256,
-    modelContextEnvelopeTurnIndex: envelope.turnIndex,
-    modelContextMessageSetSha256: envelope.messageSetSha256,
-    modelContextToolDefinitionSetSha256: envelope.toolDefinitionSetSha256,
-  };
-  const event = await input.host.store.appendEvent({
-    threadId: input.run.threadId,
-    runId: input.run.id,
-    type: "model.context.overflow",
-    category: "model",
-    visibility: "debug",
-    payload: { ...content, contentSha256: sha256(canonicalJson(content)) },
-  });
-  if (input.onEvent) {
-    try {
-      await input.onEvent(event);
-    } catch {
-      // Durable overflow evidence survives a disconnected stream.
-    }
-  }
-  return action;
-}
-
 function redirectedContext(
   context: Context,
   evidence: ModelThinkingLoopEvidence,
@@ -363,58 +392,4 @@ function redirectedContext(
     ...context,
     messages: [...context.messages, redirect],
   };
-}
-
-async function recordDetection(
-  input: AgentModelStreamLifecycleInput,
-  model: Model<Api>,
-  evidence: ModelThinkingLoopEvidence,
-  action: "retry" | "finalize",
-  envelope: ModelContextEnvelopeReceipt | undefined,
-): Promise<"retry" | "finalize" | "budget_exhausted"> {
-  input.budget.observeAuxiliaryUsage({
-    inputTokens: 0,
-    outputTokens: Math.ceil(evidence.observedBytes / 4),
-    cacheReadTokens: 0,
-    cacheWriteTokens: 0,
-    costUsd: 0,
-  });
-  const effectiveAction = input.budget.exhaustion
-    ? ("budget_exhausted" as const)
-    : action;
-  const content = {
-    kind: "napier.model-thinking-loop" as const,
-    schemaVersion: 1 as const,
-    action: effectiveAction,
-    provider: model.provider,
-    model: model.id,
-    ...evidence,
-    ...(effectiveAction === "retry" && envelope
-      ? {
-          modelContextEnvelopeSha256: envelope.contentSha256,
-          modelContextEnvelopeTurnIndex: envelope.turnIndex,
-          modelContextMessageSetSha256: envelope.messageSetSha256,
-          modelContextToolDefinitionSetSha256: envelope.toolDefinitionSetSha256,
-        }
-      : {}),
-  };
-  const event = await input.host.store.appendEvent({
-    threadId: input.run.threadId,
-    runId: input.run.id,
-    type: "model.thinking_loop.detected",
-    category: "model",
-    visibility: effectiveAction === "retry" ? "debug" : "user",
-    payload: {
-      ...content,
-      contentSha256: sha256(canonicalJson(content)),
-    },
-  });
-  if (input.onEvent) {
-    try {
-      await input.onEvent(event);
-    } catch {
-      // Durable thinking-loop evidence survives a disconnected stream.
-    }
-  }
-  return effectiveAction;
 }

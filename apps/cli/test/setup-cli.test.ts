@@ -448,8 +448,14 @@ describe("Napier setup CLI", () => {
     roots.push(root);
     const workspace = path.join(root, "workspace");
     await mkdir(workspace);
-    const current = await inspectPinnedBrowserRuntime();
-    expect(current.status).toBe("ready");
+    const current: PinnedBrowserRuntimeInspection = {
+      ...(await installableInspection()),
+      status: "ready",
+      runtime: {
+        executablePath: path.join(root, "chrome"),
+        executableSha256: "c".repeat(64),
+      },
+    };
     const previewOutput = new CaptureWritable();
     const createRuntime = async () => {
       throw new Error("Browser setup must remain Store-free");

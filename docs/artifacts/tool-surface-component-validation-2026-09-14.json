@@ -1,0 +1,53 @@
+{
+  "kind": "napier.tool-surface-component-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T20:51:13.517021+00:00",
+  "snapshot": "/tmp/napier-harness-tool-surface-v2",
+  "targetedTestsPassed": 43,
+  "compilePassed": true,
+  "architectureExistingViolations": 7,
+  "scope": "Diagnostics and fixed-phase selection mechanics. No full Runtime rerun or new model success claimed. Broad qualification running separately.",
+  "logs": [
+    {
+      "path": "/tmp/napier-fixed-phase-tools-v1.log",
+      "sha256": "04b885cc9bf26df534e88f57c20972fb529300bea2d9f9fdf98d590da010b614"
+    },
+    {
+      "path": "/tmp/napier-tool-surface-revision-tests-v1.log",
+      "sha256": "10780661920d738f088dd45c53406d163d4147b2576818e1b0ad7c3a762bcda6"
+    },
+    {
+      "path": "/tmp/napier-tool-surface-revision-tests-v2.log",
+      "sha256": "c8d8cd6f850d5706851de94022871365b2119b6bba17aaecf7af45bb2ad51252"
+    },
+    {
+      "path": "/tmp/napier-tool-surface-compile-v2.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-tool-surface-architecture-v2.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-tool-surface-capsule-audit-v1.log",
+      "sha256": "c5a0e56dce36877b11028427954146a1c1187c7e40d1bb78f9f55eec10a41525"
+    },
+    {
+      "path": "/tmp/napier-tool-surface-capsule-audit-v2.log",
+      "sha256": "36084a2e121b70d16d90bf5ce497dad2159b021f165481fe93f7cd47d27249c7"
+    },
+    {
+      "path": "/tmp/napier-freeze-tool-surface-v2.py",
+      "sha256": "01337298903899740185d7d902ff55f7054e1aa470a457809228d9df2eb8d54f"
+    },
+    {
+      "path": "/tmp/napier-harness-tool-surface-v2/freeze-receipt.json",
+      "sha256": "adb5a44d05a8abbdd787cec457d1eff7abcb7b16aa2fe8d32fee442e1c36ca32"
+    },
+    {
+      "path": "/tmp/napier-tool-surface-capsule-audit-v2.mjs",
+      "sha256": "b8e8c190e028e42d484c9a740898fb8d7fe5a929d9c426553fcb3b3924cb77a3"
+    }
+  ],
+  "promotionReady": false
+}

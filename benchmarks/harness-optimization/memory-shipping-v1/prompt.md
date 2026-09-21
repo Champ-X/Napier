@@ -1,0 +1,1 @@
+Fix the boundary regression in `src/shipping.js` using the current shipping requirements. Preserve input validation and verify the behavior. Read the relevant files before editing. Modify only `src/shipping.js`.

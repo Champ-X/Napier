@@ -1,0 +1,59 @@
+{
+  "kind": "napier.bounded-progress-final-check",
+  "schemaVersion": 1,
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "boundFiles": 5658,
+  "sourceFilesCompared": 1264,
+  "sourceDrift": [],
+  "newEpochFinancialRecords": [
+    {
+      "status": "reserved",
+      "count": 2,
+      "fen": 1200
+    },
+    {
+      "status": "settled",
+      "count": 107,
+      "fen": 340
+    }
+  ],
+  "thisTurnFinancialRecords": [
+    {
+      "status": "reserved",
+      "count": 2,
+      "fen": 1200
+    },
+    {
+      "status": "settled",
+      "count": 44,
+      "fen": 129
+    }
+  ],
+  "startingUserReportedFen": 2000,
+  "committedFen": 3540,
+  "remainingFen": 6460,
+  "providerInvoiceIndependentlyVerified": false,
+  "architecture": {
+    "path": "/tmp/napier-staged-verification-architecture-2026-09-15.log",
+    "sha256": "793b6cb6c53956baff6f6fb6adbd4187a8bbc88fde73e50eb81a1b066bd2dbce",
+    "inheritedViolations": 6,
+    "newViolations": 0
+  },
+  "artifactBindings": {
+    "user-reconciled-memory-streaming-final-audit-2026-09-15.json": "0627ee38cc749d31fc58a08e1389d1e35e3ffb509d5fe4c3922af8d361970b9a",
+    "staged-contract-verification-offline-2026-09-15.json": "78b1149b6bda66f1b1fa988cbeabc59ce6c9d73ac23a280c55e268fbde21f063",
+    "staged-verification-final-audit-2026-09-15.json": "6b1267c1aefc832b1d25d0931da87bb3272f5b8d27b18ac6a47d1c14d2f0062b"
+  },
+  "paidChildPidsConfirmedExited": [
+    44269,
+    47041,
+    49949,
+    56301,
+    59024
+  ],
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false
+}

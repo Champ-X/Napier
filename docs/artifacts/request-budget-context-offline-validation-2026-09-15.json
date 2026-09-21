@@ -1,0 +1,353 @@
+{
+  "kind": "napier.request-budget-context-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T17:50:25.253Z",
+  "sourceFiles": {
+    "packages/contracts/src/harness-experiments.ts": "3afa3aa27023c512aede8326744cf682a6f2a7f80989e99c116e9a355949d7a2",
+    "packages/runtime/src/run-budget.ts": "6554f09f14d52a532330551bb2f1d20c4b208a222206cafda49e6a3148d7dabf",
+    "packages/runtime/src/run-budget-context.ts": "7c93c7a461e6522e62680dd87a9a4af78ccc50ad7064ec38e3e12587ff0f93d5",
+    "packages/runtime/src/run-finalization-reserve.ts": "500803c29f188e11e5d83ae2410bb9805a3763e26842bd51b9d2a47e186301ba",
+    "packages/runtime/src/harness-policy-profile.ts": "40287d6c7854e4fb5b0ac2856227b6cc614c09468eb5376e984b61295034f157",
+    "packages/runtime/src/agent-invocation-context.ts": "700e3efdd8818ef4140e146fe537041ec153d0f887d937c3ddd88fca54c5a074",
+    "packages/runtime/src/agent-model-stream-lifecycle.ts": "645148844d7d5b11cc31ba3005c1a83984431bbc173f78d27fe5d34380f9294f",
+    "packages/runtime/src/agent-runtime-step-lifecycle.ts": "52526302fb5f0b9df0da088baf99152d5f8ab11a3eb2ff20d94e0c3b57e19938",
+    "packages/runtime/src/agent-prompt-layers.ts": "69f62c6350be739299e9a7c33568dca2f114d9d97b09e97a8b1edf4553aed40b",
+    "packages/runtime/src/runtime-context-delivery.ts": "02b037ff5679f37a31a39f8bee57c8847e4e36b3047b12e7c35343a57bad53e4",
+    "packages/runtime/src/context-projection-service.ts": "cfd42d170aa1e6f197ed9a0e27a08b1c56500071d55e4ea8fa0a5212330cd8e9",
+    "packages/runtime/src/kernel-model-call-pipeline.ts": "3062e7f51bd8916554a4bc55faedcc9d14a1af3ae8c8a9906730ae60cc500411"
+  },
+  "profile": {
+    "path": "/Users/champ/orca/Napier/benchmarks/harness-profiles/current-integrated.v3.json",
+    "id": "napier.current-integrated.v3",
+    "contentSha256": "dcc5de0cd1b3ba6ca09e9d741d1670ba649c28ba97eac35d68435d2eb075c038",
+    "fileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398"
+  },
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/run-budget-context-offline-tests-2026-09-15.json",
+    "sha256": "1cc2a7ec8361a23714a0d4b9b0104f5dde31a6bcc288fad9f7fa166859d1cb17",
+    "passed": 36,
+    "failed": 0,
+    "pending": 0
+  },
+  "builds": {
+    "contracts": "npm run build -w @napier/contracts passed",
+    "runtime": "npm run build:compile -w @napier/runtime passed"
+  },
+  "originalRun": {
+    "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+    "reportSha256": "6cd5b0b57b0dc4c635cea8572624c289acd3d932abe9e3a08fe3ef9f0332c236",
+    "status": "failed",
+    "taskSuccess": false,
+    "graderExitCode": 0,
+    "error": "Run budget exhausted: total tokens 250,865 / 250,000",
+    "oneTimeReserve": {
+      "status": "reserved",
+      "reasons": [
+        "tokens"
+      ],
+      "observed": {
+        "turns": 8,
+        "inFlightTurns": 0,
+        "totalTokens": 78464,
+        "rawTotalTokens": 222213,
+        "costUsd": 0.0152899264,
+        "rawCostUsd": 0.0152899264,
+        "elapsedMs": 190243,
+        "usage": {
+          "inputTokens": 44770,
+          "outputTokens": 30755,
+          "cacheReadTokens": 146688,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0152899264
+        }
+      },
+      "limits": {
+        "maxTurns": 40,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 0.05,
+        "timeoutMs": 900000
+      },
+      "reservedTurns": 6,
+      "reservedTokens": 128943,
+      "reservedTimeoutMs": 180000,
+      "requestForecast": {
+        "strategy": "request-aware-v1",
+        "sampleCount": 3,
+        "uncachedCallTokens": 42981,
+        "callsReserved": 3
+      },
+      "message": "Run entered deterministic finalization reserve: tokens"
+    },
+    "cancellations": [
+      {
+        "seq": 790,
+        "reason": "near_paragraph_cluster",
+        "usageSource": "reasoning_bytes_estimate"
+      }
+    ],
+    "snapshots": [
+      {
+        "turnIndex": 0,
+        "capsuleSha256": "a7ed1a8b2edec2a856cf7d0ce01ba3b94f981b489f68d83e62f7319d129971e3",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 0,
+        "replayedAccountedTokens": 0,
+        "replayedRemainingTokens": 250000,
+        "replayedPhase": "working",
+        "forecast": null
+      },
+      {
+        "turnIndex": 1,
+        "capsuleSha256": "0e03ed940b25d9332674fa5c7b78904a238e5b01658988e7488b385e06e2b98f",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 0,
+        "replayedAccountedTokens": 6819,
+        "replayedRemainingTokens": 243181,
+        "replayedPhase": "working",
+        "forecast": {
+          "sampleCount": 1,
+          "uncachedCallTokens": 8198
+        }
+      },
+      {
+        "turnIndex": 2,
+        "capsuleSha256": "ab7706931fcd79d5f476fd37299cade942062bdf1d5a7998d2ed9d6088da9170",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 0,
+        "replayedAccountedTokens": 8945,
+        "replayedRemainingTokens": 241055,
+        "replayedPhase": "working",
+        "forecast": {
+          "sampleCount": 2,
+          "uncachedCallTokens": 8899
+        }
+      },
+      {
+        "turnIndex": 3,
+        "capsuleSha256": "6159ceeac2785b0418c6646deec87c0e769d5cce15cce617dc842e9ea0afe32f",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 0,
+        "replayedAccountedTokens": 25765,
+        "replayedRemainingTokens": 224235,
+        "replayedPhase": "working",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 24220
+        }
+      },
+      {
+        "turnIndex": 4,
+        "capsuleSha256": "522041e527f6cb90a4e74c7ec59cee60797990c2618cf82bbde89c25071e5fe5",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 0,
+        "replayedAccountedTokens": 49654,
+        "replayedRemainingTokens": 200346,
+        "replayedPhase": "working",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 32168
+        }
+      },
+      {
+        "turnIndex": 5,
+        "capsuleSha256": "c6194b444f144091852eb78b1e2efafdd099d42aecb0b86ff822622fde343d0a",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 0,
+        "replayedAccountedTokens": 59233,
+        "replayedRemainingTokens": 190767,
+        "replayedPhase": "working",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 33161
+        }
+      },
+      {
+        "turnIndex": 6,
+        "capsuleSha256": "cb74bf82308e157bf6b4abe79a0efec6a662e8d028895b449eb053ac5d8e23b8",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 0,
+        "replayedAccountedTokens": 64842,
+        "replayedRemainingTokens": 185158,
+        "replayedPhase": "working",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 35965
+        }
+      },
+      {
+        "turnIndex": 7,
+        "capsuleSha256": "aa00ce7fcfe025bb661010ed29d64034c7c4954fa8467e608bf39ba3df3d5c80",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 0,
+        "replayedAccountedTokens": 69602,
+        "replayedRemainingTokens": 180398,
+        "replayedPhase": "working",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 36621
+        }
+      },
+      {
+        "turnIndex": 8,
+        "capsuleSha256": "83bcf80f494dd62b3b895130ce24718b096b4e7a8cd78df649376a120bdb151c",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 78464,
+        "replayedRemainingTokens": 171536,
+        "replayedPhase": "finalization",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 42981
+        }
+      },
+      {
+        "turnIndex": 9,
+        "capsuleSha256": "6dc18f6934b4f7441b8decdae1e14a4acdd4076983d83d93dec4639475d1bbe2",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 125927,
+        "replayedRemainingTokens": 124073,
+        "replayedPhase": "finalization",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 48842
+        }
+      },
+      {
+        "turnIndex": 10,
+        "capsuleSha256": "5ad8ab74f6092695ef909f5d948a76b95f8aeecd15c6017a29e286257664da79",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 149887,
+        "replayedRemainingTokens": 100113,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 64853
+        }
+      },
+      {
+        "turnIndex": 11,
+        "capsuleSha256": "d7bcb32d763c1b55ab41e074c90a9280d1c6c9370451ca939e142e5381464899",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 172699,
+        "replayedRemainingTokens": 77301,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 69726
+        }
+      },
+      {
+        "turnIndex": 12,
+        "capsuleSha256": "f1f330235f751e6f15ef6821ef3658f587e4a46f85cfc7f8f826227089ab72b6",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 182637,
+        "replayedRemainingTokens": 67363,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 73912
+        }
+      },
+      {
+        "turnIndex": 13,
+        "capsuleSha256": "a52b8a2f6dc20866b764ef8c58a703b6679a17521312aa30ee2adb6890eabdd8",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 183082,
+        "replayedRemainingTokens": 66918,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 73912
+        }
+      },
+      {
+        "turnIndex": 14,
+        "capsuleSha256": "ad4467e4b8b12bd9c99c381a116ff67ca5647fa308a386ab6bd3b98bf520fc96",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 214106,
+        "replayedRemainingTokens": 35894,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 73912
+        }
+      },
+      {
+        "turnIndex": 15,
+        "capsuleSha256": "c4908a60c6e1f6fa7aa838b51dfd393f3127c26e8f7a4272683556aa6775cee4",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 220486,
+        "replayedRemainingTokens": 29514,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 78633
+        }
+      },
+      {
+        "turnIndex": 16,
+        "capsuleSha256": "3278a44f88dd4db2f477079fa5ec45aa0b5a9bf73a32c1e3546ab86c33507cfc",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 228790,
+        "replayedRemainingTokens": 21210,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 81184
+        }
+      },
+      {
+        "turnIndex": 17,
+        "capsuleSha256": "a2de812bd3a1605754a64cce05a3f4d16b5b56fa00079af2ddb9de8e03d3bae6",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 236555,
+        "replayedRemainingTokens": 13445,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 84659
+        }
+      },
+      {
+        "turnIndex": 18,
+        "capsuleSha256": "e04b29bcfa7f314109a54f0a96acef42f8906ded19e1179ee495d4e21e173309",
+        "originalBudgetSources": 0,
+        "originalOneTimeReminders": 1,
+        "replayedAccountedTokens": 245785,
+        "replayedRemainingTokens": 4215,
+        "replayedPhase": "critical",
+        "forecast": {
+          "sampleCount": 3,
+          "uncachedCallTokens": 87504
+        }
+      }
+    ]
+  },
+  "verification": {
+    "oldPolicyPreserved": true,
+    "hardLimitsUnchanged": true,
+    "requestLocalCaptureChecked": true,
+    "lateUserControlsChecked": true,
+    "compactionAndOverflowAccountingChecked": true,
+    "stableSystemForNewBudgetUpdatesChecked": true,
+    "providerInvoiceVerified": false,
+    "modelRequests": 0
+  },
+  "limitations": [
+    "Recorded-token replay shows where new guidance would appear; it does not prove the historical model would finish or preserve task quality.",
+    "The original Run failed its token budget despite passing code grading; its missing counterpart and unreceipted cancellation remain ineligible and unchanged.",
+    "Current-integrated.v3 has no real-model observations or frozen campaign. The six pairs for the prior source cannot qualify this new source.",
+    "Thinking-loop cancellation can still lack terminal provider usage; all three historical CNY6 reservations remain."
+  ],
+  "collectionComplete": false,
+  "promotionReady": false
+}

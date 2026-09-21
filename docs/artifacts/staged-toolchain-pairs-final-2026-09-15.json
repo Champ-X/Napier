@@ -1,0 +1,148 @@
+{
+  "kind": "napier.staged-toolchain-pairs-audit",
+  "schemaVersion": 1,
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "sourceFilesCompared": 1264,
+  "sourceUnchanged": true,
+  "observations": [
+    {
+      "index": 58,
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "candidate",
+      "runId": "run_bed442cce02b418681f7",
+      "toolContractAuditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-candidate-trial-1/preedit-tool-audit.json",
+      "toolContractAuditSha256": "625a716b0d87521aa5c26a6c21f6efcb861d1796f12226ce054ba3c2bfd01dca",
+      "checks": {
+        "edited": true,
+        "referencesBeforeEdit": true,
+        "listedOnceBeforeEdit": true,
+        "readAffectedBeforeEdit": true
+      },
+      "admissions": 10,
+      "settledFen": 22,
+      "toolFailures": 1,
+      "durationMs": 140952
+    },
+    {
+      "index": 59,
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "baseline",
+      "runId": "run_db38b4032c7146aab134",
+      "toolContractAuditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-baseline-trial-1/preedit-tool-audit.json",
+      "toolContractAuditSha256": "d13d00840f339594420938b385b0b4f3a818ef53f7fd2805f372fdeec6bd91fc",
+      "checks": {
+        "edited": true,
+        "referencesBeforeEdit": true,
+        "listedOnceBeforeEdit": true,
+        "readAffectedBeforeEdit": true
+      },
+      "admissions": 10,
+      "settledFen": 14,
+      "toolFailures": 1,
+      "durationMs": 141067
+    },
+    {
+      "index": 57,
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "arm": "candidate",
+      "runId": "run_b0f70ffcfc2c4dc1bff1",
+      "toolContractAuditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-candidate-trial-1/preedit-tool-audit.json",
+      "toolContractAuditSha256": "851973c748053eca0e42e68abc7567b0c8bc25b47a81e37be2cd831f943c0de1",
+      "checks": {
+        "edited": true,
+        "liveValuesAndClosedBeforeEdit": true
+      },
+      "admissions": 10,
+      "settledFen": 18,
+      "toolFailures": 1,
+      "durationMs": 141079
+    },
+    {
+      "index": 56,
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "arm": "baseline",
+      "runId": "run_066041099c38426ba52f",
+      "toolContractAuditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-baseline-trial-1/preedit-tool-audit.json",
+      "toolContractAuditSha256": "b2212495ae1d8500c4cfc2011e848a360820cce9e4892cb649d4026612ebc2d0",
+      "checks": {
+        "edited": true,
+        "liveValuesAndClosedBeforeEdit": true
+      },
+      "admissions": 13,
+      "settledFen": 16,
+      "toolFailures": 1,
+      "durationMs": 187336
+    }
+  ],
+  "inheritedBlockersUnchanged": true,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 2,
+    "cases": 2,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 2",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "62491bbe0df6ef5c88def4fdb8118bdd3d4cc59e97d03608fd0c6653ef431a3e"
+  },
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 3610,
+    "remainingFen": 6390,
+    "requests": 152,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "newFinancialRequests": 43,
+  "newSettledFen": 70,
+  "newReservedFen": 0,
+  "statusCounts": {
+    "settled": 6,
+    "notStarted": 174
+  },
+  "paidChildPidsConfirmedExited": [
+    66293,
+    68221,
+    70803,
+    72712
+  ],
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Two different original current-source tasks pass in both arms, including actual LSP and debugger requirements. All inherited reports and NDJSON evidence blockers remain in the aggregate. No source, profile, driver, task, grader or gate changed. Candidate cost exceeds baseline cost in both tasks; no generalized efficiency or causal claim."
+}

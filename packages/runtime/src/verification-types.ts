@@ -7,6 +7,7 @@ export interface VerificationRequest {
   cwd?: string;
   target?: string;
   timeoutMs?: number;
+  testRunner?: "node-test" | "vitest";
 }
 
 export type VerificationStatus =
@@ -31,11 +32,16 @@ export interface VerificationDetails {
   targetSnapshotTruncated?: boolean;
   verifierPathSha256: string;
   verifierSha256: string;
+  testRunner?: "node-test" | "vitest";
+  testRunnerSourceSha256?: string;
   verifierVersion?: string;
   toolchainExternal: boolean;
   toolchainSha256: string;
   runtimeIdentitySha256?: string;
   workspaceSnapshotSha256: string;
+  workspaceSnapshotScope?: "workspace";
+  observedWorkspaceSnapshotSha256?: string;
+  snapshotStatus?: "unchanged" | "changed" | "indeterminate";
   workspaceSnapshotFileCount: number;
   workspaceSnapshotBytes: number;
   workspaceSnapshotTruncated: boolean;

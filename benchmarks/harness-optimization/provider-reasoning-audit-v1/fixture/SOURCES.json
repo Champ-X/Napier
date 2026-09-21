@@ -1,0 +1,45 @@
+{
+  "scope": "Offline audit of actual installed SDK source excerpts; no browser capture or network execution is simulated",
+  "sources": [
+    {
+      "file": "sources/models.js",
+      "package": "@earendil-works/pi-ai",
+      "version": "0.82.0",
+      "originalPath": "dist/models.js",
+      "originalStartLine": 391,
+      "originalEndLine": 423,
+      "originalFileSha256": "ceb81be470cd45410f5586844b27ee65a70c474acc7eae7e8911752b5dfa7c2e",
+      "excerptSha256": "42ef3030ce6935af7c0c479ccd071edd17b3b776714b95413eadea516599aa54"
+    },
+    {
+      "file": "sources/simple-wrapper.js",
+      "package": "@earendil-works/pi-ai",
+      "version": "0.82.0",
+      "originalPath": "dist/api/openai-completions.js",
+      "originalStartLine": 467,
+      "originalEndLine": 478,
+      "originalFileSha256": "0d50250fe2931e66e2078279a397814202e1ecddee58faf4b8bc04c278da177a",
+      "excerptSha256": "bd6ac6c54e8627610ffb79a631bcbf9bf8130a6113901c9d857550e373738d7c"
+    },
+    {
+      "file": "sources/deepseek-payload.js",
+      "package": "@earendil-works/pi-ai",
+      "version": "0.82.0",
+      "originalPath": "dist/api/openai-completions.js",
+      "originalStartLine": 585,
+      "originalEndLine": 598,
+      "originalFileSha256": "0d50250fe2931e66e2078279a397814202e1ecddee58faf4b8bc04c278da177a",
+      "excerptSha256": "26dd52dcbd37a90dbc160ec40393bee050092cc735515fc0c5e867b17ca247b0"
+    },
+    {
+      "file": "sources/deepseek.json",
+      "package": "@earendil-works/pi-ai",
+      "version": "0.82.0",
+      "originalPath": "dist/providers/data/deepseek.json",
+      "originalStartLine": 1,
+      "originalEndLine": 1,
+      "originalFileSha256": "0dcc807a4e5827b488c6ceac87884ff6e735e01cf4f2ddfec9dd812e6fde041b",
+      "excerptSha256": "0dcc807a4e5827b488c6ceac87884ff6e735e01cf4f2ddfec9dd812e6fde041b"
+    }
+  ]
+}

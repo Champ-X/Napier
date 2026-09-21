@@ -1,0 +1,222 @@
+{
+  "kind": "napier.outcome-preserving-full-statistics-plan",
+  "createdAt": "2026-09-15T09:47:12.833Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/outcome-preserving-full-statistics-v1/plan.json",
+  "planSha256": "b035c944b00796fa842d44e5fba5a6cf05759e259600d5137f559cc1499849cb",
+  "source": "/tmp/napier-harness-bounded-thinking-v1",
+  "sourceFreezeSha256": "f1738687b1d40df52f6ff9ce4388a4fad638ce36ad4e8c4720c7560dad3850cc",
+  "retainedObservations": 25,
+  "retainedEligiblePairs": 11,
+  "remainingOriginalPositions": 157,
+  "remainingBaselineReuses": 8,
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 6577,
+    "remainingFen": 3423,
+    "requests": 612,
+    "reservedRequests": 4,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "collectionPolicy": {
+    "mode": "complete-original-sample-with-adverse-outcomes",
+    "modulePath": "/Users/champ/orca/Napier/scripts/harness-full-statistical-collection.mjs",
+    "moduleSha256": "f5a62e87abc2ad48aa1ce8ef9c449295ed2f443fe41f27cceea3d59d8a35d99c",
+    "testPath": "/Users/champ/orca/Napier/docs/artifacts/full-statistical-collection-tests-2026-09-15.json",
+    "testSha256": "8f1b41dbbbd1491e9aad48ec14dd558e950c1e8827c70b2499caf9db4b7264ed",
+    "adoptedAfterObservedCandidateFailure": true,
+    "originalStopPreserved": true,
+    "qualityGateUnchanged": true,
+    "sourceUnchanged": true,
+    "assessmentBefore": {
+      "kind": "napier.full-statistical-collection-assessment",
+      "schemaVersion": 1,
+      "decision": "continue",
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "expectedObservations": 182,
+      "observedPositions": 25,
+      "remainingPositions": 157,
+      "pendingArms": [
+        "bounded_async_queue_v4:0: missing arm"
+      ],
+      "integrityBlockers": [],
+      "observedFailures": [
+        {
+          "runId": "run_c553965d6ff14131a763",
+          "caseId": "incremental_ndjson_v1",
+          "trial": 0,
+          "arm": "baseline",
+          "status": "failed",
+          "taskSuccess": false,
+          "graderExitCode": 0
+        },
+        {
+          "runId": "run_9ab9042343c24c19a2a8",
+          "caseId": "access_rule_evaluation_v2",
+          "trial": 0,
+          "arm": "baseline",
+          "status": "failed",
+          "taskSuccess": false,
+          "graderExitCode": 0
+        },
+        {
+          "runId": "run_0aa5c49110e54ca58a60",
+          "caseId": "inventory_event_projection_v1",
+          "trial": 0,
+          "arm": "baseline",
+          "status": "failed",
+          "taskSuccess": false,
+          "graderExitCode": 0
+        },
+        {
+          "runId": "run_f97cec501e20465480de",
+          "caseId": "weighted_expense_allocation_v1",
+          "trial": 0,
+          "arm": "baseline",
+          "status": "failed",
+          "taskSuccess": false,
+          "graderExitCode": 0
+        },
+        {
+          "runId": "run_cef83d950d1c416096e2",
+          "caseId": "bounded_async_queue_v4",
+          "trial": 0,
+          "arm": "candidate",
+          "status": "completed",
+          "taskSuccess": false,
+          "graderExitCode": 1
+        }
+      ],
+      "qualification": {
+        "kind": "napier.recovered-campaign-quality",
+        "schemaVersion": 1,
+        "recoveryProtocolSha256": "f863af1906d82c0d223c67091e4eb9c0e33b639fa8c13baa1f1256494ef45d4b",
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "rawQuality": {
+          "kind": "napier.harness-campaign-quality",
+          "schemaVersion": 1,
+          "required": {
+            "minimumCases": 30,
+            "minimumTrials": 3
+          },
+          "comparablePairs": 11,
+          "cases": 11,
+          "regressions": [],
+          "evidenceBlockers": [
+            "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence",
+            "bounded_async_queue_v4:0: missing arm"
+          ],
+          "blockers": [
+            "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence",
+            "bounded_async_queue_v4:0: missing arm",
+            "Need 30 cases; observed 11",
+            "incremental_ndjson_v1: need 3 paired trials; observed 1",
+            "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+            "semantic_version_order_v1: need 3 paired trials; observed 1",
+            "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+            "http_retry_policy_v2: need 3 paired trials; observed 1",
+            "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+            "booking_calendar_v2: need 3 paired trials; observed 1",
+            "safe_csv_export_v1: need 3 paired trials; observed 1",
+            "inventory_event_projection_v1: need 3 paired trials; observed 1",
+            "weighted_expense_allocation_v1: need 3 paired trials; observed 1",
+            "http_etag_preconditions_v2: need 3 paired trials; observed 1"
+          ],
+          "verdict": "insufficient_evidence",
+          "promotionReady": false,
+          "contentSha256": "caca59595585d34f7914cacd16b38407171435a12aabf096df38de3c38142e5f"
+        },
+        "qualificationQuality": {
+          "kind": "napier.harness-campaign-quality",
+          "schemaVersion": 1,
+          "required": {
+            "minimumCases": 30,
+            "minimumTrials": 3
+          },
+          "comparablePairs": 11,
+          "cases": 11,
+          "regressions": [],
+          "evidenceBlockers": [
+            "bounded_async_queue_v4:0: missing arm"
+          ],
+          "blockers": [
+            "bounded_async_queue_v4:0: missing arm",
+            "Need 30 cases; observed 11",
+            "incremental_ndjson_v1: need 3 paired trials; observed 1",
+            "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+            "semantic_version_order_v1: need 3 paired trials; observed 1",
+            "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+            "http_retry_policy_v2: need 3 paired trials; observed 1",
+            "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+            "booking_calendar_v2: need 3 paired trials; observed 1",
+            "safe_csv_export_v1: need 3 paired trials; observed 1",
+            "inventory_event_projection_v1: need 3 paired trials; observed 1",
+            "weighted_expense_allocation_v1: need 3 paired trials; observed 1",
+            "http_etag_preconditions_v2: need 3 paired trials; observed 1"
+          ],
+          "verdict": "insufficient_evidence",
+          "promotionReady": false,
+          "contentSha256": "fc0f064dc8c044ef2dcdbfb2cf901dcb9e6eabce9746b46a50ab8808afd8f6a5"
+        },
+        "unexpectedBlockers": [
+          "bounded_async_queue_v4:0: missing arm"
+        ],
+        "retiredIneligibleObservations": [
+          {
+            "runId": "run_0aa5c49110e54ca58a60",
+            "caseId": "inventory_event_projection_v1",
+            "trial": 0,
+            "arm": "baseline",
+            "status": "failed",
+            "taskSuccess": false,
+            "reportDigest": "87c456774b671fc314febf8c59baf87e3dbebfdcd164133723e86a2b59730ba1"
+          },
+          {
+            "runId": "run_a03b91bc514d4a37976b",
+            "caseId": "inventory_event_projection_v1",
+            "trial": 0,
+            "arm": "candidate",
+            "status": "completed",
+            "taskSuccess": true,
+            "reportDigest": "a18a9c7e619b2ec1b675d2560c4aa32437db339e3149d569620f9987548f4d12"
+          }
+        ],
+        "supplementalTrialRequired": false,
+        "supplementalTrial": 3,
+        "originalCampaignPromotionReady": false,
+        "promotionReady": false,
+        "scope": "A new prospective qualification cohort, not repair or promotion of the original campaign. Preserve the original schedule and append one whole new trial; require three eligible pairs per case. No candidate failure or eligible baseline failure may be retired. No reservation is released."
+      },
+      "collectionComplete": false,
+      "promotionReady": false
+    }
+  },
+  "necessity": "The user explicitly requires full 30-case x 3-trial statistics before unified delivery. Preserve the observed queue failure and all prior observations, complete its original baseline once, then collect the remaining predetermined positions. This dispatch-only rule prevents repeated candidate changes and sample resets from replacing complete measurement. It does not authorize promotion of a failed candidate, a retry, a new serving model, extra trials or additional budget.",
+  "scope": "Frozen v6 source, original baseline, model, task inputs, graders and per-Run limits. Keep 182 raw positions with 90 intended eligible paired trials under the existing inventory recovery protocol. Every adverse outcome remains in the unchanged evaluator. Stop on execution/collection/integrity failures, source/model drift, incomplete usage, cancellation or budget refusal. Full collection may finish with a rejected promotion gate; no confirmatory significance claim is made after this recorded stopping-policy amendment.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

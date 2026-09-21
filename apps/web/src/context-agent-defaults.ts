@@ -2,7 +2,7 @@ import type { ModelAdvisorRuleId } from "@napier/contracts";
 
 export const DEFAULT_AGENT_RUN_LIMITS = {
   maxTurns: 64,
-  maxTotalTokens: 1_000_000,
+  maxTotalTokens: 0,
   maxCostUsd: 25,
   timeoutMs: 1_800_000,
 } as const;

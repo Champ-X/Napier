@@ -1,4 +1,5 @@
 import type { Api, Message, Model } from "@earendil-works/pi-ai";
+import { modelHarnessTaskText } from "./model-harness-task-text.js";
 
 export type ModelHarnessFamily = "anthropic" | "openai" | "google" | "generic";
 export type ModelHarnessTaskPhase =
@@ -74,13 +75,17 @@ const PHASE_PATTERNS: Array<[ModelHarnessTaskPhase, RegExp]> = [
   ],
   [
     "coding",
-    /\b(build|bug|clone|code|develop|file|fix|html|implement|javascript|program|refactor|repo|repository|source code|test|typescript|verify)\b|代码|源码|编写|编码|开发|生成|制作|克隆|构建|仓库|实现|文件|测试|验证|修复|重构/iu,
+    /\b(build|bugs?|clone|code|develop|files?|fix(?:es)?|html|implement(?:ation)?|javascript|program|refactor(?:ing)?|repair|repo|repository|source code|tests?|typescript|verif(?:y|ication))\b|代码|源码|编写|编码|开发|生成|制作|克隆|构建|仓库|实现|文件|测试|验证|修复|重构/iu,
   ],
   [
     "data",
     /\b(analyze (?:a |the )?(?:csv|data|dataset|dataframe|spreadsheet)|csv|data|dataset|dataframe|spreadsheet|sql|sqlite|statistics)\b|数据|表格|统计/iu,
   ],
 ];
+// Search/source/web can name the implementation being repaired. Keep explicit
+// research instructions in compound tasks without promoting those nouns alone.
+const EXPLICIT_RESEARCH =
+  /\b(citations?|latest|research)\b|引用|最新|调研|(?:^|[.!?;\n]|\b(?:and|then|please))\s*search\b|\bsearch\s+(?:for|the web|online|documentation)\b|\b(?:web|online|internet)\s+search\b|(?:搜索|查找)(?:资料|文献|新闻|网页|文档|官方)/iu;
 const INTERNAL_USER_REDIRECT_PREFIXES = [
   "Internal thinking-loop redirect:",
   "Internal execution redirect:",
@@ -257,11 +262,15 @@ export function inferModelHarnessTaskPhases(
         ),
     );
   if (!latest || latest.role !== "user") return ["general"];
-  const text = userText(latest);
+  const text = modelHarnessTaskText(userText(latest));
   const phases = PHASE_PATTERNS.filter(([, pattern]) => pattern.test(text)).map(
     ([phase]) => phase,
   );
-  return phases.length > 0 ? phases : ["general"];
+  const requested =
+    phases.includes("coding") && !EXPLICIT_RESEARCH.test(text)
+      ? phases.filter((phase) => phase !== "research")
+      : phases;
+  return requested.length > 0 ? requested : ["general"];
 }
 
 export function projectModelHarnessEnvironmentCapabilities(

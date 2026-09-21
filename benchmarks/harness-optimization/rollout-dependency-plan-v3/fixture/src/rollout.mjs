@@ -1,0 +1,1 @@
+import {normalizeGraph} from './graph.mjs';export function planRollout(nodes,{selected=null,maxParallel=2}={}){const ids=[...normalizeGraph(nodes).keys()].sort();return Array.from({length:Math.ceil(ids.length/maxParallel)},(_,i)=>ids.slice(i*maxParallel,(i+1)*maxParallel));}

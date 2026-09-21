@@ -1,0 +1,66 @@
+{
+  "kind": "napier.supervised-inventory-recovery-pilot-plan",
+  "createdAt": "2026-09-15T08:59:08.582Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory-recovery-v1/plan.json",
+  "planSha256": "358fb78754b5b6a067e305dbe55f7cadb777f791b114876d4d5ddcef06976e32",
+  "source": "/tmp/napier-harness-bounded-thinking-v1",
+  "sourceFreezeSha256": "f1738687b1d40df52f6ff9ce4388a4fad638ce36ad4e8c4720c7560dad3850cc",
+  "profileFileSha256": "68edc7d8664ba3b6d13f4db172d49a87ae88c4400662e774c3b683139a769db8",
+  "dispatchIndices": [
+    180,
+    181
+  ],
+  "originalPositions": 180,
+  "retainedObservations": 18,
+  "retainedEligiblePairs": 8,
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 6155,
+    "remainingFen": 3845,
+    "requests": 504,
+    "reservedRequests": 4,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "processSupervision": {
+    "terminalGraceMs": 10000,
+    "killGraceMs": 5000,
+    "pollMs": 250,
+    "maxProcessMs": 1020000
+  },
+  "supervisionSourceFiles": {
+    "/Users/champ/orca/Napier/scripts/harness-process-supervisor.mjs": "6a56c25bea23bd3ce2f62f0aa6e4de6dbfb94feae3f5e374e418f3464c268a4b",
+    "/Users/champ/orca/Napier/scripts/harness-terminal-report.mjs": "a425d1a446c83d1446dc20a1b9e2e78fdeef2db52f7821a98446a2605d92cb2e",
+    "/Users/champ/orca/Napier/scripts/harness-trial-result-path.mjs": "b310a45cc7137852fa0f979846e4a15b6637088c50113f393a50e2cb1ecafa9f"
+  },
+  "offlineTests": {
+    "path": "/tmp/napier-terminal-process-recovery-tests-2026-09-15.json",
+    "sha256": "dee584cfb5369bfa15e6c1093a8c817319078bf37d9ff18013264b5f2b56f277",
+    "passed": 18,
+    "durablePath": "/Users/champ/orca/Napier/docs/artifacts/terminal-process-recovery-tests-2026-09-15.json"
+  },
+  "protocolPath": "/Users/champ/orca/Napier/docs/artifacts/bounded-inventory-missing-usage-protocol-2026-09-15.json",
+  "protocolSha256": "370cc54659c9876fd00f16f7642bfe3a21a591e6da62a53ddd1063b5be45a66c",
+  "necessity": "The successful v6 inventory candidate cannot form a valid pair with its original baseline because the failed baseline lacks one terminal usage receipt. The existing strict prospective protocol requires one unused WHOLE trial-3 pair; no availability probe or isolated model retry can satisfy the original 30-case/3-pair requirement. Source/profile/tasks/model/driver/Run limits remain unchanged; all prior failures and reservations remain visible.",
+  "scope": "Exactly one candidate-first supplemental pair. Retain original 180 positions and append positions180/181. Stop on candidate failure, any new missing evidence/regression or spending refusal. Supervision bounds only post-terminal process lingering after a complete graded report plus durable terminal Ledger event, records actual OS exit and never settles missing provider usage. The 17-minute child wall deadline includes the unchanged 15-minute Run plus setup/grader allowance. No further pair queued by this pilot.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

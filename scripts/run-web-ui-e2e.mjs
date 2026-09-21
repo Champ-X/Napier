@@ -11,6 +11,10 @@ import {
 } from "./web-ui-e2e-contract.mjs";
 import { seedWebUiNarrativeFixture } from "./web-ui-e2e-fixture.mjs";
 import {
+  regionSeparation,
+  regionsDoNotOverlap,
+} from "./web-ui-region-geometry.mjs";
+import {
   createWebUiE2eRoot,
   productionEntryReceipt,
   removeWebUiE2eRoot,
@@ -200,7 +204,11 @@ async function inspectViewport(browser, origin, viewport, expected) {
 
     const initial = await page.evaluate(readInitialContract);
     const layoutSnapshot = await page.evaluate(readLayoutSnapshot);
-    const readingAxis = await page.evaluate(readReadingAxis);
+    const { navigationBounds, statusBounds, ...readingAxis } =
+      await page.evaluate(readReadingAxis);
+    readingAxis.navigationToStatusGapPx = Math.round(
+      regionSeparation(navigationBounds, statusBounds),
+    );
     const keyboard = await verifyKeyboardNavigation(page);
     const task = await readTaskContract(page);
     const settings = await readSettingsContract(page, initial.settingsHidden);
@@ -1201,7 +1209,7 @@ async function readCompleteToolContent(page) {
 }
 
 async function readWorkbenchChrome(page) {
-  return page.evaluate(() => {
+  const { receipt, regions } = await page.evaluate(() => {
     const header = document.querySelector(".workbench-header");
     const textarea = document.querySelector(".composer textarea");
     const composer = document.querySelector(".composer");
@@ -1230,13 +1238,8 @@ async function readWorkbenchChrome(page) {
         (element) =>
           element instanceof HTMLElement && element.getClientRects().length > 0,
       )
-      .map((element) => element.getBoundingClientRect())
-      .sort((left, right) => left.left - right.left);
+      .map((element) => element.getBoundingClientRect());
     const receipt = {
-      headerNoOverlap: regions.every(
-        (region, index) =>
-          index === 0 || region.left >= regions[index - 1].right - 1,
-      ),
       headerContentWithinBounds: regions.every(
         (region) =>
           region.left >= headerBounds.left - 1 &&
@@ -1260,8 +1263,9 @@ async function readWorkbenchChrome(page) {
         composerStyle.borderColor === composerStyle.outlineColor,
     };
     textarea.blur();
-    return receipt;
+    return { receipt, regions: regions.map((region) => region.toJSON()) };
   });
+  return { ...receipt, headerNoOverlap: regionsDoNotOverlap(regions) };
 }
 
 function readBrowserRailGeometry() {
@@ -1323,7 +1327,8 @@ function readReadingAxis() {
       status.bottom <= commandBar.bottom &&
       status.left >= commandBar.left &&
       status.right <= commandBar.right,
-    navigationToStatusGapPx: Math.round(status.left - navigation.right),
+    navigationBounds: navigation.toJSON(),
+    statusBounds: status.toJSON(),
     statusToModelGapPx: Math.round(model.left - status.right),
     conversationWidth: Math.round(conversation.width),
     composerWidth: Math.round(composer.width),

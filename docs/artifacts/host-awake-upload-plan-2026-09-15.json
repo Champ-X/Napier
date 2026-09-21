@@ -1,0 +1,52 @@
+{
+  "kind": "napier.host-awake-bounded-collection-plan",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:15:03.570Z",
+  "source": "/tmp/napier-harness-request-budget-context-v1",
+  "sourceFreezeSha256": "ab7dd3cce935478fccd2ff3a099ad51edfb72c1a697a6a1940ee8c3e91d3173d",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+  "driverFreezeSha256": "cb2cf2fb5e473ff1a46b18af04e2d46bb2b9b7b9418c661f981d5dbbc394588d",
+  "profileFileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/plan.json",
+  "planSha256": "ef5a31707ab27c20c3d05d1e72eebcd426fdcdca6f5812709d26cc06ad25b847",
+  "dispatchIndices": [
+    37,
+    36
+  ],
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "jobCount": 180,
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 7022,
+    "remainingFen": 2978,
+    "requests": 647,
+    "reservedRequests": 5,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "The preceding upload observation overlapped a documented 561-second macOS sleep and produced no model content or edits. The new full-wake gate now passes and adds process-scoped awake protection. One fresh pair is necessary to assess actual model repair and finalization of the unchanged resumable byte-upload task in an eligible host state. The earlier cancelled Run remains ineligible and is not relabeled.",
+  "scope": "One candidate-first pair only; new frozen driver v8 shared by both arms and unchanged frozen Runtime sources. Full original 30-case/3-trial gate retained. Serial >=15-second admissions, equal 64-request caps, unchanged 15-minute Run windows, and cumulative CNY100 accounting. Prior interrupted observation retained separately and does not qualify. Stop on candidate failure or invalid first-arm evidence; no later batch queued.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

@@ -28,6 +28,7 @@ export interface AgentModelCallFinalization extends AgentModelCallPreparation {
   compiledPrompt: CompiledPromptArtifact;
   recoveryAttempt: 0 | 1;
   runContextCompaction?: RunContextCompactionPort;
+  refreshBudgetPrompt?: () => CompiledPromptArtifact;
 }
 
 export interface AgentModelCallExtension {

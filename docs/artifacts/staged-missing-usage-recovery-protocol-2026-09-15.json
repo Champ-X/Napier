@@ -1,0 +1,45 @@
+{
+  "kind": "napier.missing-usage-recovery-protocol",
+  "schemaVersion": 1,
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "caseId": "incremental_ndjson_v1",
+  "originalTrial": 0,
+  "supplementalTrial": 3,
+  "baselineRunId": "run_76af8c7911754698b595",
+  "baselineReportDigest": "e21211d142753536461610b896cbd732d08e648055d864e350e8ce65953ca7ea",
+  "candidateRunId": "run_9a1d0aec74c646499a50",
+  "candidateReportDigest": "6904c467d518685bfda058265e255ebf3b292cd2cf9294004e933adbf38bd5ce",
+  "originalScheduleDigest": "9d2aed15316e0a3fe7413dbc4b53b88b3fa70f3e8e1c00449a4f05c8e8db30d4",
+  "originalSchedulePositions": 180,
+  "originalPairQuality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 0,
+    "cases": 0,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 0"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "3ee7d65bd3e3c189355546546ea4e191683919be2e753995740b4c9124d3c77e"
+  },
+  "originalReservationDelta": 1,
+  "originalRunIdsMustRemainVisible": [
+    "run_76af8c7911754698b595",
+    "run_9a1d0aec74c646499a50"
+  ],
+  "scope": "A new prospective qualification cohort, not repair or promotion of the original campaign. Preserve the original schedule and append one whole new trial; require three eligible pairs per case. No candidate failure or eligible baseline failure may be retired. No reservation is released.",
+  "contentSha256": "c952f1ca5477f2c89bd094f4d49dbc07ea034d35ea242d68b6ea7d8380b8cd91"
+}

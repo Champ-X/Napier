@@ -1,0 +1,82 @@
+{
+  "kind": "napier.task-failure-compaction-recovery-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T11:25:21.565946+00:00",
+  "sourceSnapshot": "/tmp/napier-harness-failure-invocations-v1",
+  "productionBindings": [
+    {
+      "path": "packages/runtime/src",
+      "fileCount": 1178,
+      "inventorySha256": "24410e3998a9dc1537dd51832af2c5bd496e7f9366706c5fa26a4a184869b5e8",
+      "matchesFrozen": true
+    },
+    {
+      "path": "packages/runtime/dist",
+      "fileCount": 3546,
+      "inventorySha256": "22a29ad05a86ba66877c787f85442e40c0ad8c2b2c7cc75a8f27b0d516954157",
+      "matchesFrozen": true
+    },
+    {
+      "path": "packages/contracts/src",
+      "fileCount": 79,
+      "inventorySha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+      "matchesFrozen": true
+    },
+    {
+      "path": "packages/contracts/dist",
+      "fileCount": 238,
+      "inventorySha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+      "matchesFrozen": true
+    }
+  ],
+  "fixture": {
+    "path": "packages/runtime/test/task-failure-compaction-recovery.test.ts",
+    "sha256": "0cc7b800be7589ed961300e800b17a34e457296897c421e3a12c8954d6ddd5fc",
+    "includedInOriginalFreeze": false
+  },
+  "verification": {
+    "reportPath": "/tmp/napier-failure-compaction-recovery-final-v1.json",
+    "sha256": "c9e3903b95ecdd9f8ff17953c5dcb945ec271ecdffded84d3f83bb6ccbf1229d",
+    "passed": 1,
+    "failed": 0,
+    "provider": "faux; credentials and live flags removed",
+    "runtime": "real AgentRuntime and LocalStore",
+    "checks": [
+      "Two distinct missing-file read failures survive provider overflow and actual compaction, despite a checkpoint summary asserting resolution.",
+      "A later budget rejection emits one blocked and one failed event for the same invocation; both remain visible.",
+      "A fresh Runtime and reopened durable store retain all four rejection records.",
+      "After a.txt becomes available, its identical-input read settles only its own review hint; b.txt and the two budget rejection records stay pending.",
+      "Recovery starts exactly one tool invocation with no rejected tool events and leaves the parent ledger byte-identical.",
+      "Both Runs pass model-request evidence binding validation; working-state task completion remains not_determined."
+    ],
+    "earlierFixtureAttempts": {
+      "preservedReports": [
+        "/tmp/napier-failure-compaction-recovery-attempt-1.json",
+        "/tmp/napier-failure-compaction-recovery-attempt-2.json",
+        "/tmp/napier-failure-compaction-recovery-attempt-3.json",
+        "/tmp/napier-failure-compaction-recovery-attempt-4.json",
+        "/tmp/napier-failure-compaction-recovery-attempt-5.json",
+        "/tmp/napier-failure-compaction-recovery-attempt-6.json",
+        "/tmp/napier-failure-compaction-recovery-attempt-7.json"
+      ],
+      "diagnosis": "Initial provider context clone included executable tools. Subsequent expectations omitted budget failed/blocked events. Production code was not changed to satisfy this test."
+    }
+  },
+  "paidApiCalls": 0,
+  "spending": {
+    "maxFen": 5000,
+    "committedFen": 1104,
+    "remainingFen": 3896,
+    "requests": 154,
+    "reservedRequests": 0
+  },
+  "limitations": [
+    "Same-process store reopening and Runtime reconstruction, not an operating-system crash/restart.",
+    "Scripted provider behavior is deterministic integration evidence, not live-model quality evidence.",
+    "A blocked/failed pair is conservatively retained as two rejection records; do not interpret record count as distinct executed calls.",
+    "Earlier 36 focused tests remain separate; no full Runtime suite rerun.",
+    "Current production source remains unqualified against the 30-case/three-paired-trial gate."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

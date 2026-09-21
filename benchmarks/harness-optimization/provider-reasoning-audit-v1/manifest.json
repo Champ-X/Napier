@@ -1,0 +1,22 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "provider_reasoning_audit_v1",
+  "title": "Audit provider reasoning compatibility from actual SDK sources",
+  "maxTurns": 32,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": [
+    "findings.json",
+    "REPORT.md"
+  ],
+  "requiredTools": [
+    "read_file",
+    "apply_patch"
+  ],
+  "requiredCompletedTools": [
+    "read_file",
+    "apply_patch"
+  ]
+}

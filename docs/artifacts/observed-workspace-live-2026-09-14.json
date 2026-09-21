@@ -1,0 +1,33 @@
+{
+  "kind": "napier.observed-workspace-live-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T19:39:48.847438+00:00",
+  "runtimeSnapshot": "/tmp/napier-harness-input-capture-v2",
+  "runId": "run_5b10106ba19941b088cb",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "taskSuccess": true,
+  "originalToolFailures": 4,
+  "initialFixturePreserved": true,
+  "observedBytesMatchSettlementReceipt": true,
+  "externalGraderExcluded": true,
+  "archivedOutputGraderExitCode": 0,
+  "originalGraderExitCode": 0,
+  "observedWorkspace": {
+    "kind": "napier.harness-observed-workspace",
+    "schemaVersion": 1,
+    "runId": "run_5b10106ba19941b088cb",
+    "files": {
+      "README.md": "7df580dd76bac99f749ba647023e1a1c48bbc2bb88bb4b075669a8a7364332d4",
+      "src/retry-after.mjs": "b701021977993eb9d37f3870ef26a976c492ecc8d42a4cd1fff9e7cb51e6b13f",
+      "src/retry.mjs": "5a54029f09aab056c156bcb41a35703efc6332b3c1e9f97117861c8556322811",
+      "test/public.test.mjs": "2836c11ca241795b3ebfeff7b5be25869e26be8805cb3b0983b6d99389657058"
+    },
+    "contentSha256": "3b6e55e3082e7cf9607f01b614dcd90c5cbf3899f4f3354733bee5842c8b528d"
+  },
+  "bundle": "/Users/champ/.cache/napier-seven-quality/observed-workspace-live-v1/bundle",
+  "scope": "One fresh real-model repair and output archival probe; not paired policy qualification",
+  "promotionReady": false
+}

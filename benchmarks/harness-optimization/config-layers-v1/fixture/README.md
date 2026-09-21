@@ -1,0 +1,6 @@
+# Layered configuration
+resolveConfig(defaults, fileLayers, environment, overrides) combines in that order.
+Inputs are JSON-like plain objects; return fresh structures and never mutate or alias caller data, including arrays and nested objects.
+Recursive object merging retains unspecified nested defaults; arrays replace instead of concatenate. A null property deletes that key. Undefined properties are ignored. false, zero and empty strings are meaningful. Root layers must be plain objects; nonfinite numbers, unsupported values and cycles are invalid. Object keys __proto__, prototype and constructor at any depth (including inside arrays) are invalid and must throw TypeError. Nothing may modify Object.prototype.
+Only APP_PORT, APP_DEBUG and APP_TAGS are read from environment. Missing variables have no effect. PORT is a decimal integer string in 0..65535; DEBUG must be exactly true or false; TAGS is comma separated, trimmed, removes empty entries; an empty string means an empty array. Invalid values throw TypeError. Unknown environment variables are ignored. Environment values map to server.port, debug and tags respectively. Explicit overrides have highest precedence.
+Run: node --test test/config.test.mjs

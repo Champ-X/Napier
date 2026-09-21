@@ -1,0 +1,31 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_cross_domain_v1",
+  "cases": [
+    {
+      "path": "harness-optimization/config-layers-v1",
+      "coverage": ["recursive-edit", "input-ownership", "validation"]
+    },
+    {
+      "path": "harness-optimization/cursor-pagination-v1",
+      "coverage": ["multi-module-edit", "protocol-validation", "state-changes"]
+    },
+    {
+      "path": "harness-optimization/ledger-reconciliation-v1",
+      "coverage": ["python-toolchain", "exact-money", "time-boundaries"]
+    },
+    {
+      "path": "harness-optimization/memory-shipping-v1",
+      "coverage": ["task-memory", "source-freshness", "scope"]
+    },
+    {
+      "path": "harness-optimization/requested-report-v1",
+      "coverage": ["report-output", "scope", "arithmetic"]
+    },
+    {
+      "path": "coding/pricing-options-migration-v1",
+      "coverage": ["lsp", "multi-file-migration", "behavior-preservation"]
+    }
+  ]
+}

@@ -9,6 +9,16 @@ import {
 const hash = "a".repeat(64);
 
 describe("edit dialect adapter", () => {
+  it("preserves a valid exact replacement on OpenAI-compatible models without inventing anchors", () => {
+    const model = { ...fauxProvider().getModel(), api: "openai-completions" as const };
+    const plan = compileEditIntent({
+      model, availableToolNames: ["apply_patch"],
+      intent: { kind: "content", target: "a.ts", expectedSha256: hash,
+        replacements: [{ oldText: "a", newText: "b" }] },
+    });
+    expect(plan.dialect).toBe("structured_patch");
+    expect(plan.input).toMatchObject({ operation: "replace", edits: [{ oldText: "a", newText: "b" }] });
+  });
   it("selects hashline for OpenAI and normalizes to apply_patch", () => {
     const plan = compileEditIntent({
       model: fauxProvider({ provider: "openai" }).getModel(),

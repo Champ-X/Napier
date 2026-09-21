@@ -1,0 +1,10 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_native_toolchain_v1",
+  "cases": [
+    { "path": "harness-optimization/rollout-dependency-plan-v1", "coverage": ["native-node-verification", "dependency-deployment"] },
+    { "path": "harness-optimization/incremental-ndjson-v1", "coverage": ["streaming-utf8", "decoder-lifecycle"] },
+    { "path": "harness-optimization/bounded-async-queue-v1", "coverage": ["async-concurrency", "cancellation"] }
+  ]
+}

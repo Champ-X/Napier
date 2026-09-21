@@ -1,0 +1,196 @@
+{
+  "kind": "napier.harness-rapid-engineering-closeout",
+  "createdAt": "2026-09-15T09:52:40.686Z",
+  "scopeDecision": "Latest user instruction stops statistical expansion and requests code review plus rapid closeout. The 30 x 3 promotion gate is not completed or waived as a passing gate; it is no longer a prerequisite for this explicitly requested engineering handoff.",
+  "paidTesting": {
+    "stopped": true,
+    "matchingLiveProcesses": [],
+    "cancelledLauncherPid": 22390,
+    "cancelledChildPid": 22429,
+    "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/outcome-preserving-full-statistics-v1/result.json",
+    "resultSha256": "3727d9367e2172c963af4b449b99da1d81bd5c95f01444d41507e4e671ab4d6f",
+    "originalCollectorStop": {
+      "reason": "job_failed",
+      "job": {
+        "caseId": "bounded_async_queue_v4",
+        "caseRoot": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/cases/bounded_async_queue_v4",
+        "arm": "baseline",
+        "trial": 0,
+        "output": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/bounded_async_queue_v4-baseline-trial-1",
+        "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+        "graderMode": "host",
+        "graderRuntimes": "node"
+      }
+    },
+    "operatorReason": "User requested immediate end of test expansion",
+    "interruptedBaselineHasNoFinalReport": true,
+    "countInterruptedBaselineAsObservation": false,
+    "restartAuthorized": false
+  },
+  "budget": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 7194,
+    "remainingFen": 2806,
+    "requests": 618,
+    "reservedRequests": 5,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "review": {
+    "reviewedFiles": [
+      {
+        "path": "packages/contracts/src/harness-experiments.ts",
+        "sha256": "059506698ec4566b0bb13be9e58eeba476df8ef2aa158d9a71a47ba225507be7"
+      },
+      {
+        "path": "packages/runtime/src/agent-model-stream-lifecycle.ts",
+        "sha256": "2346f2c0dd1b7c8139c45c2f39644a91e2934b166ef8e3a20822290d4269a1a1"
+      },
+      {
+        "path": "packages/runtime/src/model-adapters.ts",
+        "sha256": "08b102d7cc7c1c63be63b21aead0dbc1ef105f0ce75aab474ea87dc0ec521bef"
+      },
+      {
+        "path": "packages/runtime/src/model-provider-wire-compatibility.ts",
+        "sha256": "67e07f44c96bcc0412c0c137cab5ef0bfa61c64cb4c0c2bdd5b6babdfef1bef3"
+      },
+      {
+        "path": "packages/runtime/src/harness-model-call-budget.ts",
+        "sha256": "2744300d0d8dcea4ece038c2228260e5b8dcb4ee21d0290ff19ea5e8dfdc2102"
+      },
+      {
+        "path": "packages/runtime/src/harness-policy-profile.ts",
+        "sha256": "bdc0dd92bb8ba797982991dc7b4669884eccf02a2503b4899b3b395d5da68728"
+      },
+      {
+        "path": "packages/runtime/src/harness-run-policy.ts",
+        "sha256": "742deb883916b958f598fd14af6616d6e8c570de0cec762708125c274b5b60f4"
+      },
+      {
+        "path": "packages/runtime/src/model-harness-experiment-profile.ts",
+        "sha256": "a9e1f1ed1f84be363c5efee0037d0d7fee6d85a4b034638060c9af3e8dd14ed8"
+      },
+      {
+        "path": "packages/runtime/src/workspace-edit-snapshots.ts",
+        "sha256": "6c9fd34b427558c9c2718293dcefb172d130ddb8bee7489ae1749885bcd87368"
+      },
+      {
+        "path": "packages/runtime/src/affected-test-selection.ts",
+        "sha256": "10f55c929f4dbc39e82008f9255ea435a8c31dfcc8f11cb47f8e1127eb10523f"
+      },
+      {
+        "path": "packages/runtime/src/task-memory-selection.ts",
+        "sha256": "8e81e74d9cf17c5a5eba8367be3520935cd1f9f6f92e2fdcf1103d9910ba8e52"
+      },
+      {
+        "path": "packages/runtime/src/task-working-state.ts",
+        "sha256": "e28d9fa1d04d5dfc5530ff93a4dbb87a44ce7511f28f555bf3c25edaa27298f1"
+      },
+      {
+        "path": "packages/runtime/src/prompt-cache-projection.ts",
+        "sha256": "c5f405b1db016484a6b500662e10e88322dc72a5eb2ad198e70b1fb579b92aaa"
+      },
+      {
+        "path": "packages/runtime/src/agent-run-recovery.ts",
+        "sha256": "1d13d6d15d4bd02687e96f9749eb83c642ef8e5c9d7d2e1d540a217072995b3d"
+      },
+      {
+        "path": "packages/runtime/src/run-replay.ts",
+        "sha256": "5f7568bd7d1d56e6fa873dbdb03b516c32746001a012900320de965d90c9aec1"
+      },
+      {
+        "path": "packages/runtime/src/sandbox-oci.ts",
+        "sha256": "40a4047357ce0c825c5b1c49b2812ac87983414df71699cff29dee85a2cd65d1"
+      },
+      {
+        "path": "apps/server/src/thread-execution-http-validation.ts",
+        "sha256": "3710eb979df14413345401cc27b1ced797667d348b5dff52b0ed597a92df991f"
+      }
+    ],
+    "focus": [
+      "Explicit policy validation and no permission expansion",
+      "Exact recovery profile inheritance and hash verification",
+      "Run-local edit references and commit-time preconditions",
+      "Conservative affected-test fallback and workspace freshness",
+      "Task-memory authorization/freshness boundaries and relevance limitations",
+      "Prompt-prefix metrics do not claim provider cache hits",
+      "DeepSeek native max_tokens field and finalizer budget widening rejection",
+      "HTTP preset allowlist and source-bound context state"
+    ],
+    "blockingCodeDefectsFound": [],
+    "limitations": [
+      "Manual review is focused on changed integration boundaries, not a claim of exhaustive review of every historical artifact",
+      "Known real candidate task failure remains: invalid AbortSignal acceptance in generated queue code",
+      "Full 30 x 3 statistics and default promotion are not established",
+      "Existing six architecture violations and release source-manifest drift remain outside this closeout"
+    ]
+  },
+  "verification": {
+    "command": "npm run typecheck -w @napier/contracts -w @napier/runtime -w @napier/cli -w @napier/server -w @napier/web",
+    "exitCode": 0,
+    "packagesPassed": [
+      "contracts",
+      "runtime",
+      "cli",
+      "server",
+      "web"
+    ],
+    "gitDiffCheckExitCode": 0,
+    "additionalModelRequestsForReview": 0,
+    "changedTextCredentialPatternScan": {
+      "scannedFiles": 1115,
+      "findings": []
+    },
+    "priorBoundFocusedTests": "docs/artifacts/bounded-thinking-test-report-index-2026-09-15.json"
+  },
+  "cleanup": {
+    "removedTemporaryFullCollectionModuleAndTests": true,
+    "archive": {
+      "reason": "User stopped full statistical collection and requested rapid code review/closeout. Preserve experimental collector source for historical evidence; remove it from the deliverable.",
+      "createdAt": "2026-09-15T09:51:09.961Z",
+      "files": [
+        {
+          "source": "/Users/champ/orca/Napier/scripts/harness-full-statistical-collection.mjs",
+          "archive": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/stopped-full-collection-sources/harness-full-statistical-collection.mjs",
+          "sha256": "f5a62e87abc2ad48aa1ce8ef9c449295ed2f443fe41f27cceea3d59d8a35d99c"
+        },
+        {
+          "source": "/Users/champ/orca/Napier/scripts/harness-full-statistical-collection.test.mjs",
+          "archive": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/stopped-full-collection-sources/harness-full-statistical-collection.test.mjs",
+          "sha256": "80b80d9274e98fb28e7dbce8d2bd127f55fb0923e2864b715c7d9d4740e2dc32"
+        }
+      ]
+    },
+    "existingProductChangesPreserved": true,
+    "commitOrPushPerformed": false
+  },
+  "statistics": {
+    "eligiblePairs": 11,
+    "rawCompletedReports": 25,
+    "unpairedCandidateFailures": 1,
+    "fullStatisticsComplete": false,
+    "promotionReady": false,
+    "evidence": [
+      "docs/artifacts/bounded-eleven-pair-statistics-2026-09-15.json",
+      "docs/artifacts/bounded-queue-contract-failure-2026-09-15.json"
+    ]
+  }
+}

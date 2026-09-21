@@ -1,0 +1,96 @@
+{
+  "kind": "napier.native-verifier-component-comparison",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T17:42:46.820Z",
+  "sourceRunId": "run_44712dffec51443ebe8a",
+  "scope": "Same correct source and public tests, real OCI verifier calls; no model calls, not Agent task qualification",
+  "image": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+  "inputs": {
+    "src/graph.mjs": "5c78ad2e047c55e735a9d45faa60d36df81b70feb91bb97098ac78d173b25969",
+    "src/rollout.mjs": "8598bd9f056e1af3f80d854ae28a5276cfd71b15c7ffd6fea21bd38b8e2471e7",
+    "test/public.test.mjs": "14e017ccf8311d546677684bbd8d6d705ccdf489c616b3e974b36e6f84d60554"
+  },
+  "stable": true,
+  "observations": [
+    {
+      "arm": "before",
+      "verificationSourceSha256": "08258e3aa6a3512dde873165a567efa89ea130da3f92aad7ff1bbc79cd815b61",
+      "full": {
+        "kind": "test",
+        "status": "failed",
+        "sandbox": "oci-container",
+        "cwd": ".",
+        "scopeSha256": "e2d5856a735bb371a696a15a545e94ce05470c99f3ba3b30704c229d3c230fab",
+        "cwdPathSha256": "cdb4ee2aea69cc6a83331bbe96dc2caa9a299d21329efb0336fc02a82e1839a8",
+        "verifierPathSha256": "8e0382027bfdbaf2db7fee94bb7b1e0f7026e9bdd8f538106ebfc90ba662d0ff",
+        "verifierSha256": "e72480c6b780df9df05557be9f2ee3aac4952202c409196bbbaf5a914d66da4d",
+        "toolchainExternal": false,
+        "toolchainSha256": "de7f0797e1fcde22533f7bc8682362fe6992488c632f3cecab3c9919734d8bb8",
+        "verifierVersion": "4.1.9",
+        "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+        "workspaceSnapshotSha256": "c12dd37dd3edfa1a34e92151470e9071edfd6c9093d9f7ffc2bb5e1a0bd23fd2",
+        "workspaceSnapshotFileCount": 3,
+        "workspaceSnapshotBytes": 5035,
+        "workspaceSnapshotTruncated": false,
+        "durationMs": 442,
+        "exitCode": 1,
+        "signal": null,
+        "stdoutChars": 325,
+        "stderrChars": 247,
+        "stdoutSha256": "924d247104d71ae5938ae451a615371ce9525137b049703f18c68f5a03f6efd6",
+        "stderrSha256": "e7457eac965d73e24afef26bcc790914c23e76a22ad98b582b2a066b0793236b",
+        "stdoutTruncated": false,
+        "stderrTruncated": false,
+        "resultSha256": "880ba6d4bfb00e57be5d909fdffc4fa7373260d1c9b4156ae61c7bd3d9a37821"
+      },
+      "selected": {
+        "status": "failed",
+        "verifierSha256": "e72480c6b780df9df05557be9f2ee3aac4952202c409196bbbaf5a914d66da4d",
+        "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+        "stdoutSha256": "d1d4de6daedd94981ebbb9e3bc01e2fb4980c1787e332b0fae5bb68432fe91d8",
+        "stderrSha256": "e7457eac965d73e24afef26bcc790914c23e76a22ad98b582b2a066b0793236b"
+      }
+    },
+    {
+      "arm": "after",
+      "verificationSourceSha256": "4c19abd16ac866f1ab62f452d361dd4f8abafdf3a8f9c97ae38cbfca39c146ac",
+      "full": {
+        "kind": "test",
+        "testRunner": "node-test",
+        "testRunnerSourceSha256": "6f3ec2d54de492b067f8689381d0c1005270a0a7ffa8abed97a59e82daeae7a9",
+        "cwdPathSha256": "cdb4ee2aea69cc6a83331bbe96dc2caa9a299d21329efb0336fc02a82e1839a8",
+        "verifierPathSha256": "95275b611231c0aeaac022a43c1a74bbcf6fd5e8ea95c3e18397ce0edf43077f",
+        "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+        "toolchainExternal": false,
+        "toolchainSha256": "2bcc528bc77e5f455afc5c079787672fec2521513631e6b402dba7ecd67e29e1",
+        "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+        "workspaceSnapshotSha256": "c12dd37dd3edfa1a34e92151470e9071edfd6c9093d9f7ffc2bb5e1a0bd23fd2",
+        "workspaceSnapshotFileCount": 3,
+        "workspaceSnapshotBytes": 5035,
+        "workspaceSnapshotTruncated": false,
+        "status": "passed",
+        "sandbox": "oci-container",
+        "cwd": ".",
+        "scopeSha256": "ca41c1a41588b3f6250d82868988e16164529dbfc8deff9074bc3148f5b8e1a6",
+        "durationMs": 237,
+        "exitCode": 0,
+        "signal": null,
+        "stdoutChars": 246,
+        "stderrChars": 0,
+        "stdoutSha256": "17365f33291455a23e7db5c1c27543aec9a3e645fd4d7d71b406568f99a761f9",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutTruncated": false,
+        "stderrTruncated": false,
+        "resultSha256": "c76d957549460fc00304e6bd013391d83c77ad65742cbcbde2db2ce4411b4111"
+      },
+      "selected": {
+        "status": "passed",
+        "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+        "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+        "stdoutSha256": "a057307041c62ec7507b6e625fe96b03fcc818b7cc2ceeccb4bdb5deeb922356",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "contentSha256": "81ae11809e50d1a6528b5509ec569e840501a7aacccd691725871e51c2dd20ee"
+}

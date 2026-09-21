@@ -1,0 +1,199 @@
+{
+  "kind": "napier.tool-failure-validation-envelope-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T11:43:04.746144+00:00",
+  "problem": "Legacy classification searched an SDK schema-validation diagnostic together with its echoed rejected arguments. HTTP status 429 inside rejected JavaScript was classified as a real rate limit. Other payload terms could falsely imply timeout, cancellation or fatal session state.",
+  "change": "Recognize the installed SDK validation-error header and diagnostic structure before legacy keyword inference; keep rejection scoped to invalid input/correct_input. Preserve bounded original diagnostic hashing and ordinary non-envelope classification. This remains legacy fallback, not trusted declared failure authority.",
+  "productionSourceChanges": [
+    "packages/runtime/src/tool-failure-legacy-fallback.ts"
+  ],
+  "bindings": [
+    {
+      "path": "packages/runtime/src/tool-failure-legacy-fallback.ts",
+      "sha256": "04bf961f383807b935bb89aa9ea65cc0ffaea256ffd01a4cc7bc5fbbea7c08f5"
+    },
+    {
+      "path": "packages/runtime/dist/tool-failure-legacy-fallback.js",
+      "sha256": "95ad8e7e861268a1f638432fab5a75ed8f38451cf6868fb45b9b5bc2951a63ce"
+    },
+    {
+      "path": "packages/runtime/test/tool-failure-validation-envelope.test.ts",
+      "sha256": "af8ab2d733c9ce47af9da024249005d461b24247c20125a1d1d252ded6b0f851"
+    },
+    {
+      "path": "packages/runtime/test/agent-tool-failure-context.test.ts",
+      "sha256": "cf871193fafe498b783932ff88abff5dd16c529c71f0d666da5ad36f1f59039a"
+    },
+    {
+      "path": "packages/runtime/test/agent-tool-failure-replay.test.ts",
+      "sha256": "a8790c99039c35a3e5ddcff9f4a28507b43fc7874f9719b1ea87bf973ecf2198"
+    },
+    {
+      "path": "packages/runtime/test/task-failure-compaction-recovery.test.ts",
+      "sha256": "0cc7b800be7589ed961300e800b17a34e457296897c421e3a12c8954d6ddd5fc"
+    },
+    {
+      "path": "packages/runtime/test/tool-failure-builtins.test.ts",
+      "sha256": "573f610c0875d9d727b63766fc7bcea7c391f4ed9f665f1ec1c45a26c1c38304"
+    },
+    {
+      "path": "packages/runtime/test/tool-failure-semantics.test.ts",
+      "sha256": "438598d18519aa01708910214ada44a1ef184ad429052bb5697f5e0c71d4cefe"
+    }
+  ],
+  "verification": {
+    "initial": {
+      "path": "/tmp/napier-validation-envelope-before-v1.json",
+      "sha256": "c179ce8c80b3dd98c73c837a8d8ff12f45bcdbbcec1ad5b1e578725d4f7ca878",
+      "failed": 8,
+      "passed": 4
+    },
+    "final": {
+      "path": "/tmp/napier-validation-envelope-final-v1.json",
+      "sha256": "086127948fcacaabfdf2cc14759e16eae19f69ac1af7128b9be0994161ca1ef7",
+      "passed": 26,
+      "failed": 0,
+      "files": 6,
+      "sameNamedRegressionsNowPassed": 8,
+      "installedSdkSchemaValidationChecked": true,
+      "compactionStoreRecoveryChecked": true
+    },
+    "runtimeCompilation": {
+      "command": "node node_modules/typescript/bin/tsc -p packages/runtime/tsconfig.json",
+      "passed": true
+    },
+    "architecture": {
+      "path": "/tmp/napier-validation-envelope-architecture-v1.json",
+      "sha256": "34c3df88b002d389cd3396815e35c307656241ddf29930846e096dc9789b5334",
+      "existingViolations": [
+        "apps/web/src/use-workspace-view-model.ts has 2317 lines, exceeding the 1884-line budget",
+        "packages/contracts/src/skill-load-standard.ts has 533 lines, exceeding the 500-line budget",
+        "packages/runtime/src/browser-session.ts has 506 lines, exceeding the 500-line budget",
+        "packages/runtime/src/standard-skill-snapshot-compose.ts has 506 lines, exceeding the 500-line budget",
+        "apps/web/src/conversation-thinking-view-model.ts has function complexity 26, exceeding the 25 budget",
+        "apps/web/src/api.ts has change coupling (fan-in * fan-out) 111, exceeding the 102 budget"
+      ],
+      "newViolations": 0,
+      "budgetsRaised": false
+    }
+  },
+  "retainedLiveFailureReplay": {
+    "path": "/tmp/napier-validation-envelope-retained-replay-v1.json",
+    "sha256": "ae3a82e8ad9e9c6d77b5160ad91fdd57f99d6152ff966d7315d8dd7db60a1e56",
+    "result": {
+      "kind": "napier.retained-validation-envelope-replay",
+      "schemaVersion": 1,
+      "runId": "run_5ccdc2b2e2ac454d8170",
+      "sourceReportSha256": "e3475ee8eddcf1ef613000e86f5a260ab716721db886182b0bc7e4fce0ac9a7f",
+      "sourceAuditSha256": "5c1bd11b81c86bee0ba56ddcb49c7b266e1c20bff516d8fcfc7740b735388b71",
+      "results": [
+        {
+          "eventId": "event_afdcb1cb8e504b36b1d1",
+          "callId": "call_00_K8Uxl3rwmKEKHclNjEHU0172",
+          "recordedClass": "invalid_input",
+          "oldReplayClass": "invalid_input",
+          "currentReplayClass": "invalid_input",
+          "currentDisposition": "correct_input",
+          "diagnosticSha256": "7c0894603527cf5f073753fcd60a08b65d7daa2d78bf04e0f4ebfd7048827df5",
+          "diagnosticBindingUnchanged": true
+        },
+        {
+          "eventId": "event_2c7d4276340d49f08a80",
+          "callId": "call_01_l7wle34pqPPhkm42wh057498",
+          "recordedClass": "rate_limited",
+          "oldReplayClass": "rate_limited",
+          "currentReplayClass": "invalid_input",
+          "currentDisposition": "correct_input",
+          "diagnosticSha256": "03aee04cc4d2481ccbf3158226dbaee66e569aa74d7b32a9e5a5b3f407dd3f81",
+          "diagnosticBindingUnchanged": true
+        }
+      ],
+      "scope": "Offline reclassification of exact retained failure outputs; no original ledger or Run outcome is rewritten, and no model request is made."
+    }
+  },
+  "freeze": {
+    "path": "/tmp/napier-harness-validation-envelope-v1/freeze-receipt.json",
+    "sha256": "f97732f46f140e9f2dc2f8b3e006028559b8ed451434c36682ee7fe909ee37f9",
+    "receipt": {
+      "kind": "napier.harness-runtime-freeze",
+      "schemaVersion": 1,
+      "snapshot": "/tmp/napier-harness-validation-envelope-v1",
+      "parentSnapshot": "/tmp/napier-harness-failure-invocations-v1",
+      "parentReceiptSha256": "6429bb0a893096f94698ec75ed8cbea1b395f21cfcfbfd944bdd2945806cf5f5",
+      "recordedAt": "2026-09-14T11:41:29.910615+00:00",
+      "runtimeSourceChanges": ["tool-failure-legacy-fallback.ts"],
+      "bindings": [
+        {
+          "path": "packages/runtime/src",
+          "fileCount": 1178,
+          "inventorySha256": "687a711678d9b980e3627e188d77affb4d8ca9bd557037743e267ac864319b85",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/runtime/dist",
+          "fileCount": 3546,
+          "inventorySha256": "0d6b5ec30bca711a4f44c03d6bd43cd69e405ae19c283be71e23c53246ea33a7",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/runtime/test",
+          "fileCount": 570,
+          "inventorySha256": "240b1ce8b1756ac27adbbcf9a761612e0e5bf6e38ea51a7ddac5e308f37d5ba0",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/contracts/src",
+          "fileCount": 79,
+          "inventorySha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/contracts/dist",
+          "fileCount": 238,
+          "inventorySha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/contracts/test",
+          "fileCount": 11,
+          "inventorySha256": "451e3f5a93653aa9e548a73b437b13e230b22145ff7953a9782ec66d4f117296",
+          "matchesWorkspaceAtFreeze": true
+        }
+      ],
+      "workspaceAliases": {
+        "runtime": "/private/tmp/napier-harness-validation-envelope-v1/packages/runtime",
+        "contracts": "/private/tmp/napier-harness-validation-envelope-v1/packages/contracts"
+      },
+      "reboundLinks": [
+        "node_modules/@napier/contracts",
+        "node_modules/@napier/runtime"
+      ],
+      "profileFileSha256": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4",
+      "scope": "Current Runtime/Contracts source, compiled dist and tests; inherited scripts are not a new execution driver. External dependencies remain linked. Old dependency preflight receipt deliberately not copied.",
+      "paidApiCalls": 0,
+      "qualityQualified": false
+    }
+  },
+  "paidApiCallsForFix": 0,
+  "latestPriorLiveObservation": {
+    "path": "docs/artifacts/failure-invocations-http-retained-baseline-validation-2026-09-14.json",
+    "sha256": "3cd1b0b658ddb79783c7be45816307aace38e0ab274f16d53c7eda3ca49fa381",
+    "qualifiedSource": "/tmp/napier-harness-failure-invocations-v1",
+    "qualifiesThisChangedSource": false
+  },
+  "spending": {
+    "maxFen": 5000,
+    "committedFen": 1204,
+    "remainingFen": 3796,
+    "requests": 166,
+    "reservedRequests": 0
+  },
+  "limitations": [
+    "Text-based legacy fallback still cannot make arbitrary tool output authoritative; declared structured failure resolvers are unchanged.",
+    "No real-model call was made for this latest source; the successful HTTP observation belongs to its parent freeze.",
+    "The full Runtime suite was not rerun; earlier unexplained Workflow failure and six existing architecture issues remain.",
+    "The full 30-case/three-trial quality gate remains insufficient and no default strategy is promoted."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

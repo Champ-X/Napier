@@ -1,0 +1,17 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "mixed_typescript_python_service_v1",
+  "title": "Repair a TypeScript booking frontend and Python quote API",
+  "maxTurns": 48,
+  "promptPath": "prompt.md",
+  "fixturePath": "fixture",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": ["frontend/booking.ts", "backend/quote.py"],
+  "requiredTools": ["workspace_process", "verify_workspace"],
+  "requiredCompletedTools": ["apply_patch", "workspace_process", "verify_workspace"],
+  "processAcceptance": {
+    "requiredActions": {"start": 1, "poll": 1, "cancel": 1},
+    "noRunningSessions": true
+  }
+}

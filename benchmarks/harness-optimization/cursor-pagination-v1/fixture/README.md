@@ -1,0 +1,6 @@
+# Feed pagination
+paginate(rows, {limit=20, status='all', cursor=null}={}) returns {items, nextCursor}.
+Rows have a unique nonempty string id, a nonnegative safe integer createdAt timestamp, and status open or closed. Sort descending createdAt and then ascending id using JavaScript string comparison (not localeCompare). Filter status before taking a page. Limit must be integer 1..100. Invalid limit/status/row data or duplicate IDs throw TypeError. Never mutate rows or input row objects; returned items are fresh shallow copies.
+Cursors are canonical unpadded base64url UTF-8 JSON objects with exactly {v:1, createdAt, id, status}. encodeCursor(key) takes {createdAt,id,status}; decodeCursor(token,status) validates shape/version, canonical encoding, bounds and the exact requested filter. Malformed/noncanonical tokens or mismatched filters throw TypeError. Max cursor length is 1024 bytes. A missing/null cursor starts at the beginning; the empty string is invalid.
+A cursor marks the exclusive last key, not an array offset and not a reference to an existing row. Therefore deleted cursor rows remain usable and inserting newer rows does not repeat already-seen rows. nextCursor is null if no matching items remain beyond this page; otherwise encode the final returned item's key and filter.
+Run: node --test test/paginate.test.mjs

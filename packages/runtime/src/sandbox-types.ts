@@ -83,6 +83,19 @@ export interface SandboxNodeDebuggerRuntimeBinding {
   runtimeIdentitySha256: string;
 }
 
+export interface SandboxPythonDebuggerRuntimeBinding {
+  runtime: "python-debugger";
+  executable: string;
+  executableSha256: string;
+  pythonVersion: string;
+  debugpyRoot: string;
+  debugpyVersion: string;
+  packageSha256: string;
+  isolation: "oci";
+  protocolWorkspaceRoot?: string;
+  runtimeIdentitySha256: string;
+}
+
 export interface SandboxVerificationRuntimeBinding {
   runtime: "verification";
   nodeExecutable: string;
@@ -112,6 +125,9 @@ export interface OsSandboxAdapter {
   resolveLspRuntime?(): Promise<SandboxLspRuntimeBinding> | undefined;
   resolveNodeDebuggerRuntime?():
     | Promise<SandboxNodeDebuggerRuntimeBinding>
+    | undefined;
+  resolvePythonDebuggerRuntime?():
+    | Promise<SandboxPythonDebuggerRuntimeBinding>
     | undefined;
   resolveVerificationRuntime?():
     | Promise<SandboxVerificationRuntimeBinding>

@@ -1,0 +1,166 @@
+{
+  "kind": "napier.harness-campaign-convergence",
+  "schemaVersion": 1,
+  "decision": "remediate_before_more_model_calls",
+  "allowQualificationDispatch": false,
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "currentQuality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 9,
+    "cases": 9,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 9",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+      "transaction_savepoints_v1: need 3 paired trials; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "config_layers_v1: need 3 paired trials; observed 1",
+      "cursor_pagination_v1: need 3 paired trials; observed 1",
+      "resumable_byte_upload_v1: need 3 paired trials; observed 1",
+      "atomic_json_patch_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "f130b34d9a8d1394c8fd882562a58f68419b249d9b9db276e53843a32cc81d64"
+  },
+  "persistentBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "irreparablePairs": [
+    {
+      "pairKey": "[\"incremental_ndjson_v1\",0]",
+      "caseId": "incremental_ndjson_v1",
+      "trial": 0,
+      "reasons": [
+        "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+        "Need 1 cases; observed 0"
+      ]
+    }
+  ],
+  "optimisticComparablePairs": 89,
+  "optimisticQualifiedCases": 29,
+  "schedulePositions": 180,
+  "unstartedPositions": 160,
+  "modelRequests": 0,
+  "scope": "Optimistic reachability only, not approval or promotion evidence. Preserve all observations and limits; no resampling or missing-usage settlement is authorized.",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic-original-pair-v1/plan.json",
+  "planSha256": "b8f885dd56b5854fc563e2768d5ce45a0814ca54f7edaf555a5b06908f3ea3fd",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic-original-pair-v1/result.json",
+  "resultSha256": "de68ed246764215199ef356936bae4fda037b2e59e7e14324c694dca6cfb5eb5",
+  "reportBindings": [
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "0d154f1e8038c84385c22dd8310e76b4e8e62bdda27bbe99a41f5bc51fd4696a",
+      "runId": "run_9a1d0aec74c646499a50"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "894b91b7d0255be49dc76887dd3ff8efc44fe4ee9b8f0084695d393d2f58cc87",
+      "runId": "run_76af8c7911754698b595"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "57e48c2e1c9650e21d23cd2c4fa57381fb699377acad27daedcf2f29245be109",
+      "runId": "run_bed442cce02b418681f7"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "99d5cd702808590bb9f3d9696811f2404fe7ac117d12db403aee63872673e4de",
+      "runId": "run_db38b4032c7146aab134"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "f9a52dcbade13bdba946156c8d246924c7c529e3027ac4454edbaebf9de8cf0b",
+      "runId": "run_b0f70ffcfc2c4dc1bff1"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "76a5f9afbec5ac7e576d2059e55dbf0896aa3273f34186ae509a4a5428ffa099",
+      "runId": "run_066041099c38426ba52f"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "ba28a0382c99b8a8bb15d01b6da0b8ae2bb736fb57f3075b89297357398df3f0",
+      "runId": "run_a692964381254931ba72"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "d0567e11ae01730c3adb38143d7bcd32c3da781ef28e57cd10168facf27da2c6",
+      "runId": "run_a03520dd63f54445a631"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "c52932beef9b02e6f2e3dc12f7a64d7145ac791b3c6fd1e4444ba6aa889eaaee",
+      "runId": "run_d445925674494856a8a5"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "1a3f36c8e5a246c7e6d7cd15b3814a0be662873af4deac979feaa88beb03a11a",
+      "runId": "run_e2127a1de8ca48249e88"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/memory_shipping_current_source_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "81fc4a1464e2a316cdc25c9b0c7641a792689aab65a52e432f769275fb52800b",
+      "runId": "run_9237f499aa8844fda46f"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06",
+      "runId": "run_569d84397d24401f893d"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/config_layers_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "39087b59c7a9e6da5aab1b3b447d8219b7120e7766ef2961827748dbda12a704",
+      "runId": "run_8f043af8ef7047329815"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/config_layers_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "60e2753fc27c8e8dce9db6a8624a4cf7c2cd8af204e9833d929a85a67c67770f",
+      "runId": "run_5cee4ebe9a9948b0a892"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/cursor_pagination_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "39aa41060e9ca2d6dcf4daa1abeff3f12e031464cd7bc5caa45aefb4056f9653",
+      "runId": "run_f35c3763338840ffa908"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/cursor_pagination_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "abc7af933a5e02cb765d65d1c0918acbcc0eec0cc7d4fd1000859433fa9f1b6d",
+      "runId": "run_12c7660d536e4dd68815"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/resumable_byte_upload_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "4269151d6314da42a8e0861d778073ce8f85792e65f8aa2ec0a9b3439d194271",
+      "runId": "run_a18f9e60282c4811b333"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/resumable_byte_upload_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "a8b7ccd8576db6254b2ffb392a106aa0636bb9501c4db167867c9fae00ed9af9",
+      "runId": "run_36c571a3672f4508ab26"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "aacffa77a07471dafdaac8bc4c8ac4709e8d14a05a9ed8472921891f82dcae94",
+      "runId": "run_7daefd4d3e684a98a5d6"
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic_json_patch_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "98aecc42bc8ca566b5530a505ba666f7dc94ba1d9141757328171eedda585566",
+      "runId": "run_13beaa3468314e28809e"
+    }
+  ]
+}

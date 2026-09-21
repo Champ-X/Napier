@@ -1,0 +1,21 @@
+{
+  "kind": "napier.original-baseline-stop-clarification",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T05:33:55.033Z",
+  "priorResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/debugger-original-pair-v1/result.json",
+  "priorResultSha256": "e7b53ab6cac949fa3f86e6dca0e085d2d386ef1d37b698ac446a2de8cb09b34d",
+  "priorAuditPath": "/Users/champ/orca/Napier/docs/artifacts/staged-debugger-final-audit-2026-09-15.json",
+  "priorAuditSha256": "47603c38cf76de75d9954f791c0e4eed88972d467943055ac7ac43cf7a8e22a9",
+  "candidateRunId": "run_9a1d0aec74c646499a50",
+  "baselineRunId": "run_76af8c7911754698b595",
+  "originalStop": "aggregate_quality_or_evidence_failed",
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "originalObservationEligible": false,
+  "originalReservationsReleased": false,
+  "sourceChanged": false,
+  "qualityGateChanged": false,
+  "reason": "The original NDJSON candidate succeeded but its baseline failed after a thinking guard, with incomplete provider usage. That observation remains ineligible. All later original reports and aggregate blockers are retained. One different unobserved original pair may add independent evidence without clearing the inherited blocker or enabling promotion. Observe the original TTL/LRU contract on the current staged-verification source: model handling of logical time, inclusive expiry, identity and invalid-call atomicity needs a real Agent and independent grader. No prior current-source observation exists for this task; no availability probe or completed-trial rerun.",
+  "modelRequests": 0
+}

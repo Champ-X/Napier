@@ -1,0 +1,18 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "path_glob_selection_v1",
+  "title": "Path glob selection with ordered include and exclude rules",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": ["src/glob.mjs", "src/select.mjs"],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": ["apply_patch", "run_command"]
+}

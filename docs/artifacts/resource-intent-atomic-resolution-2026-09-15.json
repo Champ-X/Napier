@@ -1,0 +1,161 @@
+{
+  "kind": "napier.resource-intent-failed-resolution",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:02:12.868Z",
+  "runId": "run_f3346b82709444f0b012",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-resource-intent-core-v13/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "837e7a936bf838cc7c4d1c8ba702f4f7ef0e269a0887e00301dbf5bdc5dd5fbc",
+  "sourceFreezeSha256": "a66da1e9aa9e6af8e95ffb7b25bea6d32927cf13620b250038422c5a46699687",
+  "profileFileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398",
+  "resolutions": [
+    {
+      "seq": 13,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 61,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 121,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 322,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "3022fa09fb662c6d3079a863019a86babe78091db45dc3efba0601019d769e55",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    }
+  ],
+  "status": "failed",
+  "taskSuccess": false,
+  "graderExitCode": 1,
+  "changed": [],
+  "thinkingGuardEvents": [
+    {
+      "seq": 319,
+      "payload": {
+        "kind": "napier.model-thinking-loop",
+        "schemaVersion": 1,
+        "action": "retry",
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "reason": "semantic_stall",
+        "attempt": 1,
+        "observedBytes": 83041,
+        "observedThinkingChunks": 20733,
+        "repeatedUnitBytes": 25,
+        "repeatedUnitSha256": "2c52808de4278585855c579f9c533b9a234ac325592bf5cd3a20ab0a9cd4ce52",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 20761,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "costUsd": 0
+        },
+        "usageSource": "reasoning_bytes_estimate",
+        "usageAccounting": {
+          "schemaVersion": 1,
+          "model": "deepseek/deepseek-v4-flash",
+          "strategy": "deepseek_cache_discounted",
+          "rawTotalTokens": 20761,
+          "budgetTokens": 20761,
+          "reportedCostUsd": 0,
+          "estimatedCostUsd": 0.00581308,
+          "budgetCostUsd": 0.00581308,
+          "costStrategy": "price_table_estimate",
+          "priceTableId": "deepseek-default.v1",
+          "priceTableSha256": "6fd887e41de18caa4feec0b9398ce940a8dcc61f35cfab772daae2423ba1a120",
+          "inputWeight": 1,
+          "outputWeight": 1,
+          "cacheReadWeight": 0.02,
+          "cacheWriteWeight": 1,
+          "contentSha256": "fade532c0e98178ed2c5f0f8eeccefb8427b789c21dfd6013bf36b44785ee34d"
+        },
+        "modelContextEnvelopeSha256": "7382338a12217ccde24c2b182d2b55bfa0c5b0deeafb0348ee9bbac17378950a",
+        "modelContextEnvelopeTurnIndex": 2,
+        "modelContextMessageSetSha256": "613c1cda5a4842b0696cf856c7588237f89ee53a8c8ea241762bcdf62403167c",
+        "modelContextToolDefinitionSetSha256": "007d84ecb28fa5974d4abcb75d54f9225a4b3b017928f1c7399df05212b7889e",
+        "contentSha256": "8014ee5be0170de416181b6909b8093a73d11936669c104b2f5a428b98038a6c"
+      }
+    }
+  ],
+  "modelRequests": 0,
+  "scope": "Read-only resolution and failure evidence from the frozen candidate. Four prepared capsules/local admissions include one transport-refused dispatch; only three financial reservations exist. Establishes correct local coding classification despite task failure, not provider receipt of all capsules or semantic-stall causality.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

@@ -1,0 +1,1 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {planRollout} from '../src/rollout.mjs';test('dependencies precede services',()=>assert.deepEqual(planRollout([{id:'api',dependsOn:['db']},{id:'db',dependsOn:[]}]),[['db'],['api']]));

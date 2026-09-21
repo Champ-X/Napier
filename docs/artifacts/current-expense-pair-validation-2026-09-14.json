@@ -1,0 +1,390 @@
+{
+  "kind": "napier.current-expense-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T14:23:27.393Z",
+  "batchResultPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-two-pair-fast-v1/result.json",
+  "batchResultSha256": "b1e76855419ec95779c860f3742d009aa52c78b34dcbf33d3cd5a886eeb38af3",
+  "audits": [
+    {
+      "kind": "napier.settled-python-harness-run-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T14:19:23.425Z",
+      "jobIndex": 12,
+      "runId": "run_005bae7421014a7c892d",
+      "caseId": "weighted_expense_allocation_v1",
+      "arm": "baseline",
+      "status": "completed",
+      "taskSuccess": true,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-grading-amendment-v1/weighted_expense_allocation_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "e1d10f7f8af153e43b8ee3e49cb7fbe97a0c73f5453a35b624ecbd4dede272e3",
+      "auditedCapsules": 11,
+      "modelRequestBindingsVerified": true,
+      "toolCalls": [
+        {
+          "callId": "call_02_jlaenK8VTpEr4ji4frSu1802",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "3c29fb4c714ba3182db0c5a7d0db53b1b7092adb0a13928fc807d78e6317f920",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_FSxJesN8NS4HTtNIG7d88830",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "57e2c98153fc6e1453420ebd620f6070776e36b45f056ce5ab278b47e855a55b",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_01_caE5Nrvsh6HWKLgnZUQN8144",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "7bc92bf359af0b645966509a9d6be36b3a9a8318c70ac5c424388ed4f871d252",
+          "terminal": "tool.completed"
+        }
+      ],
+      "toolFailures": 2,
+      "changed": [
+        "src/allocation.py",
+        "src/money.py"
+      ],
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "graderConfiguration": {
+        "kind": "napier.harness-grader-configuration",
+        "schemaVersion": 1,
+        "mode": "sandbox",
+        "sandboxId": "oci-container",
+        "runtimes": [
+          {
+            "runtime": "node",
+            "executable": "/usr/local/bin/node",
+            "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+            "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+          },
+          {
+            "runtime": "python",
+            "executable": "/usr/bin/python3.13",
+            "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+            "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+          }
+        ],
+        "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+      },
+      "graderExecution": {
+        "kind": "napier.harness-grader-execution",
+        "schemaVersion": 1,
+        "runId": "run_005bae7421014a7c892d",
+        "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+        "graderSha256": "3ad122326529c53f34e7cc480b9683c17ebb7a5e6a55ba6aee263c3021706467",
+        "graderRelativePath": "__napier_external_grader__.mjs",
+        "observedWorkspaceSha256": "2f0b3da6ad0400f0a3dfc85a63b0231a618010dbdd61f3b13da5cd711de173c5",
+        "workspaceBeforeSha256": "3074c800af07054722ab1624a1b7dbb8330ff3561034692d7ecde927f1d088d4",
+        "workspaceAfterSha256": "3074c800af07054722ab1624a1b7dbb8330ff3561034692d7ecde927f1d088d4",
+        "workspaceUnchanged": true,
+        "processStatus": "exited",
+        "exitCode": 0,
+        "signal": null,
+        "stdoutSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reportOutputSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+        "stdoutTruncated": false,
+        "stderrTruncated": false,
+        "observationComplete": true,
+        "passed": true,
+        "contentSha256": "7e9de5c184503c3f62ae528217ab45c97fa6a352f9349952a7f64dca1562bc08"
+      },
+      "verificationStatuses": [],
+      "admissions": 12,
+      "minimumIntervalMs": 15001,
+      "conservativeCostFen": 107,
+      "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+    },
+    {
+      "kind": "napier.settled-python-harness-run-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T14:22:24.200Z",
+      "jobIndex": 13,
+      "runId": "run_526b6ede92a34139b012",
+      "caseId": "weighted_expense_allocation_v1",
+      "arm": "candidate",
+      "status": "completed",
+      "taskSuccess": true,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-grading-amendment-v1/weighted_expense_allocation_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "026400f8fbd2f5f4ee7da4eea3f5d45ef093a85cf6b430e2fbb1aa7e6f5b68dc",
+      "auditedCapsules": 9,
+      "modelRequestBindingsVerified": true,
+      "toolCalls": [
+        {
+          "callId": "call_00_B4zhu1MmOc1rTq87673y5139",
+          "toolName": "verify_workspace",
+          "runtime": "python",
+          "kind": "test",
+          "argumentsSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_QAm1X4mlqYv7S1b6cHU64636",
+          "toolName": "verify_workspace",
+          "runtime": "python",
+          "kind": "test",
+          "argumentsSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_01_avQiXzU2h7y2CfQyYLrS5029",
+          "toolName": "run_command",
+          "runtime": "python",
+          "kind": null,
+          "argumentsSha256": "a65d8a153fbb154f5d79a5a8de753009deaf4ec6d2da08f15e04b85388dbe116",
+          "terminal": "tool.completed"
+        }
+      ],
+      "toolFailures": 0,
+      "changed": [
+        "src/allocation.py",
+        "src/money.py"
+      ],
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "graderConfiguration": {
+        "kind": "napier.harness-grader-configuration",
+        "schemaVersion": 1,
+        "mode": "sandbox",
+        "sandboxId": "oci-container",
+        "runtimes": [
+          {
+            "runtime": "node",
+            "executable": "/usr/local/bin/node",
+            "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+            "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+          },
+          {
+            "runtime": "python",
+            "executable": "/usr/bin/python3.13",
+            "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+            "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+          }
+        ],
+        "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+      },
+      "graderExecution": {
+        "kind": "napier.harness-grader-execution",
+        "schemaVersion": 1,
+        "runId": "run_526b6ede92a34139b012",
+        "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+        "graderSha256": "3ad122326529c53f34e7cc480b9683c17ebb7a5e6a55ba6aee263c3021706467",
+        "graderRelativePath": "__napier_external_grader__.mjs",
+        "observedWorkspaceSha256": "155956643fa7196b818f01f7c5eaa12689337f117fd70f27aeca8215d4ea8c8c",
+        "workspaceBeforeSha256": "c957c7e0f010207a1c286d6591b3c556e17d548ff88a1174eee6148e43b8d894",
+        "workspaceAfterSha256": "c957c7e0f010207a1c286d6591b3c556e17d548ff88a1174eee6148e43b8d894",
+        "workspaceUnchanged": true,
+        "processStatus": "exited",
+        "exitCode": 0,
+        "signal": null,
+        "stdoutSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reportOutputSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+        "stdoutTruncated": false,
+        "stderrTruncated": false,
+        "observationComplete": true,
+        "passed": true,
+        "contentSha256": "ca9f42f9a53c9bdec23569f4a6cd08bfb596ca6f0c7dfd98fd3bb189b7202fed"
+      },
+      "verificationStatuses": [
+        "failed",
+        "passed"
+      ],
+      "admissions": 10,
+      "minimumIntervalMs": 15000,
+      "conservativeCostFen": 70,
+      "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 7,
+    "cases": 7,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 7",
+      "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+      "http_retry_policy_v2: need 3 paired trials; observed 1",
+      "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+      "booking_calendar_v2: need 3 paired trials; observed 1",
+      "safe_csv_export_v1: need 3 paired trials; observed 1",
+      "inventory_event_projection_v1: need 3 paired trials; observed 1",
+      "weighted_expense_allocation_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "1987411cb9f185ea0c708876fc7846257ca1c35df8f8dddf566e69bd78083d81"
+  },
+  "spendingAtPairSettlement": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 2579,
+    "remainingFen": 7421,
+    "requests": 343,
+    "reservedRequests": 0,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14"
+    }
+  },
+  "newCostFen": 177,
+  "supplemental": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/expense-supplemental-grade-v1.json",
+    "sha256": "0750d8c9af200069ea7e655213cd9a028389b82ce9cc918be1c33e6ae29fe14e",
+    "kind": "napier.expense-supplemental-grading",
+    "schemaVersion": 1,
+    "createdAt": "2026-09-14T14:21:50.764Z",
+    "oracleFreezeSha256": "c8654d856f6e8e30ab8231991bb85a4b564c2f86999cf67f002ef6f18293ab4f",
+    "scriptSha256": "759a7385d8ed339bd7101dc7e557573208345e29a7b9b66f84aef281647c45bb",
+    "results": [
+      {
+        "arm": "baseline",
+        "runId": "run_005bae7421014a7c892d",
+        "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-grading-amendment-v1/weighted_expense_allocation_v1-baseline-trial-1/trial-1/result.json",
+        "reportSha256": "e1d10f7f8af153e43b8ee3e49cb7fbe97a0c73f5453a35b624ecbd4dede272e3",
+        "configuration": {
+          "kind": "napier.harness-grader-configuration",
+          "schemaVersion": 1,
+          "mode": "sandbox",
+          "sandboxId": "oci-container",
+          "runtimes": [
+            {
+              "runtime": "node",
+              "executable": "/usr/local/bin/node",
+              "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+              "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+            },
+            {
+              "runtime": "python",
+              "executable": "/usr/bin/python3.13",
+              "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+              "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+            }
+          ],
+          "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+        },
+        "originalTaskSuccess": true,
+        "originalGraderExitCode": 0,
+        "grade": {
+          "status": 0,
+          "stdout": "Supplemental expense contract checks passed\n",
+          "stderr": "",
+          "receipt": {
+            "kind": "napier.harness-grader-execution",
+            "schemaVersion": 1,
+            "runId": "run_005bae7421014a7c892d",
+            "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+            "graderSha256": "fcf5fc238ea917383faecf4c04ed90458041af5b0f46ff16459da952c3e671bc",
+            "graderRelativePath": "__napier_external_grader__.mjs",
+            "observedWorkspaceSha256": "2f0b3da6ad0400f0a3dfc85a63b0231a618010dbdd61f3b13da5cd711de173c5",
+            "workspaceBeforeSha256": "4395078299b2c08f695db5610b031c4d422c8da1d314c297e4d4854c806cd707",
+            "workspaceAfterSha256": "4395078299b2c08f695db5610b031c4d422c8da1d314c297e4d4854c806cd707",
+            "workspaceUnchanged": true,
+            "processStatus": "exited",
+            "exitCode": 0,
+            "signal": null,
+            "stdoutSha256": "8e9f607503d90540090e8c3153888fb8d48e7cb9b44831acc1f7e40345f258c8",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reportOutputSha256": "8e9f607503d90540090e8c3153888fb8d48e7cb9b44831acc1f7e40345f258c8",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "observationComplete": true,
+            "passed": true,
+            "contentSha256": "9540450cc08ad8c50ac48e47c0319dce8ec152932048b8b34a5121932eaab0d1"
+          }
+        }
+      },
+      {
+        "arm": "candidate",
+        "runId": "run_526b6ede92a34139b012",
+        "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-grading-amendment-v1/weighted_expense_allocation_v1-candidate-trial-1/trial-1/result.json",
+        "reportSha256": "026400f8fbd2f5f4ee7da4eea3f5d45ef093a85cf6b430e2fbb1aa7e6f5b68dc",
+        "configuration": {
+          "kind": "napier.harness-grader-configuration",
+          "schemaVersion": 1,
+          "mode": "sandbox",
+          "sandboxId": "oci-container",
+          "runtimes": [
+            {
+              "runtime": "node",
+              "executable": "/usr/local/bin/node",
+              "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+              "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+            },
+            {
+              "runtime": "python",
+              "executable": "/usr/bin/python3.13",
+              "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+              "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+            }
+          ],
+          "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+        },
+        "originalTaskSuccess": true,
+        "originalGraderExitCode": 0,
+        "grade": {
+          "status": 0,
+          "stdout": "Supplemental expense contract checks passed\n",
+          "stderr": "",
+          "receipt": {
+            "kind": "napier.harness-grader-execution",
+            "schemaVersion": 1,
+            "runId": "run_526b6ede92a34139b012",
+            "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+            "graderSha256": "fcf5fc238ea917383faecf4c04ed90458041af5b0f46ff16459da952c3e671bc",
+            "graderRelativePath": "__napier_external_grader__.mjs",
+            "observedWorkspaceSha256": "155956643fa7196b818f01f7c5eaa12689337f117fd70f27aeca8215d4ea8c8c",
+            "workspaceBeforeSha256": "457367d1734e1c84e122a8dc7fcd6729c3bb644cb88a2febea3b626d1f826e2c",
+            "workspaceAfterSha256": "457367d1734e1c84e122a8dc7fcd6729c3bb644cb88a2febea3b626d1f826e2c",
+            "workspaceUnchanged": true,
+            "processStatus": "exited",
+            "exitCode": 0,
+            "signal": null,
+            "stdoutSha256": "8e9f607503d90540090e8c3153888fb8d48e7cb9b44831acc1f7e40345f258c8",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reportOutputSha256": "8e9f607503d90540090e8c3153888fb8d48e7cb9b44831acc1f7e40345f258c8",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "observationComplete": true,
+            "passed": true,
+            "contentSha256": "2f818d0c291a735b0afc6fb16eef7aa5af7beffb98aa015f144596c0ed62ad26"
+          }
+        }
+      }
+    ],
+    "regression": false,
+    "eligible": true,
+    "originalsUnchanged": true,
+    "modelRequests": 0,
+    "scope": "Read-only same-image grading of disposable copies; supplemental evidence adds no observations and cannot rewrite original scores."
+  },
+  "source": "/tmp/napier-harness-validation-envelope-v1",
+  "scope": "Two actual Agent Runs, original OCI grades and separately frozen supplemental OCI checks. Original reports unchanged; supplemental checks add no model observations. Seven pairs remain insufficient for 30 cases and three paired trials.",
+  "promotionReady": false
+}

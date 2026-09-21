@@ -1,0 +1,301 @@
+{
+  "kind": "napier.resource-intent-live-delivery",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:51:37.338Z",
+  "runId": "run_7e7109bcf26e40ea89c0",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-resource-intent-core-v13/bm25_document_search_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "565c9818b69565d6c4843d9f635fa4a2649dc94ac9089471941b3844239a7c6d",
+  "sourceFreezeSha256": "a66da1e9aa9e6af8e95ffb7b25bea6d32927cf13620b250038422c5a46699687",
+  "profileFileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398",
+  "resolutions": [
+    {
+      "seq": 13,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 60,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 118,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 205,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 263,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 299,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 356,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 436,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 503,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 568,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 622,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    },
+    {
+      "seq": 709,
+      "taskPhase": "coding",
+      "intents": [
+        "coding"
+      ],
+      "contentSha256": "ce2b3f8df4a2ec3d4c95e1342260a8b991aeceab4450d2dbc41f6d38604dd9d7",
+      "activeToolNames": [
+        "apply_patch",
+        "create_plan",
+        "delegate_task",
+        "list_files",
+        "read_file",
+        "record_run_milestone",
+        "replan_plan",
+        "request_operator_decision",
+        "run_command",
+        "search_files",
+        "update_plan_artifact",
+        "update_plan_step",
+        "verify_workspace"
+      ]
+    }
+  ],
+  "status": "completed",
+  "taskSuccess": true,
+  "graderExitCode": 0,
+  "changed": [
+    "src/search.mjs",
+    "src/tokenize.mjs"
+  ],
+  "previousFailureRunId": "run_1a5a98c8cf484e4686b3",
+  "thinkingGuardEvents": [],
+  "modelRequests": 0,
+  "scope": "Read-only actual resolution evidence from the frozen candidate. Establishes delivered coding classification; does not establish semantic-stall causality or general task quality. Previous failed source observation remains unchanged.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

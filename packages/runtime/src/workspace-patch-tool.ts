@@ -7,6 +7,7 @@ import type {
 import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { WorkspacePatchInputError } from "./workspace-patch-input-error.js";
 import type {
   WorkspacePatchInput,
   WorkspacePatchResult,
@@ -367,7 +368,7 @@ function parseWorkspacePatchInput(
       value.content === undefined ||
       value.edits !== undefined
     ) {
-      invalidPatchFields();
+      invalidPatchFields(value.operation);
     }
     return {
       operation: value.operation,
@@ -385,7 +386,7 @@ function parseWorkspacePatchInput(
     value.createParentDirectories !== undefined ||
     value.edits === undefined
   ) {
-    invalidPatchFields();
+    invalidPatchFields(value.operation);
   }
   if (value.operation === "replace") {
     return {
@@ -401,7 +402,7 @@ function parseWorkspacePatchInput(
           edit.anchorSha256 !== undefined ||
           edit.rangeSha256 !== undefined
         ) {
-          invalidPatchFields();
+          invalidPatchFields(value.operation);
         }
         return { oldText: edit.oldText, newText: edit.newText };
       }),
@@ -420,7 +421,7 @@ function parseWorkspacePatchInput(
           edit.anchorSha256 === undefined ||
           edit.rangeSha256 !== undefined
         ) {
-          invalidPatchFields();
+          invalidPatchFields(value.operation);
         }
         return {
           ...(edit.line !== undefined ? { line: edit.line } : {}),
@@ -443,7 +444,7 @@ function parseWorkspacePatchInput(
         edit.anchorSha256 !== undefined ||
         edit.rangeSha256 === undefined
       ) {
-        invalidPatchFields();
+        invalidPatchFields(value.operation);
       }
       return {
         startLine: edit.startLine,
@@ -455,8 +456,8 @@ function parseWorkspacePatchInput(
   };
 }
 
-function invalidPatchFields(): never {
-  throw new Error("Workspace patch fields do not match operation");
+function invalidPatchFields(operation: WorkspacePatchInput["operation"]): never {
+  throw new WorkspacePatchInputError(operation);
 }
 
 function patchOperation(

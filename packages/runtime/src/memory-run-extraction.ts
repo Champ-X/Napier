@@ -9,3 +9,5 @@ export {
   createMemorySourceProvenance,
   memoryRunMessageIds,
 } from "./memory-provenance.js";
+export { formatTaskMemoryContext, captureMemoryFileDependencies } from "./task-memory-context.js";
+export { prepareAgentMemoryContext } from "./agent-memory-context.js";

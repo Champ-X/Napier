@@ -10,11 +10,72 @@ import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope
 import { modelAdapterReceipt } from "../src/model-adapters.js";
 import {
   compilePrompt,
+  STABLE_PROMPT_COMPILER_ASSEMBLY,
+  validateCompiledPromptArtifact,
   type PromptCompilerLayerInput,
 } from "../src/prompt-compiler.js";
 import { PROMPT_INVARIANT_CORE } from "../src/prompt-invariant-core.js";
 
 describe("Prompt Compiler", () => {
+  it("binds stable assembly without dropping current permissions or dynamic context", () => {
+    const adapter = modelAdapterReceipt(model("openai-responses"));
+    const compile = (capabilities: string, workspace: string) => {
+      const layers = compilerLayers();
+      layers[1]!.sources = [
+        {
+          sourceId: "capabilities.current",
+          content: capabilities,
+          priority: 1000,
+          required: true,
+        },
+      ];
+      layers[3]!.sources = [
+        { sourceId: "workspace.current", content: workspace, priority: 1000 },
+      ];
+      return compilePrompt({
+        purpose: "agent_turn",
+        layers,
+        adapter,
+        assembly: STABLE_PROMPT_COMPILER_ASSEMBLY,
+      });
+    };
+    const first = compile("Workspace writes admitted.", "Version A verified.");
+    const second = compile(
+      "Read-only; writes denied.",
+      "Version B stale; reverify.",
+    );
+    const prefix = [
+      second.layers[0]!.content,
+      second.layers[2]!.content,
+      second.layers[4]!.content,
+    ].join("\n\n");
+    expect(first.systemPrompt.startsWith(prefix)).toBe(true);
+    expect(second.systemPrompt.startsWith(prefix)).toBe(true);
+    expect(second.systemPrompt).toContain("Read-only; writes denied.");
+    expect(second.systemPrompt).toContain("Version B stale; reverify.");
+    expect(second.systemPrompt).not.toContain("Workspace writes admitted.");
+    expect(() =>
+      validateCompiledPromptArtifact({
+        ...second,
+        assembly: "ordered_nonempty_layers_v1",
+      }),
+    ).toThrow("binding");
+    const envelope = createModelContextEnvelopeReceipt({
+      turnIndex: 1,
+      systemPrompt: second.systemPrompt,
+      messages: [],
+      tools: [],
+    });
+    const receipt = createCompiledPromptPackageReceiptV3({
+      compiled: second,
+      adapter,
+      envelope,
+      purpose: "agent_turn",
+    });
+    expect(validateCompiledPromptPackageReceipt(receipt)).toEqual(receipt);
+    expect(receipt.assembly).toBe(STABLE_PROMPT_COMPILER_ASSEMBLY);
+  });
+
   it("assembles five independent layers deterministically and omits lower-priority sources by budget", () => {
     const adapter = modelAdapterReceipt(model("anthropic-messages"));
     const layers = compilerLayers();

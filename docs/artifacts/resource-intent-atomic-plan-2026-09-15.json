@@ -1,0 +1,46 @@
+{
+  "kind": "napier.bounded-continuation-plan",
+  "createdAt": "2026-09-15T01:58:10.096Z",
+  "candidate": "/tmp/napier-harness-resource-intent-v1",
+  "sourceFreezeSha256": "a66da1e9aa9e6af8e95ffb7b25bea6d32927cf13620b250038422c5a46699687",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+  "driverFreezeSha256": "cb2cf2fb5e473ff1a46b18af04e2d46bb2b9b7b9418c661f981d5dbbc394588d",
+  "dispatchIndices": [
+    33,
+    32
+  ],
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 7835,
+    "remainingFen": 2165,
+    "requests": 709,
+    "reservedRequests": 6,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "The original atomic JSON Patch candidate previously passed its code grader but exhausted the unchanged token budget; the later request-budget source observation never qualified. Offline replay proves its task classification changes from general to coding under the newly frozen source. One original candidate-first pair is necessary to observe actual complete repair and budget-aware finalization, which offline checks cannot establish. Preserve all old failures, task/grader/limits, and stop after this pair or candidate/evidence failure.",
+  "scope": "At most two serial candidate-first pairs; original tasks, graders, source, profile, request cap and complete 30-case/3-trial schedule unchanged. Stop on candidate failure, budget/evidence blockers or regression. No later batch queued.",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-resource-intent-core-v13/atomic-pair-v1/plan.json",
+  "planSha256": "89636f84d64c1c3a5d725bc1f278511dabee6140ed38212e40c8ace55c2e8b23",
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false
+}

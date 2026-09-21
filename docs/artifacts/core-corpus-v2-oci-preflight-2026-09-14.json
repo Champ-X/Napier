@@ -1,0 +1,54 @@
+{
+  "kind": "napier.corrected-corpus-oci-preflight",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:25:51.764Z",
+  "root": "/Users/champ/.cache/napier-seven-quality/core-corpus-v2-oci-preflight-v1",
+  "image": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+  "readOnlyFixtureMount": true,
+  "readOnlyContainer": true,
+  "network": "none",
+  "results": [
+    {
+      "caseId": "path-glob-selection-v2",
+      "command": [
+        "node",
+        "--test",
+        "test/public.test.mjs"
+      ],
+      "exitCode": 0,
+      "logSha256": "455466cf323309f56b795e3669bba5c24b223a4c790f8345d0a96d2a08efba78"
+    },
+    {
+      "caseId": "path-glob-selection-v2",
+      "command": [
+        "node",
+        "grade.mjs"
+      ],
+      "exitCode": 0,
+      "logSha256": "4bd2bace07a3ea58f772447ec78f86fc7418cfc618ddebc491555a6b7c30d5a4"
+    },
+    {
+      "caseId": "binary-frame-decoder-v2",
+      "command": [
+        "node",
+        "--test",
+        "test/public.test.mjs"
+      ],
+      "exitCode": 0,
+      "logSha256": "2884f045d0134797ef5920557e73f3d90e18c6b7a0b6fbc7ffb34040fb66bfe8"
+    },
+    {
+      "caseId": "binary-frame-decoder-v2",
+      "command": [
+        "node",
+        "grade.mjs"
+      ],
+      "exitCode": 0,
+      "logSha256": "a1687f185efdc16c8c7673a82049fd8761ed2f6162d74000e02742d3d31195ef"
+    }
+  ],
+  "passed": 4,
+  "total": 4,
+  "scope": "Reference public tests and independent graders in the pinned image; not Agent outcomes or sandbox-adapter qualification.",
+  "promotionReady": false
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "napier.harness-convergence-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:42:54.595568+00:00",
+  "command": "npx --no-install vitest run scripts/harness-campaign-convergence.test.mjs scripts/harness-campaign-evidence.test.mjs --maxWorkers=2",
+  "testsPassed": 20,
+  "filesPassed": 2,
+  "modelRequests": 0,
+  "sourceBindings": {
+    "scripts/harness-campaign-convergence.mjs": "0dd5194611ee89707eb349839a8b015526aeae08d4373e234aab6557988d582e",
+    "scripts/harness-campaign-convergence.test.mjs": "50e8eb9020b00428c42b04ef60af2bf12b80220b31f0ce46c13099fd66a362bc",
+    "scripts/harness-campaign-evidence.mjs": "6c6fb67e95065a65a8ccaafb3cd6bd1b47667172f603f22303628f8ea23fb409"
+  },
+  "actualAssessmentPath": "docs/artifacts/staged-convergence-bound-assessment-2026-09-15.json",
+  "actualAssessmentSha256": "597689b9692e66f30c1eff5d2e869ca09d7bcb0bb587e08aecd6a7a00cf9bc25",
+  "actualAssessmentExitCode": 2,
+  "scope": "Forecast of remaining immutable schedule capacity; no qualification evidence or altered quality thresholds. Source, task, grader and financial records remain unchanged."
+}

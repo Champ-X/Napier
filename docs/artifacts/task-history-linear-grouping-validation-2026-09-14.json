@@ -1,0 +1,180 @@
+{
+  "kind": "napier.task-history-linear-grouping-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T09:01:59.808447+00:00",
+  "snapshot": "/tmp/napier-harness-history-linear-v1",
+  "parentSnapshot": "/tmp/napier-harness-branch-history-v2",
+  "change": "Build per-Run event arrays in one pass while preserving first-seen Run order and original per-Run ledger order, then apply the unchanged control decoder. Removes repeated whole-thread filtering; does not mix control lifecycles.",
+  "runtimeSourceFilesChanged": ["task-requirement-revisions.ts"],
+  "benchmark": {
+    "scope": "CPU-only synthetic current-thread histories with real control payload validation; excludes SQLite read time, FTS, model inference and network.",
+    "nodeVersion": "v24.19.0",
+    "warmupsPerSize": 1,
+    "measuredIterationsPerSize": 5,
+    "comparison": [
+      {
+        "runs": 40,
+        "events": 1600,
+        "parentMedianMs": 0.9230830000000019,
+        "candidateMedianMs": 0.7381250000000001,
+        "inputSha256": "174fbe3b57bfce80f49db0f0c9609cbc9122dff17bd426111d619b7cfa3dc207",
+        "resultSha256": "59a708353bf2f2b0ccf3aeac30c46c876880009cc44bb7f3940e2f55a375e301",
+        "outputIdentical": true
+      },
+      {
+        "runs": 400,
+        "events": 16000,
+        "parentMedianMs": 18.528625000000005,
+        "candidateMedianMs": 5.004542000000001,
+        "inputSha256": "4ddbd6fff1983e5d12ec10034c308294ec59bbfb6b107a8cd0f2bf01430a74f1",
+        "resultSha256": "168ec8fc8e04e42bde3f566b7950c504cf423f96bc493524f05025fe4377d077",
+        "outputIdentical": true
+      },
+      {
+        "runs": 1000,
+        "events": 40000,
+        "parentMedianMs": 113.69224999999994,
+        "candidateMedianMs": 11.57808399999999,
+        "inputSha256": "adb750fd87fc513ab511f3677ef59f246ecef0c7338ae9b6bf5c4ec6ecdc9b55",
+        "resultSha256": "105861fc89a1239461b540a13932f65a8249578a0a01510867d1025104429184",
+        "outputIdentical": true
+      }
+    ],
+    "limits": [
+      "Synthetic CPU microbenchmark, not end-to-end Agent latency or provider cost.",
+      "SQLite event loading, FTS retrieval, branch collection scaling and heap use are not measured here.",
+      "Output equality on these histories plus focused invariant tests does not replace general stochastic task-quality qualification."
+    ]
+  },
+  "validation": {
+    "targetedTestsPassed": 26,
+    "crossRunControlIsolationTestAdded": true,
+    "inputMutationRejectedByComparison": true,
+    "runtimeCompilePassed": true,
+    "architectureExistingViolations": 7,
+    "architectureNewViolations": 0,
+    "fullSuiteRepeated": false
+  },
+  "spending": {
+    "newApiRequests": 0,
+    "sharedRequests": 84,
+    "committedFen": 555,
+    "remainingFen": 4445,
+    "reservedRequests": 0,
+    "denied": 0
+  },
+  "qualityGate": {
+    "requiredCases": 30,
+    "requiredPairedTrials": 3,
+    "promotionReady": false,
+    "overallGoalComplete": false
+  },
+  "freeze": {
+    "kind": "napier.harness-runtime-freeze",
+    "schemaVersion": 1,
+    "snapshot": "/tmp/napier-harness-history-linear-v1",
+    "parentSnapshot": "/tmp/napier-harness-branch-history-v2",
+    "recordedAt": "2026-09-14T09:00:40.762399+00:00",
+    "runtimeSourceChanges": ["task-requirement-revisions.ts"],
+    "bindings": [
+      {
+        "path": "packages/runtime/src",
+        "fileCount": 1177,
+        "inventorySha256": "ee9da557d6a6db7f5f96a472821041ec6431bab3635e0ab298cc69293ead9fae",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/runtime/dist",
+        "fileCount": 3543,
+        "inventorySha256": "f216201b68de2bc8b7ae85193ee164a311231cb1e97dd14bbde7a23e2162940e",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/runtime/test",
+        "fileCount": 566,
+        "inventorySha256": "a5059b61ac1627a096296181a2de4e36fd717331b6ea99a099bfc14a6b35e69e",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/src",
+        "fileCount": 79,
+        "inventorySha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/dist",
+        "fileCount": 238,
+        "inventorySha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/test",
+        "fileCount": 11,
+        "inventorySha256": "451e3f5a93653aa9e548a73b437b13e230b22145ff7953a9782ec66d4f117296",
+        "matchesWorkspaceAtFreeze": true
+      }
+    ],
+    "workspaceAliases": {
+      "runtime": "/private/tmp/napier-harness-history-linear-v1/packages/runtime",
+      "contracts": "/private/tmp/napier-harness-history-linear-v1/packages/contracts"
+    },
+    "profileFileSha256": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4",
+    "scope": "Runtime/Contracts source, dist and tests frozen. Inherited scripts and external dependency links are not a current execution driver or hermetic environment.",
+    "paidApiCalls": 0,
+    "qualityQualified": false
+  },
+  "files": [
+    {
+      "path": "/tmp/napier-history-scaling-v1.mjs",
+      "sha256": "54884379c48b05dbeca1ce6b7bc5086277ecf777449f4b41d34bab2bb45e7573"
+    },
+    {
+      "path": "/tmp/napier-history-scaling-before-v1.json",
+      "sha256": "ad52d922fca3e821091b37dd4ecd7e453864e6a9ccf7347c26865baa116e28d1"
+    },
+    {
+      "path": "/tmp/napier-history-scaling-after-v1.json",
+      "sha256": "d77b6cb8dc404aa684779efd485ad1ecaa33c81f93449448ecf7fcdd74bc046e"
+    },
+    {
+      "path": "/tmp/napier-history-grouping-tests-v1.log",
+      "sha256": "ede5d3330a0fa696e7246ae4fcc0c2608959a8d141e1aecd0ff521c4295d0264"
+    },
+    {
+      "path": "/tmp/napier-history-grouping-build-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-history-grouping-architecture-v1.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-harness-history-linear-v1/freeze-receipt.json",
+      "sha256": "db59296538f8177e7788ac57b0806a3df9608bf82e3870f3a95f7d8074d1733a"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/task-requirement-revisions.ts",
+      "sha256": "8533e36f71180905e471e10eb942d175f0e0ec54d263abc364da3bd1ad9bce91"
+    },
+    {
+      "path": "/tmp/napier-harness-history-linear-v1/packages/runtime/src/task-requirement-revisions.ts",
+      "sha256": "8533e36f71180905e471e10eb942d175f0e0ec54d263abc364da3bd1ad9bce91"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/src/task-requirement-revisions.ts",
+      "sha256": "888f87469c450500ee6862608594cf419ee4b31e671ae4a74e8899640561289c"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/task-requirement-revisions.test.ts",
+      "sha256": "371ad3a375e2defec45c8f3af085eb06a50569d65e89724bef863d0c98839908"
+    },
+    {
+      "path": "/tmp/napier-harness-history-linear-v1/packages/runtime/test/task-requirement-revisions.test.ts",
+      "sha256": "371ad3a375e2defec45c8f3af085eb06a50569d65e89724bef863d0c98839908"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/test/task-requirement-revisions.test.ts",
+      "sha256": "768c8b0a96382a5b133f0fcbb3f5cec168127ad2e1f83d440d7fcd0518cf230e"
+    }
+  ]
+}

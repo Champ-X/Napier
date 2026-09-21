@@ -1,0 +1,537 @@
+{
+  "kind": "napier.production-code-reconstruction-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T18:38:09.806578+00:00",
+  "snapshot": "/tmp/napier-harness-input-capture-v2",
+  "model": "deepseek/deepseek-v4-flash",
+  "original": {
+    "runId": "run_787cc47273de4c69a382",
+    "threadId": "thread_a65ad51c472c4ffaaabb",
+    "taskSuccess": true,
+    "status": "completed",
+    "graderExitCode": 0,
+    "allowedChanges": true,
+    "requiredTools": true,
+    "toolFailures": 2,
+    "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+    "profile": {
+      "kind": "napier.model-harness-experiment-profile",
+      "schemaVersion": 1,
+      "id": "napier.harness-preset.coding-python.v1",
+      "maxActiveTools": 32,
+      "maxActiveToolsMode": "model_default",
+      "policies": {
+        "schemaVersion": 1,
+        "id": "coding-python.v1",
+        "revision": 1,
+        "context": {
+          "prompt": "stable-v1",
+          "memory": "task-aware-v1",
+          "workingState": "evidence-v1",
+          "delivery": "tail-v1",
+          "finalization": "request-aware-v1"
+        },
+        "toolSurface": {
+          "editReferences": true
+        },
+        "verification": "node-python-v1",
+        "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+      },
+      "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+    },
+    "usageEvidence": {
+      "kind": "napier.harness-usage-evidence",
+      "schemaVersion": 1,
+      "runId": "run_787cc47273de4c69a382",
+      "scope": "recorded model and subagent usage; not external billing or cache/latency attribution",
+      "persistedUsage": {
+        "inputTokens": 76780,
+        "outputTokens": 36909,
+        "cacheReadTokens": 242176,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.021761812800000002
+      },
+      "observedUsage": {
+        "inputTokens": 76780,
+        "outputTokens": 36909,
+        "cacheReadTokens": 242176,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.021761812800000002
+      },
+      "legacyResponseOnlyUsage": {
+        "inputTokens": 75582,
+        "outputTokens": 36608,
+        "cacheReadTokens": 242048,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.021509454400000003
+      },
+      "receipts": [
+        {
+          "eventId": "event_41d776a992a94c7c9fe5",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 6664,
+            "outputTokens": 119,
+            "cacheReadTokens": 640,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.000968072
+          },
+          "sourceReceiptSha256": "3fc31e4016c98a6c51d5ba32fa71df00ce365c10c42b521970a4fba027b1eb29"
+        },
+        {
+          "eventId": "event_b161350aab5d479f842b",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 1766,
+            "outputTokens": 131,
+            "cacheReadTokens": 6144,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0003011232
+          },
+          "sourceReceiptSha256": "cf723e5ec7a717b828466b647181b240247dbb51fb30f3ec72cadc6fec5351bf"
+        },
+        {
+          "eventId": "event_c7673c9898204e64b25e",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 1728,
+            "outputTokens": 193,
+            "cacheReadTokens": 6784,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0003149552
+          },
+          "sourceReceiptSha256": "cd459efa6677727cb10646908d19df15cd4ddf04927a3fef7057a6257968b468"
+        },
+        {
+          "eventId": "event_ddcc3e09ca154a20b494",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 1911,
+            "outputTokens": 16452,
+            "cacheReadTokens": 7424,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0048948872
+          },
+          "sourceReceiptSha256": "b072692c5ecf4e52d83410eacef2319f8d450ddd5ec07e138f5141e4004ce239"
+        },
+        {
+          "eventId": "event_9b8e5f53366843559874",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 25808,
+            "outputTokens": 1247,
+            "cacheReadTokens": 640,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.003964072
+          },
+          "sourceReceiptSha256": "c4c174d7b990e33a36992cb7cea87f1303ec2e2bdeb5a7275b2d6dd8ebce2fc3"
+        },
+        {
+          "eventId": "event_1dbbd507794a435ba096",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 3342,
+            "outputTokens": 2665,
+            "cacheReadTokens": 25088,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0012843264000000003
+          },
+          "sourceReceiptSha256": "402259f6476932c611a12affcefe277080484c74b53d7d13a9b3c6c82e345464"
+        },
+        {
+          "eventId": "event_f61ab95277a347059ff5",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 6035,
+            "outputTokens": 6542,
+            "cacheReadTokens": 27008,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0027522824000000006
+          },
+          "sourceReceiptSha256": "a16a8a75cb5fab0c4d1ccae2219b338d2c3eac991f03ce3d2463d3645b2c866b"
+        },
+        {
+          "eventId": "event_894b27c356e8406b950e",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 10965,
+            "outputTokens": 4012,
+            "cacheReadTokens": 31488,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0027466264000000004
+          },
+          "sourceReceiptSha256": "b0697ab6c05ffc9e580e93aef492cbd73ac3529a63f58c006a809724a85b8343"
+        },
+        {
+          "eventId": "event_e01dec6873bb470f96d3",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 6795,
+            "outputTokens": 3031,
+            "cacheReadTokens": 40832,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0019143096
+          },
+          "sourceReceiptSha256": "ef41de962fbde874d285c2daa19d76d84e15b4242579571a0e4157e0f2192e38"
+        },
+        {
+          "eventId": "event_4afb5c5c8e794678aced",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 5770,
+            "outputTokens": 1366,
+            "cacheReadTokens": 45952,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0013189456000000002
+          },
+          "sourceReceiptSha256": "8215210837f792dda1d00c442091e9bb2fde5a2e357ac239f8504d26c4272610"
+        },
+        {
+          "eventId": "event_295e5526db83496f8ba0",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 4798,
+            "outputTokens": 850,
+            "cacheReadTokens": 50048,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0010498544
+          },
+          "sourceReceiptSha256": "f10ef4c7bda375af90c6337513fc3213aff2c25998cea964d08b878f97c2798d"
+        },
+        {
+          "eventId": "event_67c066a20c4844ab8f2d",
+          "type": "memory.extraction.completed",
+          "usage": {
+            "inputTokens": 1198,
+            "outputTokens": 301,
+            "cacheReadTokens": 128,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0002523584
+          },
+          "sourceReceiptSha256": "56e8ba9f968606a097eac199f1c0a194ea74e12a8ff5513cb5f456cbe74063a7"
+        }
+      ],
+      "blockers": [],
+      "eligibleForObservedUsageComparison": true,
+      "contentSha256": "b71e928d4adf85d1be7cac1cc201ed86f6d7a587a9ea43e819ca2fd6d45d00fc"
+    }
+  },
+  "restored": {
+    "runId": "run_62df96e95bc1465c99c6",
+    "threadId": "thread_4cbc3bef855a42698c94",
+    "taskSuccess": true,
+    "status": "completed",
+    "graderExitCode": 0,
+    "allowedChanges": true,
+    "requiredTools": true,
+    "toolFailures": 0,
+    "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+    "profile": {
+      "kind": "napier.model-harness-experiment-profile",
+      "schemaVersion": 1,
+      "id": "napier.harness-preset.coding-python.v1",
+      "maxActiveTools": 32,
+      "maxActiveToolsMode": "model_default",
+      "policies": {
+        "schemaVersion": 1,
+        "id": "coding-python.v1",
+        "revision": 1,
+        "context": {
+          "prompt": "stable-v1",
+          "memory": "task-aware-v1",
+          "workingState": "evidence-v1",
+          "delivery": "tail-v1",
+          "finalization": "request-aware-v1"
+        },
+        "toolSurface": {
+          "editReferences": true
+        },
+        "verification": "node-python-v1",
+        "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+      },
+      "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+    },
+    "usageEvidence": {
+      "kind": "napier.harness-usage-evidence",
+      "schemaVersion": 1,
+      "runId": "run_62df96e95bc1465c99c6",
+      "scope": "recorded model and subagent usage; not external billing or cache/latency attribution",
+      "persistedUsage": {
+        "inputTokens": 67975,
+        "outputTokens": 35330,
+        "cacheReadTokens": 196480,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.019959044
+      },
+      "observedUsage": {
+        "inputTokens": 67975,
+        "outputTokens": 35330,
+        "cacheReadTokens": 196480,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.019959044
+      },
+      "legacyResponseOnlyUsage": {
+        "inputTokens": 66922,
+        "outputTokens": 35006,
+        "cacheReadTokens": 196352,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0197205456
+      },
+      "receipts": [
+        {
+          "eventId": "event_1b8ca9784c7f44548cdf",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 6676,
+            "outputTokens": 112,
+            "cacheReadTokens": 640,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0009677920000000001
+          },
+          "sourceReceiptSha256": "fd7a1105272184487a9e22cb52999471919f5c60ef6c8e0fba7c84b27c1bdce1"
+        },
+        {
+          "eventId": "event_3e07c98e1878453ea3d5",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 1772,
+            "outputTokens": 211,
+            "cacheReadTokens": 6144,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0003243632
+          },
+          "sourceReceiptSha256": "32dbd30c78485cfe3b161a84236407a980f80e69a0b53f1a93ec9af3ba229538"
+        },
+        {
+          "eventId": "event_da5fe4981bdc4ba38b06",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 2454,
+            "outputTokens": 20185,
+            "cacheReadTokens": 6784,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0060143552
+          },
+          "sourceReceiptSha256": "eae921ee3e905792cac79c906005e594b08de5158fce9715fc39c219a6118b9e"
+        },
+        {
+          "eventId": "event_87ca741c698149919731",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 29295,
+            "outputTokens": 1879,
+            "cacheReadTokens": 640,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.004629212
+          },
+          "sourceReceiptSha256": "ee2d73a8957f37d25cfd5cfc27801a0411c8a23b480faedef8c21136e33ef937"
+        },
+        {
+          "eventId": "event_29df72f3845f4e4b8794",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 3735,
+            "outputTokens": 2375,
+            "cacheReadTokens": 28672,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0012681816
+          },
+          "sourceReceiptSha256": "a6c260b995db66ad9f44428ac311af09c38d247efb1d8bb4b86f2c4383984518"
+        },
+        {
+          "eventId": "event_72d1bbfcac994e67bca9",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 5508,
+            "outputTokens": 4651,
+            "cacheReadTokens": 31104,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0021604912
+          },
+          "sourceReceiptSha256": "3d652dc5b148cd4c69e6cb1043fb3e64f3cbf4d8e868ed16156910c45b136ce8"
+        },
+        {
+          "eventId": "event_70e5d5f97a6948628ccc",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 6616,
+            "outputTokens": 4280,
+            "cacheReadTokens": 35200,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0022232000000000003
+          },
+          "sourceReceiptSha256": "03caa5b05cd833a672790ab3579c22a2ab20d0944cdfd42d62ae709daf33df77"
+        },
+        {
+          "eventId": "event_44e053e6298247a79ab2",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 7752,
+            "outputTokens": 624,
+            "cacheReadTokens": 40448,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0013732544
+          },
+          "sourceReceiptSha256": "52dd2fedad59e33557bf007d12305bbb71c8a096c3c393ad0291073dfcd6ae98"
+        },
+        {
+          "eventId": "event_fd86e556cb3c4d678b8e",
+          "type": "model.response",
+          "usage": {
+            "inputTokens": 3114,
+            "outputTokens": 689,
+            "cacheReadTokens": 46720,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.000759696
+          },
+          "sourceReceiptSha256": "2c3dbdbf8b68396c8733066eb027af414cf55c6a6e9d5bff4c753fb06eff12c1"
+        },
+        {
+          "eventId": "event_3695d9e2021d45619e05",
+          "type": "memory.extraction.completed",
+          "usage": {
+            "inputTokens": 1053,
+            "outputTokens": 324,
+            "cacheReadTokens": 128,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.00023849840000000002
+          },
+          "sourceReceiptSha256": "163d589e09a2fbca44d13e49f9f96ae0ace9e66299f43fa004e85fc822f8ac28"
+        }
+      ],
+      "blockers": [],
+      "eligibleForObservedUsageComparison": true,
+      "contentSha256": "67050231dc279fe10fadb7b8379a53f9db8b1c03b4ee70db7ec71dc020b94003"
+    }
+  },
+  "originalWorkspaceRestoredExactly": true,
+  "currentSourceUnchangedByExport": true,
+  "exportedPromptMatchesEffectivePrompt": true,
+  "submittedPromptDiffersByWhitespace": true,
+  "freshProcessForEachAgent": true,
+  "reproduction": {
+    "configuration": {
+      "agentRevision": 2,
+      "automaticRecovery": {
+        "backoffMs": 5000,
+        "maxAttempts": 2,
+        "mode": "manual"
+      },
+      "contentSha256": "68fb0c1ec13dc5df5637ac8201062cc417f041fd4eef1e8976f91d266576741c",
+      "enabledSkills": [
+        "artifact-studio",
+        "browser-automation",
+        "data-analysis",
+        "frontend-design",
+        "research-brief",
+        "software-delivery"
+      ],
+      "enabledSubagents": ["general", "researcher", "reviewer"],
+      "enabledTools": [
+        "apply_patch",
+        "list_files",
+        "read_file",
+        "run_command",
+        "search_files",
+        "verify_workspace"
+      ],
+      "executionMode": "standard",
+      "model": {
+        "id": "deepseek-v4-flash",
+        "provider": "deepseek"
+      },
+      "modelAdvisor": {
+        "enabledRules": [
+          "destructive_command_reference",
+          "unverified_verification_claim"
+        ],
+        "maxCorrectionAttempts": 0,
+        "mode": "observe"
+      },
+      "modelRoute": {
+        "retryPolicy": {
+          "jitterRatio": 0.2,
+          "maxBackoffMs": 120000
+        },
+        "roles": {
+          "default": {
+            "model": {
+              "id": "deepseek-v4-flash",
+              "provider": "deepseek"
+            }
+          }
+        },
+        "schemaVersion": 2
+      },
+      "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+      "promptVariableSnapshotSha256": "b7df1bb9587399e40922b6596463190666699ed7095c1fe6b62449e04048a6d2",
+      "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+      "runLimits": {
+        "maxCostUsd": 3,
+        "maxTotalTokens": 250000,
+        "maxTurns": 40,
+        "timeoutMs": 240000
+      },
+      "schemaVersion": 9,
+      "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+      "subagentLimits": {
+        "maxConcurrent": 4,
+        "maxTotal": 8,
+        "maxTurns": 16,
+        "timeoutMs": 300000
+      },
+      "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+      "thinkingLevel": "medium",
+      "toolLoopGuard": {
+        "enabled": true,
+        "exemptTools": [],
+        "threshold": 3
+      },
+      "toolPolicy": "workspace"
+    },
+    "contentSha256": "d999e18e57a1763421d63a8a4d170ff541f968c2a391933ddccc74e60cfc0365",
+    "files": [
+      {
+        "mode": 420,
+        "path": "README.md",
+        "sha256": "7df580dd76bac99f749ba647023e1a1c48bbc2bb88bb4b075669a8a7364332d4"
+      },
+      {
+        "mode": 420,
+        "path": "src/retry-after.mjs",
+        "sha256": "f2ba1be57f3f1bd85d5b2f2048b39526e2e3951d9a9104db969a4b6a7b9eb897"
+      },
+      {
+        "mode": 420,
+        "path": "src/retry.mjs",
+        "sha256": "3852de347487def79331b37213072a5ee62118bc46eb55bd601352b6dddf9318"
+      },
+      {
+        "mode": 420,
+        "path": "test/public.test.mjs",
+        "sha256": "2836c11ca241795b3ebfeff7b5be25869e26be8805cb3b0983b6d99389657058"
+      }
+    ],
+    "initialCapsuleSha256": "b4b287788c6ee31ee750dda1b5082c0904761eac92946538dbc92a98f51d6a63",
+    "initialCaptureEventId": "event_f5e5a62f1a2d40448651",
+    "initialInvocationEventId": "event_b8587341cf8142a79364",
+    "initialInvocationSha256": "5529b82495e0a4627f1c6e29e9d43421ea18be60cc25b3fd974e05d3b315dd1a",
+    "kind": "napier.production-run-reproduction",
+    "limitations": [
+      "Optimistic file scan, not an atomic filesystem snapshot",
+      "External services and installed dependency bytes are not restored",
+      "Independent grader and environment qualification are required",
+      "Same model inputs do not guarantee the same failure"
+    ],
+    "omissions": [],
+    "originalStatus": "completed",
+    "promptSha256": "6900ff8c02c27975244a755410f81ccaf19c06ba745bddcf934f42fea38c992a",
+    "qualificationReady": false,
+    "runId": "run_787cc47273de4c69a382",
+    "schemaVersion": 1,
+    "threadId": "thread_a65ad51c472c4ffaaabb",
+    "workspaceComplete": true
+  },
+  "scope": "Two fresh model coding runs from identical original file bytes; initial public-test failure retained; not a paired policy qualification",
+  "promotionReady": false
+}

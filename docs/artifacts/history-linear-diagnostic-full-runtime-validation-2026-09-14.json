@@ -1,0 +1,116 @@
+{
+  "kind": "napier.history-linear-diagnostic-full-runtime-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T10:29:55.279444+00:00",
+  "source": {
+    "source": "/tmp/napier-harness-history-linear-v1",
+    "audit": "/tmp/napier-runtime-audit-history-linear-v1",
+    "bindings": {
+      "packages/runtime/src": {
+        "files": 1177,
+        "sha256": "ece8d9f23422c70aed944fb6e778397f678d2fac706fb18b7184ba07e10bf36f"
+      },
+      "packages/runtime/dist": {
+        "files": 3543,
+        "sha256": "cdad69f2da7d7b1c4f4df1fb9df2891d8352a8539c1da86c2044263eea2179e5"
+      },
+      "packages/runtime/test": {
+        "files": 566,
+        "sha256": "ed5eb60afbba26899639569973ef5f686a1013ab7b601cafc74ee9982ed21823"
+      },
+      "packages/contracts/src": {
+        "files": 79,
+        "sha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced"
+      },
+      "packages/contracts/dist": {
+        "files": 238,
+        "sha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d"
+      }
+    },
+    "testConfigSha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c",
+    "supportFilesReceiptSha256": "b537afb7e4044d2ddecd47dedbe2c7411d8f6a5fc61832ed19f63c0bab231636",
+    "scope": "Full Runtime suite with diagnostic-only Workflow assertion update; production sources match history-linear-v1, tests match current workspace, dependencies linked, no live opt-ins or model keys."
+  },
+  "productionSourceAndSupportUnchanged": true,
+  "testDeltaFromFrozen": {
+    "file": "packages/runtime/test/workflow-runtime.test.ts",
+    "sha256": "d3c3f7547f6997296f93033d9b5f6bd0dedbd23a7e3597bda47391ca8b9d7845",
+    "scope": "Add serialized typed Workflow result to the assertion message. Expected output, rejection checks, timeouts, Run logic and provider responses are unchanged. The same diagnostic source passed both targeted reproductions in the isolated tree."
+  },
+  "current": {
+    "passed": 2711,
+    "failed": 2,
+    "skipped": 60,
+    "files": 537,
+    "failures": [
+      {
+        "file": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+        "title": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+        "firstMessage": "AssertionError: expected 'b8a26579de3a3eb9f6cef217c962be001e463\u2026' to be '56d32e5912d14ad608257b126c9950a1f98d5\u2026' // Object.is equality"
+      },
+      {
+        "file": "packages/runtime/test/agent-capability-contract.test.ts",
+        "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+        "firstMessage": "AssertionError: expected [ { \u2026(6) }, { \u2026(6) }, { \u2026(6) }, \u2026(50) ] to deeply equal ArrayContaining{\u2026}"
+      }
+    ],
+    "success": false
+  },
+  "previous": {
+    "passed": 2710,
+    "failed": 3,
+    "skipped": 60,
+    "files": 537,
+    "failures": [
+      {
+        "file": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+        "title": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+        "firstMessage": "AssertionError: expected 'b8a26579de3a3eb9f6cef217c962be001e463\u2026' to be '56d32e5912d14ad608257b126c9950a1f98d5\u2026' // Object.is equality"
+      },
+      {
+        "file": "packages/runtime/test/agent-capability-contract.test.ts",
+        "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+        "firstMessage": "AssertionError: expected [ { \u2026(6) }, { \u2026(6) }, { \u2026(6) }, \u2026(50) ] to deeply equal ArrayContaining{\u2026}"
+      },
+      {
+        "file": "packages/runtime/test/workflow-runtime.test.ts",
+        "title": "Execution Plan Workflow runtime keeps Agent revision pinning and reused outputs out of public execution requests",
+        "firstMessage": "AssertionError: expected undefined to deeply equal { report: 'Live model report', \u2026(1) }"
+      }
+    ],
+    "success": false
+  },
+  "comparison": {
+    "commonStatusChanges": [
+      {
+        "test": "packages/runtime/test/workflow-runtime.test.ts::Execution Plan Workflow runtime keeps Agent revision pinning and reused outputs out of public execution requests",
+        "before": [
+          "failed"
+        ],
+        "after": [
+          "passed"
+        ]
+      }
+    ],
+    "newTests": [],
+    "removedTests": []
+  },
+  "bindings": {
+    "previousReportSha256": "503e7e05a8cabe219e371a97ab101686fd0aa7446ab455c53f96c5ee55046e75",
+    "currentReportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/runtime-audit-tests-v4.json",
+    "currentReportSha256": "0ea00df41adb1209e49915c4960820de3299789ac916ac01251127913d916f5d",
+    "sourceReceiptSha256": "3636f63c9b0264e41baeb0f3584592f37a01ebe4b742db4a48626bf08b303c68",
+    "launcherSha256": "e7d976c122c9fff231157376f04c7659496036a9ac71f493eeaf0027f767b47a"
+  },
+  "workflowRootCauseEstablished": false,
+  "originalWorkflowFailureRetained": true,
+  "paidApiCalls": 0,
+  "limitations": [
+    "Passing Workflow rerun does not erase the original full-suite failure or establish a harmless root cause.",
+    "Two capability-contract assertions still fail in this full run.",
+    "No keys or live opt-ins; dependencies remain shared links.",
+    "No whole-composition quality qualification or default promotion."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

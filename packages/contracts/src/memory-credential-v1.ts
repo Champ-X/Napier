@@ -37,6 +37,7 @@ export interface MemorySource {
   persistenceReason?: string;
   differenceSummary?: string;
   repositoryEvidence?: MemoryRepositoryEvidence;
+  fileDependencies?: Array<{ path: string; sha256: string }>;
 }
 
 export interface MemoryFact {

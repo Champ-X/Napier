@@ -2,17 +2,13 @@ import type {
   TransitionPlanStepRequest,
   UpdateArtifactManifestRequest,
 } from "@napier/contracts";
-import {
-  createId,
-} from "@napier/runtime/core";
+import { createId } from "@napier/runtime/core";
 import {
   createPlanArtifactEventPayload,
   createWorkspaceArtifactDriftRequest,
   createWorkspaceArtifactVerificationRequest,
 } from "@napier/runtime/workflow";
-import {
-  type LocalStore,
-} from "@napier/runtime/store";
+import { type LocalStore } from "@napier/runtime/store";
 import { Hono } from "hono";
 
 import { errorMessage, jsonError } from "./http-response-evidence.js";
@@ -180,7 +176,7 @@ function registerPlanArtifactLifecycleHttp(
       if (plan.revision !== before.revision && artifact) {
         await store.appendEvent({
           threadId,
-          runId: artifactRequest.sourceRunId ?? createId("runctl"),
+          runId: artifact.sourceRunId ?? createId("runctl"),
           type: `plan.artifact.${artifact.status}`,
           category: "plan",
           visibility: "user",

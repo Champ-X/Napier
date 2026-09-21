@@ -303,3 +303,28 @@ describe("RunBudgetTracker", () => {
     );
   });
 });
+
+it("keeps token accounting without a token ceiling or token finalization reserve", () => {
+  const budget = new RunBudgetTracker(
+    { ...LIMITS, maxTotalTokens: 0, maxTurns: 64, timeoutMs: 900_000 },
+    1000,
+  );
+  budget.observePrimaryUsage(
+    { ...emptyUsage(), inputTokens: 20_000_000 },
+    1100,
+  );
+  budget.observeAuxiliaryUsage(
+    { ...emptyUsage(), outputTokens: 20_000_000 },
+    1200,
+  );
+  expect(budget.observed(1300).totalTokens).toBe(40_000_000);
+  expect(budget.exhaustion).toBeUndefined();
+  expect(budget.canStartOptionalAuxiliaryCall(1300)).toBe(true);
+  expect(
+    budget.finalizationReserveBeforeNextPrimaryTurn(1300, true),
+  ).toBeUndefined();
+  expect(() => budget.assertCanStartPrimaryTurn(1300)).not.toThrow();
+  expect(() => budget.assertCanStartAuxiliaryCall(1300)).not.toThrow();
+  budget.observeAuxiliaryUsage({ ...emptyUsage(), costUsd: 2 }, 1400);
+  expect(budget.exhaustion?.reason).toBe("cost");
+});

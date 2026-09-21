@@ -1,0 +1,18 @@
+{
+  "id": "unified_diff_interface_v1",
+  "title": "Exercise declared edit format on shipping boundary",
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "requiredTools": [
+    "read_file",
+    "apply_patch"
+  ],
+  "requiredCompletedTools": [
+    "read_file",
+    "apply_patch"
+  ],
+  "allowedChangedPaths": [
+    "src/shipping.js"
+  ]
+}

@@ -1,0 +1,1506 @@
+{
+  "kind": "napier.toolchain-process-lifecycle-pilot",
+  "schemaVersion": 1,
+  "date": "2026-09-13",
+  "snapshots": {
+    "baseline": "/tmp/napier-harness-runtime-tail-v1",
+    "initial": "/tmp/napier-harness-process-lifecycle-v1",
+    "current": "/tmp/napier-harness-process-lifecycle-v2"
+  },
+  "limitations": [
+    "One case, three paired trials per version; both historical and current gates remain regressed, with no default promotion.",
+    "v1 used a 24-turn task budget; v2 gave both arms 48 turns. The 250000-token, cost and timeout limits did not increase.",
+    "Current candidate passed actual interactive exchange, cancellation and independent outcome checks in all three runs; one run exceeded its token budget before completion.",
+    "Concurrent small pilots do not establish causal cost or latency changes. Baseline interruption and longer successful trajectories affect totals.",
+    "Host-direct execution supplies no OS isolation evidence. Python debugger coverage and general dependency attribution remain incomplete."
+  ],
+  "verification": {
+    "build": {
+      "passed": true,
+      "log": "/tmp/napier-process-progress-build-final.log"
+    },
+    "liveLifecycleAndNodeRegression": {
+      "passed": 84,
+      "log": "/tmp/napier-toolchain-lifecycle-targeted-final.log"
+    },
+    "progressAndAdmission": {
+      "passed": 34,
+      "log": "/tmp/napier-process-progress-targeted.log"
+    },
+    "campaignHelpers": {
+      "passed": 23,
+      "log": "/tmp/napier-process-evidence-final-tests.log"
+    },
+    "fullRuntime": {
+      "passed": 2549,
+      "skipped": 52,
+      "failed": 2,
+      "files": 506,
+      "durationSeconds": 312.01,
+      "log": "/tmp/napier-process-lifecycle-full-final.log",
+      "remainingFailures": [
+        "existing capability vector hash",
+        "existing production Skill readiness"
+      ]
+    },
+    "architecture": {
+      "unchangedViolations": 9,
+      "log": "/tmp/napier-process-progress-architecture-final.log"
+    },
+    "publicApi": {
+      "existingExportCount": 1897,
+      "budget": 1896,
+      "existingDigestMismatch": true,
+      "log": "/tmp/napier-process-progress-public-api.log"
+    },
+    "initialFullRuntime": {
+      "passed": 2545,
+      "skipped": 52,
+      "failed": 3,
+      "files": 505,
+      "durationSeconds": 299.86,
+      "log": "/tmp/napier-process-lifecycle-full.log",
+      "additionalFailure": "same-tool process decorator absent from admission structure audit; fixed with narrow audited identity entry and original-guard regression coverage"
+    }
+  },
+  "campaigns": [
+    {
+      "version": "v1",
+      "model": {
+        "provider": "deepseek",
+        "id": "deepseek-v4-flash"
+      },
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "c8486b4c1e561e065dfa62838e74cbd340185368e40ffbe982cd2db78daace98"
+        },
+        "contentSha256": "54808a33a3ad46a6cdfc8801d7db0b1dca9567adb5d458d02538ec3a4128b712"
+      },
+      "budgets": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "gate": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 3,
+        "cases": 1,
+        "regressions": [
+          "interactive_python_shipping_v1:1: task completion regressed"
+        ],
+        "blockers": [
+          "Need 30 cases; observed 1"
+        ],
+        "verdict": "regressed",
+        "promotionReady": false,
+        "contentSha256": "8946d2fb2f27759ce74009bb48b07b237d7e5e2d48db9665b25475438a3a7870"
+      },
+      "aggregate": {
+        "baseline": {
+          "runs": 3,
+          "taskSuccess": 1,
+          "independentOutcomePassed": 1,
+          "processLifecyclePassed": 2,
+          "permittedChanges": 3,
+          "toolCalls": 78,
+          "toolFailures": 3,
+          "costUsd": 0.0645522864
+        },
+        "candidate": {
+          "runs": 3,
+          "taskSuccess": 0,
+          "independentOutcomePassed": 0,
+          "processLifecyclePassed": 2,
+          "permittedChanges": 3,
+          "toolCalls": 69,
+          "toolFailures": 2,
+          "costUsd": 0.0510541808
+        }
+      },
+      "observations": [
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-system-v1/trial-1/result.json",
+          "reportSha256": "034e30d4709b0ac18eccfe9d6435c085ff696ab8c6948b33cb130912e1b3b6b9",
+          "runId": "run_65e9df911634477b9cde",
+          "runtimeArtifactSha256": "e99b4da427a3c4d0fd24a752f27d086c48558c87709e3752e50c407f4e0577d7",
+          "sourceIdentity": {
+            "packages/runtime/src": "0f8999e835496e61d44645d5d3197fb88c82869f65178b8cc2809c8c699bf09d",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "1e635c14a2ab72c8b6b1d97767cb162d50c559c2af925f9cd6a3bdb30ea99dd1",
+          "taskSuccess": false,
+          "status": "failed",
+          "error": "Run made no measurable progress after one reroute: turns.",
+          "changed": [
+            "shipping.py"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 1,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_b65f2776127a471dafba",
+                "runId": "run_65e9df911634477b9cde",
+                "runtime": "shell",
+                "status": "running",
+                "actions": {
+                  "start": 1,
+                  "poll": 2,
+                  "input": 2
+                }
+              }
+            ],
+            "runningSessions": 1,
+            "matchingProcessIds": [],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": false,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [],
+              "unavailableCapsules": 0,
+              "passed": false
+            }
+          },
+          "toolCalls": 18,
+          "toolFailures": 0,
+          "durationMs": 26864,
+          "usage": {
+            "inputTokens": 63737,
+            "outputTokens": 3391,
+            "cacheReadTokens": 106240,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.010170132000000002
+          }
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-system-v1/trial-2/result.json",
+          "reportSha256": "463a368ffb0bfb3a6e0e244df59676095314357e0f6a01a2ec4a91a360810170",
+          "runId": "run_0ad0e0faf2374aaf839c",
+          "runtimeArtifactSha256": "e99b4da427a3c4d0fd24a752f27d086c48558c87709e3752e50c407f4e0577d7",
+          "sourceIdentity": {
+            "packages/runtime/src": "0f8999e835496e61d44645d5d3197fb88c82869f65178b8cc2809c8c699bf09d",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "1e635c14a2ab72c8b6b1d97767cb162d50c559c2af925f9cd6a3bdb30ea99dd1",
+          "taskSuccess": true,
+          "status": "completed",
+          "error": null,
+          "changed": [
+            "shipping.py",
+            "report.json"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 0,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_c285cabeae5a4239aaba",
+                "runId": "run_0ad0e0faf2374aaf839c",
+                "runtime": "shell",
+                "status": "succeeded",
+                "actions": {
+                  "start": 1,
+                  "poll": 1
+                }
+              },
+              {
+                "processId": "process_9898d88c0b2f4a9182cc",
+                "runId": "run_0ad0e0faf2374aaf839c",
+                "runtime": "shell",
+                "status": "cancelled",
+                "actions": {
+                  "start": 1,
+                  "poll": 4,
+                  "input": 2,
+                  "cancel": 1
+                }
+              }
+            ],
+            "runningSessions": 0,
+            "matchingProcessIds": [
+              "process_9898d88c0b2f4a9182cc"
+            ],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": true,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [
+                "process_9898d88c0b2f4a9182cc"
+              ],
+              "unavailableCapsules": 0,
+              "passed": true
+            }
+          },
+          "toolCalls": 34,
+          "toolFailures": 0,
+          "durationMs": 47905,
+          "usage": {
+            "inputTokens": 223457,
+            "outputTokens": 6302,
+            "cacheReadTokens": 98432,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.033324149600000005
+          }
+        },
+        {
+          "arm": "baseline",
+          "trial": 3,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-system-v1/trial-3/result.json",
+          "reportSha256": "90c01ccd23058d4b831310d03a07cf75147aa2499d29b6d8f7e63b1556c3ac73",
+          "runId": "run_90993fe125cd4206ab8e",
+          "runtimeArtifactSha256": "e99b4da427a3c4d0fd24a752f27d086c48558c87709e3752e50c407f4e0577d7",
+          "sourceIdentity": {
+            "packages/runtime/src": "0f8999e835496e61d44645d5d3197fb88c82869f65178b8cc2809c8c699bf09d",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "1e635c14a2ab72c8b6b1d97767cb162d50c559c2af925f9cd6a3bdb30ea99dd1",
+          "taskSuccess": false,
+          "status": "failed",
+          "error": "Run budget exhausted: model turns 24 / 24",
+          "changed": [
+            "shipping.py"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 1,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_765e5e5535204d6fafd0",
+                "runId": "run_90993fe125cd4206ab8e",
+                "runtime": "shell",
+                "status": "cancelled",
+                "actions": {
+                  "start": 1,
+                  "poll": 4,
+                  "input": 2,
+                  "cancel": 1
+                }
+              },
+              {
+                "processId": "process_2ddd4ae5c27a49fea4ee",
+                "runId": "run_90993fe125cd4206ab8e",
+                "runtime": "shell",
+                "status": "succeeded",
+                "actions": {
+                  "start": 1,
+                  "poll": 1
+                }
+              }
+            ],
+            "runningSessions": 0,
+            "matchingProcessIds": [
+              "process_765e5e5535204d6fafd0"
+            ],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": true,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [
+                "process_765e5e5535204d6fafd0"
+              ],
+              "unavailableCapsules": 0,
+              "passed": true
+            }
+          },
+          "toolCalls": 26,
+          "toolFailures": 3,
+          "durationMs": 46872,
+          "usage": {
+            "inputTokens": 134508,
+            "outputTokens": 5909,
+            "cacheReadTokens": 204416,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.021058004800000005
+          }
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-candidate-v1/trial-1/result.json",
+          "reportSha256": "06dcf5e7335647541c4f31354b15761162c1c1461da27d190f4dc2183fa98e9f",
+          "runId": "run_be916929e1f249898a1c",
+          "runtimeArtifactSha256": "0622bbfaa3af3523322bf80d44d08cf78e181013679f5cb3014f8946eced7b95",
+          "sourceIdentity": {
+            "packages/runtime/src": "dd8f84687bac524c5440c38df34686c25b6786073bdefe090d1f661fa28e0dab",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "1e635c14a2ab72c8b6b1d97767cb162d50c559c2af925f9cd6a3bdb30ea99dd1",
+          "taskSuccess": false,
+          "status": "failed",
+          "error": "Run made no measurable progress after one reroute: turns.",
+          "changed": [
+            "shipping.py"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 1,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_b95d9a8b5d8342b08222",
+                "runId": "run_be916929e1f249898a1c",
+                "runtime": "python",
+                "status": "running",
+                "actions": {
+                  "start": 1,
+                  "poll": 3,
+                  "input": 2
+                }
+              },
+              {
+                "processId": "process_0372ae7b08634de8aa20",
+                "runId": "run_be916929e1f249898a1c",
+                "runtime": "python",
+                "status": "succeeded",
+                "actions": {
+                  "start": 1,
+                  "poll": 1
+                }
+              }
+            ],
+            "runningSessions": 1,
+            "matchingProcessIds": [],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": false,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [],
+              "unavailableCapsules": 0,
+              "passed": false
+            }
+          },
+          "toolCalls": 22,
+          "toolFailures": 0,
+          "durationMs": 30650,
+          "usage": {
+            "inputTokens": 96216,
+            "outputTokens": 3544,
+            "cacheReadTokens": 135680,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.014842464000000001
+          }
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-candidate-v1/trial-2/result.json",
+          "reportSha256": "c33ec341f1ce4eaa7f2ab680fb77148c9a9e6ba0999f1c21ab32cc9b9db8b9dc",
+          "runId": "run_e27b52d06b0e470eba5f",
+          "runtimeArtifactSha256": "0622bbfaa3af3523322bf80d44d08cf78e181013679f5cb3014f8946eced7b95",
+          "sourceIdentity": {
+            "packages/runtime/src": "dd8f84687bac524c5440c38df34686c25b6786073bdefe090d1f661fa28e0dab",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "1e635c14a2ab72c8b6b1d97767cb162d50c559c2af925f9cd6a3bdb30ea99dd1",
+          "taskSuccess": false,
+          "status": "failed",
+          "error": "Run budget exhausted: model turns 24 / 24",
+          "changed": [
+            "shipping.py"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 1,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_d8a89e27712f45ef87ed",
+                "runId": "run_e27b52d06b0e470eba5f",
+                "runtime": "python",
+                "status": "cancelled",
+                "actions": {
+                  "start": 1,
+                  "poll": 4,
+                  "input": 2,
+                  "cancel": 1
+                }
+              }
+            ],
+            "runningSessions": 0,
+            "matchingProcessIds": [
+              "process_d8a89e27712f45ef87ed"
+            ],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": true,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [
+                "process_d8a89e27712f45ef87ed"
+              ],
+              "unavailableCapsules": 0,
+              "passed": true
+            }
+          },
+          "toolCalls": 25,
+          "toolFailures": 2,
+          "durationMs": 42886,
+          "usage": {
+            "inputTokens": 150938,
+            "outputTokens": 5562,
+            "cacheReadTokens": 187264,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0232130192
+          }
+        },
+        {
+          "arm": "candidate",
+          "trial": 3,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-candidate-v1/trial-3/result.json",
+          "reportSha256": "7b323563ba9a41603459f21c0d2cdf93c4d23f0f860438e4f4a14203cc05b05d",
+          "runId": "run_9e096cb50fe347688c87",
+          "runtimeArtifactSha256": "0622bbfaa3af3523322bf80d44d08cf78e181013679f5cb3014f8946eced7b95",
+          "sourceIdentity": {
+            "packages/runtime/src": "dd8f84687bac524c5440c38df34686c25b6786073bdefe090d1f661fa28e0dab",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "1e635c14a2ab72c8b6b1d97767cb162d50c559c2af925f9cd6a3bdb30ea99dd1",
+          "taskSuccess": false,
+          "status": "failed",
+          "error": "Run made no measurable progress after one reroute: turns.",
+          "changed": [
+            "shipping.py"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 1,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_88d4d0561b014a2bb754",
+                "runId": "run_9e096cb50fe347688c87",
+                "runtime": "python",
+                "status": "cancelled",
+                "actions": {
+                  "start": 1,
+                  "poll": 3,
+                  "input": 2,
+                  "cancel": 1
+                }
+              }
+            ],
+            "runningSessions": 0,
+            "matchingProcessIds": [
+              "process_88d4d0561b014a2bb754"
+            ],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": true,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [
+                "process_88d4d0561b014a2bb754"
+              ],
+              "unavailableCapsules": 0,
+              "passed": true
+            }
+          },
+          "toolCalls": 22,
+          "toolFailures": 0,
+          "durationMs": 24201,
+          "usage": {
+            "inputTokens": 84688,
+            "outputTokens": 2942,
+            "cacheReadTokens": 113792,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.012998697600000001
+          }
+        }
+      ]
+    },
+    {
+      "version": "v2",
+      "model": {
+        "provider": "deepseek",
+        "id": "deepseek-v4-flash"
+      },
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "c8486b4c1e561e065dfa62838e74cbd340185368e40ffbe982cd2db78daace98"
+        },
+        "contentSha256": "54808a33a3ad46a6cdfc8801d7db0b1dca9567adb5d458d02538ec3a4128b712"
+      },
+      "budgets": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "gate": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 3,
+        "cases": 1,
+        "regressions": [
+          "interactive_python_shipping_v1:2: task completion regressed"
+        ],
+        "blockers": [
+          "Need 30 cases; observed 1"
+        ],
+        "verdict": "regressed",
+        "promotionReady": false,
+        "contentSha256": "8889326e64e6f5f95a4e96966cdcfeb62fe87e1790f3d144720647ff53b97d7c"
+      },
+      "aggregate": {
+        "baseline": {
+          "runs": 3,
+          "taskSuccess": 1,
+          "independentOutcomePassed": 1,
+          "processLifecyclePassed": 1,
+          "permittedChanges": 3,
+          "toolCalls": 84,
+          "toolFailures": 2,
+          "costUsd": 0.06894272560000002
+        },
+        "candidate": {
+          "runs": 3,
+          "taskSuccess": 2,
+          "independentOutcomePassed": 3,
+          "processLifecyclePassed": 3,
+          "permittedChanges": 3,
+          "toolCalls": 113,
+          "toolFailures": 4,
+          "costUsd": 0.108031028
+        }
+      },
+      "observations": [
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-system-v2/trial-1/result.json",
+          "reportSha256": "f64857cabd1b0a244eb894872294b664aa5fea26e529284958b08f8d5bad1757",
+          "runId": "run_7c51ab8508174d17b692",
+          "runtimeArtifactSha256": "e99b4da427a3c4d0fd24a752f27d086c48558c87709e3752e50c407f4e0577d7",
+          "sourceIdentity": {
+            "packages/runtime/src": "0f8999e835496e61d44645d5d3197fb88c82869f65178b8cc2809c8c699bf09d",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "0342e71865b303f371bf68e33770031c20acf2dc94455c9512daa6d1449b04b6",
+          "taskSuccess": false,
+          "status": "failed",
+          "error": "Run made no measurable progress after one reroute: turns.",
+          "changed": [
+            "shipping.py"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 1,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_98ab84323c91472aa469",
+                "runId": "run_7c51ab8508174d17b692",
+                "runtime": "shell",
+                "status": "running",
+                "actions": {
+                  "start": 1,
+                  "poll": 3,
+                  "input": 2
+                }
+              }
+            ],
+            "runningSessions": 1,
+            "matchingProcessIds": [],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": false,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [],
+              "unavailableCapsules": 0,
+              "passed": false
+            }
+          },
+          "toolCalls": 23,
+          "toolFailures": 1,
+          "durationMs": 41200,
+          "usage": {
+            "inputTokens": 117268,
+            "outputTokens": 4874,
+            "cacheReadTokens": 156544,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0182205632
+          }
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-system-v2/trial-2/result.json",
+          "reportSha256": "0e9a9aca96b00fab570263d6634bf292191493edb823edcebcdbc28c2b446e64",
+          "runId": "run_bb2fbec5eb404e7295bc",
+          "runtimeArtifactSha256": "e99b4da427a3c4d0fd24a752f27d086c48558c87709e3752e50c407f4e0577d7",
+          "sourceIdentity": {
+            "packages/runtime/src": "0f8999e835496e61d44645d5d3197fb88c82869f65178b8cc2809c8c699bf09d",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "0342e71865b303f371bf68e33770031c20acf2dc94455c9512daa6d1449b04b6",
+          "taskSuccess": false,
+          "status": "failed",
+          "error": "Run made no measurable progress after one reroute: turns.",
+          "changed": [
+            "shipping.py"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 1,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_ab814978dcd54700a4fc",
+                "runId": "run_bb2fbec5eb404e7295bc",
+                "runtime": "shell",
+                "status": "running",
+                "actions": {
+                  "start": 1,
+                  "poll": 3,
+                  "input": 2
+                }
+              },
+              {
+                "processId": "process_21344eba922d409daa2c",
+                "runId": "run_bb2fbec5eb404e7295bc",
+                "runtime": "shell",
+                "status": "succeeded",
+                "actions": {
+                  "start": 1,
+                  "poll": 1
+                }
+              }
+            ],
+            "runningSessions": 1,
+            "matchingProcessIds": [],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": false,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [],
+              "unavailableCapsules": 0,
+              "passed": false
+            }
+          },
+          "toolCalls": 23,
+          "toolFailures": 1,
+          "durationMs": 41095,
+          "usage": {
+            "inputTokens": 174541,
+            "outputTokens": 5000,
+            "cacheReadTokens": 88704,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.026084111200000003
+          }
+        },
+        {
+          "arm": "baseline",
+          "trial": 3,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-system-v2/trial-3/result.json",
+          "reportSha256": "a8b0d7c0806eddbc0155025e852988ef0b80e3d3dd325686ec030d6ecbef15d4",
+          "runId": "run_bd192f1af6a64daaa544",
+          "runtimeArtifactSha256": "e99b4da427a3c4d0fd24a752f27d086c48558c87709e3752e50c407f4e0577d7",
+          "sourceIdentity": {
+            "packages/runtime/src": "0f8999e835496e61d44645d5d3197fb88c82869f65178b8cc2809c8c699bf09d",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "0342e71865b303f371bf68e33770031c20acf2dc94455c9512daa6d1449b04b6",
+          "taskSuccess": true,
+          "status": "completed",
+          "error": null,
+          "changed": [
+            "shipping.py",
+            "report.json"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 0,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_7e8d46fe205849fd850d",
+                "runId": "run_bd192f1af6a64daaa544",
+                "runtime": "shell",
+                "status": "cancelled",
+                "actions": {
+                  "start": 1,
+                  "poll": 4,
+                  "input": 2,
+                  "cancel": 1
+                }
+              }
+            ],
+            "runningSessions": 0,
+            "matchingProcessIds": [
+              "process_7e8d46fe205849fd850d"
+            ],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": true,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [
+                "process_7e8d46fe205849fd850d"
+              ],
+              "unavailableCapsules": 0,
+              "passed": true
+            }
+          },
+          "toolCalls": 38,
+          "toolFailures": 0,
+          "durationMs": 51134,
+          "usage": {
+            "inputTokens": 159260,
+            "outputTokens": 6900,
+            "cacheReadTokens": 146304,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.024638051200000007
+          }
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-candidate-v2/trial-1/result.json",
+          "reportSha256": "6e95e5ff6d4fa66022461fc0f1d15e5514a2d6c3518367500f0e0bcd4e6590f9",
+          "runId": "run_afd5175b728247519c02",
+          "runtimeArtifactSha256": "da33ea52a17ed7cc80f1f97806ad1ca5b11cc71fbfd1833998baf602a344bdd9",
+          "sourceIdentity": {
+            "packages/runtime/src": "2fc5a4985eb0ff4c635cbd5b3afd3cd50d868d0718ab8ef2a5ec6690d471b4ee",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "0342e71865b303f371bf68e33770031c20acf2dc94455c9512daa6d1449b04b6",
+          "taskSuccess": true,
+          "status": "completed",
+          "error": null,
+          "changed": [
+            "shipping.py",
+            "report.json"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 0,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_f8cfdd2aac3b44769c6c",
+                "runId": "run_afd5175b728247519c02",
+                "runtime": "shell",
+                "status": "succeeded",
+                "actions": {
+                  "start": 1,
+                  "poll": 1
+                }
+              },
+              {
+                "processId": "process_8fea35ad257c46bd8336",
+                "runId": "run_afd5175b728247519c02",
+                "runtime": "python",
+                "status": "cancelled",
+                "actions": {
+                  "start": 1,
+                  "poll": 4,
+                  "input": 2,
+                  "cancel": 1
+                }
+              },
+              {
+                "processId": "process_876de78da13e4856b971",
+                "runId": "run_afd5175b728247519c02",
+                "runtime": "shell",
+                "status": "succeeded",
+                "actions": {
+                  "start": 1,
+                  "poll": 1
+                }
+              }
+            ],
+            "runningSessions": 0,
+            "matchingProcessIds": [
+              "process_8fea35ad257c46bd8336"
+            ],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": true,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [
+                "process_8fea35ad257c46bd8336"
+              ],
+              "unavailableCapsules": 0,
+              "passed": true
+            }
+          },
+          "toolCalls": 41,
+          "toolFailures": 1,
+          "durationMs": 71409,
+          "usage": {
+            "inputTokens": 229160,
+            "outputTokens": 9963,
+            "cacheReadTokens": 232448,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0355228944
+          }
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-candidate-v2/trial-2/result.json",
+          "reportSha256": "c543bbef11913862041f308f059aca3eca4532affae8e71412e3869bc86b8aa9",
+          "runId": "run_1e0b9a459fd34c6790b9",
+          "runtimeArtifactSha256": "da33ea52a17ed7cc80f1f97806ad1ca5b11cc71fbfd1833998baf602a344bdd9",
+          "sourceIdentity": {
+            "packages/runtime/src": "2fc5a4985eb0ff4c635cbd5b3afd3cd50d868d0718ab8ef2a5ec6690d471b4ee",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "0342e71865b303f371bf68e33770031c20acf2dc94455c9512daa6d1449b04b6",
+          "taskSuccess": true,
+          "status": "completed",
+          "error": null,
+          "changed": [
+            "shipping.py",
+            "report.json"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 0,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_55ebd024e24648c39c15",
+                "runId": "run_1e0b9a459fd34c6790b9",
+                "runtime": "python",
+                "status": "cancelled",
+                "actions": {
+                  "start": 1,
+                  "poll": 4,
+                  "input": 2,
+                  "cancel": 1
+                }
+              }
+            ],
+            "runningSessions": 0,
+            "matchingProcessIds": [
+              "process_55ebd024e24648c39c15"
+            ],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": true,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [
+                "process_55ebd024e24648c39c15"
+              ],
+              "unavailableCapsules": 0,
+              "passed": true
+            }
+          },
+          "toolCalls": 35,
+          "toolFailures": 0,
+          "durationMs": 58389,
+          "usage": {
+            "inputTokens": 235698,
+            "outputTokens": 6492,
+            "cacheReadTokens": 262656,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.035550916800000006
+          }
+        },
+        {
+          "arm": "candidate",
+          "trial": 3,
+          "reportPath": "/tmp/napier-seven-quality/process-lifecycle-candidate-v2/trial-3/result.json",
+          "reportSha256": "db9904087cc9d5c6f5a3e6320b088c619a482b24417fd1e2ce6e5c6d996e517f",
+          "runId": "run_2ccaa70fc1954f11a84f",
+          "runtimeArtifactSha256": "da33ea52a17ed7cc80f1f97806ad1ca5b11cc71fbfd1833998baf602a344bdd9",
+          "sourceIdentity": {
+            "packages/runtime/src": "2fc5a4985eb0ff4c635cbd5b3afd3cd50d868d0718ab8ef2a5ec6690d471b4ee",
+            "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+            "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+            "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+            "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+            "nodeVersion": "v24.19.0"
+          },
+          "qualifyingEvidence": true,
+          "acceptanceSha256": "0342e71865b303f371bf68e33770031c20acf2dc94455c9512daa6d1449b04b6",
+          "taskSuccess": false,
+          "status": "failed",
+          "error": "Run budget exhausted: total tokens 254,528 / 250,000",
+          "changed": [
+            "shipping.py",
+            "report.json"
+          ],
+          "allowedChanges": true,
+          "graderExitCode": 0,
+          "processEvidence": {
+            "observedBeforeCleanup": true,
+            "sessions": [
+              {
+                "processId": "process_cd7a863d608e479ab2f9",
+                "runId": "run_2ccaa70fc1954f11a84f",
+                "runtime": "python",
+                "status": "succeeded",
+                "actions": {
+                  "start": 1,
+                  "poll": 1
+                }
+              },
+              {
+                "processId": "process_fb89ce0a153e4a2d9ec0",
+                "runId": "run_2ccaa70fc1954f11a84f",
+                "runtime": "python",
+                "status": "cancelled",
+                "actions": {
+                  "start": 1,
+                  "poll": 4,
+                  "input": 2,
+                  "cancel": 1
+                }
+              }
+            ],
+            "runningSessions": 0,
+            "matchingProcessIds": [
+              "process_fb89ce0a153e4a2d9ec0"
+            ],
+            "requirements": {
+              "requiredActions": {
+                "start": 1,
+                "input": 2,
+                "poll": 1,
+                "cancel": 1
+              },
+              "noRunningSessions": true,
+              "jsonExchanges": [
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": false
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": false,
+                    "shipping": 0
+                  }
+                },
+                {
+                  "input": {
+                    "subtotal": 50,
+                    "expedited": true
+                  },
+                  "output": {
+                    "subtotal": 50,
+                    "expedited": true,
+                    "shipping": 8
+                  }
+                }
+              ]
+            },
+            "passed": true,
+            "exchanges": {
+              "required": true,
+              "expectedExchanges": 2,
+              "matchedProcessIds": [
+                "process_fb89ce0a153e4a2d9ec0"
+              ],
+              "unavailableCapsules": 0,
+              "passed": true
+            }
+          },
+          "toolCalls": 37,
+          "toolFailures": 3,
+          "durationMs": 67528,
+          "usage": {
+            "inputTokens": 240689,
+            "outputTokens": 9467,
+            "cacheReadTokens": 217856,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0369572168
+          }
+        }
+      ]
+    }
+  ],
+  "failureReproduction": {
+    "originalRunId": "run_2ccaa70fc1954f11a84f",
+    "casePath": "/tmp/napier-seven-quality/failures/process-lifecycle-candidate-v2-trial3",
+    "reportPath": "/tmp/napier-seven-quality/process-lifecycle-budget-reproduction-v2/trial-1/result.json",
+    "reportSha256": "b8313d07e04d2130a0b44634d42c36a6117755527d15c23995f22505c63a629e",
+    "runId": "run_34c8671ab5724a618245",
+    "status": "completed",
+    "taskSuccess": true,
+    "scopePreserved": true,
+    "processLifecyclePassed": true,
+    "qualifyingEvidence": true,
+    "toolCalls": 33,
+    "toolFailures": 2,
+    "usage": {
+      "inputTokens": 230231,
+      "outputTokens": 6018,
+      "cacheReadTokens": 206080,
+      "cacheWriteTokens": 0,
+      "costUsd": 0.034494404000000006
+    },
+    "acceptanceSha256": "0342e71865b303f371bf68e33770031c20acf2dc94455c9512daa6d1449b04b6",
+    "originalAcceptanceMatched": true,
+    "budgetMatched": true,
+    "conclusion": "A fresh identical-task replay completed; the original token-budget failure was not reproduced and remains in the paired regressed gate. This replay is diagnostic and is not an additional paired trial."
+  }
+}

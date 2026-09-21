@@ -1,0 +1,28 @@
+{
+  "kind": "napier.cache-aware-spending-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T14:46:48.710Z",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v5",
+  "driverFreezeSha256": "be90c30f33877b551a51c4731f7d8a29688bca76ab7fa866cca497eaf4531474",
+  "tests": {
+    "path": "/tmp/napier-cache-spending-tests-v1.json",
+    "sha256": "a6bf2c1626d9407c99634bdb31d052d494012d3a34d2d7befcf2418ca8834749",
+    "passed": 54,
+    "failed": 0
+  },
+  "pricing": {
+    "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+    "snapshot": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/cache-aware-spending-v1/pricing.html",
+    "sha256": "a1602748f50a9baacd416f4b831438896ba1351160f1f9afe89a9423c4b76cf3",
+    "peakCnyPerMillion": {
+      "cacheHit": 0.04,
+      "cacheMiss": 2,
+      "output": 8
+    }
+  },
+  "modelRequests": 0,
+  "liveLedgerMigrated": false,
+  "historicalChargesChanged": false,
+  "runtimeSourceChanged": false,
+  "scope": "Explicit forward-only cache-aware CNY settlement with the same peak tariff, unchanged 600-fen worst-case reservation, total ceiling and admission rate. Exact accounting policy within each pair; no cost attribution across modes. Old drivers and all historical report/charge bytes remain unchanged."
+}

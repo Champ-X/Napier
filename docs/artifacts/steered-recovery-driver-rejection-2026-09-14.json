@@ -1,0 +1,68 @@
+{
+  "kind": "napier.steered-recovery-driver-rejection",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T20:19:48.483636+00:00",
+  "root": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v1",
+  "snapshot": "/tmp/napier-harness-contract-guidance-v1",
+  "runId": "run_64352e2585444b4ca6b1",
+  "status": "cancelled",
+  "scenario": {
+    "kind": "napier.harness-scenario-receipt",
+    "schemaVersion": 1,
+    "threadId": "thread_146c75b2f89547e1871b",
+    "runId": "run_64352e2585444b4ca6b1",
+    "planSha256": "3eee2b673b5170eeee8d721704ccfd1e935ff92648d0ad496effd7866dbd0cd2",
+    "completed": true,
+    "completedSteps": 4,
+    "expectedSteps": 4,
+    "receipts": [
+      {
+        "stepId": "first_edit",
+        "action": "observe",
+        "triggerEventId": "event_07a3662b0f904538aba2",
+        "triggerSeq": 219
+      },
+      {
+        "stepId": "revision",
+        "action": "steer",
+        "triggerEventId": "event_11bad716a0a04623bc82",
+        "triggerSeq": 314,
+        "controlMessageId": "control_7f5fc6c5000642899084",
+        "messageSha256": "b6460a9144f06a5f52e306db5a86667742115bd940d15de146583cc24b5b163f"
+      },
+      {
+        "stepId": "delivery",
+        "action": "observe",
+        "triggerEventId": "event_874e8adc03a447289f6e",
+        "triggerSeq": 319
+      },
+      {
+        "stepId": "interruption",
+        "action": "interrupt",
+        "triggerEventId": "event_e70c073dc9c64c4a9ae3",
+        "triggerSeq": 405,
+        "observation": {
+          "inventorySha256": "220691fd79d5622c12cefe6ec04a3be78e12a7353caefcc6a58ad70c7a0a518b"
+        }
+      }
+    ],
+    "contentSha256": "3f164eb153e60d2a6c4c4f1aab781d19042bc102fc03b492aaf66d49cdec975d"
+  },
+  "finding": "AbortSignal requested user cancellation, not unexpected process interruption. Production resume correctly rejected cancelled Run. No Run status or lease was edited.",
+  "scope": "Controller delivery and settled-edit triggers executed; fresh-process recovery was not exercised successfully. This original observation is not replaced by the revised driver.",
+  "logs": [
+    {
+      "path": "/tmp/napier-steered-recovery-probe-v1.log",
+      "sha256": "f54dc2df1b215c0787d82c4135cc4f497e831cbd7463386db4d5530bc18f6c30"
+    },
+    {
+      "path": "/tmp/napier-steered-recovery-driver-v1.mjs",
+      "sha256": "71d78ad3589d0e21bd3bdd4ea05fe52ae18901d2d9e726681049d5f4a737dc5a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v1/initial-result.json",
+      "sha256": "8ada901acf3c8ae9562176ba7e7d30250e9118cec5c59a010529d69ca37d526f"
+    }
+  ],
+  "promotionReady": false
+}

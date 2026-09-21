@@ -1,0 +1,339 @@
+{
+  "kind": "napier.request-budget-context-interrupted-observation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T19:05:50.754Z",
+  "source": "/tmp/napier-harness-request-budget-context-v1",
+  "profileFileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398",
+  "runId": "run_bf3b680d94a34f729026",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-request-budget-context-core-v10/plan.json",
+  "planSha256": "d30a0457bf9e772301c942e3d9da11126a66998a6751dcaad9d7fe8ab6d1b2a3",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-request-budget-context-core-v10/result.json",
+  "resultSha256": "ca7d3a9fcf6759f9fd989a48fc08e7554b41fadb9ac020547bde15848c366099",
+  "ledgerPath": "/Users/champ/.cache/napier-seven-quality/cny-request-budget-context-core-v10/atomic_json_patch_v1-candidate-trial-1/trial-1/data/ledger.sqlite",
+  "eventSetSha256": "e45638a2023f9b1e8f8caa1adde198ea7ec014e426c15073350bed51e2c5b187",
+  "stop": {
+    "processSignal": "SIGTERM",
+    "reason": "Operator stopped after observing an earlier still-unreceipted cancellation while a retry was active. That earlier receipt arrived during stopping; the final in-flight request remained unreceipted.",
+    "terminalRunReport": false,
+    "independentGraderRun": false,
+    "taskSuccess": null,
+    "baselineStarted": false
+  },
+  "snapshots": [
+    {
+      "seq": 22,
+      "capsuleSha256": "2e65c1c47cdc53370eccf5e519fb28b59c382916b40b6d2a8c7b41b1ffd00939",
+      "sourceContentSha256": "8da6516920a9bd04975d41d2e5c880b073eff61edf0ac4194f1f48fb341a4b30",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 39,
+        "accountedTokens": 250000,
+        "accountedCostUsd": 0.05,
+        "seconds": 899
+      },
+      "observed": {
+        "primaryTurns": 1,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 0,
+        "accountedCostUsd": 0
+      }
+    },
+    {
+      "seq": 70,
+      "capsuleSha256": "1a21b2032823cc0d4e4ab0b63e868f0c01269bb339479380d29cc893b1262be0",
+      "sourceContentSha256": "f2bbbad20e5d742008f1b056899dcd62c1873a5a0d19a9412f3aa12911508d31",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 38,
+        "accountedTokens": 242870,
+        "accountedCostUsd": 0.0489891776,
+        "seconds": 898
+      },
+      "observed": {
+        "primaryTurns": 2,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 7130,
+        "accountedCostUsd": 0.0010108224000000001
+      }
+    },
+    {
+      "seq": 130,
+      "capsuleSha256": "21c107e08c248320b746608ed532139f91cb1350f8fc5cf51cee9320dc9511f6",
+      "sourceContentSha256": "8f628b9fbd3436b33c3841818a94ecb3d41e1076c81f82ac7ab7cdd3ac9758cc",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 37,
+        "accountedTokens": 240409,
+        "accountedCostUsd": 0.048627664,
+        "seconds": 883
+      },
+      "observed": {
+        "primaryTurns": 3,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 9591,
+        "accountedCostUsd": 0.001372336
+      }
+    },
+    {
+      "seq": 342,
+      "capsuleSha256": "a84e413e2ec4caa3df83d6ec4410774965638fab4fa9e19f8bfc97d692295385",
+      "sourceContentSha256": "403ccad8cbf74c13dcf5f21960391dc2b97fd8c24c77d9adf3f47c0137a703ff",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 37,
+        "accountedTokens": 218513,
+        "accountedCostUsd": 0.042496784,
+        "seconds": 779
+      },
+      "observed": {
+        "primaryTurns": 3,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 31487,
+        "accountedCostUsd": 0.007503216
+      }
+    },
+    {
+      "seq": 375,
+      "capsuleSha256": "e3208debc2a8650c3a86a2052ce0a65c70826307e922ec4a9036d239b13d681b",
+      "sourceContentSha256": "94c1560786f7445944de707b8f6fcf9784b11b6d0691e5c93cf924d7952916d6",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 36,
+        "accountedTokens": 209480,
+        "accountedCostUsd": 0.041222016800000004,
+        "seconds": 777
+      },
+      "observed": {
+        "primaryTurns": 4,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 40520,
+        "accountedCostUsd": 0.0087779832
+      }
+    },
+    {
+      "seq": 582,
+      "capsuleSha256": "eadbcf1a7a9a9543e3e0f4c88fffa2ff206b38f805d108776f25c1fc7eb3ec54",
+      "sourceContentSha256": "32adab36bcf7c362903bd24f7c11ae12e679ba890bb7e1a58d0f50b155cac67f",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 36,
+        "accountedTokens": 187652,
+        "accountedCostUsd": 0.035110176800000004,
+        "seconds": 673
+      },
+      "observed": {
+        "primaryTurns": 4,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 62348,
+        "accountedCostUsd": 0.014889823200000001
+      }
+    },
+    {
+      "seq": 620,
+      "capsuleSha256": "8ee9353f34b12a093227fbbfcda79d4352e0c6ca42913a7d889eaeffe9771c11",
+      "sourceContentSha256": "67c149ad43f3c906f020a80d6d205c9a9ac67e1beb38cd5f30940e06da5e4783",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 35,
+        "accountedTokens": 184373,
+        "accountedCostUsd": 0.0345868008,
+        "seconds": 671
+      },
+      "observed": {
+        "primaryTurns": 5,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 65627,
+        "accountedCostUsd": 0.015413199200000002
+      }
+    }
+  ],
+  "modelRequestBindingsVerified": false,
+  "modelRequestBindingError": "Model request evidence Model Context Envelope terminal binding count is invalid: run_bf3b680d94a34f729026",
+  "capturedEnvelopeHashesVerified": true,
+  "accountingReplayVerified": true,
+  "limitsUnchanged": true,
+  "cancellations": [
+    {
+      "seq": 330,
+      "reason": "semantic_stall",
+      "usageSource": "reasoning_bytes_estimate"
+    },
+    {
+      "seq": 570,
+      "reason": "semantic_stall",
+      "usageSource": "reasoning_bytes_estimate"
+    }
+  ],
+  "cancellationFailures": [
+    {
+      "seq": 377,
+      "graceMs": 5000
+    },
+    {
+      "seq": 622,
+      "graceMs": 5000
+    }
+  ],
+  "admissions": 7,
+  "minIntervalMs": 15001,
+  "newRequests": [
+    {
+      "id": 640,
+      "charged_fen": 2,
+      "status": "settled",
+      "prompt_tokens": 8418,
+      "completion_tokens": 91,
+      "cache_hit_tokens": 1408,
+      "cache_miss_tokens": 7010,
+      "accounting_mode": "provider_cache_split"
+    },
+    {
+      "id": 641,
+      "charged_fen": 1,
+      "status": "settled",
+      "prompt_tokens": 9112,
+      "completion_tokens": 122,
+      "cache_hit_tokens": 6912,
+      "cache_miss_tokens": 2200,
+      "accounting_mode": "provider_cache_split"
+    },
+    {
+      "id": 642,
+      "charged_fen": 20,
+      "status": "settled",
+      "prompt_tokens": 9911,
+      "completion_tokens": 23127,
+      "cache_hit_tokens": 7552,
+      "cache_miss_tokens": 2359,
+      "accounting_mode": "provider_cache_split"
+    },
+    {
+      "id": 643,
+      "charged_fen": 2,
+      "status": "settled",
+      "prompt_tokens": 9963,
+      "completion_tokens": 73,
+      "cache_hit_tokens": 1024,
+      "cache_miss_tokens": 8939,
+      "accounting_mode": "provider_cache_split"
+    },
+    {
+      "id": 644,
+      "charged_fen": 29,
+      "status": "settled",
+      "prompt_tokens": 10918,
+      "completion_tokens": 35221,
+      "cache_hit_tokens": 8448,
+      "cache_miss_tokens": 2470,
+      "accounting_mode": "provider_cache_split"
+    },
+    {
+      "id": 645,
+      "charged_fen": 1,
+      "status": "settled",
+      "prompt_tokens": 10972,
+      "completion_tokens": 460,
+      "cache_hit_tokens": 8320,
+      "cache_miss_tokens": 2652,
+      "accounting_mode": "provider_cache_split"
+    },
+    {
+      "id": 646,
+      "charged_fen": 600,
+      "status": "reserved",
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "cache_hit_tokens": null,
+      "cache_miss_tokens": null,
+      "accounting_mode": null
+    }
+  ],
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 5767,
+      "remainingFen": 4233,
+      "requests": 639,
+      "reservedRequests": 3,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 6422,
+      "remainingFen": 3578,
+      "requests": 646,
+      "reservedRequests": 4,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "settledConservativeFen": 4022,
+    "unreceiptedReservations": [
+      {
+        "id": 410,
+        "charged_fen": 600
+      },
+      {
+        "id": 421,
+        "charged_fen": 600
+      },
+      {
+        "id": 633,
+        "charged_fen": 600
+      },
+      {
+        "id": 646,
+        "charged_fen": 600
+      }
+    ],
+    "providerBillVerified": false
+  },
+  "quality": {
+    "comparablePairs": 0,
+    "qualifiedSuccesses": 0,
+    "unstartedJobs": 179
+  },
+  "limitations": [
+    "All seven observed budget snapshots were in working phase; actual finalization behavior and task quality remain unverified.",
+    "No terminal candidate report or independent grade exists. This interrupted diagnostic is not a success, baseline-relative regression, or completed paired observation.",
+    "The receipt for request 644 arrived late and settled automatically; the CNY6 reservation for request 646 was retained after operator termination. Historical reservations remain unchanged."
+  ],
+  "collectionComplete": false,
+  "promotionReady": false
+}

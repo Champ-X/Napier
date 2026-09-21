@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import type { ContextPolicy } from "@napier/contracts/harness-experiments";
+import { planGuidancePolicy } from "./plan-guidance-policy.js";
 
 import type {
   JsonObject,
@@ -87,9 +89,11 @@ export function turnPromptEvent(
 
 export function formatPlanToolGuidance(
   tools: readonly { name: string }[],
+  planning?: ContextPolicy["planning"],
 ): string {
   const toolNames = new Set(tools.map((tool) => tool.name));
   if (toolNames.size === 0) return "";
+  const policy = planGuidancePolicy(planning);
   const hasCreatePlan = toolNames.has("create_plan");
   const hasStepUpdate = toolNames.has("update_plan_step");
   const hasArtifactUpdate = toolNames.has("update_plan_artifact");
@@ -97,6 +101,7 @@ export function formatPlanToolGuidance(
   const hasMilestone = toolNames.has("record_run_milestone");
   const lines = [
     "<operator_progress_protocol>",
+    ...policy.nextAction,
     "For any non-trivial tool-driven Run, keep the operator oriented with concise progress updates in normal assistant text. These updates are public narration, not hidden reasoning.",
     "Before the first meaningful tool phase, briefly state the immediate approach. After a meaningful batch of tool results, and before starting the next tool phase, state what the evidence established, any important gap or changed assumption, and the next action.",
     "Put each update in the same assistant response as the tool call it introduces so it can stream before the tool starts. Use the operator's language, favor concrete facts or counts, and keep the update to one or two short paragraphs.",
@@ -116,17 +121,17 @@ export function formatPlanToolGuidance(
   lines.push("<plan_tool_protocol>");
   if (hasCreatePlan || hasStepUpdate || hasArtifactUpdate || hasReplan) {
     lines.push(
-      "Use durable plans for multi-step work, artifact delivery, or tasks where the operator needs progress and recovery evidence.",
+      policy.usage,
     );
   }
   if (hasCreatePlan) {
     lines.push(
-      "Create one focused plan with concrete verification criteria and declared artifacts before doing substantial delivery work.",
+      policy.create,
     );
   }
   if (hasStepUpdate) {
     lines.push(
-      "Start a step before acting on it, then complete, block, skip, or reopen it with concise evidence from the current run.",
+      policy.transition,
       "Do not batch transitions for dependency-linked steps in the same assistant response. Wait for each update_plan_step result, then use its readyStepIds and parallelReadyStepIds before transitioning dependents; only steps already listed together in parallelReadyStepIds may be batched.",
     );
   }

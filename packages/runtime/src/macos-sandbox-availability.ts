@@ -18,6 +18,9 @@ export async function probeMacOsSandboxAvailability(
     "(deny default)",
     "(allow process-fork)",
     `(allow process-exec (literal ${sandboxLiteral(command)}))`,
+    // Match the launch profile: dyld reads the root directory on current macOS.
+    // This grants the directory itself, not its descendants.
+    '(allow file-read-data (literal "/"))',
     "(allow file-read*",
     '  (subpath "/System")',
     '  (subpath "/usr/lib")',

@@ -1,0 +1,165 @@
+{
+  "kind": "napier.staged-stall-task-closeout",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:38:33.593805+00:00",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "frozenFilesVerified": 5658,
+  "sourceFilesCompared": 1264,
+  "sourceUnchanged": true,
+  "baselineAndDriverUnchanged": true,
+  "retainedReportsUnchanged": true,
+  "baselineReuse": [
+    {
+      "index": 1,
+      "runId": "run_569d84397d24401f893d",
+      "reportSha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06",
+      "originalAdmissions": 14,
+      "newAdmissions": 0,
+      "newReservations": 0,
+      "nativeOutputAbsent": true
+    },
+    {
+      "index": 51,
+      "runId": "run_5cee4ebe9a9948b0a892",
+      "reportSha256": "60e2753fc27c8e8dce9db6a8624a4cf7c2cd8af204e9833d929a85a67c67770f",
+      "originalAdmissions": 25,
+      "newAdmissions": 0,
+      "newReservations": 0,
+      "nativeOutputAbsent": true
+    },
+    {
+      "index": 52,
+      "runId": "run_12c7660d536e4dd68815",
+      "reportSha256": "abc7af933a5e02cb765d65d1c0918acbcc0eec0cc7d4fd1000859433fa9f1b6d",
+      "originalAdmissions": 20,
+      "newAdmissions": 0,
+      "newReservations": 0,
+      "nativeOutputAbsent": true
+    }
+  ],
+  "newObservations": [
+    {
+      "index": 33,
+      "executionProvenance": "current_cohort_run",
+      "caseId": "atomic_json_patch_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_7daefd4d3e684a98a5d6",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "error": null,
+      "admissions": 9,
+      "settledFen": 55,
+      "unreceiptedReservedFen": 0,
+      "toolFailures": 0,
+      "durationMs": 241940,
+      "auditedCapsules": 8,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "aacffa77a07471dafdaac8bc4c8ac4709e8d14a05a9ed8472921891f82dcae94",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/audit-33.json",
+      "auditSha256": "2993f3d1e30efaeb060e0fb781abd6ce3258d3184388682d8a7a3e8ef8a0c02b",
+      "graderMode": "host"
+    },
+    {
+      "index": 32,
+      "executionProvenance": "current_cohort_run",
+      "caseId": "atomic_json_patch_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_13beaa3468314e28809e",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "error": null,
+      "admissions": 25,
+      "settledFen": 74,
+      "unreceiptedReservedFen": 0,
+      "toolFailures": 9,
+      "durationMs": 448242,
+      "auditedCapsules": 24,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic_json_patch_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "98aecc42bc8ca566b5530a505ba666f7dc94ba1d9141757328171eedda585566",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/audit-32.json",
+      "auditSha256": "4aa9983f03a6406ab4b2761cb072275baf0225d4058c06ee534fffac43a37647",
+      "graderMode": "host"
+    }
+  ],
+  "newFinancialRequests": 34,
+  "newSettledFen": 129,
+  "newReservedFen": 0,
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 4141,
+    "remainingFen": 5859,
+    "requests": 287,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 9,
+    "cases": 9,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 9",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+      "transaction_savepoints_v1: need 3 paired trials; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "config_layers_v1: need 3 paired trials; observed 1",
+      "cursor_pagination_v1: need 3 paired trials; observed 1",
+      "resumable_byte_upload_v1: need 3 paired trials; observed 1",
+      "atomic_json_patch_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "f130b34d9a8d1394c8fd882562a58f68419b249d9b9db276e53843a32cc81d64"
+  },
+  "inheritedBlockersUnchanged": true,
+  "statusCounts": {
+    "currentCohortTerminalRuns": 17,
+    "reusedOriginalBaselineObservations": 3,
+    "handledSchedulePositions": 20,
+    "notStarted": 160
+  },
+  "paidChildPidsConfirmedExited": [
+    11229,
+    18135
+  ],
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Read-only closeout of original tasks that exposed stalls in older candidates. Historical failures and 180 schedule positions preserved. Financial delta begins after record 253; user-reported prior CNY20 is not a retrieved invoice. No generalized or causal claim."
+}

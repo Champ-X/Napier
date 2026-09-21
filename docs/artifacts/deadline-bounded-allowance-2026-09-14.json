@@ -1,0 +1,60 @@
+{
+  "kind": "napier.deadline-bounded-allowance",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T15:42:19.025Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/plan.json",
+  "planSha256": "d33742a034fafd2164ff9b37cb1d032771a83f6416ed853115e2499b4bd20e30",
+  "source": "/tmp/napier-harness-progressive-verification-v1",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v6",
+  "sourceUnchanged": true,
+  "requestAllowanceBasis": {
+    "runTimeoutMs": 900000,
+    "minIntervalMs": 15000,
+    "terminalAllowance": 4,
+    "maxRequestsPerRun": 64,
+    "scope": "A prospective ceiling covering the unchanged 15-minute task window at one admission per 15 seconds, with four admissions of lifecycle margin; not a target request count. Same ceiling for both arms, enforced by existing durable admission guard."
+  },
+  "policyCheck": {
+    "kind": "napier.harness-api-request-budget",
+    "schemaVersion": 1,
+    "maxRequests": 64,
+    "minIntervalMs": 15000,
+    "policySha256": "09d927bf382b4e07caeb962db06a60d59e9762f15f77dc39688e22050c4e4a89",
+    "admitted": 0,
+    "denied": 0,
+    "remaining": 64,
+    "billingCeilingEstablished": false
+  },
+  "priorResultsPreserved": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-progressive-verification-core-v8",
+    "sha256": "4f884cc7d5c137c3e89f765aedb80c40457589784215c76717a6d449b9a4c914"
+  },
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 4562,
+    "remainingFen": 5438,
+    "requests": 453,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "scope": "Prospective equal allowances only. Existing exhausted observations remain ineligible and unchanged. No Runtime/profile/task/grader/cadence/price/financial-ceiling change; one memory task pair dispatched from a complete 30-case/3-trial schedule."
+}

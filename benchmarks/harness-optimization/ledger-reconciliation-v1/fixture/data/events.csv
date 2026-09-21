@@ -1,0 +1,4 @@
+event_id,customer_id,kind,status,amount,occurred_at
+one,alice,charge,settled,10.10,2026-09-01T00:00:00Z
+two,alice,refund,settled,0.20,2026-09-01T12:00:00Z
+three,bob,charge,pending,99.00,2026-09-01T12:00:00Z

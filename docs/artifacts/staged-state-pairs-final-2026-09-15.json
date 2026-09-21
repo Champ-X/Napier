@@ -1,0 +1,223 @@
+{
+  "kind": "napier.staged-state-contract-pairs-audit",
+  "schemaVersion": 1,
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "sourceFilesCompared": 1264,
+  "sourceUnchanged": true,
+  "observations": [
+    {
+      "index": 25,
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "candidate",
+      "runId": "run_a692964381254931ba72",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "error": null,
+      "runLimits": {
+        "maxTurns": 40,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 0.05,
+        "timeoutMs": 900000
+      },
+      "usage": {
+        "inputTokens": 66462,
+        "outputTokens": 35897,
+        "cacheReadTokens": 199296,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.019913868800000005
+      },
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "ba28a0382c99b8a8bb15d01b6da0b8ae2bb736fb57f3075b89297357398df3f0",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/audit-25.json",
+      "auditSha256": "a54297b32c53c4f8f8e9740578daded518921a9caff10a07ab8c17e995ad6447",
+      "admissions": 10,
+      "settledFen": 49,
+      "toolFailures": 1,
+      "durationMs": 207688,
+      "changed": [
+        "src/cache.mjs",
+        "src/clock.mjs"
+      ]
+    },
+    {
+      "index": 24,
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "baseline",
+      "runId": "run_a03520dd63f54445a631",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "error": null,
+      "runLimits": {
+        "maxTurns": 40,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 0.05,
+        "timeoutMs": 900000
+      },
+      "usage": {
+        "inputTokens": 76575,
+        "outputTokens": 38173,
+        "cacheReadTokens": 594304,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.023072991200000007
+      },
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "d0567e11ae01730c3adb38143d7bcd32c3da781ef28e57cd10168facf27da2c6",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/audit-24.json",
+      "auditSha256": "250baf0975444b0dfea998daae429e7d36fb59edef33d13027b2a3f87439d44c",
+      "admissions": 19,
+      "settledFen": 58,
+      "toolFailures": 2,
+      "durationMs": 339856,
+      "changed": [
+        "src/cache.mjs",
+        "src/clock.mjs"
+      ]
+    },
+    {
+      "index": 30,
+      "caseId": "transaction_savepoints_v1",
+      "arm": "candidate",
+      "runId": "run_d445925674494856a8a5",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "error": null,
+      "runLimits": {
+        "maxTurns": 40,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 0.05,
+        "timeoutMs": 900000
+      },
+      "usage": {
+        "inputTokens": 53735,
+        "outputTokens": 26154,
+        "cacheReadTokens": 128512,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.015205853600000001
+      },
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "c52932beef9b02e6f2e3dc12f7a64d7145ac791b3c6fd1e4444ba6aa889eaaee",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/audit-30.json",
+      "auditSha256": "f32913c385d77c21ac1cf510f66782ac79a2f9a69c702df59d1a95dfa59a3cb3",
+      "admissions": 10,
+      "settledFen": 37,
+      "toolFailures": 2,
+      "durationMs": 208819,
+      "changed": [
+        "src/store.mjs",
+        "src/value.mjs"
+      ]
+    },
+    {
+      "index": 31,
+      "caseId": "transaction_savepoints_v1",
+      "arm": "baseline",
+      "runId": "run_e2127a1de8ca48249e88",
+      "status": "failed",
+      "taskSuccess": false,
+      "graderExitCode": 0,
+      "error": "Run budget exhausted: total tokens 292,291 / 250,000",
+      "runLimits": {
+        "maxTurns": 40,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 0.05,
+        "timeoutMs": 900000
+      },
+      "usage": {
+        "inputTokens": 227026,
+        "outputTokens": 54935,
+        "cacheReadTokens": 516096,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0486105088
+      },
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "1a3f36c8e5a246c7e6d7cd15b3814a0be662873af4deac979feaa88beb03a11a",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/audit-31.json",
+      "auditSha256": "f30410122a107f25972ba1242abc56ad8731d49a47f8aabcf34e3cfd643bdcab",
+      "admissions": 16,
+      "settledFen": 98,
+      "toolFailures": 2,
+      "durationMs": 354839,
+      "changed": [
+        "src/store.mjs",
+        "src/value.mjs"
+      ]
+    }
+  ],
+  "inheritedBlockersUnchanged": true,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 4,
+    "cases": 4,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 4",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+      "transaction_savepoints_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "d10d3c871dd6dfc8ec206c74d52caa8b739da2b80d2db92121ed9566388e3def"
+  },
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 3852,
+    "remainingFen": 6148,
+    "requests": 207,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "newFinancialRequests": 55,
+  "newSettledFen": 242,
+  "newReservedFen": 0,
+  "statusCounts": {
+    "settled": 10,
+    "notStarted": 170
+  },
+  "baselineFailureRetained": true,
+  "paidChildPidsConfirmedExited": [
+    79877,
+    81930,
+    85291,
+    87592
+  ],
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Both original state-task pairs are eligible under the unchanged evaluator. TTL passes in both arms. Savepoints candidate passes; baseline code grader passes but its Run exhausts total tokens, with complete usage evidence. A failed baseline is not relabeled as success. All prior NDJSON evidence blockers remain; no overall or causal improvement claim."
+}

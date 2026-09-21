@@ -14,6 +14,7 @@ import {
 } from "./lsp-persistent-session.js";
 import { NodeDebuggerManager } from "./node-debugger.js";
 import { createNodeDebuggerTool } from "./node-debugger-tool.js";
+import { PythonDebuggerToolRuntime } from "./python-debugger-tool.js";
 import { createResearchSourceTool } from "./research-source-tool.js";
 import {
   type BrowserSourceCaptureProvider,
@@ -30,6 +31,7 @@ import type { GovernedCodeBridgeDispatcher } from "./governed-code-bridge-model.
 export class AgentSessionRuntime {
   private readonly kernels: AgentKernelRuntime;
   private readonly debuggerManager: NodeDebuggerManager | undefined;
+  private readonly pythonDebugger: PythonDebuggerToolRuntime | undefined;
   private readonly languageServers: RunLspSessionManager;
   private readonly browsers: BrowserSessionPort;
   private readonly browserOutputArtifacts:
@@ -68,6 +70,9 @@ export class AgentSessionRuntime {
     this.debuggerManager = processes
       ? new NodeDebuggerManager(processes, workspaceRoot)
       : undefined;
+    this.pythonDebugger = processes
+      ? new PythonDebuggerToolRuntime(processes)
+      : undefined;
   }
 
   lspSession(owner: LspSessionOwner) {
@@ -87,7 +92,13 @@ export class AgentSessionRuntime {
       | ReturnType<typeof createNodeDebuggerTool>
     > = [...this.kernels.createTools(enabledTools, context, codeBridge)];
     if (enabledTools.includes("node_debugger") && this.debuggerManager) {
-      tools.push(createNodeDebuggerTool(this.debuggerManager, context));
+      tools.push(
+        createNodeDebuggerTool(
+          this.debuggerManager,
+          context,
+          this.pythonDebugger,
+        ),
+      );
     }
     return tools;
   }
@@ -139,9 +150,7 @@ export class AgentSessionRuntime {
       this.languageServers.cancelRun(request),
       this.browsers.cancelRun(request),
       this.researchSources.cancelRun(request),
-      ...(this.debuggerManager
-        ? [this.debuggerManager.cancelRun(request)]
-        : []),
+      this.cancelDebuggerRun(request),
     ]);
     const failure = settlements.find(
       (settlement): settlement is PromiseRejectedResult =>
@@ -231,7 +240,12 @@ export class AgentSessionRuntime {
     threadId: string;
     runId: string;
   }): Promise<void> {
-    await this.debuggerManager?.cancelRun(request);
+    const results = await Promise.allSettled([
+      this.debuggerManager?.cancelRun(request),
+      this.pythonDebugger?.cancelRun(request),
+    ]);
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure?.status === "rejected") throw failure.reason;
   }
 
   debuggerWriteBarrier(request: { threadId: string; id: string }) {

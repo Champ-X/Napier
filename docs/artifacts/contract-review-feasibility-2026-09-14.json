@@ -1,0 +1,926 @@
+{
+  "kind": "napier.contract-review-feasibility-assessment",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T19:38:11.903809+00:00",
+  "sourceResultPath": "/Users/champ/.cache/napier-seven-quality/contract-review-pilot-v1/pilot-result.json",
+  "sourceResultSha256": "a4098fe5b2da9f45e879693aa0b2dab4c93e4ee916167dc5d74610418ca9296d",
+  "snapshot": "/tmp/napier-harness-input-capture-v2",
+  "model": "deepseek/deepseek-v4-flash",
+  "runs": 12,
+  "completedRuns": 12,
+  "allWorkspacesUnchanged": true,
+  "allInvocationBindingsVerified": true,
+  "medianRunDurationMs": 100656.0,
+  "httpDefect": {
+    "correctlyIdentified": 1,
+    "attempts": 2,
+    "otherResult": "One review returned a withdrawn non-finding with empty expected/actual fields"
+  },
+  "referenceReviews": {
+    "emptyFindings": 1,
+    "attempts": 6,
+    "otherResults": "Nonempty arrays included withdrawn findings, descriptions of correct behavior, an unsupported overflow allegation, or invalid quote/schema bindings"
+  },
+  "observations": [
+    {
+      "name": "http-retry-policy-v1",
+      "variant": "defective",
+      "trial": 2,
+      "runId": "run_4bbb0e37dfed482fa872",
+      "status": "completed",
+      "durationMs": 97392,
+      "usage": {
+        "inputTokens": 22568,
+        "outputTokens": 23106,
+        "cacheReadTokens": 4480,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0034316240000000003
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/retry.mjs",
+            "contractQuote": "Reject fractional/negative/nonfinite/overflow values and noncanonical/impossible dates.",
+            "counterexample": "retryDelay({method:'GET',status:429,attempt:0,retryAfter:'1e3',nowMs:0}) or parseRetryAfter('1e3',0): text '1e3' fails the /^[0-9]+$/ delta-seconds test and fails the IMF-fixdate regex, so parseRetryAfter returns null; '1e3' is a noncanonical numeric form that should be rejected (and it is), so no violation here. Actual definite violation: parseRetryAfter('0000000000000000000000000000000000000000001',0) - leading zeros. Text passes /^[0-9]+$/; Number('0...01')=1 is a safe integer; returns 1000. But delta-seconds canonical form 1*DIGIT does permit leading zeros per RFC, so wait. Re-examine: leading-zero delta-seconds is permitted by 1*DIGIT, so this is not a violation.",
+            "expected": "",
+            "actual": ""
+          }
+        ],
+        "uncertainties": [
+          "Drafting only; no violation should be asserted for leading zeros since 1*DIGIT permits them."
+        ]
+      },
+      "quoteBindings": [
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": false
+    },
+    {
+      "name": "http-retry-policy-v1",
+      "variant": "defective",
+      "trial": 1,
+      "runId": "run_96ca077b8a5e409097a6",
+      "status": "completed",
+      "durationMs": 148383,
+      "usage": {
+        "inputTokens": 44603,
+        "outputTokens": 31620,
+        "cacheReadTokens": 8960,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.015123108000000003
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/retry.mjs",
+            "contractQuote": "Validate all options even for a nonretryable status.",
+            "counterexample": "retryDelay({method:'GET', status:200, attempt:0, nowMs:-1}). Status 200 is not in RETRYABLE_STATUS, so execution runs the up-front checks for method, status, attempt, maxRetries, baseMs, maxMs, jitter and idempotencyKey, then evaluates the guard `!RETRYABLE_STATUS.has(status) || !methodRetryable || attempt >= maxRetries`; the first disjunct is true, so the function returns null. nowMs is checked only inside parseRetryAfter, which retryDelay calls solely when the status is retryable AND a non-null Retry-After value is supplied; here neither holds, so the invalid nowMs is never range-checked. The same gap occurs on a retryable path with no usable header: retryDelay({method:'GET', status:429, attempt:0, nowMs:-1}) returns 100 instead of raising.",
+            "expected": "Throw TypeError: retryDelay must validate every option it accepts, and nowMs must be a nonnegative safe integer, independent of the status or of whether a Retry-After header is present.",
+            "actual": "Returns null (and returns the backoff 100 in the retryable/no-header variant) without throwing; nowMs is validated only conditionally, when parseRetryAfter is reached with a string Retry-After."
+          }
+        ],
+        "uncertainties": []
+      },
+      "quoteBindings": [
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "http-retry-policy-v1",
+      "variant": "reference",
+      "trial": 1,
+      "runId": "run_64092393b80943c5ae42",
+      "status": "completed",
+      "durationMs": 121499,
+      "usage": {
+        "inputTokens": 16187,
+        "outputTokens": 20805,
+        "cacheReadTokens": 4992,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0026906376000000003
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/retry.mjs",
+            "contractQuote": "Delay is max(backoff, valid Retry-After); if Retry-After exceeds maxMs, return null rather than retrying before the server permits.",
+            "counterexample": "retryDelay({method:'GET',status:429,attempt:0,retryAfter:'2000000000000000',nowMs:0,maxMs:30000}). parseRetryAfter returns 2000000000000000 (a safe integer), header !== null and header > maxMs is true, so the function returns null. This is consistent; the counterexample instead targets retryAfter values whose millisecond product exceeds Number.MAX_SAFE_INTEGER but which still pass the /^\\d+$/ branch, e.g. retryAfter='9007199254740992': n = 9007199254740992000 is not a safe integer, so parseRetryAfter returns null, invalid header is ignored, and retryDelay returns the plain backoff rather than null.",
+            "expected": "A valid unsigned-integer Retry-After header whose value exceeds maxMs should cause retryDelay to return null.",
+            "actual": "Very large delta-seconds values that overflow when multiplied by 1000 are treated as invalid headers by parseRetryAfter, so retryDelay ignores them and returns a backoff delay instead of null."
+          }
+        ],
+        "uncertainties": [
+          "README does not define the exact numeric ceiling for 'overflow' delta-seconds; it is ambiguous whether values that multiply to > Number.MAX_SAFE_INTEGER should be rejected at parse time (treated as invalid) or should be recognized as exceeding maxMs and drive retryDelay to return null.",
+          "README does not specify whether 'floor(min(maxMs,baseMs*2**attempt)*jitter)' with huge attempt must avoid Infinity prior to min; the implementation relies on Math.min(maxMs, Infinity) yielding maxMs, which matches the stated overflow-free requirement, but the exact intended cap ordering is not otherwise constrained."
+        ]
+      },
+      "quoteBindings": [
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "ttl-lru-cache-v1",
+      "variant": "defective",
+      "trial": 1,
+      "runId": "run_50db0bdbcffb4ea5b9dc",
+      "status": "completed",
+      "durationMs": 75941,
+      "usage": {
+        "inputTokens": 15454,
+        "outputTokens": 17998,
+        "cacheReadTokens": 8960,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.007228088000000001
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/clock.mjs",
+            "contractQuote": "`validateTime(now,lastNow)` in `src/clock.mjs` accepts finite nonnegative numbers with now >= lastNow, returning now; invalid input throws TypeError.",
+            "counterexample": "validateTime(-3, 0): the body `return Number(now);` returns -3; validateTime(7, 10) returns 7 even though now < lastNow; validateTime(NaN, 0) returns NaN.",
+            "expected": "Throw TypeError whenever now is not a finite nonnegative number or when now < lastNow.",
+            "actual": "Returns Number(now) unconditionally; lastNow is ignored and no TypeError is thrown."
+          },
+          {
+            "file": "src/clock.mjs",
+            "contractQuote": "`deadline(now,ttlMs)` accepts finite nonnegative numbers, rejects overflow of their sum, and returns now+ttlMs. All validation failures use TypeError.",
+            "counterexample": "deadline(Number.MAX_VALUE, Number.MAX_VALUE): the body `return now + ttlMs;` returns Infinity. deadline(-5, 3) returns -2.",
+            "expected": "Throw TypeError when either argument is not a finite nonnegative number or when now+ttlMs overflows to a non-finite value.",
+            "actual": "Returns now+ttlMs with no validation and no overflow rejection."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "`TtlLruCache(capacity,ttlMs)` in `src/cache.mjs` takes a positive safe-integer capacity and a finite nonnegative TTL.",
+            "counterexample": "new TtlLruCache(-1, -5), new TtlLruCache(1.5, 10), and new TtlLruCache(0, 0): the constructor body only assigns this.capacity = capacity; this.ttlMs = ttlMs; and performs no checks.",
+            "expected": "Reject a capacity that is not a positive safe integer and a ttlMs that is not a finite nonnegative number (TypeError).",
+            "actual": "Accepts and stores any capacity/ttlMs values without validation."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "Each valid operation advances logical time monotonically and first removes all entries whose expiration <= now.",
+            "counterexample": "const c = new TtlLruCache(2, 10); c.put(\"a\", 1, 0); c.get(\"a\", 10); c.keys(10); c.size(10); — put stores \"a\" with expiration deadline(0,10)=10; get sets time=10 then reads this.items.get(\"a\") directly (no purge) returning {found:true,value:1}; keys returns [...this.items.keys()] and size returns keys(now).length, both still counting \"a\".",
+            "expected": "get/keys/size first remove entries whose expiration (10) <= now (10): get(\"a\",10) returns {found:false}, keys(10) returns [], size(10) returns 0.",
+            "actual": "No method purges expired entries; get(\"a\",10) returns {found:true,value:1}, keys(10) returns [\"a\"], size(10) returns 1."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "delete reports whether an unexpired key existed.",
+            "counterexample": "const c = new TtlLruCache(2, 10); c.put(\"a\", 1, 0); c.delete(\"a\", 10); — \"a\" expires at 10, so at now=10 it is expired; delete runs this.items.delete(\"a\") and returns true.",
+            "expected": "Purge the expired entry and return false, because no unexpired key existed at now=10.",
+            "actual": "Returns true."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "A hit becomes most recently used; a miss, keys or size does not reorder remaining entries.",
+            "counterexample": "const c = new TtlLruCache(2, 100); c.put(\"a\", 1, 0); c.put(\"b\", 2, 1); c.get(\"a\", 2); c.keys(2); — get only calls this.items.get(key) without reinserting, so the Map iteration order remains [\"a\",\"b\"].",
+            "expected": "The hit \"a\" becomes most recently used, so keys(2) returns [\"b\",\"a\"] (least to most recent).",
+            "actual": "keys(2) returns [\"a\",\"b\"]; the hit is not promoted."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "put replaces and renews an existing key, making it most recent; then evicts least recent entries until within capacity.",
+            "counterexample": "const c = new TtlLruCache(2, 100); c.put(\"a\", 1, 0); c.put(\"b\", 2, 1); c.put(\"a\", 3, 2); c.keys(2); — this.items.set(\"a\", ...) on an existing key leaves it at its original position, so order stays [\"a\",\"b\"].",
+            "expected": "Replacing \"a\" renews it and moves it to most recent, so keys(2) returns [\"b\",\"a\"].",
+            "actual": "keys(2) returns [\"a\",\"b\"]; a replaced existing key is not made most recent."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "then evicts least recent entries until within capacity.",
+            "counterexample": "const c = new TtlLruCache(2, 100); c.put(\"a\", 1, 0); c.put(\"b\", 2, 1); c.put(\"c\", 3, 2); c.keys(2); — after the third put size 3 > capacity 2, and the code executes this.items.delete(key), deleting the just-inserted \"c\".",
+            "expected": "Evict the least recently used entry \"a\", leaving keys(2) = [\"b\",\"c\"] and c.get(\"c\",2) = {found:true,value:3}.",
+            "actual": "Deletes the newly inserted \"c\"; keys(2) returns [\"a\",\"b\"] and c.get(\"c\",2) returns {found:false}."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "TTL zero never retains an entry and removes an existing instance of that key.",
+            "counterexample": "const c = new TtlLruCache(2, 0); c.put(\"a\", 1, 0); c.size(0); — with ttlMs=0, put stores {value:1,end:deadline(0,0)=0} via this.items.set and no purge removes it.",
+            "expected": "A zero-TTL put never retains an entry, so size(0) returns 0.",
+            "actual": "size(0) returns 1; the entry is retained."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "Validate key, time and (for put) expiration before modifying any cache state, purging entries or advancing time. Invalid calls leave all state intact.",
+            "counterexample": "const c = new TtlLruCache(2, 10); c.put(\"a\", 1, 10); c.get(\"b\", 5); — now=5 < lastNow=10 is invalid, so the call must throw TypeError and leave logical time at 10; instead get runs this.time = validateTime(5, 10), which returns 5, and returns {found:false}.",
+            "expected": "An invalid time (or key/expiration) throws TypeError before any state change, leaving logical time at 10 and items untouched.",
+            "actual": "No validation error is raised; this.time is lowered to 5, so logical time does not advance monotonically and state is changed."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "Keys are nonempty strings.",
+            "counterexample": "const c = new TtlLruCache(2, 10); c.put(\"\", 1, 0); c.keys(0); — the empty string (and any non-string) is not a valid key; put executes this.items.set(\"\", {...}).",
+            "expected": "Reject the invalid key with TypeError before modifying cache state, leaving the cache empty.",
+            "actual": "Stores the empty-string key; keys(0) returns [\"\"]."
+          }
+        ],
+        "uncertainties": [
+          "The sentence 'All validation failures use TypeError' sits in the clock.mjs paragraph; it is not fully explicit whether it also governs TtlLruCache's capacity/ttlMs/key validation, though the constructor's 'takes a positive safe-integer capacity and a finite nonnegative TTL' still makes accepting invalid values a violation.",
+          "Whether invalid keys (e.g., empty or non-string) must surface specifically as TypeError is not stated in the cache paragraph; I read it together with the clock paragraph's 'All validation failures use TypeError'.",
+          "The README does not define behavior for inputs coercible to numbers (e.g., the string \"5\"); since validateTime/deadline 'accept finite nonnegative numbers', I treated any non-number as invalid, but this coercion boundary is not spelled out."
+        ]
+      },
+      "quoteBindings": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "http-retry-policy-v1",
+      "variant": "reference",
+      "trial": 2,
+      "runId": "run_2039ba0f37b74f5889f6",
+      "status": "completed",
+      "durationMs": 160060,
+      "usage": {
+        "inputTokens": 38138,
+        "outputTokens": 34990,
+        "cacheReadTokens": 9984,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.015164475200000003
+      },
+      "review": {
+        "findings": [],
+        "uncertainties": [
+          "Overflow Retry-After vs the maxMs rule: README says parseRetryAfter must reject 'overflow values' (making such a header invalid and therefore ignored per 'Invalid Retry-After is ignored'), while it also says retryDelay must return null when 'Retry-After exceeds maxMs'. For a delta-seconds header too large to convert to a safe-integer millisecond count (e.g. \"9007199254741\"), these rules imply opposite outcomes (ignore-then-backoff vs null), and the README does not define the overflow threshold, so no definite conclusion is possible for those inputs.",
+          "Error signalling is underspecified for retryDelay: the README attaches TypeError explicitly only to parseRetryAfter's nowMs, while for retryDelay it says merely 'Validate all options even for a nonretryable status'. The implementation throws TypeError for invalid retryDelay options (method, status, attempt/maxRetries, baseMs/maxMs, jitter, idempotencyKey, and nowMs via parseRetryAfter); whether an error is required and of which type cannot be determined from the contract."
+        ]
+      },
+      "quoteBindings": [],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "ttl-lru-cache-v1",
+      "variant": "defective",
+      "trial": 2,
+      "runId": "run_59088986846f4fddad71",
+      "status": "completed",
+      "durationMs": 62132,
+      "usage": {
+        "inputTokens": 14018,
+        "outputTokens": 12416,
+        "cacheReadTokens": 8960,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.005464088000000001
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/clock.mjs",
+            "contractQuote": "`validateTime(now,lastNow)` in `src/clock.mjs` accepts finite nonnegative numbers\nwith now >= lastNow, returning now; invalid input throws TypeError.",
+            "counterexample": "Call validateTime(-1, 0): the body is `return Number(now);` with no check. Likewise validateTime(10, 5) (now < lastNow) and validateTime(Infinity, 0) (non-finite) execute the same single line.",
+            "expected": "Any non-finite number, negative number, or now < lastNow must throw TypeError and return nothing.",
+            "actual": "Returns -1, returns 10, and returns Infinity respectively; no TypeError is ever thrown, and non-number inputs such as validateTime(\"5\", 0) are silently coerced to 5 by Number()."
+          },
+          {
+            "file": "src/clock.mjs",
+            "contractQuote": "`deadline(now,ttlMs)` accepts finite nonnegative numbers, rejects overflow of their\nsum, and returns now+ttlMs. All validation failures use TypeError.",
+            "counterexample": "Call deadline(Number.MAX_VALUE, Number.MAX_VALUE): the body is `return now + ttlMs;`, so the sum is computed unconditionally. Also deadline(1, -1) and deadline(0, Infinity) take the same path.",
+            "expected": "TypeError for overflow of the sum and for any non-finite or negative argument.",
+            "actual": "Returns Infinity for the overflow case, returns 0 for deadline(1, -1), and returns Infinity for deadline(0, Infinity); no validation runs and no TypeError is thrown."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "Each valid operation advances logical time monotonically and first removes all\nentries whose expiration <= now.",
+            "counterexample": "const c = new TtlLruCache(5, 10); c.put('a', 1, 0); then c.get('a', 10). The stored end is deadline(0, 10) = 10, and now = 10, so the entry expires at 10 and must be removed before the lookup.",
+            "expected": "get returns {found:false} because the entry's expiration (10) is <= now (10) and is purged first.",
+            "actual": "No method ever iterates or purges this.items; get reads this.items.get('a') and returns {found:true,value:1}, so expired entries are retained forever."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "TTL zero\nnever retains an entry and removes an existing instance of that key.",
+            "counterexample": "const c = new TtlLruCache(5, 0); c.put('a', 1, 0); then c.get('a', 0). put stores end = deadline(0, 0) = 0.",
+            "expected": "The entry is never retained: get returns {found:false}, and putting a key that already exists with TTL zero removes that existing instance.",
+            "actual": "put stores the item, and because no purge runs, get returns {found:true,value:1}; an existing key is also overwritten rather than removed."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "A hit becomes most recently used; a miss, keys or size does\nnot reorder remaining entries.",
+            "counterexample": "const c = new TtlLruCache(3, 100); c.put('a',1,0); c.put('b',2,0); c.put('c',3,0); c.get('a',0); then c.keys(0). The get is a hit on 'a' and must make 'a' most recently used.",
+            "expected": "keys(0) returns ['b','c','a'] (least to most recently used).",
+            "actual": "get contains no delete/set to move the hit; keys(0) returns ['a','b','c'], the original insertion order."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "put replaces and renews an existing key, making\nit most recent; then evicts least recent entries until within capacity.",
+            "counterexample": "const c = new TtlLruCache(2, 100); c.put('a',1,0); c.put('b',2,0); c.put('a',3,0); then c.keys(0). The second put('a') is on an existing key and must make 'a' most recent.",
+            "expected": "keys(0) returns ['b','a'] because putting 'a' again moves it to the most-recent position.",
+            "actual": "put calls this.items.set(key, ...); a Map.set on an existing key does not change insertion order, so keys(0) still returns ['a','b']."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "put replaces and renews an existing key, making\nit most recent; then evicts least recent entries until within capacity.",
+            "counterexample": "const c = new TtlLruCache(2, 100); c.put('a',1,0); c.put('b',2,0); c.put('c',3,0). This makes size 3 > capacity 2, so one entry must be evicted.",
+            "expected": "Evict the least recently used entry 'a', leaving keys ['b','c'] and c.get('c',0) = {found:true,value:3}.",
+            "actual": "The code runs `if (this.items.size > this.capacity) this.items.delete(key);`, deleting the just-inserted key 'c'; keys(0) returns ['a','b'] and c.get('c',0) returns {found:false}, so the newest entry is dropped and stale entries are kept."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "delete\nreports whether an unexpired key existed.",
+            "counterexample": "const c = new TtlLruCache(3, 10); c.put('a', 1, 0); then c.delete('a', 10). The stored end is 10 and now = 10, so the key has expired.",
+            "expected": "delete returns false, because no unexpired key 'a' existed at now = 10.",
+            "actual": "delete returns this.items.delete(key), which is true; expiration is never consulted because no purge or expiration check runs."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "Keys are nonempty strings.",
+            "counterexample": "const c = new TtlLruCache(3, 10); c.put('', 1, 0). The key is an empty string, which is not a nonempty string. Equivalently c.get('', 0) or c.delete('', 0) with an invalid key.",
+            "expected": "Throw TypeError and leave all cache state unchanged.",
+            "actual": "No key check is performed, so the empty-string key is stored in this.items and returned without error; keys of any type are accepted."
+          },
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "Validate key, time and (for put) expiration before modifying any cache\nstate, purging entries or advancing time. Invalid calls leave all state intact.",
+            "counterexample": "const c = new TtlLruCache(2, 10); c.put('a',1,0); c.get('a',5); then the invalid call c.put('', 2, 7). The key is invalid, so the call must not modify state.",
+            "expected": "Throw TypeError; this.time remains 5 and the map remains unchanged, with no '' entry.",
+            "actual": "put runs `this.time = validateTime(now, this.time);` first, which sets this.time to 7, then stores the '' key; validation of the key never occurs, so the invalid call advances logical time and mutates cache state."
+          }
+        ],
+        "uncertainties": [
+          "Whether the constructor is required to validate capacity/ttlMs and throw TypeError is not explicit: README states the precondition ('takes a positive safe-integer capacity and a finite nonnegative TTL') and that 'All validation failures use TypeError', but the explicit validation clause names only key, time, and (for put) expiration. src/cache.mjs performs no constructor validation at all, so if constructor validation is required this is an additional violation; a definite call cannot be made from the text alone.",
+          "Whether a hit returning {found:true,value:undefined} satisfies the distinguishability clause is clear and satisfied by the object wrapper, so no uncertainty there; the only unresolved ambiguity identified is constructor-argument validation scope.",
+          "The methods get/delete/keys are key- or time-taking, and README's validation clause does not enumerate them per method; it is ambiguous whether every key-taking method must validate its key, though the implementation validates none."
+        ]
+      },
+      "quoteBindings": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "ttl-lru-cache-v1",
+      "variant": "reference",
+      "trial": 1,
+      "runId": "run_a312d873a45b435fa575",
+      "status": "completed",
+      "durationMs": 97022,
+      "usage": {
+        "inputTokens": 19382,
+        "outputTokens": 23469,
+        "cacheReadTokens": 5120,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0030038960000000003
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/clock.mjs",
+            "contractQuote": "`validateTime(now,lastNow)` in `src/clock.mjs` accepts finite nonnegative numbers with now >= lastNow, returning now; invalid input throws TypeError.",
+            "counterexample": "validateTime(0.5, 0) — now=0.5 is finite and nonnegative, lastNow=0 is finite and nonnegative, and 0.5 >= 0. The `valid` helper returns true for both, so no TypeError is thrown and 0.5 is returned; the contract's accepted domain is not restricted to integers.",
+            "expected": "Accepts any finite nonnegative numbers satisfying now >= lastNow and returns now.",
+            "actual": "The helper is `const valid = (x) => typeof x === \"number\" && Number.isFinite(x) && x >= 0;`, which accepts non-integers, so 0.5 passes — no violation here; conversely no integer-only gate exists. (Reported finding withdrawn on inspection: behavior matches the contract.)"
+          }
+        ],
+        "uncertainties": [
+          "Whether 'finite nonnegative numbers' admits fractional values such as 0.5 as valid logical times, since the README states logical time advances monotonically but does not explicitly restrict times to integers; this affects whether accepting fractional `now` is correct or an error.",
+          "Whether a `ttlMs` of fractional value combined with a fractional `now` producing an exact expiration equal to a later `now` counts as removal at 'expiration <= now', since float rounding is not addressed by the contract.",
+          "Constructor validation: README says TtlLruCache takes a positive safe-integer capacity and a finite nonnegative TTL, but does not state whether an invalid capacity/TTL must throw TypeError specifically or any error; the implementation throws TypeError, so no definite violation can be asserted either way.",
+          "README states 'Each valid operation advances logical time monotonically and first removes all entries whose expiration <= now' while also requiring 'Validate key, time and (for put) expiration before modifying any cache state, purging entries or advancing time' — it is unclear whether a `put` with TTL zero that must not retain the key should still count as an 'advance' and purge expired entries, since the implementation calls `#advance(now)` before returning early for `ttl === 0`."
+        ]
+      },
+      "quoteBindings": [
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "semantic-version-order-v1",
+      "variant": "defective",
+      "trial": 1,
+      "runId": "run_56ef8e0d262a4e47be80",
+      "status": "completed",
+      "durationMs": 59431,
+      "usage": {
+        "inputTokens": 14197,
+        "outputTokens": 15359,
+        "cacheReadTokens": 10496,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0063174888
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "`core` is exactly three decimal digit strings; the other fields are arrays of identifier strings.",
+            "counterexample": "parseVersion(\"1.0\") — text.split(\"-\") gives [\"1.0\"], base=\"1.0\", base.split(\".\") gives a two-element array; no validation runs.",
+            "expected": "TypeError, because a version missing one of the three core components must be rejected.",
+            "actual": "Returns {core:[\"1\",\"0\"], prerelease:[], build:[]} without throwing."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Core fields must be nonnegative integers with no leading zeros except `0`.",
+            "counterexample": "parseVersion(\"01.0.0\") — base=\"01.0.0\", core becomes [\"01\",\"0\",\"0\"] with no digit/leading-zero check.",
+            "expected": "TypeError, because \"01\" is a core field with a leading zero.",
+            "actual": "Returns {core:[\"01\",\"0\",\"0\"], prerelease:[], build:[]} without throwing."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Reject nonstrings, surrounding whitespace, `v` prefixes, empty identifiers, missing components and any other characters with TypeError.",
+            "counterexample": "parseVersion(\"v1.0.0\") — no prefix or character validation is performed; base=\"v1.0.0\".",
+            "expected": "TypeError, because a `v` prefix is an explicitly rejected character.",
+            "actual": "Returns {core:[\"v1\",\"0\",\"0\"], prerelease:[], build:[]} without throwing."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Reject nonstrings, surrounding whitespace, `v` prefixes, empty identifiers, missing components and any other characters with TypeError.",
+            "counterexample": "parseVersion(\" 1.0.0\") — the leading space is kept; base=\" 1.0.0\".",
+            "expected": "TypeError, because surrounding whitespace is explicitly rejected.",
+            "actual": "Returns {core:[\" 1\",\"0\",\"0\"], prerelease:[], build:[]} without throwing."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Reject nonstrings, surrounding whitespace, `v` prefixes, empty identifiers, missing components and any other characters with TypeError.",
+            "counterexample": "parseVersion(new String(\"1.0.0\")) — the argument is an object (typeof \"object\"), but it inherits String.prototype.split, so text.split(\"-\") succeeds.",
+            "expected": "TypeError, because the wrapper object is not a string primitive.",
+            "actual": "Returns {core:[\"1\",\"0\",\"0\"], prerelease:[], build:[]} without throwing; only ordinary primitives such as 42 accidentally throw at text.split."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Optional prerelease starts with `-`, optional build with `+`, in that order.",
+            "counterexample": "parseVersion(\"1.0.0+build\") — split(\"-\") gives [\"1.0.0+build\"]; there is no `+` handling, so build stays hardcoded to [] and \"+build\" remains in the core string.",
+            "expected": "{core:[\"1\",\"0\",\"0\"], prerelease:[], build:[\"build\"]}.",
+            "actual": "{core:[\"1\",\"0\",\"0+build\"], prerelease:[], build:[]}."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Prerelease identifiers are nonempty ASCII alphanumeric/hyphen strings separated by dots; identifiers containing only digits must not have leading zeros.",
+            "counterexample": "parseVersion(\"1.0.0-01\") — split(\"-\") gives [\"1.0.0\",\"01\"], prerelease=\"01\"; no leading-zero check runs.",
+            "expected": "TypeError, because a numeric prerelease identifier must not have leading zeros.",
+            "actual": "Returns {core:[\"1\",\"0\",\"0\"], prerelease:[\"01\"], build:[]} without throwing."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Reject nonstrings, surrounding whitespace, `v` prefixes, empty identifiers, missing components and any other characters with TypeError.",
+            "counterexample": "parseVersion(\"1.0.0-a..b\") — prerelease=\"a..b\", split(\".\") gives [\"a\",\"\",\"b\"], then .filter(Boolean) silently removes the empty identifier; likewise parseVersion(\"1.0.0-\") yields prerelease [].",
+            "expected": "TypeError, because empty prerelease identifiers must be rejected.",
+            "actual": "Returns prerelease [\"a\",\"b\"] (or [] for \"1.0.0-\") without throwing; the empty identifier is dropped instead of reported."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Prerelease identifiers are nonempty ASCII alphanumeric/hyphen strings separated by dots",
+            "counterexample": "parseVersion(\"1.0.0-alpha-beta\") — split(\"-\") gives [\"1.0.0\",\"alpha\",\"beta\"]; destructuring keeps only base=\"1.0.0\" and prerelease=\"alpha\", discarding \"beta\".",
+            "expected": "{core:[\"1\",\"0\",\"0\"], prerelease:[\"alpha-beta\"], build:[]}, since a hyphen is allowed inside a prerelease identifier.",
+            "actual": "{core:[\"1\",\"0\",\"0\"], prerelease:[\"alpha\"], build:[]}; the \"beta\" segment is silently lost."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "Equal core: a release is greater than any prerelease; compare prerelease identifiers in order, numeric below nonnumeric, numeric by exact integer value, and nonnumeric by ASCII lexicographic order. A shorter equal prefix sorts first.",
+            "counterexample": "compareVersions(\"1.0.0-alpha\", \"1.0.0\") — both parseVersion cores map to [1,0,0]; the loop finds all three equal and returns 0, never inspecting prerelease.",
+            "expected": "-1, because the prerelease version is lower than the release version.",
+            "actual": "Returns 0 (and symmetrically compareVersions(\"1.0.0-alpha\",\"1.0.0-beta\") also returns 0 instead of -1)."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "Ignore build metadata in precedence.",
+            "counterexample": "compareVersions(\"1.0.0+a\", \"1.0.0\") — parseVersion(\"1.0.0+a\").core is [\"1\",\"0\",\"0+a\"], and .map(Number) converts the last element to NaN; the loop tests NaN !== 0 and falls through to the false branch of NaN < 0.",
+            "expected": "0, because build metadata is ignored in precedence.",
+            "actual": "Returns 1."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "Compare core integers numerically without precision loss.",
+            "counterexample": "compareVersions(\"1.0.99999999999999999999\", \"1.0.100000000000000000000\") — core.map(Number) converts both 20/21-digit strings to the same double value 1e20.",
+            "expected": "-1, because 99999999999999999999 < 100000000000000000000 exactly.",
+            "actual": "Returns 0, because the Number conversion rounds both operands to 1e20."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "`compareVersions(left,right)` in `src/order.mjs` validates both operands and returns exactly -1, 0 or 1.",
+            "counterexample": "compareVersions(\"v1.0.0\", \"1.0.0\") — parseVersion performs no validation, so core [\"v1\",\"0\",\"0\"].map(Number) is [NaN,0,0] and NaN !== 1 yields the return value 1.",
+            "expected": "TypeError, because an invalid operand must be rejected before comparison.",
+            "actual": "Returns 1; compareVersions(\"1.0\", \"1.0.0\") likewise returns 0 instead of throwing."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "`sortVersions(values)` validates every element of a dense array, even a singleton, returns a new ascending array, preserves original strings and preserves original order among versions with equal precedence.",
+            "counterexample": "const a = [\"2.0.0\", \"1.0.0\"]; sortVersions(a) — the body is values.sort(compareVersions), which sorts the caller's array in place and returns the same reference.",
+            "expected": "A new array [\"1.0.0\",\"2.0.0\"] with a left unchanged as [\"2.0.0\",\"1.0.0\"] (Never mutate inputs).",
+            "actual": "a is mutated to [\"1.0.0\",\"2.0.0\"] and the returned value is the same array object."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "`sortVersions(values)` validates every element of a dense array, even a singleton",
+            "counterexample": "sortVersions([\"not-a-version\"]) — with one element Array.prototype.sort never invokes the comparator, so parseVersion is never called.",
+            "expected": "TypeError, because every element must be validated even for a singleton array.",
+            "actual": "Returns [\"not-a-version\"] without throwing."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "Reject sparse/nonarray input with TypeError. Never mutate inputs.",
+            "counterexample": "sortVersions([,\"1.0.0\"]) — the input is a sparse array (hole at index 0); Array.prototype.sort skips the hole and never calls the comparator, so only one defined element exists and no error path runs.",
+            "expected": "TypeError, because sparse array input must be rejected.",
+            "actual": "Returns a length-2 array with the hole relocated and \"1.0.0\" first, without throwing."
+          }
+        ],
+        "uncertainties": [
+          "Ordinary non-string primitives (e.g. parseVersion(42)) throw TypeError only incidentally because text.split does not exist; whether the contract's 'Reject nonstrings' requirement is satisfied for non-primitive non-strings that expose a split method (such as new String(\"1.0.0\")) depends on how literally 'nonstring' is read.",
+          "Nonarray inputs that supply their own sort method (e.g. a typed array passed to sortVersions) are not rejected, but the contract's 'Reject sparse/nonarray input' clause does not say explicitly whether such array-like objects are in scope.",
+          "The README states core 'is exactly three decimal digit strings' but lists only 'missing components' in its rejection list; it is ambiguous whether an extra component such as \"1.0.0.0\" falls under that list, although the implementation returns a four-element core without throwing.",
+          "For unparsable cores the comparator returns values in {-1,0,1} only because NaN comparisons are false, so it is unclear whether that nominally satisfies 'returns exactly -1, 0 or 1' or whether the clause presupposes validated operands."
+        ]
+      },
+      "quoteBindings": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "ttl-lru-cache-v1",
+      "variant": "reference",
+      "trial": 2,
+      "runId": "run_b28d2c1944cb48a9a519",
+      "status": "completed",
+      "durationMs": 125330,
+      "usage": {
+        "inputTokens": 26766,
+        "outputTokens": 27511,
+        "cacheReadTokens": 9344,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0055407632
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/cache.mjs",
+            "contractQuote": "A hit becomes most recently used",
+            "counterexample": "c = new TtlLruCache(1, 10); c.put(\"a\", 1, 0); c.put(\"b\", 2, 1); then call c.get(\"a\", 2). Path: get validates key and calls #advance(2), which deletes \"a\" because item.end = 10 <= 2? No—10 > 2, so no deletion occurs there; but in the same get call, #advance(2) purges nothing, the Map contains only \"b\" (put of \"b\" at now=1 evicted \"a\" under capacity 1), so get(\"a\",2) returns {found:false}. This is the capacity-1 path; for a hit, consider capacity 2, ttl 10: put(\"a\",1,0); put(\"b\",2,1); get(\"a\",2) -> item a present, deleted and re-set: order [b,a]. Correct.",
+            "expected": "A hit moves the key to most-recently-used, and misses do not reorder.",
+            "actual": "#advance mutates #now before returning; get's hit path is correct, but note that a get that hits an item whose end <= now never happens because advance purges first. No definite violation here."
+          }
+        ],
+        "uncertainties": []
+      },
+      "quoteBindings": [
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "semantic-version-order-v1",
+      "variant": "defective",
+      "trial": 2,
+      "runId": "run_7ef49b2d2fee49e4b861",
+      "status": "completed",
+      "durationMs": 69945,
+      "usage": {
+        "inputTokens": 15346,
+        "outputTokens": 17124,
+        "cacheReadTokens": 10624,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0069729072
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Reject nonstrings, surrounding whitespace, `v` prefixes, empty identifiers,",
+            "counterexample": "parseVersion(\"v1.2.3\") and parseVersion(\" 1.2.3\"); text.split(\"-\") leaves the prefix/whitespace intact and base.split(\".\") yields three nonempty strings, so no check rejects the input.",
+            "expected": "Both calls throw TypeError.",
+            "actual": "parseVersion(\"v1.2.3\") returns {core:[\"v1\",\"2\",\"3\"],prerelease:[],build:[]} and parseVersion(\" 1.2.3\") returns {core:[\" 1\",\"2\",\"3\"],prerelease:[],build:[]}."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "missing components and any other characters with TypeError.",
+            "counterexample": "parseVersion(\"1.2\") and parseVersion(\"1.2.3abc\"); nothing in parseVersion inspects the shape or character set of core, it only calls split.",
+            "expected": "Both calls throw TypeError.",
+            "actual": "parseVersion(\"1.2\") returns {core:[\"1\",\"2\"],prerelease:[],build:[]}; parseVersion(\"1.2.3abc\") returns {core:[\"1\",\"2\",\"3abc\"],prerelease:[],build:[]}."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Core fields must be nonnegative integers with no leading zeros except `0`.",
+            "counterexample": "parseVersion(\"01.2.3\"); the leading-zero rule is never applied to the split components.",
+            "expected": "TypeError.",
+            "actual": "Returns {core:[\"01\",\"2\",\"3\"],prerelease:[],build:[]}. (Non-digit core such as \"1.x.3\" and negative values are accepted the same way.)"
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Optional prerelease starts with `-`, optional build with `+`, in that order.",
+            "counterexample": "parseVersion(\"1.2.3-alpha.4+build.007\"); text is split only on \"-\", so \"+\" is never recognized as the build separator and build is hard-coded to [].",
+            "expected": "{core:[\"1\",\"2\",\"3\"],prerelease:[\"alpha\",\"4\"],build:[\"build\",\"007\"]}.",
+            "actual": "Returns {core:[\"1\",\"2\",\"3\"],prerelease:[\"alpha\",\"4+build\",\"007\"],build:[]}; the build field is always an empty array, and parseVersion(\"1.2.3+build\") returns core [\"1\",\"2\",\"3+build\"]."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Prerelease identifiers are nonempty ASCII alphanumeric/hyphen strings separated",
+            "counterexample": "parseVersion(\"1.0.0-\") and parseVersion(\"1.0.0-a..b\"); the prerelease list is built with split(\".\").filter(Boolean), which discards empty identifiers instead of rejecting them.",
+            "expected": "Both calls throw TypeError.",
+            "actual": "parseVersion(\"1.0.0-\") returns {core:[\"1\",\"0\",\"0\"],prerelease:[],build:[]}; parseVersion(\"1.0.0-a..b\") returns prerelease [\"a\",\"b\"]."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "by dots; identifiers containing only digits must not have leading zeros.",
+            "counterexample": "parseVersion(\"1.0.0-01\"); prerelease components are kept verbatim with no numeric-identifier check.",
+            "expected": "TypeError.",
+            "actual": "Returns {core:[\"1\",\"0\",\"0\"],prerelease:[\"01\"],build:[]}."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "Equal core: a release is greater than any prerelease",
+            "counterexample": "compareVersions(\"1.0.0-rc.1\",\"1.0.0\"): both cores parse to [\"1\",\"0\",\"0\"], the loop over the three core components finds them equal, and the function returns.",
+            "expected": "-1 (release greater than prerelease).",
+            "actual": "0; prerelease is never examined by compareVersions."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "identifiers in order, numeric below nonnumeric, numeric by exact integer value,",
+            "counterexample": "compareVersions(\"1.0.0-alpha\",\"1.0.0-1\"), compareVersions(\"1.0.0-alpha\",\"1.0.0-alpha.1\"), compareVersions(\"1.0.0-Beta\",\"1.0.0-alpha\"): all three pairs have equal core components, so the comparison loop returns immediately.",
+            "expected": "1, -1, -1 respectively (numeric sorts below nonnumeric, shorter equal prefix first, ASCII \"B\" < \"a\").",
+            "actual": "0 for all three pairs; prerelease identifier ordering is not implemented at all."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "Compare core integers numerically without precision",
+            "counterexample": "compareVersions(\"9007199254740993.0.0\",\"9007199254740992.0.0\"); core strings are converted with .map(Number), and both values round to 9007199254740992 (2^53).",
+            "expected": "1.",
+            "actual": "0; the distinct specified core integers compare as equal because Number conversion loses precision."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "validates both operands and",
+            "counterexample": "compareVersions(\"bogus\",\"bogus\") and compareVersions(\"1.2\",\"1.3\"); neither operand is validated before parseVersion(...).core.map(Number) is consumed.",
+            "expected": "Both calls throw TypeError (invalid operands).",
+            "actual": "compareVersions(\"bogus\",\"bogus\") returns 1 (Number(\"bogus\") is NaN, NaN !== NaN is true and NaN < NaN is false, so the else-branch value 1 is returned); compareVersions(\"1.2\",\"1.3\") returns -1 instead of rejecting the two-component versions."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "returns a new ascending array",
+            "counterexample": "sortVersions([\"1.0.0\",\"1.0.0-rc.1\"]): compareVersions returns 0 for this pair (core equal, prerelease ignored), so the stable sort leaves the input order unchanged.",
+            "expected": "[\"1.0.0-rc.1\",\"1.0.0\"].",
+            "actual": "[\"1.0.0\",\"1.0.0-rc.1\"], which is not ascending, because equal-core versions are treated as equal precedence and never reordered."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "Never mutate inputs.",
+            "counterexample": "const a = [\"1.2.0\",\"1.0.0\"]; const r = sortVersions(a); values.sort(compareVersions) sorts in place and its return value is the same array object.",
+            "expected": "a is left as [\"1.2.0\",\"1.0.0\"] and r is a new array equal to [\"1.0.0\",\"1.2.0\"].",
+            "actual": "a is mutated to [\"1.0.0\",\"1.2.0\"] and r === a, so no new array is produced."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "`sortVersions(values)` validates every element of a dense array, even a singleton,",
+            "counterexample": "sortVersions([\"bogus\"]); Array.prototype.sort does not invoke the comparator when the array has fewer than two elements, and sortVersions performs no pre-validation pass.",
+            "expected": "TypeError (each element, including this singleton, must be validated).",
+            "actual": "Returns [\"bogus\"] with no error; the same holds for e.g. sortVersions([\"1.0.0\",\"bogus\"]) when the comparator happens to be called but performs no validation."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "order among versions with equal precedence. Reject sparse/nonarray input with",
+            "counterexample": "sortVersions([,\"1.0.0\"]); Array.prototype.sort skips holes rather than passing them to the comparator, so the only code that could throw never sees the hole.",
+            "expected": "TypeError.",
+            "actual": "No TypeError is raised; the hole is retained/relocated by the engine's hole handling and compareVersions is never called on it."
+          }
+        ],
+        "uncertainties": [
+          "Rejection of nonstring input: parseVersion(123), parseVersion(null) and parseVersion({}) do throw TypeError, but only incidentally because those values have no .split method, not because of an explicit type check. Whether such incidental runtime errors satisfy the README's rejection requirement is not decidable from static review, so it is not reported as a definite violation.",
+          "Rejection of nonarray input to sortVersions: nonarrays without a .sort method (e.g. \"1.0.0\", 5, null) throw TypeError incidentally, but a nonarray exposing a .sort method (e.g. {sort(){return []}}) would be returned without error; whether such exotic nonarrays must be reported as a definite violation is unclear, so only sparse input is reported.",
+          "For sparse input the definite violation is the absence of TypeError; the exact resulting element/hole arrangement after Array.prototype.sort is engine-dependent and is not asserted here.",
+          "Stability of Array.prototype.sort is assumed for the current Node runtime, so \"preserves original order among versions with equal precedence\" is not reported as violated; the non-ascending finding does not depend on stability assumptions.",
+          "No ambiguity was found about the build-metadata parsing requirement itself: build is hard-coded to [] for every input, so the build-identifier character and leading-zero rules are moot and are not reported separately."
+        ]
+      },
+      "quoteBindings": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    },
+    {
+      "name": "semantic-version-order-v1",
+      "variant": "reference",
+      "trial": 1,
+      "runId": "run_bfc36dd885a146ea9d3d",
+      "status": "completed",
+      "durationMs": 146286,
+      "usage": {
+        "inputTokens": 25225,
+        "outputTokens": 34837,
+        "cacheReadTokens": 11136,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0066869208
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "sortVersions(values) validates every element of a dense array, even a singleton, returns a new ascending array, preserves original strings and preserves original order among versions with equal precedence.",
+            "counterexample": "sortVersions([1.0]) — a one-element array whose only element is the number 1.0. Execution path: Array.isArray passes; loop i=0, Object.hasOwn(values,0) true; parseVersion(1.0) in src/version.mjs hits `typeof text !== \"string\"` and throws TypeError.",
+            "expected": "Rejecting a nonstring element in a singleton array is required (\"validates every element of a dense array, even a singleton\").",
+            "actual": "The element is validated and a TypeError is thrown."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "sortVersions(values) validates every element of a dense array, even a singleton, returns a new ascending array, preserves original strings and preserves original order among versions with equal precedence.",
+            "counterexample": "sortVersions([\"1.0.0+a\",\"1.0.0+b\"]) — both compare equal (build metadata ignored). Execution path: the validation loop calls parseVersion on each element and discards the result, then `[...values].sort(compareVersions)` re-parses each element inside the comparator.",
+            "expected": "No definite requirement is stated about how many times each element is validated; the quoted text requires validation of every element and does not constrain validation count.",
+            "actual": "Each element is parsed twice (once for validation, once per sort comparison)."
+          },
+          {
+            "file": "README.md",
+            "contractQuote": "(none)",
+            "counterexample": "(none) — no README text supports a definite violation for this file; no implementation file exists under this path.",
+            "expected": "(none)",
+            "actual": "(none)"
+          }
+        ]
+      },
+      "quoteBindings": [
+        false,
+        false,
+        false
+      ],
+      "workspaceUnchanged": true,
+      "parseError": "Invalid review shape",
+      "nonemptyFieldsValid": false
+    },
+    {
+      "name": "semantic-version-order-v1",
+      "variant": "reference",
+      "trial": 2,
+      "runId": "run_f684f54521e641a79858",
+      "status": "completed",
+      "durationMs": 103920,
+      "usage": {
+        "inputTokens": 20419,
+        "outputTokens": 23649,
+        "cacheReadTokens": 5120,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0036541960000000006
+      },
+      "review": {
+        "findings": [
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "`compareVersions(left,right)` in `src/order.mjs` validates both operands",
+            "counterexample": "Call `sortVersions([\"1.0.0\", \"1.0.0\"])` or `sortVersions([\"1.0.0+build\"])`. In `sortVersions`, the loop calls `parseVersion(values[i])` on each element, then `[...values].sort(compareVersions)`. V8's `Array.prototype.sort` invokes the comparator `compareVersions` between pairs of elements; the comparator itself calls `parseVersion` on both operands, so validation occurs there. However, the claim is a definite violation only if the README's validation requirement for `compareVersions` is unmet. On the counterexample `compareVersions(\"1.0.0\", 5)`, `parseVersion(5)` throws TypeError, satisfying validation. The distinct issue: `sortVersions` validates elements via `parseVersion` but the sort comparator receives the values again — no violation. Static inspection did not reveal a definite violation here.",
+            "expected": "Both operands must be validated (TypeError on invalid input).",
+            "actual": "`compareVersions` calls `parseVersion(left)` and `parseVersion(right)`, which throw TypeError for nonstrings and malformed versions."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "`sortVersions(values)` validates every element of a dense array, even a singleton",
+            "counterexample": "`sortVersions` with a sparse array: `const a = [\"1.0.0\"]; a[2] = \"2.0.0\"; sortVersions(a)`. The loop iterates `i` from 0 to `values.length - 1` (0,1,2). At `i === 1`, `Object.hasOwn(values, 1)` is false, so it throws TypeError(\"Sparse array\"). This meets the requirement to reject sparse input.",
+            "expected": "Reject sparse input with TypeError.",
+            "actual": "Throws TypeError when an index is missing."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "returns a new ascending array, preserves original strings and preserves original order among versions with equal precedence",
+            "counterexample": "`sortVersions([\"1.0.0+b\", \"1.0.0+a\"])`. Both parse to equal precedence (build ignored). The comparator `compareVersions` returns 0 for both pairs, so `Array.prototype.sort` (stable in V8/Node) preserves input order, yielding `[\"1.0.0+b\", \"1.0.0+a\"]`. This satisfies stability. Original strings are preserved because the array is shallow-copied with `[...values]`.",
+            "expected": "Stable, non-mutating, preserves original strings.",
+            "actual": "Uses `[...values].sort(compareVersions)`, preserving strings and stability in Node."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Core fields must be nonnegative integers with no leading zeros except `0`.",
+            "counterexample": "`parseVersion(\"01.0.0\")`. The regex requires `(0|[1-9][0-9]*)` for each core field, so `01` does not match; the overall match is null and TypeError is thrown. Likewise `parseVersion(\"1.0.0-\")` fails because the prerelease group requires at least one valid identifier.",
+            "expected": "Reject leading zeros in core and empty identifiers with TypeError.",
+            "actual": "Throws TypeError for leading-zero core fields and empty prerelease/build identifiers."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Reject nonstrings, surrounding whitespace, `v` prefixes, empty identifiers, missing components and any other characters with TypeError.",
+            "counterexample": "`parseVersion(\" 1.0.0\")`. The regex is anchored with `^` and `$` and does not allow whitespace; the match fails, so TypeError is thrown. `parseVersion(\"v1.0.0\")` likewise fails. `parseVersion(\"1.0\")` fails the required three-component pattern. `match[0] !== text` is a redundant but harmless guard that cannot reject any string the anchored regex accepted.",
+            "expected": "Throw TypeError for all listed invalid forms.",
+            "actual": "Throws TypeError for nonstrings, whitespace, `v` prefixes, empty identifiers, and missing components."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "identifiers containing only digits must not have leading zeros",
+            "counterexample": "`parseVersion(\"1.0.0-01\")`. The prerelease group captures `01`; the post-check `prerelease.some((id) => /^[0-9]+$/.test(id) && id.length > 1 && id[0] === \"0\")` detects `01` and throws TypeError. For `1.0.0-0`, the check does not fire and `0` is accepted, as required.",
+            "expected": "Reject numeric prerelease identifiers with leading zeros; accept `0`.",
+            "actual": "Rejects `01`; accepts `0`."
+          },
+          {
+            "file": "src/version.mjs",
+            "contractQuote": "Build identifiers follow the same character rules but may have leading zeros.",
+            "counterexample": "`parseVersion(\"1.0.0+01\")` returns `{core:[\"1\",\"0\",\"0\"], prerelease:[], build:[\"01\"]}` because the leading-zero check is applied only to `prerelease`. This matches the requirement that build identifiers may have leading zeros.",
+            "expected": "Accept leading zeros in build identifiers.",
+            "actual": "Accepts them; the leading-zero guard excludes build identifiers."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "Compare core integers numerically without precision loss.",
+            "counterexample": "`compareVersions(\"1.0.0\", \"1.0.1\")` and large values e.g. `compareVersions(\"99999999999999999999.0.0\", \"1.0.0\")`. The helper `integer(a,b)` compares `a.length` then `a` lexicographically as decimal digit strings, which equals numeric order for equal-length comparison of digit strings without leading zeros (guaranteed by `parseVersion`). This avoids Number precision loss.",
+            "expected": "Exact numeric core comparison.",
+            "actual": "Uses length then lexicographic comparison of decimal strings, which is exact for canonical nonnegative integers without leading zeros."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "(A)",
+            "counterexample": "`compareVersions(\"1.0.0-alpha\", \"1.0.0-alpha.1\")`. Core equal; both prerelease arrays nonempty; loop runs `Math.min(1,2)=1` iteration comparing `alpha` vs `alpha` -> 0; loop ends; returns `cmp(1,2) = -1`, so the shorter prefix sorts first. This satisfies the shorter-prefix rule.",
+            "expected": "Shorter equal prefix sorts first.",
+            "actual": "Falls through to `cmp(a.prerelease.length, b.prerelease.length)`."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "a release is greater than any prerelease",
+            "counterexample": "`compareVersions(\"1.0.0\", \"1.0.0-rc.1\")`. Core equal; `a.prerelease.length === 0`, so the guard returns `cmp(true, false) = 1`. Release greater than prerelease. Also `compareVersions(\"1.0.0-rc.1\", \"1.0.0\")` returns `cmp(false, true) = -1`. Correct.",
+            "expected": "Release > prerelease.",
+            "actual": "Guard `cmp(a.prerelease.length === 0, b.prerelease.length === 0)` uses `cmp` on booleans: `a < b` and `a > b` on booleans coerce to 0/1; `false < true` is true, so cmp(false,true) = -1 and cmp(true,false) = 1. Correct direction."
+          },
+          {
+            "file": "src/order.mjs",
+            "contractQuote": "numeric below nonnumeric, numeric by exact integer value, and nonnumeric by ASCII lexicographic order",
+            "counterexample": "`compareVersions(\"1.0.0-1\", \"1.0.0-alpha\")`: `xn=true, yn=false`, so `xn !== yn` branch yields `xn ? -1 : 1` = -1, numeric below nonnumeric. `compareVersions(\"1.0.0-2\", \"1.0.0-10\")`: both numeric, `integer(\"2\",\"10\")` compares lengths (1 vs 2) -> -1, numeric by exact value. `compareVersions(\"1.0.0-Alpha\", \"1.0.0-alpha\")`: both nonnumeric, `cmp(\"Alpha\",\"alpha\")` uses JS string `<`/`>` which compares UTF-16 code units; uppercase `A`(65) < `a`(97), returns -1. ASCII lexicographic order matches UTF-16 code-unit order for ASCII alphanumerics/hyphens.",
+            "expected": "Numeric below nonnumeric; numeric by exact value; nonnumeric by ASCII order.",
+            "actual": "Implements all three rules with exact integer comparison and code-unit comparison for identifiers restricted to ASCII."
+          }
+        ],
+        "uncertainties": [
+          "Whether `Array.prototype.sort` stability is guaranteed: the README requires preserving original order among versions with equal precedence. Node's V8 implements stable sort (ES2019 requires stability for all engines), so `[...values].sort(compareVersions)` preserves equal-precedence order. No ambiguity remains because ECMAScript mandates stable sort, but this rests on the runtime being ES2019+."
+        ]
+      },
+      "quoteBindings": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true
+      ],
+      "workspaceUnchanged": true,
+      "parseError": null,
+      "nonemptyFieldsValid": true
+    }
+  ],
+  "decision": "Do not integrate this reviewer as an automatic completion blocker",
+  "reasons": [
+    "Static review sometimes repeats the same interpretation error",
+    "A quote substring is insufficient to prove a semantic violation",
+    "Nonempty findings arrays may describe correct or explicitly withdrawn behavior",
+    "Full Agent reviews consume separate budgets and often exceed the original task remaining wall time"
+  ],
+  "scope": "Read-only fresh-context review feasibility, not an integrated paired quality qualification or proof of complete reference correctness",
+  "promotionReady": false
+}

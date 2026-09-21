@@ -1,0 +1,185 @@
+{
+  "kind": "napier.cny-budgeted-queue-comparison",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T07:17:17.864049+00:00",
+  "authorizedTotalFen": 5000,
+  "priorProbeConservativeFen": 110,
+  "cumulativeCommittedFenAfterPair": 346,
+  "billingScope": "Peak CNY prices, all input treated as uncached, each response rounded upward to a fen; not a provider invoice. Historical SDK USD figures are obsolete for current billing.",
+  "pricingSource": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+  "runtimeSourceChange": "General guidance to distinguish required concrete types/formats from invalid lookalikes and verify compatibility assumptions.",
+  "arms": [
+    {
+      "arm": "baseline",
+      "runId": "run_dd60b6a8edea4f2cb301",
+      "requestedModel": {
+        "provider": "deepseek",
+        "id": "deepseek-v4-flash"
+      },
+      "taskSuccess": true,
+      "externalGraderExitCode": 0,
+      "supplementalAuditPassed": true,
+      "durationMs": 520160,
+      "apiRequests": 17,
+      "minimumObservedIntervalMs": 30000,
+      "conservativeChargeFen": 139,
+      "toolFailures": 1,
+      "changed": [
+        "src/job-result.mjs",
+        "src/queue.mjs"
+      ],
+      "actualEditOperations": [
+        "replace",
+        "replace"
+      ],
+      "verificationExecutions": 0,
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "dependencyEligible": true,
+      "contextValid": true
+    },
+    {
+      "arm": "candidate",
+      "runId": "run_36cdb48abdf64462a168",
+      "requestedModel": {
+        "provider": "deepseek",
+        "id": "deepseek-v4-flash"
+      },
+      "taskSuccess": true,
+      "externalGraderExitCode": 0,
+      "supplementalAuditPassed": true,
+      "durationMs": 421207,
+      "apiRequests": 12,
+      "minimumObservedIntervalMs": 30000,
+      "conservativeChargeFen": 97,
+      "toolFailures": 2,
+      "changed": [
+        "src/job-result.mjs",
+        "src/queue.mjs"
+      ],
+      "actualEditOperations": [
+        "replace",
+        "replace"
+      ],
+      "verificationExecutions": 2,
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "dependencyEligible": true,
+      "contextValid": true
+    }
+  ],
+  "qualityGate": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "bounded_async_queue_v2: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "45e50ea496fdec79b83d3ab81f6338984f6f4daaa63410efa1132f67e4524164"
+  },
+  "validation": {
+    "budgetAndAdmissionTestsPassed": 14,
+    "pairedSpendingPolicyTestsPassed": 1,
+    "contractPromptBindingTestsPassed": 2,
+    "runtimeCompilePassed": true,
+    "fullSuitesRepeated": false,
+    "testOutputLocation": "Tool execution transcript; no tests were repeated merely to capture log files.",
+    "postRunFormatting": "Only the workspace campaign/suite entry formatting changed after freezing; immutable driver and Run receipts are unchanged."
+  },
+  "decision": "Both arms pass the enhanced queue task and four supplemental checks. One pair does not qualify the full composition or justify default promotion. No cost/cache causality claim.",
+  "files": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-baseline-v1/plan.json",
+      "sha256": "9d492746defcb90943a7fe655e755f36a6dfde65a07da322ee32d5538bf670cb"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-baseline-v1/command.json",
+      "sha256": "1b33b31450097453ab76a3d29ae9175351aae2013c3a92326f7fea0d47f34a89"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-baseline-v1/candidate.log",
+      "sha256": "d35fb0bb4dfcc8f41f442c889ee10d490e54201b69b5b0c85981a9563efba6c9"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-baseline-v1/candidate/trial-1/result.json",
+      "sha256": "4d94a4262fa15c6383b11e3c4762b7627afb6664462efd858bf67a8119996a6b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-baseline-v1/contract-audit.json",
+      "sha256": "6577f6c07583cb54161a6d923dacc1cfd8df0bbd3c7c861a09b4e1b171425937"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/plan.json",
+      "sha256": "89d6ebdebf13ffdafc9971284f7c4f12984558c002bdaea6f22ede37e5da1155"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/command.json",
+      "sha256": "37448c79e58a9832a140b4792addde81d5a19d6b50706005cbf734ce6f3bd3f2"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/candidate.log",
+      "sha256": "2e7d838cae66bc44d86dc78348b0a2130c59eade027da858fb46f923adfc0a80"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/candidate/trial-1/result.json",
+      "sha256": "5c482e3fd5c406fc0a0ebe6ac4ca37dc62c0956e356e4b9233a6dfc2ceb519db"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/contract-audit.json",
+      "sha256": "6577f6c07583cb54161a6d923dacc1cfd8df0bbd3c7c861a09b4e1b171425937"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/paired-quality-gate.json",
+      "sha256": "f569851c708c206f7ed707e76b772da838cdc3b2739086c3026926118038e528"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-queue-v1/pricing.html",
+      "sha256": "a1602748f50a9baacd416f4b831438896ba1351160f1f9afe89a9423c4b76cf3"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-spending-budget.mjs",
+      "sha256": "b9b77d96e057a4bea33c60e239dd24c5357bc5a97ce7c5b9a637a830099ed49f"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-spending-transport.mjs",
+      "sha256": "9104ccc625288f9b481302ed8b4f754280f10181b6e89fc9c551f1e6c4573fef"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-spending-budget.test.mjs",
+      "sha256": "c03bd1f4ff3008166781e53dae65e5ab1a3f2dbc2a8cbb782ebabb31ac8badc9"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-api-request-budget.mjs",
+      "sha256": "301276f5f662925ad3dd3f98e7f594ef72cbeb18c91cf5f0e02bc6a32c9f2390"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-campaign-evidence.mjs",
+      "sha256": "23b591a16616eb0b4527307b3dd8bcb45242ebe99f76d729119e49c791978987"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-campaign-evidence.test.mjs",
+      "sha256": "d7081f1053071c9f67c0cfdca785fcd07d29893279ddb733d581c9d58405ced2"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/run-harness-optimization-campaign.mjs",
+      "sha256": "e94a613fe2d519b6502c6f3b2fda8d7323ad68302b4d2340a323ae2584da095d"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/run-harness-optimization-suite.mjs",
+      "sha256": "8754c5549a13506a871fe1d8090173d6772c143bbf9eb61e00cfa5cee04903ec"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/contract-verification-protocol.ts",
+      "sha256": "e461b60f24ff38ebfd44ec81966b8cbd540fb064f4f36cc69d50ffa6170472ac"
+    }
+  ]
+}

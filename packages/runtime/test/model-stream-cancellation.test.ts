@@ -512,6 +512,8 @@ describe("Agent model stream cancellation", () => {
         action: "retry",
         reason: "semantic_stall",
         attempt: 1,
+        usageSource: "reasoning_bytes_estimate",
+        usage: expect.objectContaining({ outputTokens: expect.any(Number) }),
       }),
     );
     expect(

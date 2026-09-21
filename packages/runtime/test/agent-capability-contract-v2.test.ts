@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AgentProfile, AgentProfileRevision } from "@napier/contracts";
 
@@ -27,6 +27,19 @@ import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
 
 const roots: string[] = [];
+
+const isolatedHome = vi.hoisted(() => ({ path: "" }));
+vi.mock("node:os", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:os")>()),
+  homedir: () => isolatedHome.path,
+}));
+
+beforeEach(async () => {
+  isolatedHome.path = await mkdtemp(
+    path.join(tmpdir(), "napier-capability-contract-home-"),
+  );
+  roots.push(isolatedHome.path);
+});
 
 afterEach(async () => {
   await Promise.all(

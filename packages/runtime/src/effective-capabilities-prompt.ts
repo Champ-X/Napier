@@ -1,4 +1,8 @@
 import type { RunExecutionMode, ToolPolicyMode } from "@napier/contracts";
+import {
+  preEditVerificationAvailable,
+  PRE_EDIT_VERIFICATION_GUIDANCE,
+} from "./pre-edit-verification.js";
 
 export function formatEffectiveCapabilitiesPrompt(input: {
   requestedTools: readonly string[];
@@ -10,6 +14,7 @@ export function formatEffectiveCapabilitiesPrompt(input: {
   executionMode?: RunExecutionMode;
   advisorCorrection: boolean;
   browserInteractionConfirmationAvailable: boolean;
+  verificationOrder?: "before-first-patch-v1" | undefined;
 }): string {
   const activeTools = sortedUnique(input.activeTools);
   const activeToolSet = new Set(activeTools);
@@ -79,6 +84,11 @@ export function formatEffectiveCapabilitiesPrompt(input: {
       ? [
           "A focused model surface hides schemas; it does not revoke configured capability or authorization. Before claiming that a needed tool is unavailable or requesting operator help for a capability blocker, query capability by semantic need if necessary, then call the returned exact cap://tools/<tool> URI to activate one schema and continue on the next step.",
         ]
+      : []),
+    ...(executionMode === "standard" &&
+    input.verificationOrder === "before-first-patch-v1" &&
+    preEditVerificationAvailable(new Set(availableTools), activeToolSet)
+      ? [PRE_EDIT_VERIFICATION_GUIDANCE]
       : []),
     "These capabilities are authoritative for this request. Preserve the capability-state distinctions above. Do not claim or silently substitute unavailable tools, isolation, Browser backends, permissions, or fallbacks.",
     "</effective_capabilities>",

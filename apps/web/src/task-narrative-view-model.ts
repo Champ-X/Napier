@@ -96,7 +96,7 @@ const NARRATIVE_TEXT_ZH: Record<string, string> = {
   "Inspect the recovered output or start a follow-up task.":
     "查看恢复后的输出，或发起后续任务。",
   "Review the recovery attempt": "查看恢复尝试",
-  "Partial result preserved at the budget boundary": "已在预算边界保留部分结果",
+  "Partial result preserved after the run stopped": "运行停止，已保留部分结果",
   "Run paused at its budget boundary": "运行已在预算边界暂停",
   "Continue from preserved artifacts and open work.":
     "从已保留的产物和未完成工作继续。",
@@ -419,8 +419,9 @@ function pausedBudgetNarrative(
   return {
     phase: "waiting",
     phaseLabel: partial ? "Partial" : "Paused",
+    ...(partial && run.error ? { blocker: run.error } : {}),
     currentAction: partial
-      ? "Partial result preserved at the budget boundary"
+      ? "Partial result preserved after the run stopped"
       : "Run paused at its budget boundary",
     completedItems,
     ...runMetrics(run, now),
@@ -463,7 +464,7 @@ function runMetrics(
       run.limits
         ? `${elapsed} / ${formatDuration(run.limits.timeoutMs)}`
         : elapsed,
-      run.limits
+      run.limits && run.limits.maxTotalTokens > 0
         ? `${tokens.toLocaleString()} / ${run.limits.maxTotalTokens.toLocaleString()} tokens`
         : `${tokens.toLocaleString()} tokens`,
       run.limits

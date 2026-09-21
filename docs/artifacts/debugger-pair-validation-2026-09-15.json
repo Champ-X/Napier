@@ -1,0 +1,764 @@
+{
+  "kind": "napier.debugger-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T16:09:40.126036+00:00",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/toolchain-two-pair-batch-v1/plan.json",
+  "planSha256": "72d8a22380678266be4a07d54e3645a66fc82e00e2e080e5b2d7800303f03b21",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/toolchain-two-pair-batch-v1/result.json",
+  "resultSha256": "840bd2d56b60d0f101103fdfde08da873ed05deca85669063a4019471500fe75",
+  "observations": [
+    {
+      "index": 57,
+      "audit": {
+        "kind": "napier.settled-harness-run-audit",
+        "schemaVersion": 1,
+        "createdAt": "2026-09-14T16:01:34.631Z",
+        "jobIndex": 57,
+        "runId": "run_8f4bfc0d51e44e50b578",
+        "caseId": "coding_loyalty_discount_debug_v1",
+        "arm": "candidate",
+        "status": "completed",
+        "taskSuccess": true,
+        "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/coding_loyalty_discount_debug_v1-candidate-trial-1/trial-1/result.json",
+        "reportSha256": "c4cc6005b13bddb43a7b9a39a103e58f749bf8040d526ee4f293a6dd1da02d21",
+        "auditedCapsules": 10,
+        "modelRequestBindingsVerified": true,
+        "toolCalls": [
+          {
+            "callId": "call_00_87iKQZ5GVfHobD3aIFPV9360",
+            "toolName": "run_command",
+            "runtime": "node",
+            "kind": null,
+            "argumentsSha256": "faeef5772f158b833c92f72704438046ddc98e9b9cbe184deaed7b64e6a2203f",
+            "terminal": "tool.completed"
+          }
+        ],
+        "toolFailures": 1,
+        "changed": [
+          "src/loyalty.js"
+        ],
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "protocol": {
+          "firstPatchStartEventId": "event_698274c685c34daba568",
+          "firstPatchStartSeq": 280,
+          "protocolSha256": "290a25cbd04c5cd15194b445186a47cdfbf431b9cd3d74f2e928ed8715635d72",
+          "invocations": [
+            {
+              "eventId": "event_6d56087ef7e14819b7c7",
+              "capsuleSha256": "0d9015994871a3f7a604a790601f8734e8945a8c5fc67daf5aaed1d0e8965729",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_e2d06c0763fc468cb7bb",
+              "capsuleSha256": "bb4630f1382cd137d21d2c94a3463fdf95e70100c3d709a8aa2532687ae13543",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_b9d6f18abe33432a8b9e",
+              "capsuleSha256": "864d0b391dea839cf06d1f003c65e0d06e98f755e59ac2a01e02c2e6ba4d41d3",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_1610b1c37a5b4d35a9c2",
+              "capsuleSha256": "839f2da15a4edad1002b442e799a3fce06410c39e5fe056a5e2756e15e6995e4",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_38ad5c5596734df784ad",
+              "capsuleSha256": "1f08d050e0d6a47b23f4583bc2fe44e1ba5f94da1ffc916e20b8bd829210c2fc",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_fa12fc16a65745a2bca6",
+              "capsuleSha256": "8c715d3bceec06b37be85e5dc3438597bcb018b93e2968b46d0efb0e17df9e68",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_e5f320ceb34b412f8143",
+              "capsuleSha256": "317de2667629e1bead48711bdab24cd50e6ff29d6c64eff1abc4e48fd42da20d",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_5d7823d2faca46b98387",
+              "capsuleSha256": "94b40b9297615493bc0067cd1b72d8d312e815a89b87eb13a73232c3292984cd",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_5cdcbd3e2acf4544a82b",
+              "capsuleSha256": "81da566131f99b0af880c9b77e2753e1faa81d9a7aacd7fd178149cfe43e5b83",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_9744be74041c40c785ab",
+              "capsuleSha256": "413e14f0cc42cc0f0c2c264668f96e9a6cdafe776dc586ff2e778c9c37011a1e",
+              "protocolPresent": true
+            }
+          ],
+          "executions": [
+            {
+              "runId": "run_8f4bfc0d51e44e50b578",
+              "callId": "call_00_87iKQZ5GVfHobD3aIFPV9360",
+              "toolName": "run_command",
+              "startedEventId": "event_5cc9ea07cf494930a715",
+              "startedSeq": 368,
+              "phase": "after_first_patch",
+              "requestSha256": "faeef5772f158b833c92f72704438046ddc98e9b9cbe184deaed7b64e6a2203f",
+              "classification": "inline_command",
+              "status": "completed",
+              "exitCode": 0,
+              "settledEventId": "event_83e13219162949cf8a2c",
+              "settledSeq": 371,
+              "verificationStatus": "succeeded",
+              "sourceCapsuleSha256": "413e14f0cc42cc0f0c2c264668f96e9a6cdafe776dc586ff2e778c9c37011a1e",
+              "settledBeforeFirstPatch": false
+            }
+          ],
+          "reusedRequests": [],
+          "unavailableCapsules": 0,
+          "complete": true,
+          "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+        },
+        "spendingRows": [
+          {
+            "id": 474,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 8543,
+            "completion_tokens": 111,
+            "cache_hit_tokens": 768,
+            "cache_miss_tokens": 7775,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 475,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 8980,
+            "completion_tokens": 585,
+            "cache_hit_tokens": 7296,
+            "cache_miss_tokens": 1684,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 476,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 9813,
+            "completion_tokens": 165,
+            "cache_hit_tokens": 7680,
+            "cache_miss_tokens": 2133,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 477,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 10216,
+            "completion_tokens": 131,
+            "cache_hit_tokens": 8576,
+            "cache_miss_tokens": 1640,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 478,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 10494,
+            "completion_tokens": 350,
+            "cache_hit_tokens": 8960,
+            "cache_miss_tokens": 1534,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 479,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 11099,
+            "completion_tokens": 370,
+            "cache_hit_tokens": 9088,
+            "cache_miss_tokens": 2011,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 480,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 11677,
+            "completion_tokens": 486,
+            "cache_hit_tokens": 9728,
+            "cache_miss_tokens": 1949,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 481,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 12431,
+            "completion_tokens": 333,
+            "cache_hit_tokens": 10240,
+            "cache_miss_tokens": 2191,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 482,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 12933,
+            "completion_tokens": 1061,
+            "cache_hit_tokens": 7424,
+            "cache_miss_tokens": 5509,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 483,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 14456,
+            "completion_tokens": 367,
+            "cache_hit_tokens": 11392,
+            "cache_miss_tokens": 3064,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 484,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 895,
+            "completion_tokens": 391,
+            "cache_hit_tokens": 128,
+            "cache_miss_tokens": 767,
+            "accounting_mode": "provider_cache_split"
+          }
+        ],
+        "spendingMathVerified": true,
+        "settledFen": 13,
+        "unreceiptedReservedFen": 0,
+        "verificationStatuses": [],
+        "admissions": 11,
+        "minimumIntervalMs": 15000,
+        "conservativeCostFen": 13,
+        "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+      },
+      "toolAudit": {
+        "kind": "napier.preedit-tool-contract-audit",
+        "schemaVersion": 1,
+        "createdAt": "2026-09-14T16:00:39.482Z",
+        "caseId": "coding_loyalty_discount_debug_v1",
+        "arm": "candidate",
+        "runId": "run_8f4bfc0d51e44e50b578",
+        "reportSha256": "c4cc6005b13bddb43a7b9a39a103e58f749bf8040d526ee4f293a6dd1da02d21",
+        "requirement": {
+          "kind": "node-debugger",
+          "sourcePath": "src/loyalty.js",
+          "sourceSha256": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa",
+          "variables": {
+            "subtotalCents": "2000",
+            "discountPercent": "15",
+            "discountCents": "15"
+          }
+        },
+        "firstPatchStartSeq": 280,
+        "auditedInputs": 10,
+        "checks": {
+          "edited": true,
+          "liveValuesAndClosedBeforeEdit": true
+        },
+        "evidence": [
+          {
+            "processId": "process_a4a0638dd00a481fb99f",
+            "sourceSha256": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa",
+            "values": {
+              "subtotalCents": "call_00_uXeEtc2e2kGrtP3cZBcy8172",
+              "discountPercent": "call_00_uXeEtc2e2kGrtP3cZBcy8172",
+              "discountCents": "call_00_uXeEtc2e2kGrtP3cZBcy8172"
+            },
+            "valuesObserved": true,
+            "closedBeforeEdit": true,
+            "calls": [
+              {
+                "callId": "call_00_x63Q6P38Ak6ptkvTk4U94729",
+                "action": "launch",
+                "seq": 101,
+                "state": "paused",
+                "resultSha256": "31e29411ded241add764e2a6a6bc8cf3d6d5ef9f43d15e455383622a1f41205d"
+              },
+              {
+                "callId": "call_00_qCyAejD9kRW4l7iRsocD8582",
+                "action": "scopes",
+                "seq": 138,
+                "state": "paused",
+                "resultSha256": "1ddd487f0408e0e20a591e1e57b224355aa6f58e565cf3571c27f826151f090f"
+              },
+              {
+                "callId": "call_00_uXeEtc2e2kGrtP3cZBcy8172",
+                "action": "variables",
+                "seq": 208,
+                "state": "paused",
+                "resultSha256": "ad3cd9ed2707def8ebf55d4957185bf49de1fb6bc052f8fccc8edc7b6ceb41c1"
+              },
+              {
+                "callId": "call_00_wWzprESb2Bk0fv3JknkY7230",
+                "action": "cancel",
+                "seq": 247,
+                "state": "terminated",
+                "resultSha256": "53b1dd244ead56e6fa044d07acb7bc32715e15279842db8f45337526bb5a80de"
+              }
+            ]
+          }
+        ],
+        "passed": true,
+        "modelRequests": 0,
+        "scope": "Supplemental audit of explicit original task tool requirements against actual completed calls, source hashes and hash-validated input capsules. Original task/grader/report bytes and quality verdict remain unchanged; incomplete supplemental evidence stops further collection."
+      },
+      "error": null,
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "observedWorkspace": {
+        "kind": "napier.harness-observed-workspace",
+        "schemaVersion": 1,
+        "runId": "run_8f4bfc0d51e44e50b578",
+        "files": {
+          "package.json": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a",
+          "src/loyalty.js": "888995f071913d3d76dd10a3743cbeed71d092f1eeb1313a2939ec2f46a2ab46"
+        },
+        "contentSha256": "5dd6bea4e0175eee7b9aee77f23d0f44dcba1356c4b9fa52c1c11a9ffa5b3b20"
+      }
+    },
+    {
+      "index": 56,
+      "audit": {
+        "kind": "napier.settled-harness-run-audit",
+        "schemaVersion": 1,
+        "createdAt": "2026-09-14T16:08:29.317Z",
+        "jobIndex": 56,
+        "runId": "run_d08cb6eed25247b5a948",
+        "caseId": "coding_loyalty_discount_debug_v1",
+        "arm": "baseline",
+        "status": "failed",
+        "taskSuccess": false,
+        "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/coding_loyalty_discount_debug_v1-baseline-trial-1/trial-1/result.json",
+        "reportSha256": "7d84b7e49a8c12914ae0709603857e61b6a5ab12804ce299c765721e511b0434",
+        "auditedCapsules": 15,
+        "modelRequestBindingsVerified": true,
+        "toolCalls": [],
+        "toolFailures": 3,
+        "changed": [
+          "outputs/thread_e7855660f8804824b242/debug-driver.mjs"
+        ],
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "protocol": {
+          "firstPatchStartEventId": "event_c42e109cc7ae41d281c2",
+          "firstPatchStartSeq": 145,
+          "protocolSha256": null,
+          "invocations": [
+            {
+              "eventId": "event_b0102c34afff41a0b583",
+              "capsuleSha256": "3f049add0c9d87bf58f19456589b9a2cdfdf5eac36c62d055d1663f873c16ea2",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_40a13674d4644d78bcc2",
+              "capsuleSha256": "b3ad50dbd0b964869d7a2b8c907cbabf3622cdb0632efc1b9db34a49fee1c4d3",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_84a99872b68241838241",
+              "capsuleSha256": "0ad7a885e7941e728e2428cbc3303be714c01885c4f5bb8ffad4b3d6bdcd5342",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_ded2da242922489caf91",
+              "capsuleSha256": "31cba0737c4d701a7ffff62327670fd4e760de65df31176af3edfab31a18463c",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_af346e63d58e4f25af09",
+              "capsuleSha256": "ad3a8ae337c641cb70d33d655d7855a8a19765f0ea3bcfa416c661396760fe23",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_f250295f7c214c20a03f",
+              "capsuleSha256": "ea3160944de705e8bb7ffd14353cb7ebc4b34b8c34505cf89ce504e58548978a",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_114447026c5e49919910",
+              "capsuleSha256": "f5dc70c4d8ab77dd981fa1d49d89492feec51b24c3c851c4240f124e34e86a03",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_82a96490627e4e998503",
+              "capsuleSha256": "c9d6da74c364ca7e43ed1cbc6157ca7fe4e373deaff5616c87e5bec886814db6",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_82020d7caba140349666",
+              "capsuleSha256": "385974e56636f6fc0fd6d5125242c8762798e1eb503e4864e6cb27eeb80784ad",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_edc0b27517dc444aa3d4",
+              "capsuleSha256": "b62a36af6890b0ac6d9694d115048f062c3bbe5258cb8fde71933f1e2a698d22",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_61c94571097842a49b3c",
+              "capsuleSha256": "01a6413345b0819b817f7f231d399b4e88eea29cb1edb96c80f4e37ba4d48510",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_1a25fb3e438641ac9b2d",
+              "capsuleSha256": "2c90b91f3f2f2ed89d158474aa983b5e5de7c32678a17ece7e4b3582d4934e36",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_b7d94bdc247947bdad5e",
+              "capsuleSha256": "23071843e5007032b806f46c2954ebd7ca5bfb48b5e7887e3b35e5e52d3d7d10",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_62950785b95940b8b1a0",
+              "capsuleSha256": "9ce90c0150d15bcd7a316ced2837acb5db0fed9fdeacd210d47321505bdb4600",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_36b4f695e4434376b4c3",
+              "capsuleSha256": "9b6a2c49c92613851d01861422c7ebcdc23e268f1c900f03ac603294b6f4f764",
+              "protocolPresent": false
+            }
+          ],
+          "executions": [],
+          "reusedRequests": [],
+          "unavailableCapsules": 0,
+          "complete": true,
+          "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+        },
+        "spendingRows": [
+          {
+            "id": 485,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 6505,
+            "completion_tokens": 96,
+            "cache_hit_tokens": 128,
+            "cache_miss_tokens": 6377,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 486,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 7602,
+            "completion_tokens": 292,
+            "cache_hit_tokens": 6528,
+            "cache_miss_tokens": 1074,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 487,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 8256,
+            "completion_tokens": 306,
+            "cache_hit_tokens": 7808,
+            "cache_miss_tokens": 448,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 488,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 8774,
+            "completion_tokens": 713,
+            "cache_hit_tokens": 8448,
+            "cache_miss_tokens": 326,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 489,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 9635,
+            "completion_tokens": 348,
+            "cache_hit_tokens": 9472,
+            "cache_miss_tokens": 163,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 490,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 10005,
+            "completion_tokens": 919,
+            "cache_hit_tokens": 9856,
+            "cache_miss_tokens": 149,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 491,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 11058,
+            "completion_tokens": 155,
+            "cache_hit_tokens": 10880,
+            "cache_miss_tokens": 178,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 492,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 11493,
+            "completion_tokens": 1207,
+            "cache_hit_tokens": 11136,
+            "cache_miss_tokens": 357,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 493,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 12942,
+            "completion_tokens": 176,
+            "cache_hit_tokens": 12672,
+            "cache_miss_tokens": 270,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 494,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 13146,
+            "completion_tokens": 658,
+            "cache_hit_tokens": 12928,
+            "cache_miss_tokens": 218,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 495,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 14081,
+            "completion_tokens": 99,
+            "cache_hit_tokens": 13696,
+            "cache_miss_tokens": 385,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 496,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 14473,
+            "completion_tokens": 1203,
+            "cache_hit_tokens": 14080,
+            "cache_miss_tokens": 393,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 497,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 16091,
+            "completion_tokens": 464,
+            "cache_hit_tokens": 15616,
+            "cache_miss_tokens": 475,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 498,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 16847,
+            "completion_tokens": 332,
+            "cache_hit_tokens": 16512,
+            "cache_miss_tokens": 335,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 499,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 17471,
+            "completion_tokens": 88,
+            "cache_hit_tokens": 17152,
+            "cache_miss_tokens": 319,
+            "accounting_mode": "provider_cache_split"
+          }
+        ],
+        "spendingMathVerified": true,
+        "settledFen": 18,
+        "unreceiptedReservedFen": 0,
+        "verificationStatuses": [],
+        "admissions": 15,
+        "minimumIntervalMs": 15000,
+        "conservativeCostFen": 18,
+        "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+      },
+      "toolAudit": {
+        "kind": "napier.preedit-tool-contract-audit",
+        "schemaVersion": 1,
+        "createdAt": "2026-09-14T16:04:26.881Z",
+        "caseId": "coding_loyalty_discount_debug_v1",
+        "arm": "baseline",
+        "runId": "run_d08cb6eed25247b5a948",
+        "reportSha256": "7d84b7e49a8c12914ae0709603857e61b6a5ab12804ce299c765721e511b0434",
+        "requirement": {
+          "kind": "node-debugger",
+          "sourcePath": "src/loyalty.js",
+          "sourceSha256": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa",
+          "variables": {
+            "subtotalCents": "2000",
+            "discountPercent": "15",
+            "discountCents": "15"
+          }
+        },
+        "firstPatchStartSeq": 145,
+        "auditedInputs": 15,
+        "checks": {
+          "edited": true,
+          "liveValuesAndClosedBeforeEdit": false
+        },
+        "evidence": [
+          {
+            "processId": "process_4f75f25c7ee04c88a6ea",
+            "sourceSha256": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa",
+            "values": {},
+            "valuesObserved": false,
+            "closedBeforeEdit": false,
+            "calls": [
+              {
+                "callId": "call_00_lx4pOVrf6qXbJOgVodvu5931",
+                "action": "launch",
+                "seq": 116,
+                "state": "terminated",
+                "resultSha256": "ab29974d71c27b8b55ccdd01ee7c08fe90ce4b0c65a4c08119a038843b011e1f"
+              }
+            ]
+          }
+        ],
+        "passed": false,
+        "modelRequests": 0,
+        "scope": "Supplemental audit of explicit original task tool requirements against actual completed calls, source hashes and hash-validated input capsules. Original task/grader/report bytes and quality verdict remain unchanged; incomplete supplemental evidence stops further collection."
+      },
+      "error": "Run made no measurable progress after one reroute: turns.",
+      "graderExitCode": 1,
+      "allowedChanges": false,
+      "observedWorkspace": {
+        "kind": "napier.harness-observed-workspace",
+        "schemaVersion": 1,
+        "runId": "run_d08cb6eed25247b5a948",
+        "files": {
+          "outputs/thread_e7855660f8804824b242/debug-driver.mjs": "157644f6498e4a3b7bf7aeabff00fa0a46549ae86ad2239d889fdee4f8aaaf55",
+          "package.json": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a",
+          "src/loyalty.js": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa"
+        },
+        "contentSha256": "1c29ff09337dd5e67e26a87c3b42fcc8a03fbddfd6eebef68bfd4d830d532a6a"
+      }
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 2,
+    "cases": 2,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 2",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "d221bc6a643521a5f09084f91b256072069f05f59eeef8d668feb7841b29dd12"
+  },
+  "originalStop": {
+    "reason": "tool_contract_evidence_incomplete",
+    "runId": "run_d08cb6eed25247b5a948",
+    "job": {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "caseRoot": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/cases/coding_loyalty_discount_debug_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "output": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/coding_loyalty_discount_debug_v1-baseline-trial-1",
+      "driver": "/tmp/napier-cny-sandbox-quality-driver-v6",
+      "graderMode": "host",
+      "graderRuntimes": "node"
+    },
+    "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/coding_loyalty_discount_debug_v1-baseline-trial-1/preedit-tool-audit.json"
+  },
+  "clarification": {
+    "classification": "observed_baseline_task_failure",
+    "sourceUnchanged": true,
+    "targetSourceSha256": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa",
+    "firstPatchSeq": 145,
+    "firstPatchOperation": "create",
+    "changedPath": "outputs/thread_e7855660f8804824b242/debug-driver.mjs",
+    "laterDebuggerSource": "extra debug driver, not modified src/loyalty.js",
+    "finding": "Baseline launched the original debugger before any patch, but it terminated without required live values. Baseline then created and changed an unauthorized debug driver, left the target unchanged and failed the independent grader (expected 1700, received 1985). This is an observed adverse baseline outcome, not a candidate regression or mere missing capture. The original supplemental stop remains preserved."
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 4588,
+      "remainingFen": 5412,
+      "requests": 473,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 4619,
+      "remainingFen": 5381,
+      "requests": 499,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "collectionComplete": false,
+  "promotionReady": false
+}

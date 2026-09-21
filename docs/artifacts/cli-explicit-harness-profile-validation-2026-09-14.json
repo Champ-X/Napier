@@ -1,0 +1,30 @@
+{
+  "kind": "napier.cli-explicit-harness-profile-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T14:10:47.707Z",
+  "files": {
+    "apps/cli/src/cli-harness-profile.ts": "5048b58fc0bf2b23026b622e5a5d9eb3105a5046fc046d6281a29d02df81802b",
+    "apps/cli/src/cli-run-options.ts": "e6172ab82406d38a5dcc41bb421f75eb448b9f95692bb6feb809acb42e08c343",
+    "apps/cli/src/cli.ts": "e4369863aaba5109ff1b8bc1cbd780efbe4b74a4c1ad73367b726ad33568b592",
+    "apps/cli/src/cli-help.ts": "a85b6b0079fb943a20803d1a747b58aa8df97411c062f1604ab93045bf07a597",
+    "apps/cli/test/harness-policy-cli.test.ts": "471b2a62973da863b95daabf5015c8ea5a52511f0a57c8e3f8c9ae2afdbcc09d",
+    "benchmarks/harness-profiles/current-integrated.v1.json": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4"
+  },
+  "profileSource": "/tmp/napier-harness-validation-envelope-v1/candidate-profile.json",
+  "profileMatchesFrozenBytes": true,
+  "profileSha256": "c42365b5b8fc90d6344ad167e0766c509cfdf4d1a37502eb1e767a562e1635ef",
+  "validation": {
+    "testReport": "/tmp/napier-cli-explicit-profile-tests-v2.json",
+    "passed": 5,
+    "failed": 0,
+    "cliBuild": "passed",
+    "architectureLog": "/tmp/napier-cli-profile-architecture-v1.log",
+    "architecture": "same six previously recorded violations, no CLI violation; no limits changed",
+    "initialTestReport": "/tmp/napier-cli-explicit-profile-tests-v1.json",
+    "initialTestCorrection": "The full profile delivers working state in request messages, whereas the old preset places it in systemPrompt. Test now checks each actual delivery location."
+  },
+  "modelApiRequests": 0,
+  "runtimeSourceChanged": false,
+  "promotionReady": false,
+  "scope": "Normal one-shot CLI profile loading, content-hash validation, capability separation, bounded file reads and pre-dispatch rejection using real CLI and a faux provider. No evidence of overall model quality or default promotion."
+}

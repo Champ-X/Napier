@@ -1,0 +1,633 @@
+{
+  "kind": "napier.lsp-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T16:15:24.500923+00:00",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/lsp-pair-batch-v1/plan.json",
+  "planSha256": "47c5a31e6ec5002adfd0b1e1fc41aecbf5fcf49c2d1b4956c59be9fe8a2aa3aa",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/lsp-pair-batch-v1/result.json",
+  "resultSha256": "9253c5db64ff82b58518f500a6cc2a246d26d9b2f501000b0cda0a6c00b9ac7f",
+  "observations": [
+    {
+      "index": 58,
+      "audit": {
+        "kind": "napier.settled-harness-run-audit",
+        "schemaVersion": 1,
+        "createdAt": "2026-09-14T16:12:31.301Z",
+        "jobIndex": 58,
+        "runId": "run_dd74c976442341c49deb",
+        "caseId": "coding_pricing_options_migration_v1",
+        "arm": "candidate",
+        "status": "completed",
+        "taskSuccess": true,
+        "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/coding_pricing_options_migration_v1-candidate-trial-1/trial-1/result.json",
+        "reportSha256": "192db7c1d4027d01ce71e41554cbf99cb864565d07c6c8104a071e8943134e91",
+        "auditedCapsules": 10,
+        "modelRequestBindingsVerified": true,
+        "toolCalls": [
+          {
+            "callId": "call_00_JxcLsn39OYx36jwdJ4kH9105",
+            "toolName": "run_command",
+            "runtime": "node",
+            "kind": null,
+            "argumentsSha256": "558754c8e9326bbde5d426ac61118f967c70a393d5a88a8b92c683df68354f9e",
+            "terminal": "tool.completed"
+          },
+          {
+            "callId": "call_03_C9AzOSn9fba0b1YElxPY9048",
+            "toolName": "run_command",
+            "runtime": "node",
+            "kind": null,
+            "argumentsSha256": "a02cc6b7c9ef90c04a256ea7b68573cd08d604ca49c5e62bd65a10791cd749c7",
+            "terminal": "tool.completed"
+          }
+        ],
+        "toolFailures": 1,
+        "changed": [
+          "src/checkout.js",
+          "src/pricing.js",
+          "src/quote.js"
+        ],
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "protocol": {
+          "firstPatchStartEventId": "event_0bcb117835b845f89c9e",
+          "firstPatchStartSeq": 288,
+          "protocolSha256": "290a25cbd04c5cd15194b445186a47cdfbf431b9cd3d74f2e928ed8715635d72",
+          "invocations": [
+            {
+              "eventId": "event_f15497a282e8412cb6a4",
+              "capsuleSha256": "599b87e3241d99ff6a6c426ac2036b7baae895d9f9edba4b6577387c601ff295",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_95dc648920a14146baea",
+              "capsuleSha256": "fd019825ce621b6fbed60f5930e9745862417a4c395f801f021c29ddded5a915",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_45177f9461164e63855f",
+              "capsuleSha256": "dfde33248168b6e1b9ea34a86c5034cd72e110f21f6e2e87e9e3b757fece3206",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_d7bb60cb0c224d39bac6",
+              "capsuleSha256": "0fba4de571c7e7c32d68462a7f00ecf43464092986af4b66e8cb9d35699fa2af",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_85ae59f4e2e746e49d40",
+              "capsuleSha256": "31cd3c0c0e1707de66c64d7c6aec910914ed8371057f021b22201264655ae335",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_0eea2f31773d426c9667",
+              "capsuleSha256": "aeb76f271fd4000fc65f66c900d0693f139b562f1736a5a8a7ff9c5e4794a177",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_2ac45c00578f4e94ae55",
+              "capsuleSha256": "e5114cafca11c60e492be052ea9227c87d341de0918fe9f1e4e6d14581d704b0",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_0302cbd687db4e0cb545",
+              "capsuleSha256": "270211a4cdef0bb2f7097e0039d00efea9eaef4fee013bb037f3c060e3cb871f",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_4d12f7efe9e4446589f7",
+              "capsuleSha256": "02292fd0659b2012c3fa9a21009325feb93f1fd3ba7614468263b7532701ca85",
+              "protocolPresent": true
+            },
+            {
+              "eventId": "event_5cd5afd6f1ab40e68dca",
+              "capsuleSha256": "982400b02a664d68f84685acbb06d5ed03eaced55a40a986474a9fc6623de5eb",
+              "protocolPresent": true
+            }
+          ],
+          "executions": [
+            {
+              "runId": "run_dd74c976442341c49deb",
+              "callId": "call_00_JxcLsn39OYx36jwdJ4kH9105",
+              "toolName": "run_command",
+              "startedEventId": "event_44a01f1ed2c5451fb53b",
+              "startedSeq": 245,
+              "phase": "before_first_patch",
+              "requestSha256": "558754c8e9326bbde5d426ac61118f967c70a393d5a88a8b92c683df68354f9e",
+              "classification": "inline_command",
+              "status": "completed",
+              "exitCode": 0,
+              "settledEventId": "event_00e251bc3d274d009e8e",
+              "settledSeq": 248,
+              "verificationStatus": "succeeded",
+              "sourceCapsuleSha256": "982400b02a664d68f84685acbb06d5ed03eaced55a40a986474a9fc6623de5eb",
+              "settledBeforeFirstPatch": true
+            },
+            {
+              "runId": "run_dd74c976442341c49deb",
+              "callId": "call_03_C9AzOSn9fba0b1YElxPY9048",
+              "toolName": "run_command",
+              "startedEventId": "event_586c2c69dfce45a5b749",
+              "startedSeq": 381,
+              "phase": "after_first_patch",
+              "requestSha256": "a02cc6b7c9ef90c04a256ea7b68573cd08d604ca49c5e62bd65a10791cd749c7",
+              "classification": "inline_command",
+              "status": "completed",
+              "exitCode": 0,
+              "settledEventId": "event_c5b515eb510447d59aa7",
+              "settledSeq": 384,
+              "verificationStatus": "succeeded",
+              "sourceCapsuleSha256": "982400b02a664d68f84685acbb06d5ed03eaced55a40a986474a9fc6623de5eb",
+              "settledBeforeFirstPatch": false
+            }
+          ],
+          "reusedRequests": [],
+          "unavailableCapsules": 0,
+          "complete": true,
+          "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+        },
+        "spendingRows": [
+          {
+            "id": 500,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 7732,
+            "completion_tokens": 86,
+            "cache_hit_tokens": 768,
+            "cache_miss_tokens": 6964,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 501,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 7854,
+            "completion_tokens": 235,
+            "cache_hit_tokens": 6528,
+            "cache_miss_tokens": 1326,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 502,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 8352,
+            "completion_tokens": 242,
+            "cache_hit_tokens": 6656,
+            "cache_miss_tokens": 1696,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 503,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 9219,
+            "completion_tokens": 307,
+            "cache_hit_tokens": 7040,
+            "cache_miss_tokens": 2179,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 504,
+            "charged_fen": 3,
+            "status": "settled",
+            "prompt_tokens": 9969,
+            "completion_tokens": 2728,
+            "cache_hit_tokens": 7936,
+            "cache_miss_tokens": 2033,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 505,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 13309,
+            "completion_tokens": 1267,
+            "cache_hit_tokens": 8704,
+            "cache_miss_tokens": 4605,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 506,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 15164,
+            "completion_tokens": 1496,
+            "cache_hit_tokens": 11904,
+            "cache_miss_tokens": 3260,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 507,
+            "charged_fen": 3,
+            "status": "settled",
+            "prompt_tokens": 17276,
+            "completion_tokens": 2005,
+            "cache_hit_tokens": 13824,
+            "cache_miss_tokens": 3452,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 508,
+            "charged_fen": 4,
+            "status": "settled",
+            "prompt_tokens": 20666,
+            "completion_tokens": 264,
+            "cache_hit_tokens": 6784,
+            "cache_miss_tokens": 13882,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 509,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 21464,
+            "completion_tokens": 620,
+            "cache_hit_tokens": 19072,
+            "cache_miss_tokens": 2392,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 510,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 1043,
+            "completion_tokens": 342,
+            "cache_hit_tokens": 128,
+            "cache_miss_tokens": 915,
+            "accounting_mode": "provider_cache_split"
+          }
+        ],
+        "spendingMathVerified": true,
+        "settledFen": 22,
+        "unreceiptedReservedFen": 0,
+        "verificationStatuses": [],
+        "admissions": 11,
+        "minimumIntervalMs": 15001,
+        "conservativeCostFen": 22,
+        "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+      },
+      "toolAudit": {
+        "kind": "napier.preedit-tool-contract-audit",
+        "schemaVersion": 1,
+        "createdAt": "2026-09-14T16:12:22.340Z",
+        "caseId": "coding_pricing_options_migration_v1",
+        "arm": "candidate",
+        "runId": "run_dd74c976442341c49deb",
+        "reportSha256": "192db7c1d4027d01ce71e41554cbf99cb864565d07c6c8104a071e8943134e91",
+        "requirement": {
+          "kind": "lsp-references",
+          "sourcePath": "src/pricing.js",
+          "sourceSha256": "043ccba543ff00864f7c434bd84052376fc01eb4e6fdadc1ea4f70416e7ac54a",
+          "referencePaths": [
+            "src/checkout.js",
+            "src/quote.js"
+          ],
+          "readPaths": [
+            "src/pricing.js",
+            "src/checkout.js",
+            "src/quote.js"
+          ]
+        },
+        "firstPatchStartSeq": 288,
+        "auditedInputs": 10,
+        "checks": {
+          "edited": true,
+          "referencesBeforeEdit": true,
+          "listedOnceBeforeEdit": true,
+          "readAffectedBeforeEdit": true
+        },
+        "evidence": [
+          {
+            "callId": "call_00_VFFPQJ83nVMJYSp3Kxvb1129",
+            "seq": 114,
+            "resultSha256": "675534f262c4663a7fbb92e128861a79ef968cd06a951ae7291ab6a3938299bd",
+            "referenceSetSha256": "f5b814dbea334d3945569abb8fc642a67a95c732cfaee242dee75e3c8ef18d16",
+            "referenceCount": 5
+          }
+        ],
+        "passed": true,
+        "modelRequests": 0,
+        "scope": "Supplemental audit of explicit original task tool requirements against actual completed calls, source hashes and hash-validated input capsules. Original task/grader/report bytes and quality verdict remain unchanged; incomplete supplemental evidence stops further collection."
+      },
+      "durationMs": 156965
+    },
+    {
+      "index": 59,
+      "audit": {
+        "kind": "napier.settled-harness-run-audit",
+        "schemaVersion": 1,
+        "createdAt": "2026-09-14T16:14:41.659Z",
+        "jobIndex": 59,
+        "runId": "run_172ebf9461764e95a4ab",
+        "caseId": "coding_pricing_options_migration_v1",
+        "arm": "baseline",
+        "status": "completed",
+        "taskSuccess": true,
+        "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/coding_pricing_options_migration_v1-baseline-trial-1/trial-1/result.json",
+        "reportSha256": "2a8ffca2f5230e44f1c023e2cb4fc1590110ebeac11cf4253387655f089319a6",
+        "auditedCapsules": 7,
+        "modelRequestBindingsVerified": true,
+        "toolCalls": [
+          {
+            "callId": "call_03_MgrzN9jDzjofvTYNrLLK9502",
+            "toolName": "run_command",
+            "runtime": "node",
+            "kind": null,
+            "argumentsSha256": "d9739c6705058982ed4232b81a52422e99ae7c925dc413cfc5e9ca86a6377af1",
+            "terminal": "tool.completed"
+          }
+        ],
+        "toolFailures": 0,
+        "changed": [
+          "src/checkout.js",
+          "src/pricing.js",
+          "src/quote.js"
+        ],
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "protocol": {
+          "firstPatchStartEventId": "event_9125ef9ed9644ab3b508",
+          "firstPatchStartSeq": 166,
+          "protocolSha256": null,
+          "invocations": [
+            {
+              "eventId": "event_383d3623ea75421d8aa1",
+              "capsuleSha256": "164268a43b1ee967defeb418c568c93b7d78226eab7f3c5ba4a73802be565972",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_354acd729c784124a086",
+              "capsuleSha256": "51be8c397d0c368f1dd6f0ca7170e07389520579453711cd08af9c609a197c54",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_f03da23c2db34ac88a74",
+              "capsuleSha256": "6414b8790626561c21898458889013818cc8f1362e0b44b6500c5f065533eb42",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_2a694ba776054447917c",
+              "capsuleSha256": "f14237c897629d506690d3e3b5d5ec38176ee040fe1d784dc9f3b1b629881218",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_e038c58d3c7c40b4bce3",
+              "capsuleSha256": "9be40b34e1678fb0678eff9fece362635c181cef2db671b6bd1819456d7f5256",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_fe7f8876133e4e1cae70",
+              "capsuleSha256": "ab81f3d7cbe1c997bc0aedb9b2e83fc253beec7dec77f8d2217afa6244b9f3a4",
+              "protocolPresent": false
+            },
+            {
+              "eventId": "event_82f75f4e36604bd6813f",
+              "capsuleSha256": "bde16231b54d8d01d76db11ab9011ae8d5b479dce962f42e080869a176fa19be",
+              "protocolPresent": false
+            }
+          ],
+          "executions": [
+            {
+              "runId": "run_172ebf9461764e95a4ab",
+              "callId": "call_03_MgrzN9jDzjofvTYNrLLK9502",
+              "toolName": "run_command",
+              "startedEventId": "event_9fbad580b9ce4d6898d1",
+              "startedSeq": 261,
+              "phase": "after_first_patch",
+              "requestSha256": "d9739c6705058982ed4232b81a52422e99ae7c925dc413cfc5e9ca86a6377af1",
+              "classification": "inline_command",
+              "status": "completed",
+              "exitCode": 0,
+              "settledEventId": "event_4926a42f49b74bb993f7",
+              "settledSeq": 264,
+              "verificationStatus": "succeeded",
+              "sourceCapsuleSha256": "bde16231b54d8d01d76db11ab9011ae8d5b479dce962f42e080869a176fa19be",
+              "settledBeforeFirstPatch": false
+            }
+          ],
+          "reusedRequests": [],
+          "unavailableCapsules": 0,
+          "complete": true,
+          "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+        },
+        "spendingRows": [
+          {
+            "id": 511,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 5828,
+            "completion_tokens": 67,
+            "cache_hit_tokens": 512,
+            "cache_miss_tokens": 5316,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 512,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 5931,
+            "completion_tokens": 146,
+            "cache_hit_tokens": 5760,
+            "cache_miss_tokens": 171,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 513,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 8118,
+            "completion_tokens": 207,
+            "cache_hit_tokens": 6016,
+            "cache_miss_tokens": 2102,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 514,
+            "charged_fen": 3,
+            "status": "settled",
+            "prompt_tokens": 8957,
+            "completion_tokens": 3064,
+            "cache_hit_tokens": 8320,
+            "cache_miss_tokens": 637,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 515,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 12731,
+            "completion_tokens": 1294,
+            "cache_hit_tokens": 11904,
+            "cache_miss_tokens": 827,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 516,
+            "charged_fen": 2,
+            "status": "settled",
+            "prompt_tokens": 14685,
+            "completion_tokens": 172,
+            "cache_hit_tokens": 6016,
+            "cache_miss_tokens": 8669,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 517,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 15182,
+            "completion_tokens": 475,
+            "cache_hit_tokens": 14848,
+            "cache_miss_tokens": 334,
+            "accounting_mode": "provider_cache_split"
+          },
+          {
+            "id": 518,
+            "charged_fen": 1,
+            "status": "settled",
+            "prompt_tokens": 1027,
+            "completion_tokens": 367,
+            "cache_hit_tokens": 128,
+            "cache_miss_tokens": 899,
+            "accounting_mode": "provider_cache_split"
+          }
+        ],
+        "spendingMathVerified": true,
+        "settledFen": 13,
+        "unreceiptedReservedFen": 0,
+        "verificationStatuses": [],
+        "admissions": 8,
+        "minimumIntervalMs": 15001,
+        "conservativeCostFen": 13,
+        "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+      },
+      "toolAudit": {
+        "kind": "napier.preedit-tool-contract-audit",
+        "schemaVersion": 1,
+        "createdAt": "2026-09-14T16:14:25.265Z",
+        "caseId": "coding_pricing_options_migration_v1",
+        "arm": "baseline",
+        "runId": "run_172ebf9461764e95a4ab",
+        "reportSha256": "2a8ffca2f5230e44f1c023e2cb4fc1590110ebeac11cf4253387655f089319a6",
+        "requirement": {
+          "kind": "lsp-references",
+          "sourcePath": "src/pricing.js",
+          "sourceSha256": "043ccba543ff00864f7c434bd84052376fc01eb4e6fdadc1ea4f70416e7ac54a",
+          "referencePaths": [
+            "src/checkout.js",
+            "src/quote.js"
+          ],
+          "readPaths": [
+            "src/pricing.js",
+            "src/checkout.js",
+            "src/quote.js"
+          ]
+        },
+        "firstPatchStartSeq": 166,
+        "auditedInputs": 7,
+        "checks": {
+          "edited": true,
+          "referencesBeforeEdit": true,
+          "listedOnceBeforeEdit": true,
+          "readAffectedBeforeEdit": true
+        },
+        "evidence": [
+          {
+            "callId": "call_00_gi99vdP0GKtcNUs5IsSX5670",
+            "seq": 120,
+            "resultSha256": "191df49f6d2811fc4f1f4c3db3a56ed395563d53bc698ceb3381623a4a88c4c0",
+            "referenceSetSha256": "f5b814dbea334d3945569abb8fc642a67a95c732cfaee242dee75e3c8ef18d16",
+            "referenceCount": 5
+          }
+        ],
+        "passed": true,
+        "modelRequests": 0,
+        "scope": "Supplemental audit of explicit original task tool requirements against actual completed calls, source hashes and hash-validated input capsules. Original task/grader/report bytes and quality verdict remain unchanged; incomplete supplemental evidence stops further collection."
+      },
+      "durationMs": 110746
+    }
+  ],
+  "retainedReportCount": 4,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 3,
+    "cases": 3,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 3",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "f85f954aedda15c9d394717c41ce6b17b56cd7cd57adfa09ac06cffbe6866c6c"
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 4619,
+      "remainingFen": 5381,
+      "requests": 499,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 4654,
+      "remainingFen": 5346,
+      "requests": 518,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "stop": null,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Both arms used original-source LSP references and read all three affected files before their first patch; only allowed files changed; identical independent host graders pass. Candidate uses more requests and cost in this pair. No generalized efficiency or whole-campaign qualification is claimed. Full 30-case/3-trial gate remains."
+}

@@ -1,0 +1,131 @@
+{
+  "kind": "napier.contract-first-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T23:50:03.777239+00:00",
+  "files": [
+    {
+      "path": "packages/runtime/src/contract-verification-protocol.ts",
+      "sha256": "fd1b63be77a26b9cc81f806ec6b4e684ee4e98c4b3eb078ed74ae3e097112f71"
+    },
+    {
+      "path": "packages/runtime/src/agent-prompt-layers.ts",
+      "sha256": "447b6a945d556d5c8f3946c8bec1890e11e0ce78a301260b59757fb90af68fe0"
+    },
+    {
+      "path": "packages/runtime/src/agent-runtime-step-lifecycle.ts",
+      "sha256": "735b8f3e87bcecea4d89e324dbf1f4c582123e0e02dacf1bcb5d95f199b7fcd6"
+    },
+    {
+      "path": "packages/runtime/src/harness-policy-profile.ts",
+      "sha256": "434419c416d5c054784058239e46149d51a0b60c57d63ce526cf638e77269a72"
+    },
+    {
+      "path": "packages/contracts/src/harness-experiments.ts",
+      "sha256": "e47bcb884864ea4aef9ba56e35aa2c6f1687df401ce11b90a4c0ed1b62e39a48"
+    },
+    {
+      "path": "packages/runtime/test/contract-verification-protocol.test.ts",
+      "sha256": "aff36187af1f99b902d44f02509560b01e409de4b3d3c669580c88381035f217"
+    },
+    {
+      "path": "scripts/harness-verification-protocol-evidence.mjs",
+      "sha256": "c464f5487d4aae967173550ccfefad51b05de2377efda74bc3494c85cef317e8"
+    },
+    {
+      "path": "scripts/harness-verification-protocol-evidence.test.mjs",
+      "sha256": "f8d0a008483292e210c9601dbee76e078cfd20c208c064a7237d8b8c3a23fff5"
+    },
+    {
+      "path": "scripts/harness-service-observation.mjs",
+      "sha256": "4134c460f444abc32e8ab1e7c24ae31274da910c118495279bd60138dfc4b262"
+    },
+    {
+      "path": "scripts/harness-service-observation.test.mjs",
+      "sha256": "cd075d810e09aaa28fbada48070eca7c282a799059f6651aabce01986d370198"
+    },
+    {
+      "path": "scripts/harness-campaign-evidence.mjs",
+      "sha256": "d2769c9a2f5c2c2c5fdf0b2239f4ffb7f28bedcdddb42c1d1c89731d37cf245d"
+    },
+    {
+      "path": "scripts/harness-campaign-evidence.test.mjs",
+      "sha256": "9ab9175da35d264d7a2ff8f9de40a293a25e9ff335378f1a1f556b189ddc7a32"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-contract-protocol-tests-v1.log",
+      "sha256": "cf1b3d00c75a780c0e042e961d1cd37397036d938b63b0ecbddbaff68802861d"
+    },
+    {
+      "path": "/tmp/napier-contract-protocol-compile-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-contract-protocol-architecture-v1.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-contract-first-runtime-full-v1.log",
+      "sha256": "b8a18a689cc7dd601d6bd3b6b5d513c58292ff6b7d66150b0cb7908f20444b63"
+    },
+    {
+      "path": "/tmp/napier-contract-protocol-audit-tests-v1.log",
+      "sha256": "33874e19d3931f70a634765e08b1ea3b33897369cdfd86d265f367db5b261c01"
+    },
+    {
+      "path": "/tmp/napier-service-export-before-v1.log",
+      "sha256": "90af493d53bdd9f2c2970f5b7c57bbcfc3fad24f0131505bbf883ba1024463ff"
+    },
+    {
+      "path": "/tmp/napier-service-export-after-v1.log",
+      "sha256": "64d28f69388d03f26c9afd049911983e08a03c9ae9410f31d9bf192ce5c6f589"
+    },
+    {
+      "path": "/tmp/napier-contract-first-rejection-audit-v1.log",
+      "sha256": "a3d86194591c2567eb6eb018591a5aeb125d9367e79427a42220954ef0625e3a"
+    },
+    {
+      "path": "/tmp/napier-contract-first-rejection-audit-v2.log",
+      "sha256": "b96b168e0f5b96c3c951e1803cf53bb926a7d546f2c62d042f6cf7c27222362a"
+    },
+    {
+      "path": "/tmp/napier-contract-first-rejection-audit-v3.log",
+      "sha256": "b3cb1b51a7f576b5d02ec204b86cf48f970a7d28e062e91ee7b6fcdab242abda"
+    },
+    {
+      "path": "/tmp/napier-contract-first-rejection-audit-v1.mjs",
+      "sha256": "d55a82a31f9a52b88ed2e8c379294f7c44f21c4935d475b9ccf866b1f1ea51b3"
+    },
+    {
+      "path": "/tmp/napier-contract-first-rejection-audit-v2.mjs",
+      "sha256": "0f29e31f8eaf4be49a683fbfcd3f1152de2ebe269cad061ab1c103396f341db3"
+    },
+    {
+      "path": "/tmp/napier-harness-contract-first-v1/freeze-receipt.json",
+      "sha256": "0818872d5e3ea25999e7667e0f3a75eb0439e923ef367098106c23ab96487854"
+    }
+  ],
+  "runtime": {
+    "passed": 2643,
+    "failed": 2,
+    "skipped": 59,
+    "files": 525,
+    "durationSeconds": 301.95,
+    "failureScope": "Original capability-vector and production Skill-readiness expectations"
+  },
+  "compilePassed": true,
+  "architectureExistingViolations": 7,
+  "limitsRaised": false,
+  "protocolFocusedPassed": 11,
+  "protocolAuditHelperPassed": 6,
+  "exporterRegressionFailedBeforeFix": true,
+  "exporterAndObservedOutputChecksPassed": 10,
+  "pairedEvidence": {
+    "path": "docs/artifacts/contract-first-rejection-2026-09-14.json",
+    "sha256": "396e913bf9955d517c9e839efcdc2e62b6196d715821a3915f3347ae42bd35bd"
+  },
+  "inputExportEligible": false,
+  "assessment": "Optional static protocol is present but candidate queue trial 2 regressed. Production initial-input export is unavailable without a source capsule. Benchmark original-input and observed-output bundle succeeded after strict service-requirement acceptance-hash support. No Runtime change was made by that exporter fix.",
+  "promotionReady": false
+}

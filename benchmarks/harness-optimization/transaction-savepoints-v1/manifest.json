@@ -1,0 +1,18 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "transaction_savepoints_v1",
+  "title": "Nested savepoints with owned JSON state",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": ["src/value.mjs", "src/store.mjs"],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": ["apply_patch", "run_command"]
+}

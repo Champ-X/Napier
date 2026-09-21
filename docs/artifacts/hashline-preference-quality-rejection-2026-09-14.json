@@ -1,0 +1,144 @@
+{
+  "kind": "napier.hashline-preference-quality-rejection",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:11:21.221Z",
+  "root": "/Users/champ/.cache/napier-seven-quality/core-hashline-calibration-suite-v1",
+  "snapshot": "/tmp/napier-harness-tool-surface-v2",
+  "sourceMatchedInBothArms": true,
+  "policy": "coding-python.v1 + tail-v1 + request-aware-v1; exact preference versus hashline preference",
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [
+      "http_retry_policy_v1:0: task completion regressed",
+      "http_retry_policy_v1:0: new false completion"
+    ],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "http_retry_policy_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "regressed",
+    "promotionReady": false,
+    "contentSha256": "6b565b788592fb431aff039c8083b906f495961bed1407ca2ae98622106bc9fe"
+  },
+  "inputsStable": true,
+  "collectionComplete": false,
+  "observed": [
+    {
+      "arm": "baseline",
+      "runId": "run_e982f7a9552c4d6b8741",
+      "caseId": "http_retry_policy_v1",
+      "trial": 0,
+      "status": "completed",
+      "taskSuccess": true,
+      "qualifyingEvidence": true,
+      "allowedChanges": true,
+      "graderExitCode": 0,
+      "reportSha256": "d8731af6a6e76ea7bc653b323d91896b6230cab347f44e5ecde5af7b755e7177",
+      "profileSha256": "1990e13cbf3c8a63974720f5e2df3dc6d8844dc567d64ecb3fbb311ee5525e75",
+      "preference": {
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "api": "openai-completions",
+        "taskPhase": "coding",
+        "dialect": "structured_patch"
+      },
+      "editOperationEvidence": {
+        "operations": [
+          {
+            "callId": "call_00_bdG5GG4Byf5YsmEVSXEU5846",
+            "runId": "run_e982f7a9552c4d6b8741",
+            "operation": "create",
+            "status": "failed",
+            "sourceCapsuleSha256": "ff47671c85cdc24c9c7f3c8dd0cae0a59093df635ed13810711cbaf0a6f56d75"
+          },
+          {
+            "callId": "call_00_UpgsqqCwSseF9Bt8vaWL8767",
+            "runId": "run_e982f7a9552c4d6b8741",
+            "operation": "replace",
+            "status": "completed",
+            "sourceCapsuleSha256": "ff47671c85cdc24c9c7f3c8dd0cae0a59093df635ed13810711cbaf0a6f56d75"
+          },
+          {
+            "callId": "call_01_hIkgLA9cOHhvjuA2ySxF9684",
+            "runId": "run_e982f7a9552c4d6b8741",
+            "operation": "replace",
+            "status": "completed",
+            "sourceCapsuleSha256": "ff47671c85cdc24c9c7f3c8dd0cae0a59093df635ed13810711cbaf0a6f56d75"
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true
+      },
+      "toolFailures": 4
+    },
+    {
+      "arm": "candidate",
+      "runId": "run_4e0c55cdef5644fe9961",
+      "caseId": "http_retry_policy_v1",
+      "trial": 0,
+      "status": "completed",
+      "taskSuccess": false,
+      "qualifyingEvidence": true,
+      "allowedChanges": true,
+      "graderExitCode": 1,
+      "reportSha256": "d671648883cc7d97aa324b094ea8c21ffb6e96b9933bdcfcc4a2aeb69f0268a4",
+      "profileSha256": "999fec25d578bea68a86e08004df61b7ebfcbb1132d956a04e17d003b5c14533",
+      "preference": {
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "api": "openai-completions",
+        "taskPhase": "coding",
+        "dialect": "hashline"
+      },
+      "editOperationEvidence": {
+        "operations": [
+          {
+            "callId": "call_01_oYRAL9os3emmW6GK3Qaf6836",
+            "runId": "run_4e0c55cdef5644fe9961",
+            "operation": "replace",
+            "status": "completed",
+            "sourceCapsuleSha256": "bb1787f5ae2fd4aae6865e38a618b7eb8fa5b53b2ca2b7a29bc5f8ec9f26a456"
+          },
+          {
+            "callId": "call_00_i4hUNnbjsNBqZUfrlFZz8966",
+            "runId": "run_4e0c55cdef5644fe9961",
+            "operation": "replace",
+            "status": "completed",
+            "sourceCapsuleSha256": "bb1787f5ae2fd4aae6865e38a618b7eb8fa5b53b2ca2b7a29bc5f8ec9f26a456"
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true
+      },
+      "toolFailures": 5
+    }
+  ],
+  "stopReason": "First completed comparable pair regressed. Both in-flight jobs cancelled; remaining cases unscheduled. Original settled observations retained and not replaced.",
+  "finding": "Candidate reported completion but omitted required nowMs validation, including an absent-header early-return path. Actual completed edits used replace, so this result cannot be attributed to hashline execution. It rejects the preferred-format composition and supplies no adoption qualification.",
+  "promotionReady": false,
+  "logs": [
+    {
+      "path": "/tmp/napier-edit-format-suite-runner-v1.mjs",
+      "sha256": "ee3b7723184afd4fee46cbf05c8c6ff1567b97ce1247f640355030da8771fe90"
+    },
+    {
+      "path": "/tmp/napier-core-hashline-calibration-suite-v1.log",
+      "sha256": "f5021d3fcf194f7d9cc419b4f6f594a8b2219d00c8170f33e6ba58fd5a0c595c"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/core-hashline-calibration-suite-v1/suite-result.json",
+      "sha256": "66f2ee533fe0039c1e5c187607c040544b1e414f9fecee98e0d6918047f00748"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/core-hashline-calibration-suite-v1/schedule.json",
+      "sha256": "c94b2bfc96466eb64d002963b2cff902cb4f2cdf9849daf4688fed55e5dde830"
+    }
+  ]
+}

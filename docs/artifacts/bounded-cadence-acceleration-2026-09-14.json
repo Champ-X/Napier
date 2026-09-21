@@ -1,0 +1,57 @@
+{
+  "kind": "napier.bounded-cadence-acceleration",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T13:57:42.131Z",
+  "admission": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/fast-pairs-after-current-admission.json",
+    "sha256": "8661eb20ae741bbcf3190e19f7f62160835d093c35cbddbbe9f375d81025f74d",
+    "kind": "napier.bounded-fast-pair-continuation-admission",
+    "schemaVersion": 1,
+    "createdAt": "2026-09-14T13:53:48.667Z",
+    "previousPid": 49145,
+    "previousCommand": "node /tmp/napier-python-two-pair-batch-v1.mjs",
+    "previousPlanSha256": "6b58eadc93ce27d9cba563f1f2324997ca440392a9af74b64fde794b54c06907",
+    "prepare": "/tmp/napier-python-two-pair-fast-plan-v1.mjs",
+    "launch": "/tmp/napier-python-two-pair-fast-v1.mjs",
+    "followerSha256": "7cd86a3126e3ec932afdc5dd4f9a881863d23b48e37df09726ee5e50d533abc1",
+    "files": [
+      {
+        "path": "/tmp/napier-python-two-pair-fast-plan-v1.mjs",
+        "sha256": "0cde1d4977e7404b8b4b049315fd049f7a5df6aa650849893f821c07784fed78"
+      },
+      {
+        "path": "/tmp/napier-python-two-pair-fast-v1.mjs",
+        "sha256": "722e6ffb980c468d8f9d1c5c07f71deffdb7d3b1c88c7463d383bdfa9a35db26"
+      },
+      {
+        "path": "/tmp/napier-cny-sandbox-quality-driver-v4/freeze.json",
+        "sha256": "75192381574ab693f5d092bc1748f40c192bae725cef356eb58c4e735d270669"
+      }
+    ],
+    "maxNewRuns": 4,
+    "maxNewRequests": 80,
+    "minimumIntervalMs": 15000,
+    "concurrency": 1,
+    "maximumCumulativeFen": 10000,
+    "scope": "After the verified current batch process exits successfully with qualified evidence, run only inventory-event projection and weighted-expense allocation pairs. No overlapping models, no repeated cases and no dispatch after failure."
+  },
+  "driverFreeze": {
+    "path": "/tmp/napier-cny-sandbox-quality-driver-v4/freeze.json",
+    "sha256": "75192381574ab693f5d092bc1748f40c192bae725cef356eb58c4e735d270669"
+  },
+  "tests": {
+    "path": "/tmp/napier-cadence-gate-tests-v1.json",
+    "sha256": "74c8df3114911494f39b73f7b458a3aa0717337c41adc140caa31cc1d4a6ec10",
+    "passed": 38
+  },
+  "requestCap": 20,
+  "concurrency": 1,
+  "previousIntervalMs": 30000,
+  "nextIntervalMs": 15000,
+  "currentRunningBatchChanged": false,
+  "taskQualityGate": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "claim": "Reduce imposed idle interval only; no causal latency, cache or cost improvement established"
+}

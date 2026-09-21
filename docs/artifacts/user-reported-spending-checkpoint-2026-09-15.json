@@ -1,0 +1,57 @@
+{
+  "kind": "napier.user-reported-spending-checkpoint",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T04:25:20.172Z",
+  "source": "explicit_user_report",
+  "userReport": "我看官网实际只消耗了20元，可以继续推进",
+  "reportedAggregateSpendFen": 2000,
+  "cumulativeCeilingFen": 10000,
+  "providerInvoiceIndependentlyVerified": false,
+  "oldLedger": "/Users/champ/.cache/napier-seven-quality/budget-50cny-2026-09-14.sqlite",
+  "oldLedgerFileSha256": "ef858265bbfd8657d102b995f991750deea79ca2e19b0959dda43f0409a3c705",
+  "oldLedgerLogicalSha256": "38ba9c728635a172e5fdcfefdbd4b4fea42a7d2211b9deaf7190ef9d0b1314b2",
+  "oldRequests": 728,
+  "oldReservedRequests": 9,
+  "oldLocalConservativeCommittedFen": 9708,
+  "newLedger": "/Users/champ/.cache/napier-seven-quality/budget-100cny-user-reconciled-2026-09-15.sqlite",
+  "newBudgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 2000,
+    "remainingFen": 8000,
+    "requests": 0,
+    "reservedRequests": 0,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "pricingPage": {
+    "url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+    "retrievedAt": "2026-09-15T04:25:20.172Z",
+    "htmlSha256": "a1602748f50a9baacd416f4b831438896ba1351160f1f9afe89a9423c4b76cf3",
+    "peakCnyPerMillion": {
+      "cacheHit": 0.04,
+      "cacheMiss": 2,
+      "output": 8
+    },
+    "offPeakHalfPrice": true,
+    "servedAliasNotice": "deepseek-flash and deepseek-v4-flash are served by DeepSeek-V4.1-Flash per current official page"
+  },
+  "scope": "Prospective epoch starts from explicit user-reported aggregate consumption. Historical request rows, missing receipts, failed Runs and quality exclusions are untouched; no per-request invoice or settlement is fabricated. New calls still reserve and settle using unchanged conservative peak tariff and complete provider cache splits. This epoch supersedes the previous conservative total for future admission, not for historical qualification."
+}

@@ -1,5 +1,13 @@
 # Napier Current Gaps
 
+Latest review: **2026-09-21**, starting at `c454a155`. See the
+[working-tree review](investigations/2026-09-21-code-review.md) for current results:
+10 architecture violations (including four current-delivery line overages), the
+unchanged 1897/1896 public API mismatch, retained source-bound receipt failures,
+and desktop layout-baseline drift after functional browser assertions pass.
+The dated table below preserves the earlier cleanup's verification scope; it is
+not a fresh acceptance result for the current source.
+
 Checked on **2026-09-09**, using source baseline `02ff34a5` with the documentation
 and desktop-scope cleanup applied. This file owns current check results and open
 verification limits. Historical plans and acceptance narratives are indexed in

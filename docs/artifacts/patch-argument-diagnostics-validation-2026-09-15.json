@@ -1,0 +1,83 @@
+{
+  "kind": "napier.patch-argument-diagnostics-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T03:03:45.422Z",
+  "originalRunId": "run_b34f6531cdd547cb9bcf",
+  "originalReportSha256": "369e46b8bef9af0e0e6b28bf64a0435cb66791d2f8fce7d024a986f09d38f998",
+  "sourceFiles": {
+    "packages/runtime/src/workspace-patch-input-error.ts": "8aa449dfd3a49d3447226d57538807e4c68375cfead3374c071c4d6d75f0a3fc",
+    "packages/runtime/src/workspace-patch-tool.ts": "038387475b7fda9c1b2f6b7cbdb7a7c1609c8add86dd5a42808d9e580ba23b8f",
+    "packages/runtime/src/workspace-edit-reference-tools.ts": "42fbff6767234dd0cd2effad52772c444139bebb9487b348f7e8608fd862b7b3",
+    "packages/runtime/test/workspace-patch-input-error.test.ts": "d730fe1b5c21876454de80d24ccdae4646d6fb0ed2f70ca788386e184830ecfa"
+  },
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/patch-argument-diagnostics-tests-2026-09-15.json",
+    "sha256": "4855b20759c65fee2ade79c712a0fe30f581a882e9f85ce22497513c80c6635f",
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runtimeCompilePassed": true,
+  "architecture": {
+    "newViolations": 0,
+    "preexistingViolations": 6,
+    "fullyPassing": false
+  },
+  "toolDescriptionAndSchemaUnchanged": true,
+  "observations": [
+    {
+      "callId": "call_00_MwShMiSM5tuX1ruyFbLm4129",
+      "path": "src/pointer.mjs",
+      "originalArgumentsSha256": "0e89f80c631298cf7831ffeab27bf19dd67fe29f9fb134a21f3d19d834519ecf",
+      "originalBeforeSha256": "a624c8b8597e34aecdc07e7ddeea49e0afa8ececdcbb38df9eb4e1029e42e6fe",
+      "diagnostic": "Workspace patch fields do not match operation. replace requires path, expectedSha256 and edits:[{oldText,newText}]. oldText must be exact previously read text. Root content and createParentDirectories are not accepted; content is only for create. No file write was attempted. Correct the arguments before retrying; do not resend the rejected call.",
+      "rejectedBeforeCleanupAndWrite": true,
+      "correctedOutputSha256": "cf7a2a5bb4720e71a21ff923978c2510159e6a5e63a47903141066f70f7b50b1",
+      "correctedExactBytesVerified": true,
+      "staleRetryRejected": true
+    },
+    {
+      "callId": "call_01_911w9jzsZXKEr9lHaUTM1804",
+      "path": "src/patch.mjs",
+      "originalArgumentsSha256": "a7ea452c013089f4f2bb076311cffee376ef7e901e3293da7dcc4051cf216cd9",
+      "originalBeforeSha256": "7a64ddecb7d241ebacc29df509521f2e518ed8c0491672d7eedcb7bc13368eae",
+      "diagnostic": "Workspace patch fields do not match operation. replace requires path, expectedSha256 and edits:[{oldText,newText}]. oldText must be exact previously read text. Root content and createParentDirectories are not accepted; content is only for create. No file write was attempted. Correct the arguments before retrying; do not resend the rejected call.",
+      "rejectedBeforeCleanupAndWrite": true,
+      "correctedOutputSha256": "ba0e76312746fd5ba7b2c83d5d23fab7c48a54fcced2b7d224339fc262e7e7d0",
+      "correctedExactBytesVerified": true,
+      "staleRetryRejected": true
+    }
+  ],
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 9708,
+    "remainingFen": 292,
+    "requests": 728,
+    "reservedRequests": 9,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "modelRequests": 0,
+  "frozen": false,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Native replay of the exact two rejected calls on a disposable original fixture. Invalid shapes still reject before cleanup, observers or writes. Only static operation-specific diagnostics change; no content-to-edit coercion, implicit retry or weaker stale preconditions. Corrected caller-authored edits commit exact intended bytes. The third historical failure exceeds the existing 2048-character argv limit and is not changed. This is deterministic tool evidence, not fresh full-Agent qualification."
+}

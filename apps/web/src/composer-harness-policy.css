@@ -1,0 +1,21 @@
+.composer-harness-policy {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.composer-harness-policy select {
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+}
+
+.composer-harness-policy p {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}

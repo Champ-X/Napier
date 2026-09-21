@@ -1,0 +1,77 @@
+{
+  "kind": "napier.steered-recovery-capability-claim-failure",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T20:27:52.438993+00:00",
+  "root": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v2",
+  "snapshot": "/tmp/napier-harness-contract-guidance-v1",
+  "sourceRunId": "run_9c6b616e39f445b3afd4",
+  "recoveryRunId": "run_765cba06e2d34652bf4d",
+  "processExit": {
+    "pid": 5580,
+    "code": 86,
+    "signal": null
+  },
+  "result": {
+    "status": "failed",
+    "taskSuccess": false,
+    "graderExitCode": 0,
+    "allowedChanges": true,
+    "parentBindingValid": true,
+    "workingStateRetained": true,
+    "freshVerification": true,
+    "invocationBindingsVerified": true
+  },
+  "failure": "Recovery correctly reverified amended source and passed independent behavior checks, but the completion guard misclassified absent write activity as unavailable write capability. Original terminal outcome remains failed.",
+  "guardAudit": [
+    {
+      "eventId": "event_e52a5c5d329847139e2f",
+      "textSha256": "f96dbb2d3baa60bdba022a02c7597b414a242cf3060555fdf5e12aff48f5b26a",
+      "before": [
+        "apply_patch",
+        "workspace_file_apply"
+      ],
+      "after": []
+    },
+    {
+      "eventId": "event_c652c3e127ad47c08cbe",
+      "textSha256": "a32e33e01b587f1e3da905d6f7f0a610a5218e5a1197838dd88e1d371b95b8a5",
+      "before": [
+        "apply_patch",
+        "workspace_file_apply"
+      ],
+      "after": []
+    }
+  ],
+  "logs": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v2/initial-result.json",
+      "sha256": "02ce3feb9aaa64182022faff44de74c2457202302633232778019c9bee100045"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v2/source-process-exit.json",
+      "sha256": "db1e1c7857fcb5fa7c8cd902f4bd56831bc34a786ed8fe4bbfe15c54f3e2ceaa"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v2/recovery-result.json",
+      "sha256": "78cf79989b5671fb9bf97c2975d1e114128747c61eb04688340b951900131379"
+    },
+    {
+      "path": "/tmp/napier-steered-recovery-probe-v2.log",
+      "sha256": "b60fbc06e383a785acb1e4933c4b89f30e7089c3d78ca00a768282fe52e09a95"
+    },
+    {
+      "path": "/tmp/napier-capability-activity-repro-v1.log",
+      "sha256": "c9c7caf20d4385d2dd9ed363e5c629498d01b81ccd019c39fd4c8632465cc9cd"
+    },
+    {
+      "path": "/tmp/napier-capability-activity-tests-v1.log",
+      "sha256": "80cfe51422c865bf8d71203ac32e97c3e32db8fcd7ff2ddae79472755ac9f1de"
+    },
+    {
+      "path": "/tmp/napier-capability-activity-tests-v2.log",
+      "sha256": "f344b47618d8d7e1dcdfd956d9909ffdb66d9609a6d9420bbfa64a66ba23c0b0"
+    }
+  ],
+  "scope": "One real interrupted task recovered to correct verified files; completion failed. Grammar repair is not yet broad quality qualification.",
+  "promotionReady": false
+}

@@ -1,0 +1,188 @@
+{
+  "kind": "napier.container-visibility-runtime-full-audit",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T03:14:22.508127+00:00",
+  "paidApiCalls": 0,
+  "goalComplete": false,
+  "promotionReady": false,
+  "baseline": {
+    "passed": 2667,
+    "failed": 2,
+    "skipped": 59,
+    "files": 530,
+    "failures": [
+      {
+        "file": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+        "title": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+        "firstMessage": "AssertionError: expected 'b8a26579de3a3eb9f6cef217c962be001e463…' to be '56d32e5912d14ad608257b126c9950a1f98d5…' // Object.is equality"
+      },
+      {
+        "file": "packages/runtime/test/agent-capability-contract.test.ts",
+        "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+        "firstMessage": "AssertionError: expected [ { …(6) }, { …(6) }, { …(6) }, …(50) ] to deeply equal ArrayContaining{…}"
+      }
+    ]
+  },
+  "current": {
+    "passed": 2686,
+    "failed": 2,
+    "skipped": 60,
+    "files": 533,
+    "failures": [
+      {
+        "file": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+        "title": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+        "firstMessage": "AssertionError: expected 'b8a26579de3a3eb9f6cef217c962be001e463…' to be '56d32e5912d14ad608257b126c9950a1f98d5…' // Object.is equality"
+      },
+      {
+        "file": "packages/runtime/test/agent-capability-contract.test.ts",
+        "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+        "firstMessage": "AssertionError: expected [ { …(6) }, { …(6) }, { …(6) }, …(50) ] to deeply equal ArrayContaining{…}"
+      }
+    ]
+  },
+  "comparison": {
+    "addedFailedTitles": [],
+    "removedFailedTitles": [],
+    "commonStatusChanges": [],
+    "newAssertions": [
+      {
+        "file": "packages/runtime/test/harness-composition-integration.test.ts",
+        "title": "integrates the complete candidate through node repair, fresh context and original-input export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/harness-composition-integration.test.ts",
+        "title": "integrates the complete candidate through python repair, fresh context and original-input export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "exports a coherently interrupted source without changing its recorded outcome",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "exports through the actual read-only SQLite CLI and leaves the source ledger unchanged",
+        "status": "skipped"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects conflicting terminal before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects conflicting terminal payload before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects damaged capture receipt before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects damaged configuration before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects damaged invocation receipt before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects duplicate sequence before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects foreign event before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects late original prompt before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects missing terminal before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects queued state before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects rebound invocation receipt before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "rejects unavailable initial invocation before creating an export",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-input-reproduction-source.test.ts",
+        "title": "selects the initial invocation by ledger sequence even when a reader returns events in reverse order",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/verification-container-entry.test.ts",
+        "title": "does not launch a verifier when workspace enumeration fails",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/verification-container-entry.test.ts",
+        "title": "preserves verifier argv, stdout and failure status through a shell-free entry",
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/verification-container-entry.test.ts",
+        "title": "the existing execution timeout still terminates the wrapped verifier process tree",
+        "status": "passed"
+      }
+    ],
+    "sharedFailuresFirstMessageEqual": true
+  },
+  "sourceUnchangedDuringRun": true,
+  "sourceMatchesFrozenCandidate": true,
+  "snapshot": "/tmp/napier-harness-container-visibility-v1",
+  "sourceFileCount": 1175,
+  "bindings": [
+    {
+      "path": "/tmp/napier-large-provider-runtime-full-v1.json",
+      "sha256": "a34ed4d70bfb24c69c501228d8a5d1efab36a0e18b0e76f77a8c0c34a06261e8"
+    },
+    {
+      "path": "/tmp/napier-container-visibility-runtime-full-v1.json",
+      "sha256": "21e78c715e3175e35765d7dd3ab56cb88cf179aaa64c5492c998866bee00dd26"
+    },
+    {
+      "path": "/tmp/napier-container-visibility-runtime-full-v1.sources.json",
+      "sha256": "e36b26235c5b58f9f4a1a572efb33028741657404c5fab4ad13182972cb32cfa"
+    },
+    {
+      "path": "/tmp/napier-container-visibility-runtime-full-v1.log",
+      "sha256": "f9af3da90ddef3c636feee357393db639f56f1f1fd8891048731706aec903edf"
+    },
+    {
+      "path": "/tmp/napier-harness-container-visibility-v1/freeze-receipt.json",
+      "sha256": "b586bb8363238fc61ab80f5c49bc7665190598610ae95fd0a3aa3b0fc2e1f4e3"
+    },
+    {
+      "path": "/tmp/napier-container-runtime-full-audit-v1.py",
+      "sha256": "f97409d3e94616d55a998fe43aebe3f5d54f03bee9a8c581dd522af4ac325862"
+    }
+  ],
+  "limits": [
+    "Full Runtime suite is offline; API credential/token/secret variables, live flags and NODE_OPTIONS were removed.",
+    "This differential test result is not real-model quality qualification and does not prove the entire goal complete.",
+    "The two capability-contract failures, if retained, are not treated as passing checks."
+  ],
+  "contentSha256": "94e5f3d1e074eef6ea65b95c86f9c99e3ab3131e76f623b8dd1a69ba8c8c969c"
+}

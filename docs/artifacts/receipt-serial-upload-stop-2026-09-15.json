@@ -1,0 +1,162 @@
+{
+  "kind": "napier.bounded-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:14:26.403Z",
+  "source": "/tmp/napier-harness-request-budget-context-v1",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v7",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-receipt-serial-core-v11/plan.json",
+  "planSha256": "5caed48be3e3fc8e97748fcac52047c5a6a363e98b8c4b0df67344665e98d22f",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-receipt-serial-core-v11/result.json",
+  "resultSha256": "196fbbcd3109c2b7cf14e1696b5ba2882a26ad80f042bf799cfae22e36cf5efa",
+  "dispatchIndices": [
+    37,
+    36
+  ],
+  "observations": [
+    {
+      "index": 37,
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_84946fb14f7841e59f58",
+      "status": "cancelled",
+      "taskSuccess": false,
+      "graderExitCode": 1,
+      "error": "Model call was aborted. Retry when the task is ready to continue.",
+      "admissions": 1,
+      "settledFen": 0,
+      "unreceiptedReservedFen": 600,
+      "toolFailures": 0,
+      "durationMs": 564224,
+      "auditedCapsules": 1,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-receipt-serial-core-v11/resumable_byte_upload_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "41d0b965f72c9e48870a718b317f288267d5b2f9d481235f0657bea5d4524627",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-receipt-serial-core-v11/audit-37.json",
+      "auditSha256": "6cd4f89ab18d0e1ee7be57061c4a0d92a334cb088cf30a21d689bc432282457f",
+      "graderMode": "host"
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 0,
+    "cases": 0,
+    "regressions": [],
+    "evidenceBlockers": [
+      "resumable_byte_upload_v1:0: missing arm"
+    ],
+    "blockers": [
+      "resumable_byte_upload_v1:0: missing arm",
+      "Need 30 cases; observed 0"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "c6df85c698bc03ecb8ac5262df335e599f1fed27e45e9fbca71ea4f3ad49cd86"
+  },
+  "stop": {
+    "reason": "candidate_task_failed",
+    "runId": "run_84946fb14f7841e59f58",
+    "job": {
+      "caseId": "resumable_byte_upload_v1",
+      "caseRoot": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/cases/resumable_byte_upload_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "output": "/Users/champ/.cache/napier-seven-quality/cny-receipt-serial-core-v11/resumable_byte_upload_v1-candidate-trial-1",
+      "driver": "/tmp/napier-cny-sandbox-quality-driver-v7",
+      "graderMode": "host",
+      "graderRuntimes": "node"
+    }
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 6422,
+      "remainingFen": 3578,
+      "requests": 646,
+      "reservedRequests": 4,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 7022,
+      "remainingFen": 2978,
+      "requests": 647,
+      "reservedRequests": 5,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "settledConservativeFen": 4022,
+    "unreceiptedReservations": [
+      {
+        "id": 410,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 421,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 633,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 646,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 647,
+        "charged_fen": 600,
+        "status": "reserved"
+      }
+    ],
+    "providerBillVerified": false
+  },
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Only original observed tasks and immutable current-source reports qualify. No causal attribution or generalized efficiency claim. Historical failed/ineligible reports and the full 30-case/3-trial gate remain unchanged."
+}

@@ -1,0 +1,113 @@
+{
+  "kind": "napier.memory-exposure-metrics",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:45:57.851Z",
+  "sourceArtifact": "/Users/champ/orca/Napier/docs/artifacts/memory-source-transition-component-2026-09-14.json",
+  "sourceArtifactSha256": "932de691dbe873b48efdf3699ab9488366de4abd8fabf234b80083146198d4f0",
+  "runIds": [
+    "run_bdafad25ca284e418b58",
+    "run_3052de5153dc4101b797"
+  ],
+  "rows": [
+    {
+      "stage": "edit",
+      "eventId": "event_1196f882bb0f4d3ebb6d",
+      "capsuleSha256": "ef49b36ed5a34375725198f2144f30db7fdc8743c845b3367ae2ea2804c54aed",
+      "availableRelevantFacts": 2,
+      "recalledRelevantFacts": 2,
+      "deliveredFacts": 3,
+      "unrelatedFacts": 1,
+      "factTextCharacters": 310,
+      "unrelatedFactTextCharacters": 82,
+      "staleFactDelivered": false,
+      "ineligibleFactDelivered": false
+    },
+    {
+      "stage": "edit",
+      "eventId": "event_e1960d86c8c94b9aa1cf",
+      "capsuleSha256": "7847732a59d3f22bfcb73d608a13797c904e4c9fe7f09a61000a748df9eb0cf6",
+      "availableRelevantFacts": 2,
+      "recalledRelevantFacts": 2,
+      "deliveredFacts": 3,
+      "unrelatedFacts": 1,
+      "factTextCharacters": 310,
+      "unrelatedFactTextCharacters": 82,
+      "staleFactDelivered": false,
+      "ineligibleFactDelivered": false
+    },
+    {
+      "stage": "edit",
+      "eventId": "event_54799ed808a44aa19f82",
+      "capsuleSha256": "f9f81325126fb8bd4613f69623319c89d9137091637d9deba446f463830aa64c",
+      "availableRelevantFacts": 1,
+      "recalledRelevantFacts": 1,
+      "deliveredFacts": 2,
+      "unrelatedFacts": 1,
+      "factTextCharacters": 159,
+      "unrelatedFactTextCharacters": 82,
+      "staleFactDelivered": false,
+      "ineligibleFactDelivered": false
+    },
+    {
+      "stage": "edit",
+      "eventId": "event_a3a1461a1a724e03adb0",
+      "capsuleSha256": "4f4e8c1f57f703a72ae276ed31c7b370d5a4a5c4993c1e96d1ecb99dc1319932",
+      "availableRelevantFacts": 1,
+      "recalledRelevantFacts": 1,
+      "deliveredFacts": 2,
+      "unrelatedFacts": 1,
+      "factTextCharacters": 159,
+      "unrelatedFactTextCharacters": 82,
+      "staleFactDelivered": false,
+      "ineligibleFactDelivered": false
+    },
+    {
+      "stage": "restart",
+      "eventId": "event_56de4e7add18421ea62b",
+      "capsuleSha256": "39576c4e0df3fc6e0db2a70abbecd950e6ddbb19acd8d35744916cba1bad7001",
+      "availableRelevantFacts": 0,
+      "recalledRelevantFacts": 0,
+      "deliveredFacts": 1,
+      "unrelatedFacts": 1,
+      "factTextCharacters": 82,
+      "unrelatedFactTextCharacters": 82,
+      "staleFactDelivered": false,
+      "ineligibleFactDelivered": false
+    },
+    {
+      "stage": "restart",
+      "eventId": "event_ea3ffa32737b401f9762",
+      "capsuleSha256": "214d684b8009d0ef2f748f080acd2dcf27c81c2b1a26ea410387cc4b31bce8eb",
+      "availableRelevantFacts": 0,
+      "recalledRelevantFacts": 0,
+      "deliveredFacts": 1,
+      "unrelatedFacts": 1,
+      "factTextCharacters": 82,
+      "unrelatedFactTextCharacters": 82,
+      "staleFactDelivered": false,
+      "ineligibleFactDelivered": false
+    }
+  ],
+  "aggregate": {
+    "relevantRecall": {
+      "recalled": 6,
+      "available": 6,
+      "ratio": 1
+    },
+    "unrelatedFactExposure": {
+      "unrelated": 6,
+      "total": 12,
+      "ratio": 0.5
+    },
+    "unrelatedFactTextCharacters": {
+      "unrelated": 492,
+      "total": 1102,
+      "ratio": 0.44646098003629764
+    },
+    "staleFactDeliveries": 0,
+    "ineligibleFactDeliveries": 0
+  },
+  "assessment": "Relevant eligible facts were recalled at every applicable invocation. Unrelated approved facts fill spare budget, including both restart invocations after all task-relevant facts became ineligible. This measures an unresolved precision/cost limitation; it does not show irrelevant-context reduction or a baseline improvement.",
+  "scope": "Recomputed from six hash-validated historical invocation capsules in two real component Runs. Repeated fact exposures, not independent memory samples. Character ratio covers rendered fact lines, excluding wrapper text; it is not a token ratio. Task outcomes passed with no stale-memory-induced wrong artifact or answer observed in those two Runs; no general error-rate claim.",
+  "promotionReady": false
+}

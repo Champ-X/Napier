@@ -447,7 +447,7 @@ function scratchBaseDirectory() {
 export async function runDocker(args, options = {}) {
   const result = await execFile("docker", args, {
     encoding: "utf8",
-    env: dockerEnvironment(),
+    env: dockerEnvironment(args[0] === "buildx"),
     timeout: options.timeoutMs ?? COMMAND_TIMEOUT_MS,
     killSignal: "SIGKILL",
     maxBuffer: options.maxBuffer ?? MAX_DOCKER_OUTPUT_BYTES,
@@ -462,7 +462,10 @@ export async function runDocker(args, options = {}) {
   return { output: `${result.stdout}${result.stderr}` };
 }
 
-function dockerEnvironment() {
+/** Registry access belongs to host-side Buildx, not the Agent container.
+ * Preserve explicitly configured client proxies without forwarding arbitrary
+ * credentials or changing the sandbox network policy. Values are never receipts. */
+export function dockerEnvironment(registryAccess = false, env = process.env) {
   const names = [
     "DOCKER_CERT_PATH",
     "DOCKER_CONFIG",
@@ -471,10 +474,22 @@ function dockerEnvironment() {
     "DOCKER_TLS_VERIFY",
     "HOME",
     "PATH",
+    ...(registryAccess
+      ? [
+          "HTTP_PROXY",
+          "HTTPS_PROXY",
+          "ALL_PROXY",
+          "NO_PROXY",
+          "http_proxy",
+          "https_proxy",
+          "all_proxy",
+          "no_proxy",
+        ]
+      : []),
   ];
   return Object.fromEntries(
     names.flatMap((name) =>
-      process.env[name] === undefined ? [] : [[name, process.env[name]]],
+      env[name] === undefined ? [] : [[name, env[name]]],
     ),
   );
 }

@@ -25,6 +25,7 @@ import type {
 } from "./prompt-compiler.js";
 import {
   PROMPT_COMPILER_ASSEMBLY,
+  STABLE_PROMPT_COMPILER_ASSEMBLY,
   PROMPT_COMPILER_VERSION,
   validateCompiledPromptArtifact,
 } from "./prompt-compiler.js";
@@ -79,7 +80,7 @@ export function createCompiledPromptPackageReceiptV3(input: {
     invariantCore: invariantCoreBinding(input.purpose, layers[0]!),
     turnIndex: input.envelope.turnIndex,
     classification: "independent_layers_v1" as const,
-    assembly: PROMPT_COMPILER_ASSEMBLY,
+    assembly: input.compiled.assembly,
     tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4" as const,
     systemPromptSha256: input.envelope.systemPromptSha256,
     systemPromptBytes: input.envelope.systemPromptBytes,
@@ -144,7 +145,9 @@ export function validateCompiledPromptPackageReceiptV3(
     value["compilerVersion"] === PROMPT_COMPILER_VERSION,
     PURPOSES.has(value["purpose"] as ModelInvocationPurpose),
     value["classification"] === "independent_layers_v1",
-    value["assembly"] === PROMPT_COMPILER_ASSEMBLY,
+    [PROMPT_COMPILER_ASSEMBLY, STABLE_PROMPT_COMPILER_ASSEMBLY].includes(
+      value["assembly"] as string,
+    ),
     value["tokenEstimateMethod"] === "sum_layer_ceil_utf8_bytes_div_4",
     value["lossless"] === true,
     integer(value["turnIndex"]),

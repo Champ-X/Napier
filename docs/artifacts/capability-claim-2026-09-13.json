@@ -1,0 +1,2242 @@
+{
+  "kind": "napier.capability-claim-qualification",
+  "schemaVersion": 1,
+  "date": "2026-09-13",
+  "observations": [
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-baseline-v1/trial-1/result.json",
+      "reportSha256": "29bbdb2d11605a5eddf54dcaf0451d6ae8b2dadae0b58ea4aa9416e1894c3436",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 0,
+      "arm": "baseline",
+      "runId": "run_62c8bb55308740c48029",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "shipping.py",
+        "report.json"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "ec394478705f028befbdb54c21a469df86b882a69aa8733981e91106a4557497",
+      "sourceIdentity": {
+        "packages/runtime/src": "d3e227e4630903b8e9ffbd37d9fcee5c3e9ba264ecc4190d65ae7782d60a28c9",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 36,
+      "toolFailures": 2,
+      "usage": {
+        "inputTokens": 95846,
+        "outputTokens": 11221,
+        "cacheReadTokens": 291072,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0173753216
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 22,
+        "auditedCapsules": 22
+      },
+      "processPassed": true
+    },
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-baseline-v1/trial-2/result.json",
+      "reportSha256": "b020682b822f8117ed45300c3e305dca8278425873d07537db9c84cfeb0710b4",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 1,
+      "arm": "baseline",
+      "runId": "run_ff3ab8ac128f4ae08936",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "shipping.py",
+        "report.json"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "ec394478705f028befbdb54c21a469df86b882a69aa8733981e91106a4557497",
+      "sourceIdentity": {
+        "packages/runtime/src": "d3e227e4630903b8e9ffbd37d9fcee5c3e9ba264ecc4190d65ae7782d60a28c9",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 31,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 61574,
+        "outputTokens": 6818,
+        "cacheReadTokens": 326144,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.011442603199999998
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 26,
+        "auditedCapsules": 26
+      },
+      "processPassed": true
+    },
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-baseline-v1/trial-3/result.json",
+      "reportSha256": "24c68998660b1dca3dbf2d7583287e1ab697cfd6f9f71465850e3c6241996e85",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 2,
+      "arm": "baseline",
+      "runId": "run_75eec0f790be4bdf8e00",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "shipping.py",
+        "report.json"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "ec394478705f028befbdb54c21a469df86b882a69aa8733981e91106a4557497",
+      "sourceIdentity": {
+        "packages/runtime/src": "d3e227e4630903b8e9ffbd37d9fcee5c3e9ba264ecc4190d65ae7782d60a28c9",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 32,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 57697,
+        "outputTokens": 8810,
+        "cacheReadTokens": 302336,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0113909208
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 22,
+        "auditedCapsules": 22
+      },
+      "processPassed": true
+    },
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-candidate-v1/trial-1/result.json",
+      "reportSha256": "3054ab16a2fe281128ebf19b6c05a36d98679cfb1d06bbc7029cf25b16b9b98f",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 0,
+      "arm": "candidate",
+      "runId": "run_7f32f01d0bce4018a9b7",
+      "status": "completed",
+      "taskSuccess": false,
+      "allowedChanges": false,
+      "changed": [
+        "shipping.py",
+        "outputs/thread_601c4afc80bc4a76a496/report.json"
+      ],
+      "graderExitCode": 1,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "bb6eb4f0adb69cc66d7eccb18e2d750223eb74ca3e07242289be0062f976c069",
+      "sourceIdentity": {
+        "packages/runtime/src": "50b1be8852ae6cc2876de31cbe6106216bb5d2350a52b82b0de1719a6bf4d63f",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 29,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 62262,
+        "outputTokens": 6528,
+        "cacheReadTokens": 324352,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0114527056
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 26,
+        "auditedCapsules": 26
+      },
+      "processPassed": true
+    },
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-candidate-v1/trial-2/result.json",
+      "reportSha256": "b2bcfa288b9adb29e3e265c455c258a43ba7a020f02259d7887db208c06715d7",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 1,
+      "arm": "candidate",
+      "runId": "run_b1fbbf77c25b48a5a0f1",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "shipping.py",
+        "report.json"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "bb6eb4f0adb69cc66d7eccb18e2d750223eb74ca3e07242289be0062f976c069",
+      "sourceIdentity": {
+        "packages/runtime/src": "50b1be8852ae6cc2876de31cbe6106216bb5d2350a52b82b0de1719a6bf4d63f",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 34,
+      "toolFailures": 1,
+      "usage": {
+        "inputTokens": 69611,
+        "outputTokens": 10092,
+        "cacheReadTokens": 286592,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.013373757599999998
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 21,
+        "auditedCapsules": 21
+      },
+      "processPassed": true
+    },
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-candidate-v1/trial-3/result.json",
+      "reportSha256": "8223a0780a8672a4cc24f86a2cc179c87287cf961465a3f31ca65ca7cb28f561",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 2,
+      "arm": "candidate",
+      "runId": "run_02c91a95525a418caa8b",
+      "status": "completed",
+      "taskSuccess": false,
+      "allowedChanges": false,
+      "changed": [
+        "shipping.py",
+        "outputs/thread_74cc948b30484837a88b/report.json"
+      ],
+      "graderExitCode": 1,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "bb6eb4f0adb69cc66d7eccb18e2d750223eb74ca3e07242289be0062f976c069",
+      "sourceIdentity": {
+        "packages/runtime/src": "50b1be8852ae6cc2876de31cbe6106216bb5d2350a52b82b0de1719a6bf4d63f",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 28,
+      "toolFailures": 1,
+      "usage": {
+        "inputTokens": 51013,
+        "outputTokens": 5842,
+        "cacheReadTokens": 245888,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.009466066399999999
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 20,
+        "auditedCapsules": 20
+      },
+      "processPassed": true
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-baseline-v1/trial-1/result.json",
+      "reportSha256": "1d39cc5e01211c7416193e50cfdb8c1f65c9553918ba3485c585632eb4b4b41e",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 0,
+      "arm": "baseline",
+      "runId": "run_d98cd74046dc4e1a8226",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "ec394478705f028befbdb54c21a469df86b882a69aa8733981e91106a4557497",
+      "sourceIdentity": {
+        "packages/runtime/src": "d3e227e4630903b8e9ffbd37d9fcee5c3e9ba264ecc4190d65ae7782d60a28c9",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 13,
+      "toolFailures": 1,
+      "usage": {
+        "inputTokens": 29460,
+        "outputTokens": 4400,
+        "cacheReadTokens": 78464,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.005576099200000001
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 11,
+        "auditedCapsules": 11
+      },
+      "processPassed": true
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-baseline-v1/trial-2/result.json",
+      "reportSha256": "ab7394dd20dbcd40395416f4a4b22b8ef3c26f3e3865673cdd9721fc00de911f",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 1,
+      "arm": "baseline",
+      "runId": "run_83fcad8a80e8411f9e91",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "ec394478705f028befbdb54c21a469df86b882a69aa8733981e91106a4557497",
+      "sourceIdentity": {
+        "packages/runtime/src": "d3e227e4630903b8e9ffbd37d9fcee5c3e9ba264ecc4190d65ae7782d60a28c9",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 12,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 29021,
+        "outputTokens": 5878,
+        "cacheReadTokens": 59776,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.005876152800000001
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 9,
+        "auditedCapsules": 9
+      },
+      "processPassed": true
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-baseline-v1/trial-3/result.json",
+      "reportSha256": "eca987bed23626304c15e0024a4bbd32d7f255f2dbef85cd0755ebf0d4889a81",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 2,
+      "arm": "baseline",
+      "runId": "run_68d9bc3b3d454d2b8e12",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "ec394478705f028befbdb54c21a469df86b882a69aa8733981e91106a4557497",
+      "sourceIdentity": {
+        "packages/runtime/src": "d3e227e4630903b8e9ffbd37d9fcee5c3e9ba264ecc4190d65ae7782d60a28c9",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 12,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 26714,
+        "outputTokens": 3466,
+        "cacheReadTokens": 67072,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0048982416
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 10,
+        "auditedCapsules": 10
+      },
+      "processPassed": true
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-candidate-v1/trial-1/result.json",
+      "reportSha256": "839ef58d82052acd05273daa613c5c3d76f7a21a347a2e82b0de9c455098f0db",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 0,
+      "arm": "candidate",
+      "runId": "run_5659923acd94474eab8f",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "bb6eb4f0adb69cc66d7eccb18e2d750223eb74ca3e07242289be0062f976c069",
+      "sourceIdentity": {
+        "packages/runtime/src": "50b1be8852ae6cc2876de31cbe6106216bb5d2350a52b82b0de1719a6bf4d63f",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 13,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 22836,
+        "outputTokens": 3592,
+        "cacheReadTokens": 42624,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0043221472
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 7,
+        "auditedCapsules": 7
+      },
+      "processPassed": true
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-candidate-v1/trial-2/result.json",
+      "reportSha256": "5ae93d141fb2c6e0802c0cb0137401b9278948b2dfc2b04050ffaffb676a41bb",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 1,
+      "arm": "candidate",
+      "runId": "run_fcb23f3da4d3482eac77",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "bb6eb4f0adb69cc66d7eccb18e2d750223eb74ca3e07242289be0062f976c069",
+      "sourceIdentity": {
+        "packages/runtime/src": "50b1be8852ae6cc2876de31cbe6106216bb5d2350a52b82b0de1719a6bf4d63f",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 13,
+      "toolFailures": 1,
+      "usage": {
+        "inputTokens": 27778,
+        "outputTokens": 5809,
+        "cacheReadTokens": 55808,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.005671702400000001
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 8,
+        "auditedCapsules": 8
+      },
+      "processPassed": true
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-candidate-v1/trial-3/result.json",
+      "reportSha256": "d1d35121f7aa41babbda32191ad253fd1839fdcc53952d79ecfc0602acfe8cb2",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 2,
+      "arm": "candidate",
+      "runId": "run_bbf457c7cd7c4b4489bf",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "bb6eb4f0adb69cc66d7eccb18e2d750223eb74ca3e07242289be0062f976c069",
+      "sourceIdentity": {
+        "packages/runtime/src": "50b1be8852ae6cc2876de31cbe6106216bb5d2350a52b82b0de1719a6bf4d63f",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 12,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 24832,
+        "outputTokens": 3257,
+        "cacheReadTokens": 59520,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.004555096
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 9,
+        "auditedCapsules": 9
+      },
+      "processPassed": true
+    }
+  ],
+  "originalResponseAudit": {
+    "kind": "napier.capability-claim-response-audit",
+    "schemaVersion": 1,
+    "observations": [
+      {
+        "runId": "run_dcd83c3d8f58464792bb",
+        "eventId": "event_44879fc54c2e4cedbf1e",
+        "textSha256": "ef58c6d70f537618a02c1b731a2b85c6fd5463627f0559b7ea159dc9a9744248",
+        "before": [
+          "workspace_process"
+        ],
+        "after": []
+      },
+      {
+        "runId": "run_dcd83c3d8f58464792bb",
+        "eventId": "event_5a97aab0f8524f2796e6",
+        "textSha256": "b812af77dd0b0dfb7abc3c9ce1b252c06b55643799fb14506ae0a9aadc5ae3b4",
+        "before": [
+          "workspace_process"
+        ],
+        "after": []
+      },
+      {
+        "runId": "run_341ad834e279459480eb",
+        "eventId": "event_4a647f48ab92414abbf5",
+        "textSha256": "a435a52d9f22c435ac0d836ce961d8d3f0127043092033672a9fe562829ed045",
+        "before": [
+          "workspace_process"
+        ],
+        "after": []
+      },
+      {
+        "runId": "run_341ad834e279459480eb",
+        "eventId": "event_29599bbf0c3f47859d3e",
+        "textSha256": "5077d738682639b8e72f849c13cd2b49f98b9a62d7c36b801bc2b087f2f1e25f",
+        "before": [
+          "web_search",
+          "web_fetch",
+          "browser",
+          "workspace_process"
+        ],
+        "after": []
+      }
+    ],
+    "passed": true
+  },
+  "gate": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 6,
+    "cases": 2,
+    "regressions": [
+      "interactive_python_shipping_v1:0: task completion regressed",
+      "interactive_python_shipping_v1:0: workspace scope breached",
+      "interactive_python_shipping_v1:0: new false completion",
+      "interactive_python_shipping_v1:2: task completion regressed",
+      "interactive_python_shipping_v1:2: workspace scope breached",
+      "interactive_python_shipping_v1:2: new false completion"
+    ],
+    "blockers": [
+      "Need 30 cases; observed 2"
+    ],
+    "verdict": "regressed",
+    "promotionReady": false,
+    "contentSha256": "72aafe71ffda12845cc06b43e57a7bed4bae969ee6621eb07d1a6fd80b33dd79"
+  },
+  "promotionReady": false,
+  "notes": [
+    "Immutable Runtime snapshots, same model/input/policy/budget per pair.",
+    "Host-direct; no OS isolation evidence.",
+    "Concurrent execution; cost and latency not qualified.",
+    "Historical false positives and new path-scope violations remain preserved.",
+    "Revised candidate adds passive availability predicates and activity grammar, and makes generated output paths conditional on unspecified user destination.",
+    "Same six baseline Runs reused in a separate comparison; original candidate failures are retained."
+  ],
+  "pythonDebuggerFeasibility": {
+    "result": {
+      "kind": "napier.python-debugger-probe",
+      "schemaVersion": 1,
+      "debugpyVersion": "1.8.17",
+      "pythonVersion": "3.9.6",
+      "sandbox": "host-direct",
+      "productionIntegrated": false,
+      "verifiedBreakpoint": true,
+      "stoppedLine": 4,
+      "locals": {
+        "base": "0",
+        "expedited": "True",
+        "subtotal": "50"
+      },
+      "evaluation": "50",
+      "adapterExitCode": 0,
+      "requests": [
+        "initialize",
+        "launch",
+        "setBreakpoints",
+        "configurationDone",
+        "stackTrace",
+        "scopes",
+        "variables",
+        "evaluate",
+        "disconnect"
+      ],
+      "passed": true
+    },
+    "probePath": "/tmp/napier-debugpy-dap-probe.py",
+    "probeSha256": "2ffaa4b76e7e2784d8c8ae36d8b0d528ece843946dff549fe4fdfccfa1cc5ea5",
+    "initialFailureLog": "/tmp/napier-debugpy-dap-probe.log",
+    "successfulLog": "/tmp/napier-debugpy-dap-probe-v2.log",
+    "finding": "disconnect alone left adapter waiting; close its stdin after disconnect to obtain exit code 0; production integration and OS isolation remain unverified"
+  },
+  "revisedObservations": [
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-candidate-v2/trial-1/result.json",
+      "reportSha256": "feaa61c4ad34e49219b1d12cfa47ef79e5fe07129747ca1ffe6884b569d1d53d",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 0,
+      "arm": "candidate",
+      "runId": "run_296188f87119417bb93f",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "shipping.py",
+        "report.json"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "d592119c377b0ebdbc49b152a67fc913747dbe11d80288664f9eb5f9c0ae7800",
+      "sourceIdentity": {
+        "packages/runtime/src": "a4a26345aa8249b0cd7b82b6b7c5a572a64660827853190f82d9190408ae1094",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 32,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 65908,
+        "outputTokens": 6757,
+        "cacheReadTokens": 359040,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.012124391999999998
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 28,
+        "auditedCapsules": 28
+      },
+      "processPassed": true,
+      "planContextAudit": {
+        "kind": "napier.plan-context-audit",
+        "schemaVersion": 1,
+        "observations": [
+          {
+            "eventId": "event_46d2fb3caeb3475f97d8",
+            "seq": 165,
+            "capsuleSha256": "bb5689647a109e16ada46c7049149d75fc4a69a3c9649318a4dfdf01fb1ef07f",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "1502892d38916546eaff85989dc2b033132e50f4a15b3fafec144073559429b8",
+            "actualSha256": "1502892d38916546eaff85989dc2b033132e50f4a15b3fafec144073559429b8"
+          },
+          {
+            "eventId": "event_8cd8460e9cea4d899b6e",
+            "seq": 201,
+            "capsuleSha256": "9518f268503cc0892fbe2e27497f1fa0a967403dc2ca5d11337d7e24e6d671d4",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "a02461c2bee79ee3bdfa72e13151c95d3e47b075d40dca340820e21b7a18e882",
+            "actualSha256": "a02461c2bee79ee3bdfa72e13151c95d3e47b075d40dca340820e21b7a18e882"
+          },
+          {
+            "eventId": "event_ce1f4713aeaa47ac8db1",
+            "seq": 234,
+            "capsuleSha256": "b988931699f9b18d96967bf0a261f00c679ac76782afc9bc37ba1821767f786b",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "a02461c2bee79ee3bdfa72e13151c95d3e47b075d40dca340820e21b7a18e882",
+            "actualSha256": "a02461c2bee79ee3bdfa72e13151c95d3e47b075d40dca340820e21b7a18e882"
+          },
+          {
+            "eventId": "event_2fedcf6646cd43fbbf0b",
+            "seq": 270,
+            "capsuleSha256": "4a81448bae165dc2322f565b9c105aa3f3813edb676d7b4390fd9aa9b7483ea8",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "a02461c2bee79ee3bdfa72e13151c95d3e47b075d40dca340820e21b7a18e882",
+            "actualSha256": "a02461c2bee79ee3bdfa72e13151c95d3e47b075d40dca340820e21b7a18e882"
+          },
+          {
+            "eventId": "event_8c3e1a2babce462fbf84",
+            "seq": 306,
+            "capsuleSha256": "af8cb3c937e24d933ddbb5ae19c7700d0341268209cbf69bf9ec47807da7ceb4",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "d7a7d16df01d2ededd088fe40acb49bf9f550326c300b947c0d7445fa216766f",
+            "actualSha256": "d7a7d16df01d2ededd088fe40acb49bf9f550326c300b947c0d7445fa216766f"
+          },
+          {
+            "eventId": "event_877b8e891bd046abb7ae",
+            "seq": 342,
+            "capsuleSha256": "35602f8d11818f0ee2ea1498d3039727facaaaba2477254a8dc75c7acd3411fd",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "051ef5f9f88fc8069ae8df3da6c657d14cf978b34b82189600447dfde010b470",
+            "actualSha256": "051ef5f9f88fc8069ae8df3da6c657d14cf978b34b82189600447dfde010b470"
+          },
+          {
+            "eventId": "event_406948d11540431db932",
+            "seq": 374,
+            "capsuleSha256": "97d23c736c373293e17344a0bdd0fad22d23d5d5cb9723e9f45deb4f7762e1f1",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "051ef5f9f88fc8069ae8df3da6c657d14cf978b34b82189600447dfde010b470",
+            "actualSha256": "051ef5f9f88fc8069ae8df3da6c657d14cf978b34b82189600447dfde010b470"
+          },
+          {
+            "eventId": "event_3e5a89f1f79f4ddabb27",
+            "seq": 410,
+            "capsuleSha256": "9b2c2fabcbcd28b846f2843be2ec31b0a9b45b23d86eb55338d9bd6220da7f19",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "99264870e265ec30de46ca9c8971de5b12bb656150711184bc68906fd863253f",
+            "actualSha256": "99264870e265ec30de46ca9c8971de5b12bb656150711184bc68906fd863253f"
+          },
+          {
+            "eventId": "event_86e396604d1c470ba663",
+            "seq": 445,
+            "capsuleSha256": "21960d4503133c4289db8a97df357c15e17b5cd44fc4b54ab77f5746d616a45c",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_9ec0772a0b1e48dfa494",
+            "seq": 480,
+            "capsuleSha256": "d91cabfc2e7e28d8e65bc5aa809396b2170860db78147bbc99458d6ae7d17719",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_0e23b89e153b4892b1b9",
+            "seq": 514,
+            "capsuleSha256": "245db7091fae08e7ef05532e067ee672f93065212d1788379948630ff5f128a2",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_4864c0aa24f84c71b25d",
+            "seq": 549,
+            "capsuleSha256": "d9c1a44248a17a465b35e7e93d7c2528804e51054c13bb7052c38cbc6f4ef7d8",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_62d746ecd2d8477c811a",
+            "seq": 582,
+            "capsuleSha256": "487586b50e1aa35df3da662e2d9b0e4aed88b7dfd983124c7db36d16eae77467",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_ffb25a8f8f8041cab044",
+            "seq": 618,
+            "capsuleSha256": "97e08c38d66beedeb40452f413949e1791d224114a0838def8f82e51a577072f",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_0a14ac006ffd440d88c1",
+            "seq": 651,
+            "capsuleSha256": "5be993a5cae576b6d83e6dc2e692db879eefcaa8bdd84f09748772cb4c04e28d",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_7da11817ea674d448c76",
+            "seq": 687,
+            "capsuleSha256": "3fa974f53e728de2394ee233c5e28099390a20f06df70938d311f2a7590e2f96",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_6b8fdbba887148f3b7f7",
+            "seq": 720,
+            "capsuleSha256": "c6bc2b836f55a155d0ab8f30467b6730e30f3a38692ba4a07b99b4e2d269a8cc",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9",
+            "actualSha256": "4e1bea8a10b561ac91547eda674731e69ee1a07f5281558bab99e46e7078d3e9"
+          },
+          {
+            "eventId": "event_beab5104504444ccb633",
+            "seq": 756,
+            "capsuleSha256": "ef20d842a903e4f5fe5a5d2b3c8843fe5f9f6c66ffcf2d78921444aba36780e8",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "5ff7b0fdce52f5c6b500e2d2f3001f5087b0c13c46f6800b93563a83d57bf875",
+            "actualSha256": "5ff7b0fdce52f5c6b500e2d2f3001f5087b0c13c46f6800b93563a83d57bf875"
+          },
+          {
+            "eventId": "event_62616a87831249b68539",
+            "seq": 793,
+            "capsuleSha256": "5ee9542d1068fd21dd5be61a8ae5eff744b684885ea9641cd7482593531187eb",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "fb2442f17c50ac0277770bc6695f85b88a93436e7decebafaedee0d8fa7cbe40",
+            "actualSha256": "fb2442f17c50ac0277770bc6695f85b88a93436e7decebafaedee0d8fa7cbe40"
+          },
+          {
+            "eventId": "event_750ade612d5d44f0b657",
+            "seq": 826,
+            "capsuleSha256": "f6e8656923644609bca8463fbb37dcbcd5d3aee1ed3255f98f283be963ec9978",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "fb2442f17c50ac0277770bc6695f85b88a93436e7decebafaedee0d8fa7cbe40",
+            "actualSha256": "fb2442f17c50ac0277770bc6695f85b88a93436e7decebafaedee0d8fa7cbe40"
+          },
+          {
+            "eventId": "event_c475bc265f224cc29dc5",
+            "seq": 862,
+            "capsuleSha256": "672a85677fc423210998e43d49c97571766d8c01da1fe9eb62dbee21d6e40508",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "fb2442f17c50ac0277770bc6695f85b88a93436e7decebafaedee0d8fa7cbe40",
+            "actualSha256": "fb2442f17c50ac0277770bc6695f85b88a93436e7decebafaedee0d8fa7cbe40"
+          },
+          {
+            "eventId": "event_4fd01d9226f04063a67b",
+            "seq": 910,
+            "capsuleSha256": "89fd786324f1359b2fe4dbe86f14bac9131b951dc8d23c9fc05aca1340868573",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "85a020a8187bd3b45e3a7dedfe4f2a71b6295be47f64a154b406bc4325acfd94",
+            "actualSha256": "85a020a8187bd3b45e3a7dedfe4f2a71b6295be47f64a154b406bc4325acfd94"
+          },
+          {
+            "eventId": "event_a0e4d620e33c49649c80",
+            "seq": 957,
+            "capsuleSha256": "6f2b0ac123d94e6faf34a699d7900946a7218b9e3dc0dc475fecc974a598923e",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "2a75864f8dffe7dbbb1f167305c482c432d9555c2c9727e88e891486a7fc5408",
+            "actualSha256": "2a75864f8dffe7dbbb1f167305c482c432d9555c2c9727e88e891486a7fc5408"
+          },
+          {
+            "eventId": "event_30538b01b2e54cd39b6d",
+            "seq": 993,
+            "capsuleSha256": "9c78d6c9b9d0d716a4e1773872b207014af0bf19405c3dffcc716b694d6082c3",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "8db173adb2c3d133b217d04112e952e53853dd790421711f8273fef8d385a93e",
+            "actualSha256": "8db173adb2c3d133b217d04112e952e53853dd790421711f8273fef8d385a93e"
+          },
+          {
+            "eventId": "event_9c886ce552ae44538483",
+            "seq": 1028,
+            "capsuleSha256": "df84f881bc61bcb98427497176f4e14b516311d6a3d736c19004dd2997610878",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "8db173adb2c3d133b217d04112e952e53853dd790421711f8273fef8d385a93e",
+            "actualSha256": "8db173adb2c3d133b217d04112e952e53853dd790421711f8273fef8d385a93e"
+          }
+        ],
+        "eligible": 25,
+        "delivered": 25,
+        "matched": 25,
+        "passed": true
+      }
+    },
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-candidate-v2/trial-2/result.json",
+      "reportSha256": "d3e94f2a674694f9b356231ad1df4192dbfab55ede0f0943f90b6ebf3dd50f3a",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 1,
+      "arm": "candidate",
+      "runId": "run_8b807d71adad46baae8b",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "shipping.py",
+        "report.json"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "d592119c377b0ebdbc49b152a67fc913747dbe11d80288664f9eb5f9c0ae7800",
+      "sourceIdentity": {
+        "packages/runtime/src": "a4a26345aa8249b0cd7b82b6b7c5a572a64660827853190f82d9190408ae1094",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 34,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 60170,
+        "outputTokens": 9173,
+        "cacheReadTokens": 307968,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0118545504
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 23,
+        "auditedCapsules": 23
+      },
+      "processPassed": true,
+      "planContextAudit": {
+        "kind": "napier.plan-context-audit",
+        "schemaVersion": 1,
+        "observations": [
+          {
+            "eventId": "event_1398142c8b4d4a7f9909",
+            "seq": 164,
+            "capsuleSha256": "03fd7caec6732d7795f6231596b41e2f849493ae2873b80754b239e19e7e36a0",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "9d13ee3025b607862618bf1a3338fe658d4c034680378212f785761bdbdb71df",
+            "actualSha256": "9d13ee3025b607862618bf1a3338fe658d4c034680378212f785761bdbdb71df"
+          },
+          {
+            "eventId": "event_ba1208d07eb84f0c8d9b",
+            "seq": 212,
+            "capsuleSha256": "7b088b5b833ad9912fe53e57e514f5b223f178897c815228050efac83226c834",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "df16e12fc284a0643ef16ecad83bcb1a9c1183538c1349f7f41e3d30da06fda0",
+            "actualSha256": "df16e12fc284a0643ef16ecad83bcb1a9c1183538c1349f7f41e3d30da06fda0"
+          },
+          {
+            "eventId": "event_ed154f94c9e34a59b142",
+            "seq": 248,
+            "capsuleSha256": "f5202f9697668b72a7f719d29a500ff242d2ea0dab2c202feccaa75902fe4967",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "df16e12fc284a0643ef16ecad83bcb1a9c1183538c1349f7f41e3d30da06fda0",
+            "actualSha256": "df16e12fc284a0643ef16ecad83bcb1a9c1183538c1349f7f41e3d30da06fda0"
+          },
+          {
+            "eventId": "event_e01794e340c04d3eb73b",
+            "seq": 285,
+            "capsuleSha256": "c34f6cde17cec45c72b9a7f8938282ea3b7d1b1ff3f2488a919e20c0eeb920be",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "1bacf9aaf7a6e6b0fc0f783091c4a5ed840db8ebbc24d63cc8d916590409e0c6",
+            "actualSha256": "1bacf9aaf7a6e6b0fc0f783091c4a5ed840db8ebbc24d63cc8d916590409e0c6"
+          },
+          {
+            "eventId": "event_9851e1c6f01d4069ac34",
+            "seq": 333,
+            "capsuleSha256": "98ed1b421d59e5ec4ed523be1ffdece1f637ab95d2ee19fc10be988aa07b0d8e",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_52137c0e344a4ffea93b",
+            "seq": 368,
+            "capsuleSha256": "fa41a4545574af6ec0880d89fee2c840ede3c1ad1802b0bb897f3950c5dae554",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_8465a78c18b643de8707",
+            "seq": 403,
+            "capsuleSha256": "bfe826ab956583f9274df0c4244a0f55be6cdaf8f2e3fccf51dd7d777da35dcb",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_67ecd316d98d484b9f5c",
+            "seq": 436,
+            "capsuleSha256": "7f3313ea4b71d32229e5f3b683417ac1ab351353ffd3e6131a66f5c22b0d9b13",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_38c0304968b04c6e8a69",
+            "seq": 469,
+            "capsuleSha256": "d361032a6f37789f312252bb3c20fcd5bfcc27da3abdd01ed2fbd0b2f876919a",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_887eabbf38e14546b9c0",
+            "seq": 504,
+            "capsuleSha256": "c583a0298a524f55b221570506b98e117de4a6764115c623f78dce463f5e6155",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_55e8793a68e048618b00",
+            "seq": 539,
+            "capsuleSha256": "5e173993eadf63829ae90f76d30e6d31f770c8f9b109967b28decbab4dbc4cbb",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_5ddb1ed4f11146d7b7b5",
+            "seq": 572,
+            "capsuleSha256": "ed140e43c3190edbc6e301f89875a8a3cbab2ade5290b217fa4f6988b01e8ef0",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_f4fc6ead57c0480286fe",
+            "seq": 608,
+            "capsuleSha256": "93fe499970c856569733149d053678e16812a28d9d48caadb8d59f1963467f49",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_c80adf59b62e459cbcca",
+            "seq": 642,
+            "capsuleSha256": "f0236d516875313596f669b0cb0525a692189ad9b7ad400578654f80f5335e77",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88",
+            "actualSha256": "b1fd24345b91bd9f66a14530cf945d16dd52c0dbf8497f675680362070874a88"
+          },
+          {
+            "eventId": "event_3f4d7d1370594e828cf3",
+            "seq": 703,
+            "capsuleSha256": "24a57b8d09624187682aca5c6770db469b4ff76c9cf660fd58ea415a976c56a9",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "85e6e907b9a6fd11dd40bfcd6f3b9b00b21d01210c3fc8298e840b3cc47f2697",
+            "actualSha256": "85e6e907b9a6fd11dd40bfcd6f3b9b00b21d01210c3fc8298e840b3cc47f2697"
+          },
+          {
+            "eventId": "event_990ae2661ef243f78812",
+            "seq": 765,
+            "capsuleSha256": "b8b402ae8556b070d18880d2e084e20bd9aa2f4a346f890f1d2d899c1788dcfe",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "5fefd9d75057073598cba8e3dadbe2f70cf2eaf3a066d81a8c020d68cd42cde7",
+            "actualSha256": "5fefd9d75057073598cba8e3dadbe2f70cf2eaf3a066d81a8c020d68cd42cde7"
+          },
+          {
+            "eventId": "event_3260a9203ee74ebbad6f",
+            "seq": 812,
+            "capsuleSha256": "f5839997ac1dc3fd4ed6b99db6804e5a767432c719548eff2c58a7f91487dafb",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "a0ea2d3ecf28fdb27a2b9e9bfaf43ec603e499f3c14551897a8fda183188d467",
+            "actualSha256": "a0ea2d3ecf28fdb27a2b9e9bfaf43ec603e499f3c14551897a8fda183188d467"
+          },
+          {
+            "eventId": "event_af1cf74f388244aab019",
+            "seq": 871,
+            "capsuleSha256": "092503dab787b83d65db322984c47f2d22156a19842c020772a82049664a546b",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "d0d48d8b887afd98e72dd84f1bd4c183eaaaf1c8390ceba3ead9070f81b529d8",
+            "actualSha256": "d0d48d8b887afd98e72dd84f1bd4c183eaaaf1c8390ceba3ead9070f81b529d8"
+          },
+          {
+            "eventId": "event_76f72771d3a94f0b8e81",
+            "seq": 908,
+            "capsuleSha256": "8917349ee170402242428d62141f1057bec5dab4131f3b566221376283611c35",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "02f5d4780cf394392caec72453e0b561ab9ef772f3f61e0fece41e74470c0773",
+            "actualSha256": "02f5d4780cf394392caec72453e0b561ab9ef772f3f61e0fece41e74470c0773"
+          },
+          {
+            "eventId": "event_6bc590d089b34bb59d5b",
+            "seq": 943,
+            "capsuleSha256": "6979a6e6acc1558645aab3c1491f51618a5b2d85c02f5be56243301e210b4f5f",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "02f5d4780cf394392caec72453e0b561ab9ef772f3f61e0fece41e74470c0773",
+            "actualSha256": "02f5d4780cf394392caec72453e0b561ab9ef772f3f61e0fece41e74470c0773"
+          }
+        ],
+        "eligible": 20,
+        "delivered": 20,
+        "matched": 20,
+        "passed": true
+      }
+    },
+    {
+      "task": "interactive",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-interactive-candidate-v2/trial-3/result.json",
+      "reportSha256": "646b8075876d6418323528f8f40c85de70572cee48a6aaad5e9ab36ea847a5c9",
+      "caseId": "interactive_python_shipping_v1",
+      "trial": 2,
+      "arm": "candidate",
+      "runId": "run_b73048af7692472d8c9b",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "shipping.py",
+        "report.json"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 48,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "d592119c377b0ebdbc49b152a67fc913747dbe11d80288664f9eb5f9c0ae7800",
+      "sourceIdentity": {
+        "packages/runtime/src": "a4a26345aa8249b0cd7b82b6b7c5a572a64660827853190f82d9190408ae1094",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 33,
+      "toolFailures": 2,
+      "usage": {
+        "inputTokens": 68312,
+        "outputTokens": 8222,
+        "cacheReadTokens": 389504,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.012956451199999998
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 28,
+        "auditedCapsules": 28
+      },
+      "processPassed": true,
+      "planContextAudit": {
+        "kind": "napier.plan-context-audit",
+        "schemaVersion": 1,
+        "observations": [
+          {
+            "eventId": "event_77074264ab904f838dfc",
+            "seq": 271,
+            "capsuleSha256": "9b5a4e458bfce7f46750053ad06c01508b5e3e4c6e8e422414d9005ead554b9e",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "d33692144aae707b66ac7865dd11fcfd2485b9ce9af660ae3dd9837080d5ab7e",
+            "actualSha256": "d33692144aae707b66ac7865dd11fcfd2485b9ce9af660ae3dd9837080d5ab7e"
+          },
+          {
+            "eventId": "event_23ba1aad1744493b9b12",
+            "seq": 310,
+            "capsuleSha256": "8be63f419e1d86695169fbb9d7b54580a4265b9efc5f7e429d67e10902b18ef7",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "d6dac2beb7cd085a5ed450a2527953451d6a5bf8cb2b661498ce3f16f47982a5",
+            "actualSha256": "d6dac2beb7cd085a5ed450a2527953451d6a5bf8cb2b661498ce3f16f47982a5"
+          },
+          {
+            "eventId": "event_a353473df64540fbb70e",
+            "seq": 346,
+            "capsuleSha256": "0ebfbd5713436057dd2f2fa0930d19ab82c82cc0583886c4b3551f64f121047a",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "d6dac2beb7cd085a5ed450a2527953451d6a5bf8cb2b661498ce3f16f47982a5",
+            "actualSha256": "d6dac2beb7cd085a5ed450a2527953451d6a5bf8cb2b661498ce3f16f47982a5"
+          },
+          {
+            "eventId": "event_0b6383a008674fecb30c",
+            "seq": 380,
+            "capsuleSha256": "1dd65ab514317c4ac54e1ae83cb2dfa04c82242bbc4b804eef3ed2e173a6961d",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "d6dac2beb7cd085a5ed450a2527953451d6a5bf8cb2b661498ce3f16f47982a5",
+            "actualSha256": "d6dac2beb7cd085a5ed450a2527953451d6a5bf8cb2b661498ce3f16f47982a5"
+          },
+          {
+            "eventId": "event_d017cc3d185f4dd2bc48",
+            "seq": 430,
+            "capsuleSha256": "14650d59a3a63d65de2e9500c13b62c7bba8daf5541f8149f1f3df71aa9227e7",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4",
+            "actualSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4"
+          },
+          {
+            "eventId": "event_34b65e712d9d4dd99ab6",
+            "seq": 465,
+            "capsuleSha256": "1f3a64775272484df7e29eee19da9fd40fbaae20f2f878f97df0512c0fc02c60",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4",
+            "actualSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4"
+          },
+          {
+            "eventId": "event_31cb687b1fde46899793",
+            "seq": 499,
+            "capsuleSha256": "5d8e79997dbb05e26c025337fc1e04c00b4ca856cab5cd0d19b24fa82fb50325",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4",
+            "actualSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4"
+          },
+          {
+            "eventId": "event_27a7ea8fc540481fb8f5",
+            "seq": 534,
+            "capsuleSha256": "6340617b795c2f21f82aafceeb1407b122954150fcebdfa3590e8a630f0dda6f",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4",
+            "actualSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4"
+          },
+          {
+            "eventId": "event_7413557683f243e0a9cb",
+            "seq": 567,
+            "capsuleSha256": "15d4276f86d0e4f1232c0609e73737d9a1d681c9ae3f52afb74b4ccbcfaf013d",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4",
+            "actualSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4"
+          },
+          {
+            "eventId": "event_cb3649892eef4ca5815f",
+            "seq": 602,
+            "capsuleSha256": "5dffb396bab3d94b84c950f65f3c47e16d1dc1fb54a6e7cd18d82bbbbc199328",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4",
+            "actualSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4"
+          },
+          {
+            "eventId": "event_2532987a5b0c4693a760",
+            "seq": 635,
+            "capsuleSha256": "e4a5035d303fde0db9a9e1275c92049a9279d4501c12ac608bea2bc4accbb99d",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4",
+            "actualSha256": "ad8f4bc439f0163e5f1509a418281a301aa83b0d88c045058638a2659ec5f3e4"
+          },
+          {
+            "eventId": "event_8812f6c921c041abb0eb",
+            "seq": 673,
+            "capsuleSha256": "42fb4e0589eeaa231fa68fd581e095919688d87192b915564288d85d6852bbdb",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ed641f6ef2e4823732ccf4e9c98b91a8aba9a1d10058583c657bd0c0d9d7c762",
+            "actualSha256": "ed641f6ef2e4823732ccf4e9c98b91a8aba9a1d10058583c657bd0c0d9d7c762"
+          },
+          {
+            "eventId": "event_4d9feab0192a4b098d44",
+            "seq": 708,
+            "capsuleSha256": "ffdf7d8dc52ef0ae89b098a98395bda2f2e8b7cf555c10f8006624da246eec8b",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ed641f6ef2e4823732ccf4e9c98b91a8aba9a1d10058583c657bd0c0d9d7c762",
+            "actualSha256": "ed641f6ef2e4823732ccf4e9c98b91a8aba9a1d10058583c657bd0c0d9d7c762"
+          },
+          {
+            "eventId": "event_941f0ed8fd7644fc9683",
+            "seq": 741,
+            "capsuleSha256": "96e1ed84f62dc074c3dd562073f021c7d91b4d54a8895ada29b5759f9cbac607",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "ed641f6ef2e4823732ccf4e9c98b91a8aba9a1d10058583c657bd0c0d9d7c762",
+            "actualSha256": "ed641f6ef2e4823732ccf4e9c98b91a8aba9a1d10058583c657bd0c0d9d7c762"
+          },
+          {
+            "eventId": "event_b19b15fa06b34c9781c8",
+            "seq": 778,
+            "capsuleSha256": "a859f8fe9f6215abd3cdedc1a1e19b78c6c7c78d59d4109a03a8365bcd2adde1",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "a057dcffaf09ee4d3b48dab1c1b1e358c0f5f0ace45f1a11d5abced38986224f",
+            "actualSha256": "a057dcffaf09ee4d3b48dab1c1b1e358c0f5f0ace45f1a11d5abced38986224f"
+          },
+          {
+            "eventId": "event_55e9039818ef40a4bdda",
+            "seq": 812,
+            "capsuleSha256": "15c0776e299bff01bccdfaa4adc25b723cf0f68f83144415e7cbe558ee19ade6",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "a057dcffaf09ee4d3b48dab1c1b1e358c0f5f0ace45f1a11d5abced38986224f",
+            "actualSha256": "a057dcffaf09ee4d3b48dab1c1b1e358c0f5f0ace45f1a11d5abced38986224f"
+          },
+          {
+            "eventId": "event_c2c04f9fa04049f18233",
+            "seq": 860,
+            "capsuleSha256": "58d7d078ff6f4e71ab6d71508b0cd06942ed7c73011fdda6098481b5b35afc1b",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "c4b1ffb935df77eef06d74bc9b03ddc2cfbeae1e2c1b83c10229351a44e1391e",
+            "actualSha256": "c4b1ffb935df77eef06d74bc9b03ddc2cfbeae1e2c1b83c10229351a44e1391e"
+          },
+          {
+            "eventId": "event_0c36d05360b142939545",
+            "seq": 906,
+            "capsuleSha256": "57d413722a322336896638abba6ab8951202cd3702906bdaa2bbf0b3d6681305",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "30c33ae523358fe31cbedd23eef70b25d7a0dbbe82f91afa32795c611fc1a42a",
+            "actualSha256": "30c33ae523358fe31cbedd23eef70b25d7a0dbbe82f91afa32795c611fc1a42a"
+          },
+          {
+            "eventId": "event_669213b5f1bf42e49e61",
+            "seq": 941,
+            "capsuleSha256": "dfceafa8d3f836cbcd2d5f649bdf7822e1781e49c98e2a39181a99f410f44bab",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "0018d31ece537d8487bee40da1bad60471bb7db8c27fe0c08a9c23c9c06708b2",
+            "actualSha256": "0018d31ece537d8487bee40da1bad60471bb7db8c27fe0c08a9c23c9c06708b2"
+          },
+          {
+            "eventId": "event_2550cc0d14c1458ab5b0",
+            "seq": 976,
+            "capsuleSha256": "3b4d100f25ef60b1bfb19448091386bb1cdecb0f8f0a6f35bebaf32ffcb7ac5d",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "0eb0c402c900953e7bd4f6a0a229ca24f54e63b666507943112ca84a354a9107",
+            "actualSha256": "0eb0c402c900953e7bd4f6a0a229ca24f54e63b666507943112ca84a354a9107"
+          },
+          {
+            "eventId": "event_b3bde3d069e24263bff8",
+            "seq": 1012,
+            "capsuleSha256": "3ecdafb746a6f034d6a3b27f87ac70a6a44115800f37c923f6ee907f8fab3608",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "e048410baba69718e7ef4b1dc46e9897e6786e811a867bbfd356965084c69e62",
+            "actualSha256": "e048410baba69718e7ef4b1dc46e9897e6786e811a867bbfd356965084c69e62"
+          },
+          {
+            "eventId": "event_73de8d4325eb488abe3f",
+            "seq": 1047,
+            "capsuleSha256": "d011e0af435e0dd58c683d4b4b4aca074a14a9bdc93a0d4e70a4f073260ae52b",
+            "plans": 1,
+            "delivered": true,
+            "matches": true,
+            "expectedSha256": "e048410baba69718e7ef4b1dc46e9897e6786e811a867bbfd356965084c69e62",
+            "actualSha256": "e048410baba69718e7ef4b1dc46e9897e6786e811a867bbfd356965084c69e62"
+          }
+        ],
+        "eligible": 22,
+        "delivered": 22,
+        "matched": 22,
+        "passed": true
+      }
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-candidate-v2/trial-1/result.json",
+      "reportSha256": "2afae9352d49b29c905df40ace183100b1f3c765a201e48a5c78c8be705ae5bd",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 0,
+      "arm": "candidate",
+      "runId": "run_26ce0df972714586a32c",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "d592119c377b0ebdbc49b152a67fc913747dbe11d80288664f9eb5f9c0ae7800",
+      "sourceIdentity": {
+        "packages/runtime/src": "a4a26345aa8249b0cd7b82b6b7c5a572a64660827853190f82d9190408ae1094",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 12,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 25824,
+        "outputTokens": 5411,
+        "cacheReadTokens": 39680,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.005241544
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 7,
+        "auditedCapsules": 7
+      },
+      "processPassed": true
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-candidate-v2/trial-2/result.json",
+      "reportSha256": "8da5f68e7de30914162171f5e60fc3a46229b04f9d0d6ae32a55cbf49210ffe6",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 1,
+      "arm": "candidate",
+      "runId": "run_804b22a77e7b42219d8a",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "d592119c377b0ebdbc49b152a67fc913747dbe11d80288664f9eb5f9c0ae7800",
+      "sourceIdentity": {
+        "packages/runtime/src": "a4a26345aa8249b0cd7b82b6b7c5a572a64660827853190f82d9190408ae1094",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 19,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 38699,
+        "outputTokens": 9480,
+        "cacheReadTokens": 97152,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.008344285600000001
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 10,
+        "auditedCapsules": 10
+      },
+      "processPassed": true
+    },
+    {
+      "task": "pricing",
+      "reportPath": "/tmp/napier-seven-quality/capability-claim-pricing-candidate-v2/trial-3/result.json",
+      "reportSha256": "19524ec801262fedf2a760839b49272128dc3891206d4b228b958b12a91c1df1",
+      "caseId": "coding_pricing_options_migration_v1",
+      "trial": 2,
+      "arm": "candidate",
+      "runId": "run_0cf24478d021411ab641",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/checkout.js",
+        "src/pricing.js",
+        "src/quote.js"
+      ],
+      "graderExitCode": 0,
+      "runLimits": {
+        "maxTurns": 24,
+        "maxTotalTokens": 250000,
+        "maxCostUsd": 3,
+        "timeoutMs": 240000
+      },
+      "runtimeArtifactSha256": "d592119c377b0ebdbc49b152a67fc913747dbe11d80288664f9eb5f9c0ae7800",
+      "sourceIdentity": {
+        "packages/runtime/src": "a4a26345aa8249b0cd7b82b6b7c5a572a64660827853190f82d9190408ae1094",
+        "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+        "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "qualifyingEvidence": true,
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolCalls": 13,
+      "toolFailures": 0,
+      "usage": {
+        "inputTokens": 27053,
+        "outputTokens": 3854,
+        "cacheReadTokens": 66944,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0050539832
+      },
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 10,
+        "auditedCapsules": 10
+      },
+      "processPassed": true
+    }
+  ],
+  "revisedGate": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 6,
+    "cases": 2,
+    "regressions": [],
+    "blockers": [
+      "Need 30 cases; observed 2"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "5e8e60bd22f64c75285d445cfc8121df9756eee02190e92859268afffc5fa652"
+  },
+  "validation": {
+    "logs": {
+      "initialFull": {
+        "path": "/tmp/napier-capability-claim-full-v1.log",
+        "sha256": "5f478dc2555ae5ffd0a0f9d723087d41a4c555c959fdfd30ece093c7a412a0f3"
+      },
+      "finalFull": {
+        "path": "/tmp/napier-capability-claim-full-v2.log",
+        "sha256": "45271f3044bd49303ccd896358e982c62720ef3e619d5305b3b2166179dcf2df"
+      },
+      "focused": {
+        "path": "/tmp/napier-capability-claim-v2-targeted.log",
+        "sha256": "1128d52b51445981977187fa37b1bb4958c075d2dfcfa05467b81f36bdc57d74"
+      },
+      "build": {
+        "path": "/tmp/napier-capability-claim-v2-build.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "architecture": {
+        "path": "/tmp/napier-capability-claim-v2-architecture.log",
+        "sha256": "5e77079067364b000583e20eef99084c44b35daa0cffa6d36f00b4c067cafd56"
+      }
+    },
+    "initialFull": {
+      "passed": 2561,
+      "skipped": 52,
+      "failed": 2
+    },
+    "finalFull": {
+      "passed": 2561,
+      "skipped": 52,
+      "failed": 2
+    },
+    "baselineFailures": [
+      "capability-vector expectation",
+      "production Skill-readiness expectation"
+    ],
+    "focusedPassed": 15,
+    "build": "passed",
+    "architectureViolations": 9,
+    "budgetsRaised": false
+  }
+}

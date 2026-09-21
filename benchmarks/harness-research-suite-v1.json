@@ -1,0 +1,16 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_source_research_v1",
+  "cases": [
+    {
+      "path": "harness-optimization/provider-reasoning-audit-v1",
+      "coverage": [
+        "research",
+        "source-citations",
+        "compatibility-analysis",
+        "scope"
+      ]
+    }
+  ]
+}

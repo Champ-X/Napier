@@ -1,0 +1,168 @@
+{
+  "kind": "napier.user-reconciled-continuation-final-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:22:23.592Z",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "planSha256": "a059bc0386f3844628bc9c4ca508e7749db5952fe0e9d4d62687b07337d0ce3b",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/upload-original-pair-v1/result.json",
+  "resultSha256": "9c4676872fa1ab20c70f2ee0b5e05b3e1c5897fb525cdfe9c4098c18fc013abe",
+  "oldLedgerLogicalHashUnchanged": true,
+  "oldLedgerLogicalSha256": "38ba9c728635a172e5fdcfefdbd4b4fea42a7d2211b9deaf7190ef9d0b1314b2",
+  "reconciliation": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/user-reported-spending-checkpoint-2026-09-15.json",
+    "sha256": "50584e482d3cbf471cd688f12efcf3e11fef7090f73685500898ca1786a1b5cc"
+  },
+  "deliveries": [
+    {
+      "index": 37,
+      "caseId": "resumable_byte_upload_v1",
+      "runId": "run_a18f9e60282c4811b333",
+      "primaryInvocations": [
+        {
+          "capsuleSha256": "76af8634f8fe1d3c76e9eba98a7328bf248c0f6da4d00dddeeb72cd2a08e5221",
+          "contextEnvelopeSha256": "68d7faef2f5fa61fc63beb21a9503ff00f9c764b17810069f2e75ed4250cf1d2",
+          "turnIndex": 0,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "c1dd35d562df0ad863cb8af2c8e2de5da6f273b8e5d33f8f82307923ac77411a",
+          "contextEnvelopeSha256": "3d927418a6c6882747e0daedc2535612cbf23edac57a43faf5edfb992d976127",
+          "turnIndex": 1,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "04c0895c9ad45eaaa6d80cf14fe6461cd96d35a67f7a7389f53d0533c5b7f962",
+          "contextEnvelopeSha256": "92d9cfee6ca6bd7dd1814f1335a6002307306dd65352b5c442a038ec1c9e1540",
+          "turnIndex": 2,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "7beca3d6e3f0fc60f356d38db8eb4a9b6edf2e1254feebc7d0c4470ea051ad6b",
+          "contextEnvelopeSha256": "824baf2ccc344bd74259ff27f661c9991da945beccebc6e76f5304e0e102b9ae",
+          "turnIndex": 3,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "24580c9697aaa671df39cfdb6708b2eac3fceb4b949203e445e8f559cfd3d4b9",
+          "contextEnvelopeSha256": "64834e00701f89127e7014542fffb585914abe7e41e45d893fed0b90a49cb946",
+          "turnIndex": 4,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "1a7485378d2d933bb17f0de924ca0d0079623713afc542767843bd252e10c113",
+          "contextEnvelopeSha256": "2a6fd49b68be3da9a4a8aad4cc41e69fa021e33f3907fca28beba8e3e871709e",
+          "turnIndex": 5,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "775bd21c4351909bb595567ce95692bf4a481d0edf8661d1a138a27c203e9f72",
+          "contextEnvelopeSha256": "0f5f67a48f6a87a2873319068d9f4530d7d3bcdcf05c20dade8c6876543107d3",
+          "turnIndex": 6,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        }
+      ],
+      "taskPhases": [
+        "coding"
+      ],
+      "thinkingGuardEvents": 0
+    }
+  ],
+  "financialEpoch": "/Users/champ/.cache/napier-seven-quality/budget-100cny-user-reconciled-2026-09-15.sqlite",
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 3952,
+      "remainingFen": 6048,
+      "requests": 232,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 4012,
+      "remainingFen": 5988,
+      "requests": 253,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "newBatchRequests": 21,
+  "newBatchCommittedFen": 60,
+  "minimumAdmissionSpacingAcrossAllRunsMs": 15000,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 8,
+    "cases": 8,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 8",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+      "transaction_savepoints_v1: need 3 paired trials; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "config_layers_v1: need 3 paired trials; observed 1",
+      "cursor_pagination_v1: need 3 paired trials; observed 1",
+      "resumable_byte_upload_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "2277710a5445aac821aca6963bb96575cfc1068a462f05869bdffcec3a95706c"
+  },
+  "statusCounts": {
+    "settled": 18,
+    "not_started": 162
+  },
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Read-only terminal report, actual input and admission audit. The historical starting amount is user-reported aggregate consumption, not an independently retrieved invoice. Historical failed reports and financial reservations remain unchanged. No causal or generalized quality claim."
+}

@@ -81,6 +81,15 @@ describe("Web UI E2E receipt contract", () => {
     expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
   });
 
+  it.each([
+    "allow-scripts allow-same-origin",
+    "allow-scripts allow-top-navigation",
+  ])("rejects an expanded running preview sandbox: %s", (sandbox) => {
+    const receipt = validReceipt();
+    receipt.runtime.runningArtifactPreview.sandbox = sandbox;
+    expect(() => assertWebUiE2eReceipt(receipt)).toThrow();
+  });
+
   it("rejects internal Product Trial controls on the default task path", () => {
     const receipt = validReceipt();
     receipt.viewports[0].task.internalTrialControlsVisible = true;
@@ -340,7 +349,7 @@ function validReceipt() {
       browserSurfaceVisible: true,
       runningArtifactPreview: {
         visible: true,
-        sandbox: "",
+        sandbox: "allow-scripts",
         path: "artifacts/running-preview.html",
       },
       runningArtifactInspector: true,

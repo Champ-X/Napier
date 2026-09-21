@@ -1,0 +1,214 @@
+{
+  "kind": "napier.steered-recovery-component-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T20:29:20.423445+00:00",
+  "root": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v3",
+  "snapshot": "/tmp/napier-harness-capability-activity-v1",
+  "sourceRunId": "run_e37d0587ce0f48abbc50",
+  "recoveryRunId": "run_4d849c45f9bb48cfaff4",
+  "model": "deepseek/deepseek-v4-flash",
+  "scenario": {
+    "kind": "napier.harness-scenario-receipt",
+    "schemaVersion": 1,
+    "threadId": "thread_3d4a4c5e3d974231b6a7",
+    "runId": "run_e37d0587ce0f48abbc50",
+    "planSha256": "3eee2b673b5170eeee8d721704ccfd1e935ff92648d0ad496effd7866dbd0cd2",
+    "completed": true,
+    "completedSteps": 4,
+    "expectedSteps": 4,
+    "receipts": [
+      {
+        "stepId": "first_edit",
+        "action": "observe",
+        "triggerEventId": "event_ae3d5a6f0c8c491e9ea9",
+        "triggerSeq": 199
+      },
+      {
+        "stepId": "revision",
+        "action": "steer",
+        "triggerEventId": "event_0b6913c434834f25aac6",
+        "triggerSeq": 329,
+        "controlMessageId": "control_da4a52ca3aef4b43a946",
+        "messageSha256": "b6460a9144f06a5f52e306db5a86667742115bd940d15de146583cc24b5b163f"
+      },
+      {
+        "stepId": "delivery",
+        "action": "observe",
+        "triggerEventId": "event_75c6808410a942c49010",
+        "triggerSeq": 334
+      },
+      {
+        "stepId": "interruption",
+        "action": "interrupt",
+        "triggerEventId": "event_e609ff00382e4ae79108",
+        "triggerSeq": 542,
+        "observation": {
+          "inventorySha256": "1a401b375d3ea8c70d4aecff6a5e1bc2ce233a2727b952e08606f106fedfca20"
+        }
+      }
+    ],
+    "contentSha256": "680ed628e84fab0d7cc4f488aea4666bf92e27822af76d59fcc5e4ca24a3808a"
+  },
+  "processExit": {
+    "pid": 13786,
+    "code": 86,
+    "signal": null
+  },
+  "startupInterruptionEvents": [
+    {
+      "eventId": "event_2b3b4eddcbe3456ebd26",
+      "type": "run.interrupted",
+      "runId": "run_e37d0587ce0f48abbc50"
+    }
+  ],
+  "result": {
+    "runId": "run_4d849c45f9bb48cfaff4",
+    "parentRunId": "run_e37d0587ce0f48abbc50",
+    "status": "completed",
+    "model": {
+      "provider": "deepseek",
+      "id": "deepseek-v4-flash"
+    },
+    "environment": {
+      "kind": "napier.harness-environment-evidence",
+      "schemaVersion": 1,
+      "runId": "run_4d849c45f9bb48cfaff4",
+      "sandboxId": "oci-container",
+      "configurationSha256": "76da07d2919cc35ea80d55f7c9398110ff52608517509afa802e574750280f1e",
+      "executionMode": "standard",
+      "valid": true,
+      "eligible": true,
+      "missingTools": [],
+      "receipts": [],
+      "blockers": [],
+      "contentSha256": "220a043242d1f0ddfb301b8a6a6f986f8a0afdee90ea5cd522bd2db2a782de45"
+    },
+    "invocationBindingsVerified": true,
+    "verificationEvents": [
+      {
+        "eventId": "event_a4465f273f654fde9408",
+        "seq": 954,
+        "details": {
+          "sandboxSha256": "7a0c56f67bf0c5ec2e83048f271ab5721132915f085737c568cc0c254f643506",
+          "kind": "typecheck",
+          "status": "passed",
+          "scopeSha256": "371b95a73929aafe37d59ed765fd7a623f5659580c47800074cc17eb4fd7592a",
+          "cwdPathSha256": "cdb4ee2aea69cc6a83331bbe96dc2caa9a299d21329efb0336fc02a82e1839a8",
+          "targetPathSha256": "b55cdbef4907b7045f32cc5360d48d262cca5f94062e353089f189f4460039e0",
+          "targetKind": "file",
+          "targetSnapshotSha256": "58e2e9143168e9a503b8534e7bc5b44eeca6a1b810876892caed4fdccd27f320",
+          "targetSnapshotFileCount": 1,
+          "targetSnapshotBytes": 269,
+          "targetSnapshotTruncated": false,
+          "verifierPathSha256": "f272a676b5f7170ca56964a118358675edcc3e4b216994c1d6bcbe86503a2c6e",
+          "verifierSha256": "39c8059ac5a45bf7332a67d8e074d21c98df1df9eaad232d8175b74f527e6479",
+          "verifierVersion": "5.9.3",
+          "toolchainExternal": false,
+          "toolchainSha256": "de7f0797e1fcde22533f7bc8682362fe6992488c632f3cecab3c9919734d8bb8",
+          "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+          "workspaceSnapshotSha256": "bf51e9255328013984c62d779ada806e95b82a47293e5e445e50aaf786595c5e",
+          "diagnosticCount": 0,
+          "diagnosticsTruncated": false,
+          "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "diagnosticOutputSha256": "b0bb83227d6dc3dd30bc1fcf37cde569973c4afc1c0cc9ece965c5967a205137",
+          "executionResultSha256": "921004f606148f1eda64fd2d67ddccfcdf5b31caece2f3ccdf8a7783342323c2",
+          "workspaceSnapshotFileCount": 4,
+          "workspaceSnapshotBytes": 2108,
+          "workspaceSnapshotTruncated": false,
+          "durationMs": 360,
+          "exitCode": 0,
+          "signal": null,
+          "stdoutChars": 0,
+          "stderrChars": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdoutTruncated": false,
+          "stderrTruncated": false,
+          "resultSha256": "4e5cb6b0b30f81bad415141300c480b1f22114a194518f2ee4c79add639f9d32"
+        }
+      }
+    ],
+    "toolFailures": [],
+    "changed": [
+      "src/fees.mjs"
+    ],
+    "allowedChanges": true,
+    "finalInventory": {
+      "README.md": "30b87228a97a83777fbbfd1e558a305ae2645fbfe9b9e6a690b7079b51c5cbb1",
+      "src/fees.mjs": "af1985078ab3ffe7a2eb87ecd6544fc2e86e600c1c782c7f4c4ddb569c5375f6",
+      "test/public.test.mjs": "d47e6c7fbaa94cfcb62eb39f7c6f988806fce2cd83790da4d5c9ea9c4e94b396",
+      "tsconfig.json": "58e2e9143168e9a503b8534e7bc5b44eeca6a1b810876892caed4fdccd27f320"
+    },
+    "graderExitCode": 0,
+    "graderOutputSha256": "cc54df4619ad5726714c50912c2d4497742ef53953ec27d0f1426504c83b533d",
+    "firstInvocationCapsuleSha256": "c1649e41ad1db05ffc671a1aae03d76256e871a2fae4a39298fd89c8e266b7f7",
+    "freshProcessRecovery": true,
+    "sourceProcessExitCode": 86,
+    "parentBindingValid": true,
+    "workingStateRequired": true,
+    "workingStateRetained": true,
+    "freshVerification": true,
+    "inputCaseSha256": "0805e8041d1635d41e5ee3009d4fdb5c7e2acbe355fed7bf4ce79e07adb16b88",
+    "runtimeIdentity": {
+      "source": "0f7c80ba5c0863f10fd87f72b3cd88f41a8a5e7b939320f8ff6bb42ef94ede02",
+      "compiled": "9801076ea40e9a69498d769209d88b98239871b698b71fcd89648e5c998419cf"
+    },
+    "taskSuccess": true,
+    "scope": "Real steering and interruption after a settled edit, followed by fresh-process manual recovery; not compaction, unknown-side-effect recovery, or broad policy qualification",
+    "promotionReady": false
+  },
+  "currentFileBytesMatchSettledReceipt": true,
+  "logs": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v3/initial-result.json",
+      "sha256": "12ace860f198debb54631de87df2d6b149f2cfa27569feb612c75815c493a44c"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v3/source-process-exit.json",
+      "sha256": "2df2b53a109a99c052466f29393aedfafe3e38ec554768a1e17ba66e3a26ae70"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v3/recovery-result.json",
+      "sha256": "110cb721cfc15a03bf8f19d6add714dd0b7a66dcae5771e6b98ebfafe7d5b9ad"
+    },
+    {
+      "path": "/private/tmp/napier-steered-recovery-probe-v3.log",
+      "sha256": "55f4b15120be0b6a32aab7b24e87d85f32ba3380a371f496813d548f45044455"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/run-harness-recovery-scenario.mjs",
+      "sha256": "3466946c6f6ebaf5badc8d7205b9c6ace41c2cbbbe01b9efe64d72e279be88c0"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-scenario-controller.mjs",
+      "sha256": "9342959326cb213b25585a4c1165005d80854e5345c747202e443f7f389fba54"
+    },
+    {
+      "path": "/private/tmp/napier-capability-activity-compile-v2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/private/tmp/napier-capability-activity-architecture-v2.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-capability-activity-runtime-full-v1.log",
+      "sha256": "25e7b1e543760aec2d83b88f95b36086743a434f32920dd248153595b234164b"
+    }
+  ],
+  "scope": "One real revised-requirement task recovered after dedicated worker exit. Not a paired quality gate, repeated/automatic compaction, or general unknown-side-effect recovery. Earlier cancellation-driver and completion-guard failures remain unchanged.",
+  "promotionReady": false,
+  "runtimeValidation": {
+    "passed": 2591,
+    "skipped": 59,
+    "failed": 2,
+    "files": 518,
+    "durationSeconds": 305.75,
+    "remainingFailures": [
+      "baseline capability vector",
+      "baseline production Skill readiness"
+    ],
+    "architectureViolations": 7,
+    "newArchitectureViolations": 0
+  }
+}

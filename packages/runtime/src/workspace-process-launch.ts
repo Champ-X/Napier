@@ -2,6 +2,7 @@ import type { WorkspaceProcessSession } from "@napier/contracts";
 
 import {
   MAX_COMMAND_OUTPUT_CHARS,
+  assertCommandRuntimeStable,
   prepareCommandExecution,
   type CommandExecutionRequest,
   type CommandRunnerOptions,
@@ -9,6 +10,7 @@ import {
 } from "./command-execution.js";
 import { sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
+import { processToolchainOptions } from "./toolchain-process-options.js";
 import type { SandboxedProcess } from "./sandbox.js";
 import { createWorkspaceProcessSession } from "./workspace-process-events.js";
 import {
@@ -39,6 +41,7 @@ export interface WorkspaceProcessLaunchRequest {
   threadId: string;
   runId: string;
   command: CommandExecutionRequest;
+  toolchainEnvironment?: "workspace";
   interactive?: boolean;
   terminal?: WorkspaceProcessTerminalSize;
   localService?: WorkspaceProcessLocalServiceRequest;
@@ -84,7 +87,10 @@ export async function launchWorkspaceProcess(input: {
     input.writePreviewId !== undefined,
     input.shuttingDown(),
   );
-  const commandOptions = processCommandOptions(request, input.options);
+  const commandOptions = await processToolchainOptions(
+    processCommandOptions(request, input.options),
+    request,
+  );
   const processId = createId("process");
   let prepared: PreparedCommandExecution;
   let beforeSnapshot: WorkspacePathSnapshot;
@@ -137,6 +143,7 @@ export async function launchWorkspaceProcess(input: {
     if (request.signal?.aborted) {
       throw new Error("workspace process start was aborted");
     }
+    await assertCommandRuntimeStable(prepared);
     child = await input.options.sandbox.launch({
       ...io.launch,
       ...(request.interactive === true ? { stdinMode: "open" as const } : {}),

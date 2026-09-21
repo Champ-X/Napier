@@ -26,6 +26,85 @@ afterEach(async () => {
 });
 
 describe("temporary capability preset HTTP", () => {
+  it("binds a Harness strategy for one HTTP Run while preserving the read-only boundary", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-http-harness-policy-"),
+    );
+    roots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "state"),
+      env: {},
+    });
+    servicesToClose.push(services);
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "Harness policy",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "harness-http" });
+    provider.setResponses([
+      (context) => {
+        expect(context.systemPrompt).toContain("napier.task-working-state");
+        expect(context.tools?.map((tool) => tool.name)).not.toContain(
+          "apply_patch",
+        );
+        return fauxAssistantMessage("Read-only boundary inspected.");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+      (context) => {
+        expect(context.systemPrompt).not.toContain("napier.task-working-state");
+        return fauxAssistantMessage("Default strategy inspected.");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    services.models.registerProvider(provider.provider);
+    const app = createApp(services);
+    const send = (extra: Record<string, unknown>) =>
+      app.request(`/api/threads/${thread.id}/messages`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          text: "Inspect the active boundary.",
+          model: { provider: "harness-http", id: "faux-1" },
+          capabilityPreset: "read_only",
+          ...extra,
+        }),
+      });
+    const first = await send({ harnessPolicyPreset: "coding-python.v1" });
+    expect(first.status).toBe(200);
+    const frames = parseSseFrames(await first.text());
+    expect(
+      frames.some(
+        (frame) => frame.type === "done" && frame.status === "completed",
+      ),
+    ).toBe(true);
+    const binding = frames.find(
+      (frame) =>
+        frame.type === "event" && frame.event.type === "harness.policy.bound",
+    );
+    expect(
+      binding?.type === "event"
+        ? JSON.parse(String(binding.event.payload.profileJson)).policies.id
+        : undefined,
+    ).toBe("coding-python.v1");
+    const second = await send({});
+    const secondFrames = parseSseFrames(await second.text());
+    expect(
+      secondFrames.some(
+        (frame) =>
+          frame.type === "event" && frame.event.type === "harness.policy.bound",
+      ),
+    ).toBe(false);
+    expect(services.store.getAgent(agent.id)).toEqual(agent);
+    expect((await send({ harnessPolicyPreset: "unknown.v1" })).status).toBe(
+      400,
+    );
+    expect(services.store.listRuns(thread.id)).toHaveLength(2);
+  });
+
   it.each(["read_only", "safe_automation", "full_access"] as const)(
     "keeps a custom Skill loadable through the %s message and capability APIs",
     async (capabilityPreset) => {

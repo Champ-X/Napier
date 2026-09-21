@@ -1,0 +1,1304 @@
+{
+  "kind": "napier.root-gate-differential-audit",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T01:11:01.241466+00:00",
+  "baseline": {
+    "worktree": "/private/tmp/napier-root-audit-baseline-v1",
+    "commit": "c454a15557e9d6d7ce9db87cbd104f058919b027",
+    "cleanAfterBuildAndTests": true,
+    "builtPrerequisites": [
+      "contracts",
+      "runtime:build:compile",
+      "sdk",
+      "cli",
+      "benchmark-kit",
+      "harness-eval",
+      "server",
+      "web"
+    ],
+    "oldFrozenBaselineModified": false
+  },
+  "current": {
+    "worktree": "/Users/champ/orca/Napier",
+    "commit": "c454a15557e9d6d7ce9db87cbd104f058919b027",
+    "uncommittedImplementationPreserved": true
+  },
+  "summaries": {
+    "current": {
+      "files": 114,
+      "passed": 539,
+      "failed": 71,
+      "total": 610,
+      "exitCode": 1
+    },
+    "baseline": {
+      "files": 91,
+      "passed": 420,
+      "failed": 67,
+      "total": 487,
+      "exitCode": 1
+    }
+  },
+  "matching": {
+    "key": [
+      "relativeTestFile",
+      "fullName",
+      "occurrenceWithinFile"
+    ],
+    "common": 487,
+    "currentOnlyAssertions": 123,
+    "currentOnlyStatuses": {
+      "passed": 123
+    },
+    "baselineOnlyAssertions": 0,
+    "transitions": {
+      "failed -> failed": 67,
+      "passed -> passed": 416,
+      "passed -> failed": 4
+    }
+  },
+  "newlyFailedExistingTests": [
+    {
+      "file": "scripts/check-oci-crash-recovery.test.mjs",
+      "testName": "OCI crash recovery artifact accepts the hash-bound current implementation and provenance",
+      "occurrence": 0,
+      "baseline": {
+        "status": "passed",
+        "firstFailureLine": "",
+        "failureMessageSha256": null
+      },
+      "current": {
+        "status": "failed",
+        "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+        "failureMessageSha256": "f7caf5f49b199aea863019492925a71b7f3516aeff133c51d002edc7fe188602"
+      }
+    },
+    {
+      "file": "scripts/check-sandbox-multi-architecture.test.mjs",
+      "testName": "Sandbox multi-architecture artifact accepts the current local dual-platform receipt",
+      "occurrence": 0,
+      "baseline": {
+        "status": "passed",
+        "firstFailureLine": "",
+        "failureMessageSha256": null
+      },
+      "current": {
+        "status": "failed",
+        "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+        "failureMessageSha256": "bbabb3519fd5dededf92cd88e760287d5a851283eba1cd033d96ca75f08c4628"
+      }
+    },
+    {
+      "file": "scripts/check-sandbox-portable-dap.test.mjs",
+      "testName": "Sandbox portable DAP artifact accepts the current portable debugger parity receipt",
+      "occurrence": 0,
+      "baseline": {
+        "status": "passed",
+        "firstFailureLine": "",
+        "failureMessageSha256": null
+      },
+      "current": {
+        "status": "failed",
+        "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+        "failureMessageSha256": "87861bb0d9ce1dc5ef9cf445e58b48cb2b284591ff04ffe6588c98999736b507"
+      }
+    },
+    {
+      "file": "scripts/check-sandbox-portable-lsp.test.mjs",
+      "testName": "Sandbox portable LSP artifact accepts the current portable LSP parity receipt",
+      "occurrence": 0,
+      "baseline": {
+        "status": "passed",
+        "firstFailureLine": "",
+        "failureMessageSha256": null
+      },
+      "current": {
+        "status": "failed",
+        "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+        "failureMessageSha256": "75177eee5325f307bbd080ff92e839012902f0064023d993b911102ae6c25284"
+      }
+    }
+  ],
+  "failedInBoth": {
+    "count": 67,
+    "differentFirstFailureLine": 53,
+    "sameFirstFailureLine": 14,
+    "firstLineEqualityDoesNotProveEquivalentCause": true,
+    "cases": [
+      {
+        "file": "scripts/check-linux-host-product-acceptance.test.mjs",
+        "testName": "Linux host product acceptance artifact accepts the current fresh Linux product receipt",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "c49d080bfb18306c6dd7965d4953acfb337014c9da25eac24322fc209e8d0c94"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "10b98e51e606805c7d4a4916ac27fcb0158d081a429dfcb626c1c2347a0a7d4d"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit accepts current package-lock and Web dist receipts as one release set",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "a02bcc0f10e78538dff7918df7e2cb69ce067e0fa57178fb5ae332e7e4df1a76"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "b2f99e2e914a93e358bf56b3f63f88db8fa89b2767939880cf8ae51e76c1b7ef"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when a component receipt drifts from current evidence",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "ab9f5be9444f8af58aec52190f44b5217df5fa028119e3a75263e55138e57708"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "7afe28efb30d371bc051d03a439ed0f8b1a335b05f759209ac6dea55cfcd3e70"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when a retained Workflow benchmark trial is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "30ac5f1860f35d23b1211563b8514fca81fa8e48b10dab070ce598393dbfb023"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "b9f3dfce31142894d83d0b6c16958dce6860cf0b0d492dc3424083709ce15da0"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when a retained external Sandbox release closure is partial",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "3cac6770791ba9d032ad1b0c5fc85399840054c807cbedffed6f0a5381882250"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "ade0203c4ee40bfeba86656d4b6085c7f505ce2c8f5cdcddb6364acb6f44720b"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when a retained open-web executor comparison report is rehashed",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "bebc47769bc4f88b0ff3574278bb1db818efe652769b3b05a1c2842db48e7b33"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "e537f5a3a3c61da824465c6405ac51823f7d8ba37a332d5866504dfdce1671fb"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Browser confirmed form evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "719416ca099463e0fa0d732d400fcb7ea55799e99e988e01b50d13a3d71dcd0e"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "d72c96f25b23ba4ea7fb5af4092428040d8bb97e7217209133867d4b78161520"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Data benchmark evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "28f7fee307cd732db64de38279392dffbf76aa84affc6692235b1296c74ec302"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "f7ae898d3ab238880a1617c20ba5412d2b6b02339015b8f42e27a59d315907e5"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained DataFrame benchmark evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "5e01e2796a4b5e74511dd3c6ee7442a21993caebfeda139a7058feaf10d5b47b"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "ce928aa305b2370cac2f7926a168f48a5dc196e097838d80c2b0b0d3f8f9b44f"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Goal no-progress evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "1fb4dc76a40a5db04573b6731edefa2d1bac58e547debb714a163a9cefb5a75b"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "3f919fdaa528ddbac36902fae242d00efa27ab8717956c8072002ea254688c08"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Linux host acceptance is overclaimed",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "07a4ab7e74e08cf19066e3a0049e89038cbdf4c509f802bf941ad579e8fdb66f"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "049e1986cdfcda1df06e5d1a3516c08284f2e78d51760e6ece84efafa013c3f0"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Long-horizon evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "c9330aae179a3f522eb896d12a61dab1bd2968ebd1ab4d0253523dce49a4c024"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "363adbf35a376383d20f11f6a7c56fbef1296cd3feaf7eb70c1deeefbc55e753"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained OCI crash recovery evidence claims endpoint reuse",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "af2288b755ec6ed421e006b5807672c2d8202c296ea2d72f522c2b3ed8fef5ef"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "9cc7c802931a728d0c78fbe049ffb36f812afc56d9e3f8b555a9e10a548c706c"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained OCI resource evidence expands swap authority",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "47538435680b3900daf727b1475c79b12c98e844dea08dad1d11d6908f84b20a"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "a6687ac6531293df819a4a9e93a9b9e36f986e5a1e643a8ddc788c1b96a2798a"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Process compensation evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "62a8fceb9e2c54f352464bebb6c0c5fb6bde03bd8791daac19c48a14599b0f61"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "90380aeec69c7ace18e75bc87431f62a4328fee78adfdfbc44376633e9d7f75b"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Provider outcome evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "4833a650e683c66942607840403ba0d997f54571b27ef4208f08ae4b4decf162"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "14f765cfd7444109d74a00e182d694cd3e33a32ee70c7ac5f235446a43b967de"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Research evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "93379c1987e9c03d546e4f4152517c4470d84ef14174588c525b6088155fc4fd"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "54c50d0d57b508e64d32936bf129fadac8edf9cc9a3ae26f261af32ccf5ebcaa"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained S1 readiness suppresses an external blocker",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "8abbaf03155fd69c58ee378fb8d0d90847abd7e4879e7f8ae841dd1b955a3973"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "e5b13c1f7890e946f7aa16c068c9e178de7349921be731216eb669e225776420"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Sandbox OCI signature is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "6701f0dbe22a3ea66fb5f00c12f4f186d76e342e21d8186da929b8609f67d1f0"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "4a78cbc6d38cdc03588ce4220d294e95d0e9a5f465bfbfb0c268dd3c9415e7b4"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Sandbox multi-architecture parity is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "71ab4b062d590e913da3f22c2d638949d19336c7aed432f91e36c4e22664e4e5"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "58be1d8ba1ba0ba67b441c7cdf6f5bb5e819b18a9520a9f71d971126033abe11"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Sandbox portable DAP parity is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "c5d72d869432e6a9198d940d2f66fdc95f9939816895618754b86256e9fca2fa"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "a8506154cf7f4aa6ef2424343ae40be7ee7c80da1cc4d7655a6523bbf173fddd"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Sandbox portable LSP parity is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "1b2c48b521f048dc0365ccc4a0e26c53e712e88861fe138c8ac3257125740d57"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "e6e176ff969f81549790e4b126bfa510c98059cef1d4b9b03a201f2ebfce8945"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Sandbox portable process identity is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "199af9cc597ef66ef3b85893e22593759f3de6605b429d9fa9d76dc4e5c555ce"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "19aa16bcffc7de5775cbe6878e94d9729769ae089a277a0bbb82db5da0e44a41"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Sandbox product acceptance exposes stale output",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "d23f543f45fd97fe303ac9bd734fb5f465faf637c4fe456d4aedc482f39017f0"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "27aa700802bfa0f034b9176278dd9c4f5dfe7c9611736949903d7f5fad7fcd1d"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Sandbox security Casebook overclaims completion",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "2dc62ae58feb69eb4a5ab43097163d81a2b84170f133a43677269816560c38a2"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "390730d160a4172c402c619b88869065964063e169fc6160d059ca0e9530bc93"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained Security benchmark evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "1b5dee2ff875b0ab50f72df52c671e0df330e2fc8cb48ca2709bdd211367899d"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "c6e0f6bfdeb5d95b878c3b323c26929cf05b42d9d4124e0ea20cd1905a9ab147"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained UX evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "77a96982da6d8e32ffc99af59b8dde0b573ebc8e3f5dccd1d54bedf41abc3d63"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "fa8ad15885ad4e86a04c7c641d77bb4a97d077ec6b07dd1e65196f93a9d49a46"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained budget exhaustion evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "0f617c420505dd6c120c76ee1009f719eba3bd091eaeb99adb4c63b9f8f419c5"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "980b06437c0f968a3dc085aa50d58fe4d9f32ab5c32234b1216020de4d8f9b17"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained offline wait deadline evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "3e8b4c473ee5ddfa6e7c9eb52cb35a80085b5b89a2d49a1b6ee0a20500c26f6a"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "2fa7c3bf40e0df16280f436487b5180dacf6efcec276cea43707cf590b21716e"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained open-web Research case binding is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "800a0e27b538574293ef8b83573031bd36fff3f1f1c418ed642c16bc517df69e"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "6deec31355abbaee0f93b1c8309452ecd401fb28a2d3672b969fdecbdbc763e3"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when retained open-web Security evidence is rehashed",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "093ce611c9da076943ed8efc9bd3b38bc4cb64fafc1f72cbdb15f5012cf100d0"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "dd5c6a7407cbb4c2dc370e1f69bd77b305f960222bd1693c60570dc675796439"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the Agent Harness acceptance evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "8a73666d50f3a38b13068f41f24569e6dab75935bec720ce8325ead18a3238f6"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "82fb8979cf66d3ef461e9a82f12ecc33ac2fcdb2748fea9e83ad932af809e01e"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the Controlled Harness evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "6d8d2ecf49f83414085266ca29a17074e4207948d957323bdc10c0bf5147577d"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "0f8863ef4d760569d8bb6798b9a09f166925ce05b6b92a98fcbd94fe1ccb246f"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the Default Product Trial evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "82100c1e022bf8e86fd787660fd295812c63b248405b8e4a7bd0076f5903e242"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "db5df53593b7d7d86873a5f3a54956ebbc20dba73952763eef4d4baa2989fc36"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the Research normalization migration receipt is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "f28cb61b667501ddcaade84db466374a7c7cf7719a309205a76188c94c2bef0c"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "033ac3208b522c0932e7101415355d7d5d97caab3d99d4dbb6e7aff626f7426a"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the consolidated Default Product Gate is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "e773676bccac6ed56fa183a1be4766077cbe568e31a4b6e07850cdd304b1c17c"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "cbde780b0feb0bbb9b0559aca65fb6126656c99048e7375b227f5958da9626da"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the focused Default Product Coding rerun is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "8e0a43aa8ac2017bf33e7e26d7896d6231fb4ac5df8f2f2061e7a4e1997e2f43"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "4a6e41a8aa30037065198005b5f5a3928a780bc11ac4b029a4b86fb47bf3fca0"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the focused Default Product breadth evidence is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "6ce47af7db003d50faa7e5f27d0303353e398a8279f606810bb5a6eb94e2ef60"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "661572f37171196ea3ad7ec241d397bb4c1c8e2b166fae8f069d8cadb0e28843"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the focused Default Product critical coverage is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "e23f9f744cad7616f877e14a07ab17c310a04011d704bf04a01544d30f42d2ae"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "b1ffd64c69fddc3e919ae3f9d849e93410d057966dfdc25482e8012ac7e694c2"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the product performance baseline is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "7aa323a73b4d8a8336897d0808a85ab4baae350025a34fcc0634f4b26c027d07"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "2e8465acd90be99a2bcc0894d7a5db0353c5b5d26dfa41ac628764ac970a47e2"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the retained coding executor comparison is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "4fb3078479b8f560f76ac004307aac4a7dce006b9ae3b86cd2a01bde53042810"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "5ef225abbfedbbba1bcb74afed8d71b60530c36ae291192c3a2bcfe4e96305bf"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the retained open-web executor attempt receipt is rehashed",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "28c407f680f126b4f2ffe9fe3e7ad4eb62999c5bd8686a67d93f27760643081c"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "ae13826c0a636a832acea53b64ab87eb1650ab3f22bb423bf5350856069c7b99"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the retained open-web executor campaign aggregate is rehashed",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "1d1a55019ffac5715592c40c01289292842a70b8ff23f6952b6c743bca1de5d9"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "d9ce269e89786077324e6484a197cbc18754b99991588461feaf396cd8284b0c"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the runtime environment receipt drifts from current evidence",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "30f9cb833730e1acab7f3483a060fda1e1d3610099af2a926aef21dc0c272ac3"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "ae0d54e92194a42e6873ad5825363ca6b57d9ecbdbf6ba873604dd584b597b64"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit fails when the second retained Runtime restart is tampered",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "636d783e4081b4eceaf8792240a23b739d67c8cf8b30b94dd4f24815a9ea091f"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "38a96b9f18308a73ac9f50768c76af9478e9ad0976eab1b92752fc5753f4e6fc"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit includes a promoted external Sandbox release and authority in the release set",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "d97110e40a8eaef4c6939b4a39daddac1cc7e457d7d530b3b363c91b662a8f08"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "47b9994ea7ddfaafc03380afd0151441bddf0beafed3622a8cae5babb94284b0"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit rejects a rehashed open-web Research freshness aggregate",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "9b31330c618d79696e1cc3896c79423befa6efdef939db57883cf9b0b072dbb2"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "88273359bf8fccdf59c1d6d49b1df1c8caf22a7965da76ec31aaddd6556cdebf"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit rejects a release receipt that no longer matches the artifact set",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "c2a06cdf65ac0f9e188a16046a49a837826347cde17357a6f7065937788b9edb"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "388d1179754d618c80ab696095f063f596c7a218f5e58fbcd7a6f617b0fc6552"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit rejects an incomplete open-web Research reliability Series",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "16e0d2fc73bdd2cae63180816e6e94e287b27bdebffc31121fb80f91aa742e04"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "318a110150f2d6107372b7c9b7451986137cd4e7dcb160c5337a25cdc6f4eba7"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit rejects malformed release artifact receipts",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "803447a65cfa9551dbed740321cbda986e7cd30a860b2192b804f29487920c14"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "e20b4916554e66691b9186832115392657ea96650e0b7da5455cba73699d785a"
+        }
+      },
+      {
+        "file": "scripts/check-release-artifacts.test.mjs",
+        "testName": "release artifacts audit writes and verifies a release artifacts receipt from the CLI",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "f81f189b55fbb6204c5d1e0caad80172799d5483cfca249bc111f4c5746c0bca"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "1a425c9768fbf293b35a12c0a66f80a28f0361ac6154d148a8012937fd2af7eb"
+        }
+      },
+      {
+        "file": "scripts/check-s1-shell-sandbox-completion.test.mjs",
+        "testName": "S1 Shell/Sandbox aggregate gate accepts the current blocked local readiness receipt",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(4) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "8c65085444f80cfcbd3f58baa883602bd3b6b922f3b1f1250539a057492b9713"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(4) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "9792f8c1ef10493f047ebf02df9fc1472e3a169496764329325ca2a86ec65e39"
+        }
+      },
+      {
+        "file": "scripts/check-s1-shell-sandbox-completion.test.mjs",
+        "testName": "S1 Shell/Sandbox aggregate gate completes only after both strict upstream verifiers accept exact-run receipts",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: S1 readiness verification failed: S1 local evidence verification failed: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "6177378034b2eee6a6743cd29d9f9db3b4c832167770cccef98606f33340580a"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: S1 readiness verification failed: S1 local evidence verification failed: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "ed9f4e23c5b7fb08d2b22b0ac4331513d372962ac5c81f7dc0033446f3e75c2f"
+        }
+      },
+      {
+        "file": "scripts/check-s1-shell-sandbox-completion.test.mjs",
+        "testName": "S1 Shell/Sandbox aggregate gate rejects a tampered blocked completion during replay",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: S1 readiness verification failed: S1 local evidence verification failed: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "974921e3702fc33f7f53ec9077275ceebf5e348fc549bc28c27067b2b4e0726c"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: S1 readiness verification failed: S1 local evidence verification failed: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "4a1491429a4f30ddfcc02d6bf65b55264b00b676bef557b7523b4097382f2237"
+        }
+      },
+      {
+        "file": "scripts/check-s1-shell-sandbox-completion.test.mjs",
+        "testName": "S1 Shell/Sandbox aggregate gate writes and replays a blocked completion without treating it as success",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: S1 readiness verification failed: S1 local evidence verification failed: Sandbox security Casebook failed: Sandbox security Casebook artifact shape is invalid",
+          "failureMessageSha256": "5b0d9a87f5b76bad813ad29fb7e0844ec333f12997d619d3d7f1569ff5af43f6"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: S1 readiness verification failed: S1 local evidence verification failed: OCI crash recovery failed: OCI crash recovery artifact shape is invalid",
+          "failureMessageSha256": "85ff77c6ab4e06a0aee1f7ae195fbb3528d1903bb6739a488e4d917eefaa1b60"
+        }
+      },
+      {
+        "file": "scripts/check-sandbox-acquisition.test.mjs",
+        "testName": "Sandbox acquisition artifact accepts the current real Docker acquisition receipt",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "9ed264b897c6b74c2e44b6f49d156a850859e2f5fa9c2405f0243b94ec44ecb8"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "7960734c77b3dfd082b603612be280101e9806aad7d19ec3208afd3d92a78d01"
+        }
+      },
+      {
+        "file": "scripts/check-sandbox-portable-process.test.mjs",
+        "testName": "Sandbox portable process artifact accepts the current portable process receipt",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "f3cfe6f273d62dadb4bb3c2a1e02cf64e88926bb2835c107c9110b273a52d5f9"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "250adaa0c272b8d6d6589482ac8359929a916fb214b1ad684b396ec158b751b9"
+        }
+      },
+      {
+        "file": "scripts/check-sandbox-product-acceptance.test.mjs",
+        "testName": "Sandbox product acceptance artifact accepts the current hash-bound default-product receipt",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "b497ec6e1061352f4cf2c5003ae72c78da082996a312f160adc044c6ef319235"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "70fb443481db0f94391dbe27530a4e9fec7af698343a73be7202ad53b34f79bf"
+        }
+      },
+      {
+        "file": "scripts/check-sandbox-security-casebook.test.mjs",
+        "testName": "Sandbox security Casebook artifact accepts the current hash-bound 11-case receipt",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "7516371a5f8dfa2a9c2b3301af32c759c0f52312d9d4afe888efb1e1dd6e1d37"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: expected { valid: false, \u2026(3) } to deeply equal ObjectContaining{\u2026}",
+          "failureMessageSha256": "28de64e004577f53895a4559c3a80cfbb92a08f763d16fbb462d454538c8a657"
+        }
+      },
+      {
+        "file": "scripts/prompt-regression-matrix.test.mjs",
+        "testName": "Prompt regression matrix verifies the committed deterministic artifact against current sources",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError: expected false to be true // Object.is equality",
+          "failureMessageSha256": "b16db35c658696633e924eb23375b7a2204b2cac0f9ce44f1adf219ce11b08ac"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError: expected false to be true // Object.is equality",
+          "failureMessageSha256": "1a4a62dac1ae97144e4d3ca9e7b70cd47b93c3ca7966dd53780b7d74ba64479c"
+        }
+      },
+      {
+        "file": "scripts/release-product-source-manifest.test.mjs",
+        "testName": "Release Product source manifest binds a material successor source set to the running identity",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+          "failureMessageSha256": "1e69a0935a0dd3f66e3f44e1a511114fa0bf6f65583d99042675e22875a542bc"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+          "failureMessageSha256": "a975802a3629f542c542e6116e0555f9e24ac64e22c593b3983e77a648ee71ea"
+        }
+      },
+      {
+        "file": "scripts/release-product-source-manifest.test.mjs",
+        "testName": "Release Product source manifest rejects manifest drift and regenerates deterministically",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError: expected { \u2026(10) } to deeply equal { \u2026(10) }",
+          "failureMessageSha256": "537160473126eff81967ea59c3f93c71ca560b5d0a6bf71d0e3bd8b9bc8e2791"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError: expected { \u2026(10) } to deeply equal { \u2026(10) }",
+          "failureMessageSha256": "da7a7c5022a17106537ed84e24c3c2cc3c88cec8bd070973a3d12f14b8b49033"
+        }
+      },
+      {
+        "file": "scripts/release-product-source-manifest.test.mjs",
+        "testName": "Release Product source manifest verifies a release source archive without Git metadata",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "Error: promise rejected \"AssertionError: Expected values to be str\u2026 { \u2026(6) }\" instead of resolving",
+          "failureMessageSha256": "10a0376891a9a5453fc23db514c86496f2eba3928613cc481dca5f37498e2542"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "Error: promise rejected \"AssertionError: Expected values to be str\u2026 { \u2026(6) }\" instead of resolving",
+          "failureMessageSha256": "a636ef43d0e9d593071e72020b70305535472ebe54ba7e3dae3616615f1a0541"
+        }
+      },
+      {
+        "file": "scripts/repository-hygiene.test.mjs",
+        "testName": "repository hygiene gates freezes public API and compatibility barrel growth",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError: expected false to be true // Object.is equality",
+          "failureMessageSha256": "8be6081678fca4b0eb2dd166c92ababe353269f41ac5665631eaecdceeb0ef5c"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError: expected false to be true // Object.is equality",
+          "failureMessageSha256": "7926de1f4c7c79ff77d820f2df8be3f7f67e7ac809d83c6f7bae7a544ef4a90c"
+        }
+      },
+      {
+        "file": "scripts/repository-hygiene.test.mjs",
+        "testName": "repository hygiene gates ratchets reviewed dead code without accepting new unreachable files",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError: expected { ok: false, \u2026(5) } to match object { ok: true, issues: [], \u2026(3) }",
+          "failureMessageSha256": "ad52cd8d8754c5e7777683d934635fedf92a0391acb6577474099f3a57b186db"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError: expected { ok: false, \u2026(5) } to match object { ok: true, issues: [], \u2026(3) }",
+          "failureMessageSha256": "7da65c53a6b6ea1ed3757d10eefec911c57d9c4c012e1973bf7406c6972f7e7c"
+        }
+      },
+      {
+        "file": "scripts/sdk-capability-parity-evidence.test.mjs",
+        "testName": "SDK capability parity evidence verifier accepts immutable ordinary verification after HEAD advanced from capture",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+          "failureMessageSha256": "45207099524c4a4e2e120e6c22a0481cdfdeb197f2dfc8f74a45e12892e981c7"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+          "failureMessageSha256": "95da1170dd05f2a53aef78894d51dd78a17f84745134668d263f2f7d97cd9592"
+        }
+      },
+      {
+        "file": "scripts/sdk-capability-parity-evidence.test.mjs",
+        "testName": "SDK capability parity evidence verifier accepts the exact current Stage 8 repair snapshot",
+        "occurrence": 0,
+        "baseline": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+          "failureMessageSha256": "84156401f61eeb72284c39430242393f7be62283ecfea48fb0b0e3b801bfb4cc"
+        },
+        "current": {
+          "status": "failed",
+          "firstFailureLine": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+          "failureMessageSha256": "17a6d42ad25db915e4f9e8cd47dd2e26679325b0b4bc5a4112ac9a9f381aad50"
+        }
+      }
+    ]
+  },
+  "receiptImplementationAudit": [
+    {
+      "name": "oci-crash-recovery",
+      "artifact": "oci-crash-recovery-stage11.json",
+      "baselineValid": true,
+      "currentValid": false,
+      "currentErrors": [
+        "OCI crash recovery artifact shape is invalid"
+      ],
+      "baselineImplementationMatchesRetained": true,
+      "mismatchedImplementationFields": [
+        {
+          "key": "ociAdapterSha256",
+          "retained": "43fbd4ed87afc95f844066d8c7ec9fbd0572342c324e734e0f0c18ec293cc8d8",
+          "baseline": "43fbd4ed87afc95f844066d8c7ec9fbd0572342c324e734e0f0c18ec293cc8d8",
+          "current": "40a4047357ce0c825c5b1c49b2812ac87983414df71699cff29dee85a2cd65d1"
+        }
+      ]
+    },
+    {
+      "name": "sandbox-multi-architecture",
+      "artifact": "sandbox-multi-architecture-stage14.json",
+      "baselineValid": true,
+      "currentValid": false,
+      "currentErrors": [
+        "Sandbox multi-architecture artifact shape is invalid"
+      ],
+      "baselineImplementationMatchesRetained": true,
+      "mismatchedImplementationFields": [
+        {
+          "key": "ociAdapterSha256",
+          "retained": "43fbd4ed87afc95f844066d8c7ec9fbd0572342c324e734e0f0c18ec293cc8d8",
+          "baseline": "43fbd4ed87afc95f844066d8c7ec9fbd0572342c324e734e0f0c18ec293cc8d8",
+          "current": "40a4047357ce0c825c5b1c49b2812ac87983414df71699cff29dee85a2cd65d1"
+        }
+      ]
+    },
+    {
+      "name": "sandbox-portable-dap",
+      "artifact": "sandbox-portable-dap-stage17.json",
+      "baselineValid": true,
+      "currentValid": false,
+      "currentErrors": [
+        "Sandbox portable DAP artifact shape is invalid"
+      ],
+      "baselineImplementationMatchesRetained": true,
+      "mismatchedImplementationFields": [
+        {
+          "key": "sandboxTypesSha256",
+          "retained": "25d245175a09bc35305f8899eeeeec04b520a7862efe8ee386503fd267d7c8ff",
+          "baseline": "25d245175a09bc35305f8899eeeeec04b520a7862efe8ee386503fd267d7c8ff",
+          "current": "6fc14fcb8ac7ec23b278bf430c3ee466d0b619dc30d54ace9d645920a65d2ca2"
+        },
+        {
+          "key": "liveHarnessSha256",
+          "retained": "a23c64c8629504dde4b3bff50d93b4a2e6ee696271d1ffcb77815d854bb41f69",
+          "baseline": "a23c64c8629504dde4b3bff50d93b4a2e6ee696271d1ffcb77815d854bb41f69",
+          "current": "cbcaaa3a71562ff91b40d21e237a15be1b28c530373bd0350f8f00756b71f4f1"
+        }
+      ]
+    },
+    {
+      "name": "sandbox-portable-lsp",
+      "artifact": "sandbox-portable-lsp-stage16.json",
+      "baselineValid": true,
+      "currentValid": false,
+      "currentErrors": [
+        "Sandbox portable LSP artifact shape is invalid"
+      ],
+      "baselineImplementationMatchesRetained": true,
+      "mismatchedImplementationFields": [
+        {
+          "key": "sandboxTypesSha256",
+          "retained": "25d245175a09bc35305f8899eeeeec04b520a7862efe8ee386503fd267d7c8ff",
+          "baseline": "25d245175a09bc35305f8899eeeeec04b520a7862efe8ee386503fd267d7c8ff",
+          "current": "6fc14fcb8ac7ec23b278bf430c3ee466d0b619dc30d54ace9d645920a65d2ca2"
+        },
+        {
+          "key": "runtimeAssetsSha256",
+          "retained": "4bbc728e950d912335969c5a92c92b5c19b1e7c4dd6086c18631b28c4349af43",
+          "baseline": "4bbc728e950d912335969c5a92c92b5c19b1e7c4dd6086c18631b28c4349af43",
+          "current": "b5e2473489328509e35f06cbdfadb9bea8c984092ddb8f344248d1429be542fd"
+        }
+      ]
+    }
+  ],
+  "promptMatrixSourceDrift": [
+    {
+      "dimension": "browser",
+      "testFile": "packages/runtime/test/agent-browser.test.ts",
+      "currentSha256": "d03a226b31060d9b267bd49ea22d678d124c70dcc6f533feb3cbaf76f04a3e38",
+      "baselineSha256": "d03a226b31060d9b267bd49ea22d678d124c70dcc6f533feb3cbaf76f04a3e38",
+      "retainedSha256": "49501de6a60e5e389cdd7881c79b1ab198c7ab86758c9b207ca79e06e09c879d",
+      "currentMatchesBaseline": true
+    },
+    {
+      "dimension": "dangerous_action",
+      "testFile": "packages/runtime/test/agent-browser-sensitive-target.test.ts",
+      "currentSha256": "aeb70bd9f44abfb30b74627608c46cd67df6b5b41acf1ca0a5f432f5846035cc",
+      "baselineSha256": "aeb70bd9f44abfb30b74627608c46cd67df6b5b41acf1ca0a5f432f5846035cc",
+      "retainedSha256": "7cb66b565e05a55733cb42bdcce843ae4f25f7ecc9e509e6a08f93442933120e",
+      "currentMatchesBaseline": true
+    }
+  ],
+  "retainedArtifactsUnchanged": [
+    {
+      "path": "docs/artifacts/oci-crash-recovery-stage11.json",
+      "sha256": "794559d4d9aa89007d3376b412908ed9203f91f1af05b0dfc5d5c643216d50f6"
+    },
+    {
+      "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
+      "sha256": "52db6c96c8c2a26ed8f0dfc2c2666835dce5e93183171a007e2d8b1860b31da9"
+    },
+    {
+      "path": "docs/artifacts/sandbox-portable-dap-stage17.json",
+      "sha256": "76b1b815daf215ebd4ffe47b8d61ebf0259cc7e002cb5ffbb3f29f1f3f1dfc8d"
+    },
+    {
+      "path": "docs/artifacts/sandbox-portable-lsp-stage16.json",
+      "sha256": "ada65ff5049c7b15351cd3fb85515365a32784e1684726d14fdd1734bd5fe0ed"
+    },
+    {
+      "path": "docs/artifacts/prompt-regression-matrix-0.1.0.json",
+      "sha256": "94a9471e4d785ce7f9d2e68a3814e506845b043f26ce16e5830a4329d6d6116a"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-root-audit-baseline-build-v1.log",
+      "sha256": "417076af03cc53c7e4a8a532f6df3405d07413fa9c1405ae407f940e2aa99e5e"
+    },
+    {
+      "path": "/tmp/napier-root-audit-baseline-full-v1.log",
+      "sha256": "6965170ed3421780a6bfeb2e1ce63b9898ee29f72d4a6978e47423f4c845c7af"
+    },
+    {
+      "path": "/tmp/napier-root-audit-baseline-full-v1.json",
+      "sha256": "8c418ae820f5be19a4166fb090a6f63170f463c3e1d1046f0d8b1f14608ac659"
+    },
+    {
+      "path": "/tmp/napier-root-audit-current-full-v1.log",
+      "sha256": "1ae42442a9d0e58b0d90b7436153f46093f6878a7537bb6d5951dd301f12677a"
+    },
+    {
+      "path": "/tmp/napier-root-audit-current-full-v1.json",
+      "sha256": "792caff36727121207d619acceba4e9c855c1feb76312a2a34e9740843819b9e"
+    },
+    {
+      "path": "/tmp/napier-root-audit-receipt-bindings-v1.mjs",
+      "sha256": "dc0bbceae0c50656abb0f2a06bc1ef3f206bf4c19d3ded0226235bf7a99c48fb"
+    },
+    {
+      "path": "/tmp/napier-root-audit-receipt-bindings-v1.json",
+      "sha256": "82cf877d7f0e38383a15463b4c23f44ac995d3b4dede36960edf8421df0b1b50"
+    }
+  ],
+  "apiTesting": {
+    "newPaidCalls": 0,
+    "newPaidCampaignsPaused": true,
+    "keysAndLiveFlagsRemovedFromTestEnvironment": true
+  },
+  "limitations": [
+    "This compares local root CI assertions, not real-model task quality",
+    "Receipt invalidation is a new failing gate, not proof of a tool behavior regression",
+    "Tests blocked during fixture setup do not validate their later assertions",
+    "Passing added assertions do not establish whole-composition quality",
+    "Different test durations are not a performance comparison"
+  ],
+  "promotionReady": false
+}

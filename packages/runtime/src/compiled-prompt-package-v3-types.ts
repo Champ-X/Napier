@@ -3,7 +3,7 @@ import type { ModelInvocationPurpose } from "@napier/contracts";
 import type { ModelAdapterReceiptV2 } from "./model-adapters.js";
 import type {
   CompiledPromptLayerId,
-  PROMPT_COMPILER_ASSEMBLY,
+  PromptCompilerAssembly,
   PROMPT_COMPILER_VERSION,
 } from "./prompt-compiler.js";
 import type { PROMPT_INVARIANT_CORE_VERSION } from "./prompt-invariant-core.js";
@@ -52,7 +52,7 @@ export interface CompiledPromptPackageReceiptV3 {
     | { status: "not_applicable" };
   turnIndex: number;
   classification: "independent_layers_v1";
-  assembly: typeof PROMPT_COMPILER_ASSEMBLY;
+  assembly: PromptCompilerAssembly;
   tokenEstimateMethod: "sum_layer_ceil_utf8_bytes_div_4";
   systemPromptSha256: string;
   systemPromptBytes: number;

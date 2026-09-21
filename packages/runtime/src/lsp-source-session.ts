@@ -3,7 +3,7 @@ import path from "node:path";
 
 import type { LspDiagnosticLanguage } from "@napier/contracts";
 
-import { sha256File } from "./command-execution.js";
+import { sha256File } from "./command-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   assertLspRuntimeStable,

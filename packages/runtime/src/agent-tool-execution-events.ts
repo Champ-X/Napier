@@ -79,6 +79,7 @@ async function recordToolSettled(
 ): Promise<void> {
   const { budget, lifecycle, privateSourceContent, progress, run, store } =
     context;
+  await lifecycle.recordUnfinalizedDisplay(event);
   privateSourceContent.observeToolResult(event.toolName);
   const output = agentToolResultText(event.result);
   const reusedProjection = lifecycle.reusedTerminalProjection(event.toolCallId);

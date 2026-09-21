@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { lstat, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 
-import { sha256File } from "./command-execution.js";
+import { sha256File } from "./command-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   loadOfficialSandboxRelease,

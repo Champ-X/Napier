@@ -1,0 +1,1289 @@
+{
+  "kind": "napier.node-verification-freshness-comparison",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:16:36.355Z",
+  "root": "/Users/champ/.cache/napier-seven-quality/mixed-service-freshness-v1",
+  "collectionComplete": false,
+  "stoppedAfterRegression": true,
+  "baseline": "/tmp/napier-harness-stream-timing-v1",
+  "candidate": "/tmp/napier-harness-node-freshness-v1",
+  "rows": [
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_8b122cc8ad7442fb9326",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "reportSha256": "7edf092ef758e60a850ec6a4eda5b266f94d199e0b20ff0c6a5c0f441f7d150a",
+      "toolFailures": 0,
+      "durationMs": 68123,
+      "verifications": [
+        {
+          "eventId": "event_d95ede6bbec64407bb67",
+          "args": {
+            "cwd": ".",
+            "kind": "test",
+            "runtime": "node",
+            "target": "frontend/booking.test.mjs",
+            "testRunner": "node-test"
+          },
+          "capsuleSha256": "376e713ff7d0ab3bd09c4afa7a44379ee14fe319d46760be4767efdda53b72aa",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": null,
+          "workspaceSnapshotScope": null,
+          "workspaceSnapshotSha256": "3937dab4df53c082b3b2e64736e450365b8001985715b4d7cf4ede86f89281b1"
+        },
+        {
+          "eventId": "event_b86488ade7dc4fe09312",
+          "args": {
+            "cwd": "backend",
+            "kind": "test",
+            "runtime": "python",
+            "verifier": "unittest"
+          },
+          "capsuleSha256": "376e713ff7d0ab3bd09c4afa7a44379ee14fe319d46760be4767efdda53b72aa",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "snapshotStatus": "unchanged",
+          "workspaceSnapshotScope": "workspace",
+          "workspaceSnapshotSha256": "3ccd9f6d0f7f24336bb2ef2596d60c25de3af0cb3b62ce3a7afdf21e8c244f83"
+        },
+        {
+          "eventId": "event_9399c50cc6814c2dbcf9",
+          "args": {
+            "cwd": "frontend",
+            "kind": "typecheck",
+            "runtime": "node",
+            "target": "tsconfig.json"
+          },
+          "capsuleSha256": "376e713ff7d0ab3bd09c4afa7a44379ee14fe319d46760be4767efdda53b72aa",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": null,
+          "workspaceSnapshotScope": null,
+          "workspaceSnapshotSha256": "37757ca9d4896eb17aa50af9bb07d6ade2811b6e6d7442502c47b1d5b454c292"
+        },
+        {
+          "eventId": "event_4c340d4354dc4c16baf8",
+          "args": {
+            "cwd": "frontend",
+            "kind": "typecheck",
+            "runtime": "node",
+            "target": "tsconfig.json"
+          },
+          "capsuleSha256": "376e713ff7d0ab3bd09c4afa7a44379ee14fe319d46760be4767efdda53b72aa",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": null,
+          "workspaceSnapshotScope": null,
+          "workspaceSnapshotSha256": "37757ca9d4896eb17aa50af9bb07d6ade2811b6e6d7442502c47b1d5b454c292"
+        }
+      ],
+      "exposures": [
+        {
+          "invocationId": "event_a9e679b71c3743d98cce",
+          "capsuleSha256": "1e2e20c9da85543160e5257d9d8785dbbe66d7096d364e7caad92b3f87a32210",
+          "eventId": "event_d95ede6bbec64407bb67",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_a9e679b71c3743d98cce",
+          "capsuleSha256": "1e2e20c9da85543160e5257d9d8785dbbe66d7096d364e7caad92b3f87a32210",
+          "eventId": "event_b86488ade7dc4fe09312",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_a9e679b71c3743d98cce",
+          "capsuleSha256": "1e2e20c9da85543160e5257d9d8785dbbe66d7096d364e7caad92b3f87a32210",
+          "eventId": "event_9399c50cc6814c2dbcf9",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_04c2e27e859649b78ade",
+          "capsuleSha256": "b522710cbdc69f1b6fb21470ee9afa5dfa896bf524b0975fa765ed8bacc44a42",
+          "eventId": "event_d95ede6bbec64407bb67",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_04c2e27e859649b78ade",
+          "capsuleSha256": "b522710cbdc69f1b6fb21470ee9afa5dfa896bf524b0975fa765ed8bacc44a42",
+          "eventId": "event_b86488ade7dc4fe09312",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_04c2e27e859649b78ade",
+          "capsuleSha256": "b522710cbdc69f1b6fb21470ee9afa5dfa896bf524b0975fa765ed8bacc44a42",
+          "eventId": "event_4c340d4354dc4c16baf8",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_e19461cee7cc4fd882d3",
+          "capsuleSha256": "36fc2030a52b00371bc2d4df2e97cbf074e3296b3419ff42c0a4ef25931fce57",
+          "eventId": "event_d95ede6bbec64407bb67",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_e19461cee7cc4fd882d3",
+          "capsuleSha256": "36fc2030a52b00371bc2d4df2e97cbf074e3296b3419ff42c0a4ef25931fce57",
+          "eventId": "event_b86488ade7dc4fe09312",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_e19461cee7cc4fd882d3",
+          "capsuleSha256": "36fc2030a52b00371bc2d4df2e97cbf074e3296b3419ff42c0a4ef25931fce57",
+          "eventId": "event_4c340d4354dc4c16baf8",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_8fd21fa96eb44097ac48",
+          "capsuleSha256": "10bba9a560681f08d2abc6350e2ca94832d2957d87ce932e02ee1036672e948c",
+          "eventId": "event_d95ede6bbec64407bb67",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_8fd21fa96eb44097ac48",
+          "capsuleSha256": "10bba9a560681f08d2abc6350e2ca94832d2957d87ce932e02ee1036672e948c",
+          "eventId": "event_b86488ade7dc4fe09312",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_8fd21fa96eb44097ac48",
+          "capsuleSha256": "10bba9a560681f08d2abc6350e2ca94832d2957d87ce932e02ee1036672e948c",
+          "eventId": "event_4c340d4354dc4c16baf8",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_1ad81e64fc4746ada3a5",
+          "capsuleSha256": "e7b7723e8f28aaf2f94dad0673439df7fb3177cb1269e6c627660cee87c3c965",
+          "eventId": "event_d95ede6bbec64407bb67",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_1ad81e64fc4746ada3a5",
+          "capsuleSha256": "e7b7723e8f28aaf2f94dad0673439df7fb3177cb1269e6c627660cee87c3c965",
+          "eventId": "event_b86488ade7dc4fe09312",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_1ad81e64fc4746ada3a5",
+          "capsuleSha256": "e7b7723e8f28aaf2f94dad0673439df7fb3177cb1269e6c627660cee87c3c965",
+          "eventId": "event_4c340d4354dc4c16baf8",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_70b3b1548d414ac591cd",
+          "capsuleSha256": "eb7f85ce848b284bb2685956476c58920f1cd8a5212021ed4cf5607c13ec67b2",
+          "eventId": "event_d95ede6bbec64407bb67",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_70b3b1548d414ac591cd",
+          "capsuleSha256": "eb7f85ce848b284bb2685956476c58920f1cd8a5212021ed4cf5607c13ec67b2",
+          "eventId": "event_b86488ade7dc4fe09312",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_70b3b1548d414ac591cd",
+          "capsuleSha256": "eb7f85ce848b284bb2685956476c58920f1cd8a5212021ed4cf5607c13ec67b2",
+          "eventId": "event_4c340d4354dc4c16baf8",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_7cd75a5432e34631a9f4",
+          "capsuleSha256": "e031c942dc8ff7e6980f0f470b74d406291693a1d5a7ee19784dc979bb895323",
+          "eventId": "event_d95ede6bbec64407bb67",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_7cd75a5432e34631a9f4",
+          "capsuleSha256": "e031c942dc8ff7e6980f0f470b74d406291693a1d5a7ee19784dc979bb895323",
+          "eventId": "event_b86488ade7dc4fe09312",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_7cd75a5432e34631a9f4",
+          "capsuleSha256": "e031c942dc8ff7e6980f0f470b74d406291693a1d5a7ee19784dc979bb895323",
+          "eventId": "event_4c340d4354dc4c16baf8",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_f05e831d03214c7f8ee2",
+          "capsuleSha256": "376e713ff7d0ab3bd09c4afa7a44379ee14fe319d46760be4767efdda53b72aa",
+          "eventId": "event_d95ede6bbec64407bb67",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_f05e831d03214c7f8ee2",
+          "capsuleSha256": "376e713ff7d0ab3bd09c4afa7a44379ee14fe319d46760be4767efdda53b72aa",
+          "eventId": "event_b86488ade7dc4fe09312",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_f05e831d03214c7f8ee2",
+          "capsuleSha256": "376e713ff7d0ab3bd09c4afa7a44379ee14fe319d46760be4767efdda53b72aa",
+          "eventId": "event_4c340d4354dc4c16baf8",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        }
+      ],
+      "scopeNotObservedExposures": 8,
+      "serviceChecks": 7,
+      "servicePassed": true,
+      "processStoppedBeforeCleanup": true
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_14b4b87fa4ab4199ba71",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "reportSha256": "417517679f01f43168e5ee5733274e8db4313a77ee41a387f78f4f147edecce9",
+      "toolFailures": 0,
+      "durationMs": 64356,
+      "verifications": [
+        {
+          "eventId": "event_ca9e6d9fc01747778868",
+          "args": {
+            "cwd": ".",
+            "kind": "test",
+            "runtime": "node",
+            "target": "frontend/booking.test.mjs",
+            "testRunner": "node-test",
+            "timeoutMs": 120000
+          },
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": null,
+          "workspaceSnapshotScope": null,
+          "workspaceSnapshotSha256": "87ae184ee995eb2591003f7e2cba5aed51cf8a1b65b7a720e25b6a92439e92d2"
+        },
+        {
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "args": {
+            "cwd": ".",
+            "kind": "test",
+            "runtime": "python",
+            "target": "backend",
+            "timeoutMs": 120000,
+            "verifier": "unittest"
+          },
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "snapshotStatus": "unchanged",
+          "workspaceSnapshotScope": "workspace",
+          "workspaceSnapshotSha256": "7dd5633725cdc4e9b95f83cbfcd6e4bd1ff70aa1e0206595e294fbe5b4cea2dc"
+        },
+        {
+          "eventId": "event_8f1b5f2825ce4d879b87",
+          "args": {
+            "cwd": "frontend",
+            "kind": "typecheck",
+            "runtime": "node",
+            "timeoutMs": 120000
+          },
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": null,
+          "workspaceSnapshotScope": null,
+          "workspaceSnapshotSha256": "5703e3fe8f68b02a9a0507fa8e2629328e8172996fe5876aa8aed50864788974"
+        },
+        {
+          "eventId": "event_9f1628cfddf146e19609",
+          "args": {
+            "cwd": "frontend",
+            "kind": "typecheck",
+            "runtime": "node",
+            "timeoutMs": 120000
+          },
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": null,
+          "workspaceSnapshotScope": null,
+          "workspaceSnapshotSha256": "5703e3fe8f68b02a9a0507fa8e2629328e8172996fe5876aa8aed50864788974"
+        },
+        {
+          "eventId": "event_0b98ce5d93ef4d20a270",
+          "args": {
+            "cwd": ".",
+            "kind": "typecheck",
+            "runtime": "node",
+            "target": "frontend/tsconfig.json",
+            "timeoutMs": 120000
+          },
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": null,
+          "workspaceSnapshotScope": null,
+          "workspaceSnapshotSha256": "87ae184ee995eb2591003f7e2cba5aed51cf8a1b65b7a720e25b6a92439e92d2"
+        }
+      ],
+      "exposures": [
+        {
+          "invocationId": "event_e9dcb548a3824750b751",
+          "capsuleSha256": "c572b38906689cfe5b327d5c94fa9a4420c6f3c1198bfdd65df8d2b1e0986b0d",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_e9dcb548a3824750b751",
+          "capsuleSha256": "c572b38906689cfe5b327d5c94fa9a4420c6f3c1198bfdd65df8d2b1e0986b0d",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_e9dcb548a3824750b751",
+          "capsuleSha256": "c572b38906689cfe5b327d5c94fa9a4420c6f3c1198bfdd65df8d2b1e0986b0d",
+          "eventId": "event_8f1b5f2825ce4d879b87",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_f1af39ea87df484e9b26",
+          "capsuleSha256": "c81a15b60ecbf83e690cb22293e6ee2411b3b06be019418f39f722348c9bd05a",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_f1af39ea87df484e9b26",
+          "capsuleSha256": "c81a15b60ecbf83e690cb22293e6ee2411b3b06be019418f39f722348c9bd05a",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_f1af39ea87df484e9b26",
+          "capsuleSha256": "c81a15b60ecbf83e690cb22293e6ee2411b3b06be019418f39f722348c9bd05a",
+          "eventId": "event_9f1628cfddf146e19609",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_77e936d7176f4f21972c",
+          "capsuleSha256": "3bcf37e1aea9e4efe12110bdd539053d86de5ed54c053b698d62e79c17e03ee8",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_77e936d7176f4f21972c",
+          "capsuleSha256": "3bcf37e1aea9e4efe12110bdd539053d86de5ed54c053b698d62e79c17e03ee8",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_77e936d7176f4f21972c",
+          "capsuleSha256": "3bcf37e1aea9e4efe12110bdd539053d86de5ed54c053b698d62e79c17e03ee8",
+          "eventId": "event_9f1628cfddf146e19609",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_e634c3ea93024c769f09",
+          "capsuleSha256": "e2d59feaaf159eed265e96a193d29200e68674703bb57bf667a2cbaaf93e9b96",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_e634c3ea93024c769f09",
+          "capsuleSha256": "e2d59feaaf159eed265e96a193d29200e68674703bb57bf667a2cbaaf93e9b96",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_e634c3ea93024c769f09",
+          "capsuleSha256": "e2d59feaaf159eed265e96a193d29200e68674703bb57bf667a2cbaaf93e9b96",
+          "eventId": "event_9f1628cfddf146e19609",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_225ae1688bba4c779198",
+          "capsuleSha256": "6b503af54bc0365b0dc8c6f3f8eb3ca735be7990417c7b45a7d9bb30e6a12259",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_225ae1688bba4c779198",
+          "capsuleSha256": "6b503af54bc0365b0dc8c6f3f8eb3ca735be7990417c7b45a7d9bb30e6a12259",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_225ae1688bba4c779198",
+          "capsuleSha256": "6b503af54bc0365b0dc8c6f3f8eb3ca735be7990417c7b45a7d9bb30e6a12259",
+          "eventId": "event_9f1628cfddf146e19609",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_de7c704131d34cbcbdcd",
+          "capsuleSha256": "702d136d1b9b784afcf9fd53f47b038d2cf3d5511667448b002b482bbc04e069",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_de7c704131d34cbcbdcd",
+          "capsuleSha256": "702d136d1b9b784afcf9fd53f47b038d2cf3d5511667448b002b482bbc04e069",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_de7c704131d34cbcbdcd",
+          "capsuleSha256": "702d136d1b9b784afcf9fd53f47b038d2cf3d5511667448b002b482bbc04e069",
+          "eventId": "event_9f1628cfddf146e19609",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_3fde124c3d37414599ea",
+          "capsuleSha256": "dfadc8e515bbd25c61b45a09facd5edb0f120ead449fdc6d4343368f8b2e1e15",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_3fde124c3d37414599ea",
+          "capsuleSha256": "dfadc8e515bbd25c61b45a09facd5edb0f120ead449fdc6d4343368f8b2e1e15",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_3fde124c3d37414599ea",
+          "capsuleSha256": "dfadc8e515bbd25c61b45a09facd5edb0f120ead449fdc6d4343368f8b2e1e15",
+          "eventId": "event_9f1628cfddf146e19609",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_e07ec8ea2b104c25bb66",
+          "capsuleSha256": "aebd2306e4e3bb3cbeac185cdfec6192d041d8404216973d8d6bd59fe833b698",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_e07ec8ea2b104c25bb66",
+          "capsuleSha256": "aebd2306e4e3bb3cbeac185cdfec6192d041d8404216973d8d6bd59fe833b698",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_e07ec8ea2b104c25bb66",
+          "capsuleSha256": "aebd2306e4e3bb3cbeac185cdfec6192d041d8404216973d8d6bd59fe833b698",
+          "eventId": "event_9f1628cfddf146e19609",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_e07ec8ea2b104c25bb66",
+          "capsuleSha256": "aebd2306e4e3bb3cbeac185cdfec6192d041d8404216973d8d6bd59fe833b698",
+          "eventId": "event_0b98ce5d93ef4d20a270",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_c74923f82f2c48a5927d",
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "eventId": "event_ca9e6d9fc01747778868",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_c74923f82f2c48a5927d",
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "eventId": "event_0e62a91cdb6c491a814c",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_c74923f82f2c48a5927d",
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "eventId": "event_9f1628cfddf146e19609",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "scope_not_observed"
+        },
+        {
+          "invocationId": "event_c74923f82f2c48a5927d",
+          "capsuleSha256": "92cbef6f547a4219b6bbca3e35d2a2a96dc115a1eb795f878f118d6573ffd28c",
+          "eventId": "event_0b98ce5d93ef4d20a270",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        }
+      ],
+      "scopeNotObservedExposures": 9,
+      "serviceChecks": 7,
+      "servicePassed": true,
+      "processStoppedBeforeCleanup": true
+    },
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_ff96de875f6444849d4d",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "reportSha256": "76ce46b12001cafc5920df0c323af8d8249586cf9c5ce4b9f6886f9644ab5e06",
+      "toolFailures": 0,
+      "durationMs": 82462,
+      "verifications": [
+        {
+          "eventId": "event_3d205d27d5ba41488178",
+          "args": {
+            "cwd": ".",
+            "kind": "test",
+            "runtime": "node",
+            "target": "frontend/booking.test.mjs",
+            "testRunner": "node-test"
+          },
+          "capsuleSha256": "aa81551dd36a2a535ae02497271b4144940a67cb78f807939d4bb253c0acf7c4",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": "unchanged",
+          "workspaceSnapshotScope": "workspace",
+          "workspaceSnapshotSha256": "dbfb627289419e1e44199f5e63f56275808d5346e46ba8fb47eafa5439ab8194"
+        },
+        {
+          "eventId": "event_4d9bfecd441541f9b709",
+          "args": {
+            "cwd": "backend",
+            "kind": "test",
+            "runtime": "python",
+            "verifier": "unittest"
+          },
+          "capsuleSha256": "aa81551dd36a2a535ae02497271b4144940a67cb78f807939d4bb253c0acf7c4",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "snapshotStatus": "unchanged",
+          "workspaceSnapshotScope": "workspace",
+          "workspaceSnapshotSha256": "dbfb627289419e1e44199f5e63f56275808d5346e46ba8fb47eafa5439ab8194"
+        },
+        {
+          "eventId": "event_59b20d470492458aba1a",
+          "args": {
+            "cwd": "frontend",
+            "kind": "typecheck",
+            "runtime": "node"
+          },
+          "capsuleSha256": "aa81551dd36a2a535ae02497271b4144940a67cb78f807939d4bb253c0acf7c4",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": "unchanged",
+          "workspaceSnapshotScope": "workspace",
+          "workspaceSnapshotSha256": "dbfb627289419e1e44199f5e63f56275808d5346e46ba8fb47eafa5439ab8194"
+        }
+      ],
+      "exposures": [
+        {
+          "invocationId": "event_70ce144eb9434f63b8f4",
+          "capsuleSha256": "3543858a83aa779db392448b701fa074fba45f3f9da7644e8093668f94d1960a",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_70ce144eb9434f63b8f4",
+          "capsuleSha256": "3543858a83aa779db392448b701fa074fba45f3f9da7644e8093668f94d1960a",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_70ce144eb9434f63b8f4",
+          "capsuleSha256": "3543858a83aa779db392448b701fa074fba45f3f9da7644e8093668f94d1960a",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_c3dead6f36944d559717",
+          "capsuleSha256": "3d9cdc1beab35965501f07f6f9bd23c19fbf04dd2362194d1719c0a1b58d4bf3",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_c3dead6f36944d559717",
+          "capsuleSha256": "3d9cdc1beab35965501f07f6f9bd23c19fbf04dd2362194d1719c0a1b58d4bf3",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_c3dead6f36944d559717",
+          "capsuleSha256": "3d9cdc1beab35965501f07f6f9bd23c19fbf04dd2362194d1719c0a1b58d4bf3",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_f53d396be15e4f5c9224",
+          "capsuleSha256": "cbbeb5190afe6a7ac49aae5af9dc05862e7479e38a8de483bb46050e28173150",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_f53d396be15e4f5c9224",
+          "capsuleSha256": "cbbeb5190afe6a7ac49aae5af9dc05862e7479e38a8de483bb46050e28173150",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_f53d396be15e4f5c9224",
+          "capsuleSha256": "cbbeb5190afe6a7ac49aae5af9dc05862e7479e38a8de483bb46050e28173150",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_db7eae04d84344259e51",
+          "capsuleSha256": "94cf18613c93fb2109b0acac224b3ef33873cef8f2f366bfa85e9353ceb54b99",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_db7eae04d84344259e51",
+          "capsuleSha256": "94cf18613c93fb2109b0acac224b3ef33873cef8f2f366bfa85e9353ceb54b99",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_db7eae04d84344259e51",
+          "capsuleSha256": "94cf18613c93fb2109b0acac224b3ef33873cef8f2f366bfa85e9353ceb54b99",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_cfb5bffd6a0743638092",
+          "capsuleSha256": "e04df05e805c8f3c7ef6fa400171216cdad6b3261a387a5b43cf40d7b78fcb78",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_cfb5bffd6a0743638092",
+          "capsuleSha256": "e04df05e805c8f3c7ef6fa400171216cdad6b3261a387a5b43cf40d7b78fcb78",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_cfb5bffd6a0743638092",
+          "capsuleSha256": "e04df05e805c8f3c7ef6fa400171216cdad6b3261a387a5b43cf40d7b78fcb78",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_44b464080b9044848c5e",
+          "capsuleSha256": "13b1e6fc0a1680d0c31f1ace5278abaa1551f472346441efa909fd39d6c94145",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_44b464080b9044848c5e",
+          "capsuleSha256": "13b1e6fc0a1680d0c31f1ace5278abaa1551f472346441efa909fd39d6c94145",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_44b464080b9044848c5e",
+          "capsuleSha256": "13b1e6fc0a1680d0c31f1ace5278abaa1551f472346441efa909fd39d6c94145",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_691c6ef084664f8ca4dc",
+          "capsuleSha256": "831933158fc10bb05a163b78400fb89e58df35ca4cb32a96227eae52a9ab640f",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_691c6ef084664f8ca4dc",
+          "capsuleSha256": "831933158fc10bb05a163b78400fb89e58df35ca4cb32a96227eae52a9ab640f",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_691c6ef084664f8ca4dc",
+          "capsuleSha256": "831933158fc10bb05a163b78400fb89e58df35ca4cb32a96227eae52a9ab640f",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_6e65a0296cae48a5b0b9",
+          "capsuleSha256": "cb9f5ba26fe134dcf2e0d3911a4adf2418bf501b107ca54aed776e7c42ec9f6d",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_6e65a0296cae48a5b0b9",
+          "capsuleSha256": "cb9f5ba26fe134dcf2e0d3911a4adf2418bf501b107ca54aed776e7c42ec9f6d",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_6e65a0296cae48a5b0b9",
+          "capsuleSha256": "cb9f5ba26fe134dcf2e0d3911a4adf2418bf501b107ca54aed776e7c42ec9f6d",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_157f774dfbed4fe9964b",
+          "capsuleSha256": "aa81551dd36a2a535ae02497271b4144940a67cb78f807939d4bb253c0acf7c4",
+          "eventId": "event_3d205d27d5ba41488178",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_157f774dfbed4fe9964b",
+          "capsuleSha256": "aa81551dd36a2a535ae02497271b4144940a67cb78f807939d4bb253c0acf7c4",
+          "eventId": "event_4d9bfecd441541f9b709",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_157f774dfbed4fe9964b",
+          "capsuleSha256": "aa81551dd36a2a535ae02497271b4144940a67cb78f807939d4bb253c0acf7c4",
+          "eventId": "event_59b20d470492458aba1a",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        }
+      ],
+      "scopeNotObservedExposures": 0,
+      "serviceChecks": 7,
+      "servicePassed": true,
+      "processStoppedBeforeCleanup": true
+    },
+    {
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_134a276016934d4094c5",
+      "status": "completed",
+      "taskSuccess": false,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "reportSha256": "00b1b19acd1acc32ca7fbc7b574886ec46f22dee06a89070a1ca294a6854244e",
+      "toolFailures": 0,
+      "durationMs": 95698,
+      "verifications": [
+        {
+          "eventId": "event_5fb9ba0d0bbf4affa9a3",
+          "args": {
+            "cwd": ".",
+            "kind": "test",
+            "runtime": "node",
+            "target": "frontend/booking.test.mjs",
+            "testRunner": "node-test",
+            "timeoutMs": 120000
+          },
+          "capsuleSha256": "60d473aba28c1f68885cde9a00972a74ff59e29d36e713a5f963f802ce6f70e6",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": "unchanged",
+          "workspaceSnapshotScope": "workspace",
+          "workspaceSnapshotSha256": "07831c17747342d4854024e71c96ef7e944ac40b4a21355612eebe86237a01a7"
+        },
+        {
+          "eventId": "event_3ee40f177b6041e2a62f",
+          "args": {
+            "cwd": "backend",
+            "kind": "test",
+            "runtime": "python",
+            "target": "test_quote.py",
+            "timeoutMs": 120000,
+            "verifier": "unittest"
+          },
+          "capsuleSha256": "60d473aba28c1f68885cde9a00972a74ff59e29d36e713a5f963f802ce6f70e6",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "snapshotStatus": "unchanged",
+          "workspaceSnapshotScope": "workspace",
+          "workspaceSnapshotSha256": "07831c17747342d4854024e71c96ef7e944ac40b4a21355612eebe86237a01a7"
+        },
+        {
+          "eventId": "event_9c49503244b849188597",
+          "args": {
+            "cwd": "frontend",
+            "kind": "typecheck",
+            "runtime": "node",
+            "target": "tsconfig.json",
+            "timeoutMs": 120000
+          },
+          "capsuleSha256": "60d473aba28c1f68885cde9a00972a74ff59e29d36e713a5f963f802ce6f70e6",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "snapshotStatus": "unchanged",
+          "workspaceSnapshotScope": "workspace",
+          "workspaceSnapshotSha256": "07831c17747342d4854024e71c96ef7e944ac40b4a21355612eebe86237a01a7"
+        }
+      ],
+      "exposures": [
+        {
+          "invocationId": "event_2750334d84b94f17b803",
+          "capsuleSha256": "c806ebc3fdb29fbcaa93ad7e329f77647748256878e20204ed5b241215f275de",
+          "eventId": "event_5fb9ba0d0bbf4affa9a3",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_2750334d84b94f17b803",
+          "capsuleSha256": "c806ebc3fdb29fbcaa93ad7e329f77647748256878e20204ed5b241215f275de",
+          "eventId": "event_3ee40f177b6041e2a62f",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_2750334d84b94f17b803",
+          "capsuleSha256": "c806ebc3fdb29fbcaa93ad7e329f77647748256878e20204ed5b241215f275de",
+          "eventId": "event_9c49503244b849188597",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_3a1cd17d34504264b1df",
+          "capsuleSha256": "252a93e1ffbbe31289872545bba88f88f2de4ff7b70ccd0de5702b54470d6c03",
+          "eventId": "event_5fb9ba0d0bbf4affa9a3",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_3a1cd17d34504264b1df",
+          "capsuleSha256": "252a93e1ffbbe31289872545bba88f88f2de4ff7b70ccd0de5702b54470d6c03",
+          "eventId": "event_3ee40f177b6041e2a62f",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_3a1cd17d34504264b1df",
+          "capsuleSha256": "252a93e1ffbbe31289872545bba88f88f2de4ff7b70ccd0de5702b54470d6c03",
+          "eventId": "event_9c49503244b849188597",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_7451490d4e454ed48038",
+          "capsuleSha256": "f3741d3b34a4139b676506d44ed5b712d00735b23b0bebefc8fe501e7ce38a6c",
+          "eventId": "event_5fb9ba0d0bbf4affa9a3",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_7451490d4e454ed48038",
+          "capsuleSha256": "f3741d3b34a4139b676506d44ed5b712d00735b23b0bebefc8fe501e7ce38a6c",
+          "eventId": "event_3ee40f177b6041e2a62f",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_7451490d4e454ed48038",
+          "capsuleSha256": "f3741d3b34a4139b676506d44ed5b712d00735b23b0bebefc8fe501e7ce38a6c",
+          "eventId": "event_9c49503244b849188597",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_3b6572041a744c539582",
+          "capsuleSha256": "19142b74f3bd6843d3df2f4b4f986545f57991c3b7e825b8cc91ea4c6e56db03",
+          "eventId": "event_5fb9ba0d0bbf4affa9a3",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_3b6572041a744c539582",
+          "capsuleSha256": "19142b74f3bd6843d3df2f4b4f986545f57991c3b7e825b8cc91ea4c6e56db03",
+          "eventId": "event_3ee40f177b6041e2a62f",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_3b6572041a744c539582",
+          "capsuleSha256": "19142b74f3bd6843d3df2f4b4f986545f57991c3b7e825b8cc91ea4c6e56db03",
+          "eventId": "event_9c49503244b849188597",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_6b6ac46edee243dea95c",
+          "capsuleSha256": "61722f56dfa7c3a56392bc3f92bd79d6b8c6674b6409cdc6d5022f02b8b44ac7",
+          "eventId": "event_5fb9ba0d0bbf4affa9a3",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_6b6ac46edee243dea95c",
+          "capsuleSha256": "61722f56dfa7c3a56392bc3f92bd79d6b8c6674b6409cdc6d5022f02b8b44ac7",
+          "eventId": "event_3ee40f177b6041e2a62f",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_6b6ac46edee243dea95c",
+          "capsuleSha256": "61722f56dfa7c3a56392bc3f92bd79d6b8c6674b6409cdc6d5022f02b8b44ac7",
+          "eventId": "event_9c49503244b849188597",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_0c5fe170b5ca4cd4a362",
+          "capsuleSha256": "278781a92b64742582f4fb98b061dced6708d7c2a2f58f576c75eaf7c7a4a3d1",
+          "eventId": "event_5fb9ba0d0bbf4affa9a3",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_0c5fe170b5ca4cd4a362",
+          "capsuleSha256": "278781a92b64742582f4fb98b061dced6708d7c2a2f58f576c75eaf7c7a4a3d1",
+          "eventId": "event_3ee40f177b6041e2a62f",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_0c5fe170b5ca4cd4a362",
+          "capsuleSha256": "278781a92b64742582f4fb98b061dced6708d7c2a2f58f576c75eaf7c7a4a3d1",
+          "eventId": "event_9c49503244b849188597",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_95b054c1947b48be8442",
+          "capsuleSha256": "60d473aba28c1f68885cde9a00972a74ff59e29d36e713a5f963f802ce6f70e6",
+          "eventId": "event_5fb9ba0d0bbf4affa9a3",
+          "kind": "test",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_95b054c1947b48be8442",
+          "capsuleSha256": "60d473aba28c1f68885cde9a00972a74ff59e29d36e713a5f963f802ce6f70e6",
+          "eventId": "event_3ee40f177b6041e2a62f",
+          "kind": "test",
+          "runtime": "python",
+          "status": "passed",
+          "freshness": "current"
+        },
+        {
+          "invocationId": "event_95b054c1947b48be8442",
+          "capsuleSha256": "60d473aba28c1f68885cde9a00972a74ff59e29d36e713a5f963f802ce6f70e6",
+          "eventId": "event_9c49503244b849188597",
+          "kind": "typecheck",
+          "runtime": "node",
+          "status": "passed",
+          "freshness": "current"
+        }
+      ],
+      "scopeNotObservedExposures": 0,
+      "serviceChecks": 7,
+      "servicePassed": true,
+      "processStoppedBeforeCleanup": true
+    }
+  ],
+  "arms": {
+    "baseline": {
+      "passed": 2,
+      "trials": 2,
+      "verificationCalls": 9,
+      "scopeNotObservedExposures": 17
+    },
+    "candidate": {
+      "passed": 1,
+      "trials": 2,
+      "verificationCalls": 6,
+      "scopeNotObservedExposures": 0
+    }
+  },
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 2,
+    "cases": 1,
+    "regressions": [
+      "mixed_typescript_python_service_v1:1: task completion regressed",
+      "mixed_typescript_python_service_v1:1: new false completion"
+    ],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "mixed_typescript_python_service_v1: need 3 paired trials; observed 2"
+    ],
+    "verdict": "regressed",
+    "promotionReady": false,
+    "contentSha256": "8e2166098e34ab5032b7e575c4b4ab90881cfb75fc6911f6d22aaf7aa41e1434"
+  },
+  "scope": "Two completed paired trials from a three-trial schedule, stopped after a regression; third trials cancelled on one unchanged mixed TypeScript/Python HTTP service task. Historical component and rejected core trials are not pooled. Source-bound capsules verify actual Node verification freshness reaching the model. Repeated exposure counts are not independent samples. Concurrent execution and differing trajectories do not establish latency or cache attribution.",
+  "promotionReady": false
+}

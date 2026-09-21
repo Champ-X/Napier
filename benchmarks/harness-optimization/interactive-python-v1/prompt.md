@@ -1,0 +1,5 @@
+Fix shipping.py: standard shipping costs 5 below subtotal 50 and is free at 50 or above. Expedited shipping adds 8 in either case. Preserve validation of invalid subtotals. Only edit shipping.py and create report.json; preserve worker.py, tests and README.
+
+After fixing the code, use workspace_process to start worker.py as an interactive process. If the tool declares runtime=python, use it; otherwise use its POSIX shell runtime to launch python3. Use -B -u so no bytecode files are created and replies flush immediately. Send these as two separate newline-terminated input calls to the SAME process: {"subtotal":50,"expedited":false} then {"subtotal":50,"expedited":true}. Poll and inspect both replies, then cancel that process and confirm it has stopped. Do not leave a background process running. Run the available tests with bytecode writing disabled.
+
+Write report.json containing {"samples":[{"subtotal":50,"expedited":false,"shipping":0},{"subtotal":50,"expedited":true,"shipping":8}],"processStopped":true} only after observing the corresponding real replies and stopped status. Briefly report the code fix and what you actually verified.

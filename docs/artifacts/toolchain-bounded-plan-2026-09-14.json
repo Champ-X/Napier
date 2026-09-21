@@ -1,0 +1,81 @@
+{
+  "kind": "napier.toolchain-bounded-plan-receipt",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T15:58:46.217Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/toolchain-two-pair-batch-v1/plan.json",
+  "planSha256": "72d8a22380678266be4a07d54e3645a66fc82e00e2e080e5b2d7800303f03b21",
+  "source": "/tmp/napier-harness-progressive-verification-v1",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v6",
+  "dispatchIndices": [
+    57,
+    56,
+    58,
+    59
+  ],
+  "toolRequirements": {
+    "coding_loyalty_discount_debug_v1": {
+      "kind": "node-debugger",
+      "sourcePath": "src/loyalty.js",
+      "sourceSha256": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa",
+      "variables": {
+        "subtotalCents": "2000",
+        "discountPercent": "15",
+        "discountCents": "15"
+      }
+    },
+    "coding_pricing_options_migration_v1": {
+      "kind": "lsp-references",
+      "sourcePath": "src/pricing.js",
+      "sourceSha256": "043ccba543ff00864f7c434bd84052376fc01eb4e6fdadc1ea4f70416e7ac54a",
+      "referencePaths": [
+        "src/checkout.js",
+        "src/quote.js"
+      ],
+      "readPaths": [
+        "src/pricing.js",
+        "src/checkout.js",
+        "src/quote.js"
+      ]
+    }
+  },
+  "toolAuditPath": "/tmp/napier-preedit-tool-audit-v1.mjs",
+  "toolAuditSha256": "79f035df7e73f341c44c001b69d630558bf8261d3a7844d677e81068c7f20ac9",
+  "retainedReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/memory_shipping_current_source_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "b824b4bba626bc760ae1616a80c942c78ab3972499e7fa5d9e144d75469c1eed"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "60f3b942561631f6ddad4add35712687e5cda9907538de91559d69f9acaf1daa"
+    }
+  ],
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 4588,
+    "remainingFen": 5412,
+    "requests": 473,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "scope": "At most two serial pairs; candidate first for each. First-arm budget/candidate failure, incomplete supplemental tool evidence, or pair/aggregate regression/evidence failure stops all remaining jobs. Full 30-case/3-trial schedule and retained memory pair stay bound. No additional batch queued; unchanged 15-second interval, 15-minute Run deadlines, 64-admission per-Run insurance ceiling and shared CNY 100 ceiling."
+}

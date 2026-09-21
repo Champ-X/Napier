@@ -1,0 +1,110 @@
+{
+  "kind": "napier.candidate-with-immutable-baseline-plan",
+  "createdAt": "2026-09-15T06:00:30.528Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/memory-reused-baseline-pair-v1/plan.json",
+  "planSha256": "3485b078cacc9ab70aa59babc68aa26ac54393784f0ec67e6d10c46dfc55c538",
+  "source": "/tmp/napier-harness-staged-verification-v1",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "dispatchIndices": [
+    0,
+    1
+  ],
+  "retainedReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "0d154f1e8038c84385c22dd8310e76b4e8e62bdda27bbe99a41f5bc51fd4696a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "894b91b7d0255be49dc76887dd3ff8efc44fe4ee9b8f0084695d393d2f58cc87"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "57e48c2e1c9650e21d23cd2c4fa57381fb699377acad27daedcf2f29245be109"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "99d5cd702808590bb9f3d9696811f2404fe7ac117d12db403aee63872673e4de"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "f9a52dcbade13bdba946156c8d246924c7c529e3027ac4454edbaebf9de8cf0b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "76a5f9afbec5ac7e576d2059e55dbf0896aa3273f34186ae509a4a5428ffa099"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "ba28a0382c99b8a8bb15d01b6da0b8ae2bb736fb57f3075b89297357398df3f0"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "d0567e11ae01730c3adb38143d7bcd32c3da781ef28e57cd10168facf27da2c6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "c52932beef9b02e6f2e3dc12f7a64d7145ac791b3c6fd1e4444ba6aa889eaaee"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "1a3f36c8e5a246c7e6d7cd15b3814a0be662873af4deac979feaa88beb03a11a"
+    }
+  ],
+  "baselineReuse": {
+    "baseline:memory_shipping_current_source_v1:0": {
+      "index": 1,
+      "caseId": "memory_shipping_current_source_v1",
+      "trial": 0,
+      "runId": "run_569d84397d24401f893d",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/audit-1.json",
+      "auditSha256": "e4b685290a348061f80dccdb324fa2c785e7b4e08e0bb920ef7797dbe5905b86",
+      "sourceCommit": "c454a15557e9d6d7ce9db87cbd104f058919b027",
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "baselineAdmissionsAlreadyObserved": 14,
+      "oldCandidateReused": false,
+      "baselineExecutedAgain": false,
+      "pairedCandidatePending": true
+    }
+  },
+  "reuseValidationPath": "/Users/champ/orca/Napier/docs/artifacts/staged-baseline-reuse-offline-2026-09-15.json",
+  "reuseValidationSha256": "e06b5e0675270d425540b5a41be17041ec42d4656be6952c8050fa25be45293e",
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "clarificationPath": "/Users/champ/orca/Napier/docs/artifacts/staged-memory-reuse-inherited-stop-clarification-2026-09-15.json",
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 3852,
+    "remainingFen": 6148,
+    "requests": 207,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "Only the current staged-verification candidate needs real observation for source-bound memory selection, stale-source exclusion and the original shipping repair. The exact same frozen baseline already has a complete original report under matching task/driver/model/budget conditions and will be referenced directly, with zero new baseline API calls.",
+  "scope": "Exactly one new candidate Run paired with one byte-identical prequalified original baseline; baseline process/API dispatch is bypassed before admission. Retain original baseline Run/trial/path provenance without copying, renaming or recounting it. Original candidate source/profile, campaign driver, 180-job schedule, tasks, graders, request cadence and budgets are unchanged. All prior failures and aggregate blockers remain, and the inherited blocker stops at this pair boundary. No later jobs queued; this is not a concurrent randomized or causal comparison.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

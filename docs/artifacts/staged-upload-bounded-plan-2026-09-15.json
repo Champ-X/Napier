@@ -1,0 +1,114 @@
+{
+  "kind": "napier.single-pair-with-retained-blocker-plan",
+  "createdAt": "2026-09-15T06:13:57.087Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/upload-original-pair-v1/plan.json",
+  "planSha256": "a059bc0386f3844628bc9c4ca508e7749db5952fe0e9d4d62687b07337d0ce3b",
+  "source": "/tmp/napier-harness-staged-verification-v1",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "dispatchIndices": [
+    37,
+    36
+  ],
+  "retainedReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "0d154f1e8038c84385c22dd8310e76b4e8e62bdda27bbe99a41f5bc51fd4696a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "894b91b7d0255be49dc76887dd3ff8efc44fe4ee9b8f0084695d393d2f58cc87"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "57e48c2e1c9650e21d23cd2c4fa57381fb699377acad27daedcf2f29245be109"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "99d5cd702808590bb9f3d9696811f2404fe7ac117d12db403aee63872673e4de"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "f9a52dcbade13bdba946156c8d246924c7c529e3027ac4454edbaebf9de8cf0b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "76a5f9afbec5ac7e576d2059e55dbf0896aa3273f34186ae509a4a5428ffa099"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "ba28a0382c99b8a8bb15d01b6da0b8ae2bb736fb57f3075b89297357398df3f0"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "d0567e11ae01730c3adb38143d7bcd32c3da781ef28e57cd10168facf27da2c6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "c52932beef9b02e6f2e3dc12f7a64d7145ac791b3c6fd1e4444ba6aa889eaaee"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "1a3f36c8e5a246c7e6d7cd15b3814a0be662873af4deac979feaa88beb03a11a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/memory_shipping_current_source_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "81fc4a1464e2a316cdc25c9b0c7641a792689aab65a52e432f769275fb52800b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/config_layers_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "39087b59c7a9e6da5aab1b3b447d8219b7120e7766ef2961827748dbda12a704"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/config_layers_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "60e2753fc27c8e8dce9db6a8624a4cf7c2cd8af204e9833d929a85a67c67770f"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/cursor_pagination_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "39aa41060e9ca2d6dcf4daa1abeff3f12e031464cd7bc5caa45aefb4056f9653"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/cursor_pagination_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "abc7af933a5e02cb765d65d1c0918acbcc0eec0cc7d4fd1000859433fa9f1b6d"
+    }
+  ],
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "clarificationPath": "/Users/champ/orca/Napier/docs/artifacts/staged-upload-inherited-stop-clarification-2026-09-15.json",
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 3952,
+    "remainingFen": 6048,
+    "requests": 232,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "Observe the original resumable-byte-upload contract on the current staged-verification candidate and frozen baseline. Actual model repair of out-of-order chunks, idempotent repeats, overlapping conflicts, write atomicity and ownership must be checked with real tool execution and independent grading. No current-source pair or same-epoch prequalified baseline exists for this task; keep every earlier report and reuse binding.",
+  "scope": "Exactly one serial candidate-first pair under unchanged source/profile/driver, 180-job schedule, tasks, graders, request cadence and budgets. Retain all prior failed and ineligible reports and aggregate blockers. Stop on new candidate failure or evidence problem; existing aggregate blocker also stops the batch at its only pair boundary. No later jobs queued.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

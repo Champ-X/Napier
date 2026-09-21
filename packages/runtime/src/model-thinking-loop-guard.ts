@@ -1,5 +1,6 @@
 import {
   createAssistantMessageEventStream,
+  getSupportedThinkingLevels,
   type Api,
   type AssistantMessage,
   type AssistantMessageEvent,
@@ -10,11 +11,16 @@ import {
 } from "@earendil-works/pi-ai";
 
 import { ModelThinkingLoopDetector } from "./model-thinking-loop-detector.js";
+import { modelAdapterReceipt } from "./model-adapters.js";
 import {
   ModelThinkingLoopError,
   type ModelThinkingLoopEvidence,
 } from "./model-thinking-loop-policy.js";
 import { ModelSemanticStallObserver } from "./model-semantic-stall-observer.js";
+import {
+  ModelThinkingTrace,
+  type ModelThinkingTraceSnapshot,
+} from "./model-thinking-trace.js";
 import {
   MAX_UNCOMMITTED_THINKING_BYTES,
   thinkingDeltaBytes,
@@ -39,6 +45,8 @@ export interface ModelThinkingLoopGuardInput {
   onDetected(
     evidence: ModelThinkingLoopEvidence,
     action: "retry" | "finalize",
+    terminalMessage?: AssistantMessage,
+    trace?: ModelThinkingTraceSnapshot,
   ):
     | Promise<"retry" | "finalize" | "budget_exhausted">
     | "retry"
@@ -89,23 +97,25 @@ export function guardModelThinkingLoop(
         let bufferedBytes = 0;
         let buffering = true;
         let detected: ModelThinkingLoopEvidence | undefined;
+        let terminalMessage: AssistantMessage | undefined;
         const semanticStall = new ModelSemanticStallObserver();
+        const thinkingTrace = new ModelThinkingTrace();
 
         try {
           while (true) {
             const step = await currentIterator.next();
-            if (step.done) {
-              const message = await created.source.result();
-              for (const event of buffered) yield event;
-              const terminalEvent = eventFromMessage(message);
-              settle(message);
-              yield terminalEvent;
-              return;
-            }
-            const event = step.value;
+            const event = step.done
+              ? eventFromMessage(await created.source.result())
+              : step.value;
             if (event.type === "done" || event.type === "error") {
               detected = semanticStall.terminalEvidence(event, attempt);
-              if (detected) break;
+              if (detected) {
+                // A watchdog error is synthesized locally and may carry zero
+                // usage; retain the observed-byte estimate for that attempt.
+                terminalMessage =
+                  event.type === "done" ? event.message : undefined;
+                break;
+              }
               const message =
                 event.type === "done" ? event.message : event.error;
               settle(message);
@@ -118,6 +128,7 @@ export function guardModelThinkingLoop(
               return;
             }
             semanticStall.observe(event);
+            thinkingTrace.observeEvent(event);
             if (buffering) {
               buffered.push(event);
               if (event.type === "thinking_delta") {
@@ -154,6 +165,8 @@ export function guardModelThinkingLoop(
         const action = await input.onDetected(
           detected,
           attempt === 1 ? "retry" : "finalize",
+          terminalMessage,
+          thinkingTrace.snapshot(),
         );
         if (action === "retry") {
           priorEvidence = detected;
@@ -196,6 +209,7 @@ export function thinkingLoopRetryMessage(
     `Reason ${evidence.reason}; attempt ${String(evidence.attempt)}; evidence ${evidence.repeatedUnitSha256}.`,
     "Do not restate the plan or continue the prior reasoning pattern.",
     "Execute one smallest safe tool action now, or provide the shortest concrete partial result and stop.",
+    "Keep tool arguments complete. Split large deliverables into small coherent edits; do not try to write an entire application in one call. After a successful write, use its returned SHA-256 for the next edit.",
   ].join("\n");
 }
 
@@ -203,10 +217,26 @@ export function shortThinkingLoopRetryOptions(
   model: Model<Api>,
   options: SimpleStreamOptions,
 ): SimpleStreamOptions {
+  const { reasoning: _previousReasoning, ...rest } = options;
+  const supported = getSupportedThinkingLevels(model);
+  // An unsupported "minimal" can be clamped upward by the provider (for
+  // example, to "high"). Prefer an actual short level, then off when allowed;
+  // compulsory-reasoning models retain their lowest supported level.
+  const selected = supported.includes("minimal")
+    ? "minimal"
+    : supported.includes("low")
+      ? "low"
+      : supported.includes("off")
+        ? "off"
+        : supported[0];
+  if (!selected) throw new Error("Model has no supported thinking retry level");
   return {
-    ...options,
-    maxTokens: Math.min(options.maxTokens ?? model.maxTokens, 2_048),
-    ...(model.reasoning ? { reasoning: "minimal" as const } : {}),
+    ...rest,
+    // Reasoning and serialized tool arguments share this ceiling. Reduce the
+    // reasoning level, but retain the ordinary bounded output allowance so
+    // recovery does not manufacture a truncated, non-executable write.
+    maxTokens: modelAdapterReceipt(model, options).streamOptionMaxTokens,
+    ...(selected && selected !== "off" ? { reasoning: selected } : {}),
   };
 }
 

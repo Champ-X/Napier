@@ -1,0 +1,214 @@
+{
+  "kind": "napier.bounded-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:38:18.433Z",
+  "source": "/tmp/napier-harness-request-budget-context-v1",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/search-config-two-pair-batch-v1/plan.json",
+  "planSha256": "490f3f3a08a9e9109b14e3a768b38f62215e330eacf192f5c6bcbd5a14929d15",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/search-config-two-pair-batch-v1/result.json",
+  "resultSha256": "456a1e2b73adadd5a8091d6cf241930b6537dad95aa62e0a1ac99f7232672337",
+  "dispatchIndices": [
+    49,
+    48,
+    50,
+    51
+  ],
+  "observations": [
+    {
+      "index": 37,
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_139c468d0253478e8138",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "error": null,
+      "admissions": 11,
+      "settledFen": 44,
+      "unreceiptedReservedFen": 0,
+      "toolFailures": 2,
+      "durationMs": 188698,
+      "auditedCapsules": 10,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/resumable_byte_upload_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "2d9a045787899031d031b87e73afa9a3de7e8d4a3ef6b3f7961d8ed5948158ff",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/audit-37.json",
+      "auditSha256": "45d0afe0ac19e1f23be0e3b4fb3313287b833b38fc5714780c93c4439e18e029",
+      "graderMode": "host"
+    },
+    {
+      "index": 36,
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_74d2a562812b435fb167",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "error": null,
+      "admissions": 13,
+      "settledFen": 40,
+      "unreceiptedReservedFen": 0,
+      "toolFailures": 0,
+      "durationMs": 215318,
+      "auditedCapsules": 12,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/resumable_byte_upload_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "29c43eb39e44649a25687bf5f38cd1654207ac7e65eff1843808357db7798850",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/audit-36.json",
+      "auditSha256": "d3373328603e467c17c5f074ace245bf9d6a7bcfa53aba552ab1b268cf26aedd",
+      "graderMode": "host"
+    },
+    {
+      "index": 49,
+      "caseId": "bm25_document_search_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_1a5a98c8cf484e4686b3",
+      "status": "failed",
+      "taskSuccess": false,
+      "graderExitCode": 1,
+      "error": "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
+      "admissions": 4,
+      "settledFen": 3,
+      "unreceiptedReservedFen": 600,
+      "toolFailures": 0,
+      "durationMs": 124123,
+      "auditedCapsules": 4,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/bm25_document_search_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "06e529721a66239d8a5faf8da0136656bf49e17e76352005d0cc42152145bdb9",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/audit-49.json",
+      "auditSha256": "6d4f3019191c6734c623e9e9601e6ac1ff40304c45efdfe9e69d2d42fb5e221f",
+      "graderMode": "host"
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [],
+    "evidenceBlockers": [
+      "bm25_document_search_v1:0: missing arm"
+    ],
+    "blockers": [
+      "bm25_document_search_v1:0: missing arm",
+      "Need 30 cases; observed 1",
+      "resumable_byte_upload_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "faa33ca998ac0579d4bb009971b2688cd51fe810467598d647d28f258222acad"
+  },
+  "stop": {
+    "reason": "candidate_task_failed",
+    "runId": "run_1a5a98c8cf484e4686b3",
+    "job": {
+      "caseId": "bm25_document_search_v1",
+      "caseRoot": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/cases/bm25_document_search_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "output": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/bm25_document_search_v1-candidate-trial-1",
+      "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+      "graderMode": "host",
+      "graderRuntimes": "node"
+    }
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 7106,
+      "remainingFen": 2894,
+      "requests": 671,
+      "reservedRequests": 5,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 7709,
+      "remainingFen": 2291,
+      "requests": 674,
+      "reservedRequests": 6,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "settledConservativeFen": 4109,
+    "unreceiptedReservations": [
+      {
+        "id": 410,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 421,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 633,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 646,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 647,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 674,
+        "charged_fen": 600,
+        "status": "reserved"
+      }
+    ],
+    "providerBillVerified": false
+  },
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Only original observed tasks and immutable current-source reports qualify. No causal attribution or generalized efficiency claim. Historical failed/ineligible reports and the full 30-case/3-trial gate remain unchanged."
+}

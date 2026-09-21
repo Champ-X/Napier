@@ -1,0 +1,68 @@
+{
+  "kind": "napier.baseline-capability-claim-replay",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:23:16.606Z",
+  "runId": "run_36c571a3672f4508ab26",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/resumable_byte_upload_v1-baseline-trial-1/trial-1/result.json",
+  "reportSha256": "a8b7ccd8576db6254b2ffb392a106aa0636bb9501c4db167867c9fae00ed9af9",
+  "baselineSourceSha256": "afe5eb3adaa64f5988aa81e4847f3ae5342438ae19be279d27d2e72f5318ec83",
+  "candidateSourceSha256": "83efbc7608e0ce83876c8c04b341d7e148bce306d479b8d0b7f9545e3dc15fef",
+  "observations": [
+    {
+      "seq": 212,
+      "responseTextSha256": "6505fa0893df4b39b2f9b123d6edf1665f94b8f5eb93edb831501408fc0f671f",
+      "quotedDiagnosticLines": [],
+      "baselineClaimedTools": [
+        "workspace_process",
+        "git_inspect"
+      ],
+      "candidateClaimedTools": [],
+      "responseText": "`checkChunk` is in place. Note the vitest-backed auto-selection can't collect this repo's `node:test` file (that's a harness mismatch, not a code failure) — I'll run the suite with `node --test` later. Now the `upload` step."
+    },
+    {
+      "seq": 419,
+      "responseTextSha256": "6d8099cc195e1c0b725200f063dbcbfc40ff89b677c8d9f29f1abcbb133142f9",
+      "quotedDiagnosticLines": [],
+      "baselineClaimedTools": [
+        "apply_patch",
+        "workspace_file_apply"
+      ],
+      "candidateClaimedTools": [],
+      "responseText": "Boundary results: existing suite `pass 1 / fail 0`; chunk checks `15/15`; behavior checks `10/10`. The safety suite reported one failure, but inspecting it: my `conflictKeepsMissing` case used chunk `[2,9,9]` at offset 1, where every overlap is identical or previously-missing — so it is a *valid* write, not a conflict, and `missing()==[]` is correct. That was a faulty assertion in my check, not a code defect. I'll rerun with a genuine conflict that also spans previously-missing bytes."
+    },
+    {
+      "seq": 514,
+      "responseTextSha256": "28131a515bf2959fd5139313b1900cfcad77bbd6cf81781910d752f40c8ecc00",
+      "quotedDiagnosticLines": [],
+      "baselineClaimedTools": [
+        "apply_patch",
+        "workspace_file_apply",
+        "workspace_process",
+        "git_inspect"
+      ],
+      "candidateClaimedTools": [],
+      "responseText": "## Changes\n\n**`src/chunk.mjs` — `checkChunk`** (was an empty stub)\n- Rejects non-positive/non-safe-int `total`, non-safe-int or negative `offset`, non-`Uint8Array`/empty `bytes` (Buffer accepted via `instanceof Uint8Array`), and `offset + length > total` — each with `TypeError`.\n- Returns `undefined` on success; no other behavior.\n\n**`src/upload.mjs` — `UploadBuffer`** (was naive append-only tracking)\n- Constructor enforces safe integer `1..1,000,000` (`TypeError` otherwise); keeps existing `this.total`.\n- Added a per-byte coverage bitmap; `write` scans the whole chunk for conflicts **before any mutation**, so a conflicting overlapping byte throws `TypeError` and rejects the entire write — including its previously-missing bytes — leaving bytes/coverage/count untouched.\n- `write` copies caller bytes in, accepts repeated identical bytes idempotently, and returns the count of newly supplied (previously missing) bytes.\n- `missing()` returns sorted half-open `[start,end)` intervals, freshly allocated per call.\n- `complete()` reflects full coverage; `finish()` throws `TypeError` when incomplete and returns a fresh `Uint8Array` copy.\n- Public exports (`checkChunk`, `UploadBuffer`) preserved; no I/O, deps, or clocks.\n\n## Verification (all exit 0)\n- `node --test test/public.test.mjs` → tests 1, pass 1, fail 0.\n- Boundary suites: chunk validation 15/15, buffer behavior 10/10, atomicity/copies/freshness 7/7 — covering out-of-order and overlapping writes, idempotent duplicates, multi-interval sorted gaps, conflict atomicity spanning missing bytes, invalid-call state preservation, constructor bounds, copy semantics, and `missing()`/`finish()` freshness.\n\nNotes: only `src/chunk.mjs` (SHA-256 `e5e2176b…`) and `src/upload.mjs` (`78c38a2f…`) were modified — README and tests untouched, no files created. One boundary assertion I wrote initially mis-flagged a *valid* overlap (chunk `[2,9,9]` at offset 1 on bytes `[1,2]`) as a conflict; that was a faulty expectation, corrected to a genuine conflict case, and the implementation passed unchanged. The vitest-backed auto-selection cannot collect this repo's `node:test` file, so `node --test` was used as the authoritative runner."
+    },
+    {
+      "seq": 594,
+      "responseTextSha256": "2df13af346f823aebba10bf5f311b06b573dc3aaaa9b70d111a9daf52cfbafcb",
+      "quotedDiagnosticLines": [
+        "Note: the workspace's Vitest-backed test selection cannot collect this repo's `node:test` file and reports \"No test suite found\" even while the test executes and passes; `node --test` is the authoritative runner used here."
+      ],
+      "baselineClaimedTools": [
+        "apply_patch",
+        "workspace_file_apply",
+        "workspace_process",
+        "git_inspect"
+      ],
+      "candidateClaimedTools": [],
+      "responseText": "Done. Repaired exactly `src/chunk.mjs` and `src/upload.mjs`; no other files created or modified.\n\n**Changes**\n\n`src/chunk.mjs` — `checkChunk(total, offset, bytes)` now validates and returns `undefined`, throwing `TypeError` otherwise:\n- `total`: positive safe integer\n- `offset`: safe integer `>= 0`\n- `bytes`: nonempty `Uint8Array` (a `Buffer` passes `instanceof Uint8Array`, so it is accepted as specified)\n- `offset + bytes.length <= total`\n\n`src/upload.mjs` — `UploadBuffer` (export preserved; `checkChunk` re-imported):\n- Constructor requires a safe integer in `1..1,000,000`, else `TypeError`.\n- Stores data plus a coverage bitmap; `write` tracks out-of-order and overlapping chunks.\n- `write` returns the count of newly supplied (previously missing) bytes; repeated identical bytes return `0` idempotently.\n- Before mutating, `write` scans the whole chunk; any covered byte that differs makes the entire write throw `TypeError`, leaving bytes and coverage untouched (including the chunk's previously-missing portions). Invalid calls are rejected by `checkChunk` before mutation.\n- `missing()` returns fresh, sorted, half-open `[start, end)` intervals; `complete()` returns a boolean.\n- `finish()` throws `TypeError` when incomplete and otherwise returns a fresh `Uint8Array` copy; `write` copies caller bytes.\n\n**Verification**\n- Existing suite: `node --test test/public.test.mjs` → `pass 1`, `fail 0`.\n- Boundary checks (exit 0): `checkChunk` validation **15/15**; construction/order/overlap/gaps **10/10**; atomic conflict rejection, invalid-call state preservation, incomplete `finish`, `finish`/`write` copies, fresh `missing()` **7/7**.\n- Fixed SHA-256: `src/chunk.mjs` `e5e2176b…3911b027`, `src/upload.mjs` `78c38a2f…a01cd3405`.\n\nNote: the workspace's Vitest-backed test selection cannot collect this repo's `node:test` file and reports \"No test suite found\" even while the test executes and passes; `node --test` is the authoritative runner used here."
+    }
+  ],
+  "independentCodeGraderPassed": true,
+  "originalRunStatusPreserved": "failed",
+  "modelRequests": 0,
+  "conclusion": "Four captured responses about runner collection, overlap validation and completion produce unavailable-capability classifications in the old guard and none in the current frozen guard. Only the final response quotes No test suite found exactly. The original failed baseline remains unchanged.",
+  "scope": "Offline replay of original captured output. Does not relabel the baseline as successful or establish a general or causal improvement.",
+  "replayCorrection": "Initial diagnostic-only assumption failed offline: three responses do not contain the exact No test suite found quote. The final audit preserves all four captured texts and their actual classifications."
+}

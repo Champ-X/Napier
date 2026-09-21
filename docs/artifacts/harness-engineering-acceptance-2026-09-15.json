@@ -1,0 +1,127 @@
+{
+  "kind": "napier.harness-engineering-acceptance",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:49:28.548648+00:00",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "runtimeSourceFilesMatched": 1264,
+  "runtimeSourceUnchanged": true,
+  "runtimeProfile": "napier.current-integrated.v5",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "modules": [
+    {
+      "module": "edit_adaptation",
+      "sourceBindings": {
+        "packages/runtime/src/workspace-edit-snapshots.ts": "6c9fd34b427558c9c2718293dcefb172d130ddb8bee7489ae1749885bcd87368",
+        "packages/runtime/src/edit-format-calibration.ts": "c17179a53beedf3a780ec0033506a4234248b845a3918197ec835bf4d835aad9"
+      },
+      "verifiedScope": [
+        "snapshot edit and unified diff through actual Agent/store",
+        "tamper, model/task mismatch and recovery rejection"
+      ]
+    },
+    {
+      "module": "toolchains",
+      "sourceBindings": {
+        "packages/runtime/src/toolchain-provider.ts": "eeb9e3de2cf0b95b148d16709c8e7b15b70e96feb776d8199ba56a85b4c3f31d",
+        "packages/runtime/src/affected-test-selection.ts": "10f55c929f4dbc39e82008f9255ea435a8c31dfcc8f11cb47f8e1127eb10523f"
+      },
+      "verifiedScope": [
+        "actual Node/Python OS sandbox execution",
+        "cancellation, read-only writes and unknown-import full-suite fallback"
+      ]
+    },
+    {
+      "module": "prompt_cache",
+      "sourceBindings": {
+        "packages/runtime/src/agent-invocation-context.ts": "700e3efdd8818ef4140e146fe537041ec153d0f887d937c3ddd88fca54c5a074",
+        "packages/runtime/src/prompt-cache-projection.ts": "c5f405b1db016484a6b500662e10e88322dc72a5eb2ad198e70b1fb579b92aaa"
+      },
+      "verifiedScope": [
+        "actual visible-prefix identities",
+        "tool and serving-model change invalidation"
+      ]
+    },
+    {
+      "module": "working_state",
+      "sourceBindings": {
+        "packages/runtime/src/task-working-state.ts": "e28d9fa1d04d5dfc5530ff93a4dbb87a44ce7511f28f555bf3c25edaa27298f1"
+      },
+      "verifiedScope": [
+        "compaction and linked recovery",
+        "stale verification and cross-thread/cycle rejection"
+      ]
+    },
+    {
+      "module": "task_memory",
+      "sourceBindings": {
+        "packages/runtime/src/task-memory-selection.ts": "8e81e74d9cf17c5a5eba8367be3520935cd1f9f6f92e2fdcf1103d9910ba8e52",
+        "packages/runtime/src/task-memory-grouping.ts": "7cc7f4e422deb8d098dfed9daa1055062c32182fc87ed61ae5199ae62e8df19c"
+      },
+      "verifiedScope": [
+        "source invalidation and query provenance",
+        "thread turns, copied branches and access boundaries"
+      ]
+    },
+    {
+      "module": "harness_policy",
+      "sourceBindings": {
+        "packages/runtime/src/harness-policy-profile.ts": "e928b3c8abc6eb0df2754ce8c16c20cf9445eefca85cbc56718a94bf222a7edf",
+        "packages/runtime/src/harness-run-policy.ts": "742deb883916b958f598fd14af6616d6e8c570de0cec762708125c274b5b60f4"
+      },
+      "verifiedScope": [
+        "CLI v5 actual input and read-only boundary",
+        "HTTP one-Run binding and browser stream evidence",
+        "recovery preserves original policy hash"
+      ]
+    },
+    {
+      "module": "failure_evaluation",
+      "sourceBindings": {
+        "scripts/harness-campaign-evidence.mjs": "6c6fb67e95065a65a8ccaafb3cd6bd1b47667172f603f22303628f8ea23fb409",
+        "scripts/harness-campaign-convergence.mjs": "0dd5194611ee89707eb349839a8b015526aeae08d4373e234aab6557988d582e",
+        "packages/runtime/src/model-thinking-trace-store.ts": "ffa6f403bf8c434e1effe9488cb668ea6f3bfb0b8a41709176144345d894f408"
+      },
+      "verifiedScope": [
+        "retained failure evidence and bounded thinking traces",
+        "immutable schedule convergence forecast",
+        "request-level missing-usage audit"
+      ]
+    }
+  ],
+  "testReports": [
+    {
+      "path": "docs/artifacts/harness-engineering-tests-2026-09-15.json",
+      "sha256": "9a6eca1d23feb638b00f26200201203fcc64d70f2eb4975f6e77a69f3e5e09a2",
+      "passed": 129,
+      "pending": 17,
+      "failed": 0
+    },
+    {
+      "path": "docs/artifacts/harness-native-toolchain-tests-2026-09-15.json",
+      "sha256": "09e6ea417c008cf0550363f7e476916497f961eb68ff6af053153877bb836897",
+      "passed": 19,
+      "pending": 0,
+      "failed": 0
+    }
+  ],
+  "cli": {
+    "command": "npx --no-install vitest run apps/cli/test/harness-policy-cli.test.ts --maxWorkers=2 --testTimeout=30000",
+    "passed": 6,
+    "failed": 0,
+    "testSourceSha256": "269fc08fca1d2fd695b7e49d5488f546062a4d8ab372df619176dfffdd22a4a8",
+    "newCoverage": "Actual CLI run with current-integrated.v5 loads profile, binds its hash, delivers staged protocol and preserves read-only tools using a scripted provider."
+  },
+  "testCountExplanation": "129 passing checks in base run; native run passes 19, including the 17 previously skipped and two overlapping checks. CLI separately passes six. No live-model test was run.",
+  "ndjsonRecoveryAudit": "docs/artifacts/staged-ndjson-recovery-audit-2026-09-15.json",
+  "ndjsonRecoveryAuditSha256": "3cf9a6b66d7b2102d12eed2d3677467b32ff9358dfd2d0b17c57215324d0f613",
+  "modelRequests": 0,
+  "newCostFen": 0,
+  "promotionReady": false,
+  "goalComplete": false,
+  "limitations": [
+    "Original 30-case/3-trial statistical gate remains incomplete and the fixed schedule is unreachable with its preserved missing-usage observation.",
+    "This tests engineering paths with scripted models and real local tool processes; it does not prove model-driven edit-format adoption, causal cache savings or broad long-task recall.",
+    "No fresh rendered browser acceptance or full release attestation is claimed. Existing release-source-manifest drift and six architecture violations remain."
+  ],
+  "scope": "Engineering acceptance across seven implemented modules, not default promotion or complete objective proof."
+}

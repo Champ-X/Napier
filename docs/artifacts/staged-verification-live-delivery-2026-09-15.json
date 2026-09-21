@@ -1,0 +1,120 @@
+{
+  "kind": "napier.staged-verification-live-delivery",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T05:10:28.260Z",
+  "runId": "run_9a1d0aec74c646499a50",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "0d154f1e8038c84385c22dd8310e76b4e8e62bdda27bbe99a41f5bc51fd4696a",
+  "protocolSha256": "d95460980e11d443c71db84e867c5ec2d7306087b2e5ba125f35755109a08ee3",
+  "actualInputs": [
+    {
+      "capsuleSha256": "3d8a1fc4dc3e762bf4e244976706865839f47cd8879571e7a79db2bc18baff38",
+      "turnIndex": 0,
+      "contextEnvelopeSha256": "88ce0f49cf9fa7451389543e99e30a7c5fbbf9eb2f02acef864d31ab87823a72"
+    },
+    {
+      "capsuleSha256": "602e9d8f706570c243a8116ab350bdda452da9f0f1c153d8b0479d3290d546a7",
+      "turnIndex": 1,
+      "contextEnvelopeSha256": "926b1d6d713a796f06c318b8de6ace35ac091dd55d3bd7c5a0d4a2cd0bf269b5"
+    },
+    {
+      "capsuleSha256": "a58f0694824066840803358099dd5369d35f153f4f3dcffaa2ffa03314f6376e",
+      "turnIndex": 2,
+      "contextEnvelopeSha256": "e4265e3efb537da0d4c18b53f4dd64d72cfa457f2749def69343b1721a60f709"
+    },
+    {
+      "capsuleSha256": "ceaac8c90a9a76a3aaa43339673c60da4a273656e02d6b01336dbfb053d60361",
+      "turnIndex": 3,
+      "contextEnvelopeSha256": "913a4c581a4d8d5b64e0fd6c23a8cfcba4d72b633e4d5a287bc99c94c779b4cc"
+    },
+    {
+      "capsuleSha256": "554276be8ef6aee1714ae84c26be0332c54ae33b4915d40576a8b841cedea539",
+      "turnIndex": 4,
+      "contextEnvelopeSha256": "73fa6980edd139671f386f7990df4bc97adf666d9a0179642799407ff2693eed"
+    },
+    {
+      "capsuleSha256": "618a353b6f51474ee67a10feda01ff1987cb8b6f3f31c152cda90f0698bede68",
+      "turnIndex": 5,
+      "contextEnvelopeSha256": "58fc45078adab787b26a43eff30f31b4758283751219f1ae58c2bca6e10bc327"
+    },
+    {
+      "capsuleSha256": "fc82294f35c3e7702af14dd60ffdf09c44f2467df4ffbb21ae26fb811ee500bc",
+      "turnIndex": 6,
+      "contextEnvelopeSha256": "b519ee67d0e875c407a0ba363b783db222d6cf8b0c1c78b0bb69aeae0cd7a892"
+    },
+    {
+      "capsuleSha256": "a0449d2caa6b12eb6754f81f2e0b189eefe1a24d41a788fe183c4125ebb61607",
+      "turnIndex": 7,
+      "contextEnvelopeSha256": "2c3e3a1f3308829ff33082fc4e806288405dfceaba5a123bd359d0b3c87c1d92"
+    },
+    {
+      "capsuleSha256": "4fb1a35c38d5a58a588d1c56fd92bcf96b8e4bbc2d997942e0eb24ed28714356",
+      "turnIndex": 8,
+      "contextEnvelopeSha256": "db7184cd0da5877e3c64bd562efeb368aad15c110715afcec271153bbe999923"
+    }
+  ],
+  "verifications": [
+    {
+      "eventId": "event_ed851c13ccc948f1860b",
+      "seq": 268,
+      "createdAt": "2026-09-15T05:06:56.969Z",
+      "args": {
+        "cwd": ".",
+        "kind": "test",
+        "timeoutMs": 60000
+      },
+      "status": "failed",
+      "exitCode": 1,
+      "workspaceSnapshotSha256": "e590f69ba781bea0181702725088001e0750175b7787fd6ea4604063aa7c6d52",
+      "executionResultSha256": "999428bbfd65fb666be99d3ce5268d1b378f54605b1e325b2b44e15990633882"
+    },
+    {
+      "eventId": "event_f417ce9629e54d178822",
+      "seq": 316,
+      "createdAt": "2026-09-15T05:07:00.189Z",
+      "args": {
+        "cwd": ".",
+        "kind": "test",
+        "runtime": "python",
+        "target": "tests",
+        "timeoutMs": 60000
+      },
+      "status": "failed",
+      "exitCode": 1,
+      "workspaceSnapshotSha256": "e590f69ba781bea0181702725088001e0750175b7787fd6ea4604063aa7c6d52",
+      "executionResultSha256": "a317d98a5955eb11b217f26366f179155e14feef1dbaa8ad0048db9628f5af9f"
+    },
+    {
+      "eventId": "event_eb9906e999f1408e9a07",
+      "seq": 462,
+      "createdAt": "2026-09-15T05:08:11.360Z",
+      "args": {
+        "cwd": ".",
+        "kind": "test",
+        "runtime": "python",
+        "target": "tests",
+        "timeoutMs": 60000
+      },
+      "status": "passed",
+      "exitCode": 0,
+      "workspaceSnapshotSha256": "160a7c830d46246fbb478334908cb29bc7cdfe407320abb629f3dc7728936208",
+      "executionResultSha256": "b12d062fb98a6ff23da22b062a7078269521342130b87ad00ac9b8c75e2ae8b1"
+    }
+  ],
+  "firstPatchStartSeq": 373,
+  "thinkingGuardEvents": 0,
+  "toolFailures": 0,
+  "changed": [
+    "src/decoder.py",
+    "src/records.py"
+  ],
+  "taskSuccess": true,
+  "graderExitCode": 0,
+  "admissions": 10,
+  "settledFen": 44,
+  "newUnreceiptedReservedFen": 0,
+  "modelRequests": 0,
+  "scope": "Read-only audit of original NDJSON candidate. Actual input delivery, real Python verification before/after edits, independent grader and exact file scope pass. The initial verification target failure is retained. One successful candidate does not establish single-module causality, a complete pair or overall quality qualification."
+}

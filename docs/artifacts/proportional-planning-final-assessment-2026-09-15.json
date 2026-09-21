@@ -1,0 +1,110 @@
+{
+  "kind": "napier.proportional-planning-final-assessment",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:58:57.902Z",
+  "candidate": {
+    "runId": "run_b34f6531cdd547cb9bcf",
+    "taskSuccess": true,
+    "graderExitCode": 0,
+    "requests": 10,
+    "settledFen": 64,
+    "durationMs": 265927,
+    "changed": [
+      "src/patch.mjs",
+      "src/pointer.mjs"
+    ],
+    "toolFailures": 3,
+    "actualInputDeliveryReceiptSha256": "a2381d1be7af9fdc8d75e7d0bb9dc623cdbe0032e4cf3697608c649dd64a6a21"
+  },
+  "baseline": {
+    "runId": "run_48f768f478d2472f84ef",
+    "taskSuccess": false,
+    "graderExitCode": 1,
+    "durationMs": 125226,
+    "changed": [],
+    "detections": [
+      {
+        "seq": 302,
+        "payload": {
+          "kind": "napier.model-thinking-loop",
+          "schemaVersion": 1,
+          "action": "retry",
+          "provider": "deepseek",
+          "model": "deepseek-v4-flash",
+          "reason": "semantic_stall",
+          "attempt": 1,
+          "observedBytes": 83615,
+          "observedThinkingChunks": 21095,
+          "repeatedUnitBytes": 25,
+          "repeatedUnitSha256": "2c52808de4278585855c579f9c533b9a234ac325592bf5cd3a20ab0a9cd4ce52",
+          "modelContextEnvelopeSha256": "a04003077220b7be123e43de98831bff3aad90b25021f361413cf722db5d8f61",
+          "modelContextEnvelopeTurnIndex": 2,
+          "modelContextMessageSetSha256": "44657e7899097779155ab999e8e15038e37c7f5131cb73b6660a069204386d2c",
+          "modelContextToolDefinitionSetSha256": "f632e707a6cad7f671b42f8a14abfaee5bba78303e2ee785b8d6d8185a54aa30",
+          "contentSha256": "0cc9fb37f6fdbb81318042c57cae27b8fea098efad5dd8a91cf1febe3790e763"
+        }
+      }
+    ],
+    "localAdmissions": 4,
+    "financialReservations": 3,
+    "settledFen": 3,
+    "unreceiptedReservedFen": 600,
+    "apiAdmissionCapExhausted": false,
+    "remainingAdmissions": 60,
+    "evidenceExclusion": "new unreceipted financial reservation; spendingBudgetEvidenceEligible requires unchanged reservedRequests, independently of local request cap"
+  },
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 0,
+    "cases": 0,
+    "regressions": [],
+    "evidenceBlockers": [
+      "atomic_json_patch_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "atomic_json_patch_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 0"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "9b3010ed3a50906cc9e240b86895aad0047ecbc30a1ed029ee8857824b6ed8d8"
+  },
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 9708,
+    "remainingFen": 292,
+    "requests": 728,
+    "reservedRequests": 9,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "remainingBelowSingleRequestReservation": true,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "The candidate is a successful original-task observation with all requests settled. The baseline failed and its new cancelled reservation excludes the pair from qualification; comparablePairs remains zero. Do not claim causal benefit or broad regression freedom. The CNY100 total is unchanged; remaining 292 fen cannot admit the mandatory 600-fen reservation. No later paid batch is queued."
+}

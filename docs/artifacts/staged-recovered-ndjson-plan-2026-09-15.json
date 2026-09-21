@@ -1,0 +1,303 @@
+{
+  "kind": "napier.prospective-recovered-qualification-plan",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:58:49.849Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/recovered-ndjson-pair-v1/plan.json",
+  "planSha256": "b922864cd7681fa4a83a0cae2803d8930bbfa0db008db300b55023de6668c8f7",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "evidenceRecovery": {
+    "protocol": {
+      "kind": "napier.missing-usage-recovery-protocol",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "caseId": "incremental_ndjson_v1",
+      "originalTrial": 0,
+      "supplementalTrial": 3,
+      "baselineRunId": "run_76af8c7911754698b595",
+      "baselineReportDigest": "e21211d142753536461610b896cbd732d08e648055d864e350e8ce65953ca7ea",
+      "candidateRunId": "run_9a1d0aec74c646499a50",
+      "candidateReportDigest": "6904c467d518685bfda058265e255ebf3b292cd2cf9294004e933adbf38bd5ce",
+      "originalScheduleDigest": "9d2aed15316e0a3fe7413dbc4b53b88b3fa70f3e8e1c00449a4f05c8e8db30d4",
+      "originalSchedulePositions": 180,
+      "originalPairQuality": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 0,
+        "cases": 0,
+        "regressions": [],
+        "evidenceBlockers": [
+          "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+        ],
+        "blockers": [
+          "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+          "Need 30 cases; observed 0"
+        ],
+        "verdict": "insufficient_evidence",
+        "promotionReady": false,
+        "contentSha256": "3ee7d65bd3e3c189355546546ea4e191683919be2e753995740b4c9124d3c77e"
+      },
+      "originalReservationDelta": 1,
+      "originalRunIdsMustRemainVisible": [
+        "run_76af8c7911754698b595",
+        "run_9a1d0aec74c646499a50"
+      ],
+      "scope": "A new prospective qualification cohort, not repair or promotion of the original campaign. Preserve the original schedule and append one whole new trial; require three eligible pairs per case. No candidate failure or eligible baseline failure may be retired. No reservation is released.",
+      "contentSha256": "c952f1ca5477f2c89bd094f4d49dbc07ea034d35ea242d68b6ea7d8380b8cd91"
+    },
+    "protocolPath": "/Users/champ/orca/Napier/docs/artifacts/staged-missing-usage-recovery-protocol-2026-09-15.json",
+    "protocolSha256": "99cc0da8445c1ea269ef26d0ea1550c275386ac36ff457636a6df0a380fb499d",
+    "modulePath": "/Users/champ/orca/Napier/scripts/harness-evidence-recovery.mjs",
+    "moduleSha256": "70d5ed44cb70257183d89442e4f1542d63a5e62a61bb63caa33205b5921b48cc",
+    "testsPath": "/Users/champ/orca/Napier/docs/artifacts/staged-recovery-protocol-tests-2026-09-15.json",
+    "testsSha256": "937291d18fdee91265154909053fbddcceb8517f259d7ea24c822a646d25447e"
+  },
+  "originalPositions": 180,
+  "totalPositions": 182,
+  "dispatchIndices": [
+    180,
+    181
+  ],
+  "originalReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "0d154f1e8038c84385c22dd8310e76b4e8e62bdda27bbe99a41f5bc51fd4696a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "894b91b7d0255be49dc76887dd3ff8efc44fe4ee9b8f0084695d393d2f58cc87"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "57e48c2e1c9650e21d23cd2c4fa57381fb699377acad27daedcf2f29245be109"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "99d5cd702808590bb9f3d9696811f2404fe7ac117d12db403aee63872673e4de"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "f9a52dcbade13bdba946156c8d246924c7c529e3027ac4454edbaebf9de8cf0b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "76a5f9afbec5ac7e576d2059e55dbf0896aa3273f34186ae509a4a5428ffa099"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "ba28a0382c99b8a8bb15d01b6da0b8ae2bb736fb57f3075b89297357398df3f0"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "d0567e11ae01730c3adb38143d7bcd32c3da781ef28e57cd10168facf27da2c6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "c52932beef9b02e6f2e3dc12f7a64d7145ac791b3c6fd1e4444ba6aa889eaaee"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/transaction_savepoints_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "1a3f36c8e5a246c7e6d7cd15b3814a0be662873af4deac979feaa88beb03a11a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/memory_shipping_current_source_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "81fc4a1464e2a316cdc25c9b0c7641a792689aab65a52e432f769275fb52800b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/config_layers_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "39087b59c7a9e6da5aab1b3b447d8219b7120e7766ef2961827748dbda12a704"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/config_layers_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "60e2753fc27c8e8dce9db6a8624a4cf7c2cd8af204e9833d929a85a67c67770f"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/cursor_pagination_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "39aa41060e9ca2d6dcf4daa1abeff3f12e031464cd7bc5caa45aefb4056f9653"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/cursor_pagination_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "abc7af933a5e02cb765d65d1c0918acbcc0eec0cc7d4fd1000859433fa9f1b6d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/resumable_byte_upload_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "4269151d6314da42a8e0861d778073ce8f85792e65f8aa2ec0a9b3439d194271"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/resumable_byte_upload_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "a8b7ccd8576db6254b2ffb392a106aa0636bb9501c4db167867c9fae00ed9af9"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "aacffa77a07471dafdaac8bc4c8ac4709e8d14a05a9ed8472921891f82dcae94"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/atomic_json_patch_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "98aecc42bc8ca566b5530a505ba666f7dc94ba1d9141757328171eedda585566"
+    }
+  ],
+  "preservedRawQuality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 9,
+    "cases": 9,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 9",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+      "transaction_savepoints_v1: need 3 paired trials; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "config_layers_v1: need 3 paired trials; observed 1",
+      "cursor_pagination_v1: need 3 paired trials; observed 1",
+      "resumable_byte_upload_v1: need 3 paired trials; observed 1",
+      "atomic_json_patch_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "f130b34d9a8d1394c8fd882562a58f68419b249d9b9db276e53843a32cc81d64"
+  },
+  "qualificationBefore": {
+    "kind": "napier.recovered-campaign-quality",
+    "schemaVersion": 1,
+    "recoveryProtocolSha256": "c952f1ca5477f2c89bd094f4d49dbc07ea034d35ea242d68b6ea7d8380b8cd91",
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "rawQuality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 9,
+      "cases": 9,
+      "regressions": [],
+      "evidenceBlockers": [
+        "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+      ],
+      "blockers": [
+        "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+        "Need 30 cases; observed 9",
+        "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+        "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+        "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+        "transaction_savepoints_v1: need 3 paired trials; observed 1",
+        "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+        "config_layers_v1: need 3 paired trials; observed 1",
+        "cursor_pagination_v1: need 3 paired trials; observed 1",
+        "resumable_byte_upload_v1: need 3 paired trials; observed 1",
+        "atomic_json_patch_v1: need 3 paired trials; observed 1"
+      ],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "f130b34d9a8d1394c8fd882562a58f68419b249d9b9db276e53843a32cc81d64"
+    },
+    "qualificationQuality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 9,
+      "cases": 9,
+      "regressions": [],
+      "evidenceBlockers": [],
+      "blockers": [
+        "Need 30 cases; observed 9",
+        "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+        "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+        "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+        "transaction_savepoints_v1: need 3 paired trials; observed 1",
+        "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+        "config_layers_v1: need 3 paired trials; observed 1",
+        "cursor_pagination_v1: need 3 paired trials; observed 1",
+        "resumable_byte_upload_v1: need 3 paired trials; observed 1",
+        "atomic_json_patch_v1: need 3 paired trials; observed 1"
+      ],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "46be8627ed9f953d4d58baef9f88db76a8d388aa5d3b1c88f2422bcd9f9fd14f"
+    },
+    "unexpectedBlockers": [],
+    "retiredIneligibleObservations": [
+      {
+        "runId": "run_76af8c7911754698b595",
+        "caseId": "incremental_ndjson_v1",
+        "trial": 0,
+        "arm": "baseline",
+        "status": "failed",
+        "taskSuccess": false,
+        "reportDigest": "e21211d142753536461610b896cbd732d08e648055d864e350e8ce65953ca7ea"
+      },
+      {
+        "runId": "run_9a1d0aec74c646499a50",
+        "caseId": "incremental_ndjson_v1",
+        "trial": 0,
+        "arm": "candidate",
+        "status": "completed",
+        "taskSuccess": true,
+        "reportDigest": "6904c467d518685bfda058265e255ebf3b292cd2cf9294004e933adbf38bd5ce"
+      }
+    ],
+    "supplementalTrialRequired": true,
+    "supplementalTrial": 3,
+    "originalCampaignPromotionReady": false,
+    "promotionReady": false,
+    "scope": "A new prospective qualification cohort, not repair or promotion of the original campaign. Preserve the original schedule and append one whole new trial; require three eligible pairs per case. No candidate failure or eligible baseline failure may be retired. No reservation is released."
+  },
+  "spendingBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 4141,
+    "remainingFen": 5859,
+    "requests": 287,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "Complete the unchanged full 30-case/3-trial statistical gate through a prospective evidence-recovery cohort. Preserve original 180 positions and all reports, including the failed/ineligible NDJSON pair and two eligible failed baselines. Append the unused NDJSON trial 3 as a whole candidate-first pair; retire neither an eligible failed baseline nor any candidate failure. Both arms require actual model execution because no observation exists for this new trial. Keep serial 15000ms cadence, 64 admissions per Run, original tokens/cost/deadline and shared CNY100 ceiling. Stop on any new candidate or evidence failure; no unrelated pair queued.",
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false
+}

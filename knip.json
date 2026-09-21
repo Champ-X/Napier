@@ -1,29 +1,38 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": [
-    "scripts/capture-sdk-capability-parity.mjs",
-    "scripts/linux-host-product-acceptance-guest.mjs",
-    "scripts/refresh-skill-load-fast-core-evidence.mjs",
-    "scripts/run-credential-reference-canary.ts",
-    "scripts/run-skill-lifecycle-ab-dogfood.mjs",
-    "scripts/run-skill-load-fast-core-evidence.mjs",
-    "scripts/run-skill-load-final-check.mjs",
-    "scripts/run-skill-resource-dogfood.mjs",
-    "scripts/run-standard-skill-directory-dogfood.mjs",
-    "scripts/windows-host-product-acceptance-live.mjs"
-  ],
-  "project": ["scripts/**/*.{mjs,ts}"],
   "ignore": [
     "benchmark-results/**",
     "benchmarks/**/expected/**",
     "benchmarks/**/fixture/**",
     "benchmarks/**/tests/**",
     "examples/**",
-    "packages/runtime/test/fixtures/**"
+    "packages/runtime/test/fixtures/**",
+    "benchmarks/harness-optimization/*/outcome.mjs",
+    "benchmarks/harness-optimization/**/reference/**",
+    "benchmarks/harness-optimization/*/reference.mjs"
   ],
   "ignoreDependencies": ["preact"],
   "ignoreBinaries": ["docker.exe"],
   "workspaces": {
+    ".": {
+      "entry": [
+        "benchmarks/harness-components/*/outcome.mjs",
+        "benchmarks/harness-supplemental/*.mjs",
+        "integrations/tessmora/scripts/mma-rag.mjs",
+        "scripts/check-workspace-html-preview.mjs",
+        "scripts/capture-sdk-capability-parity.mjs",
+        "scripts/linux-host-product-acceptance-guest.mjs",
+        "scripts/refresh-skill-load-fast-core-evidence.mjs",
+        "scripts/run-credential-reference-canary.ts",
+        "scripts/run-skill-lifecycle-ab-dogfood.mjs",
+        "scripts/run-skill-load-fast-core-evidence.mjs",
+        "scripts/run-skill-load-final-check.mjs",
+        "scripts/run-skill-resource-dogfood.mjs",
+        "scripts/run-standard-skill-directory-dogfood.mjs",
+        "scripts/windows-host-product-acceptance-live.mjs"
+      ],
+      "project": ["**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}!"]
+    },
     "apps/cli": {
       "entry": ["src/index.ts!", "test/**/*.test.ts"],
       "project": ["src/**/*.ts!", "test/**/*.ts"]

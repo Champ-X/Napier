@@ -1,0 +1,115 @@
+{
+  "kind": "napier.domain-allocation-reassessment",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T17:23:49.827Z",
+  "originalCampaign": "domain-suite-v1",
+  "reason": "The task specifies ValueError for insufficient capacity but does not specify the class for other input validation errors. Accept TypeError or ValueError there; preserve explicit capacity ValueError and reject silently accepted invalid inputs.",
+  "changedGraderSha256": "3ad122326529c53f34e7cc480b9683c17ebb7a5e6a55ba6aee263c3021706467",
+  "unchangedAgentOutputs": true,
+  "newAgentExecutions": 0,
+  "observations": [
+    {
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_770ff9f661e84caaa031",
+      "originalReportSha256": "4a73736e1cd7bb15bf61ab153c86099b3b0117b3375a24d6ff43f3983de3280e",
+      "originalOutcomeSha256": "f3847018381d21b35cb8d7ba36cd456ae9d96013c572e8d694c57aafd33328b5",
+      "originalTaskSuccess": true,
+      "sourceHashes": {
+        "src/money.py": "41f66685cb93f4a8490f54d2d1447571fb4310a8337a7b0aeaa07cf211d76197",
+        "src/allocation.py": "0fc690525c59dd276dd1b7d21ee3a915438a0c375acea1c1cba94a4a4a17631d"
+      },
+      "graderExitCode": 0,
+      "graderOutput": "Independent behavior checks passed\n",
+      "taskSuccess": true
+    },
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_7a920028d5d04242b1cd",
+      "originalReportSha256": "96f7b5112d18f42743a4974dba050df3ddf2c5bc82fe4e2c3a6e8301f5810810",
+      "originalOutcomeSha256": "f3847018381d21b35cb8d7ba36cd456ae9d96013c572e8d694c57aafd33328b5",
+      "originalTaskSuccess": true,
+      "sourceHashes": {
+        "src/money.py": "f7b35337f6dc36ec3af49fc4299f63b81b71f40a406a93e5a240c806d9da7298",
+        "src/allocation.py": "5e63a35bdc151fe84e38cb313102ca2a19cf14e7d4bc6a782cb1a3463335f1e1"
+      },
+      "graderExitCode": 0,
+      "graderOutput": "Independent behavior checks passed\n",
+      "taskSuccess": true
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_28d7f94e158644b3923b",
+      "originalReportSha256": "adc44a2177c645b3aa35d09ebe77597f36473b24341244dbd688ac6f82397fa2",
+      "originalOutcomeSha256": "f3847018381d21b35cb8d7ba36cd456ae9d96013c572e8d694c57aafd33328b5",
+      "originalTaskSuccess": false,
+      "sourceHashes": {
+        "src/money.py": "8cfbef6d70dbe0e51a79be3f320790684494c72133ad0b1508e9b8e9cd0a972a",
+        "src/allocation.py": "912348ddac8402cb983223d921d01c4174681abd6e1f0d358444c7467f069c00"
+      },
+      "graderExitCode": 0,
+      "graderOutput": "Independent behavior checks passed\n",
+      "taskSuccess": true
+    },
+    {
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_82646f6da3a7471cbab6",
+      "originalReportSha256": "f854fbfb2a035b952c32c2350a0f215e59ac50595a3dfe8a307b07330a0689fa",
+      "originalOutcomeSha256": "f3847018381d21b35cb8d7ba36cd456ae9d96013c572e8d694c57aafd33328b5",
+      "originalTaskSuccess": true,
+      "sourceHashes": {
+        "src/money.py": "4c4d04324d70d66f4993f9ac465a25a1a10d18d56739798ca531c6d3b77ec8b2",
+        "src/allocation.py": "a9ae0b4f511550da18d3ee5be58990b5d7514fc59d5600ab77179ebc8f89e1c0"
+      },
+      "graderExitCode": 0,
+      "graderOutput": "Independent behavior checks passed\n",
+      "taskSuccess": true
+    },
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_d9bdeed1b2104c1eadc8",
+      "originalReportSha256": "0a957537822f93d1f2407eeb455d231d2b60ba7fe5d1735b6db2506a43b6489d",
+      "originalOutcomeSha256": "f3847018381d21b35cb8d7ba36cd456ae9d96013c572e8d694c57aafd33328b5",
+      "originalTaskSuccess": true,
+      "sourceHashes": {
+        "src/money.py": "7bb571758c04134e0bc7d09c746df340def50a1e103438b425f6e96a34ba648e",
+        "src/allocation.py": "d699eba089c1bcf01f15bfaa0f29b8429cf61bd63f6ea34ca345fd5d37e46d5c"
+      },
+      "graderExitCode": 0,
+      "graderOutput": "Independent behavior checks passed\n",
+      "taskSuccess": true
+    },
+    {
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_6296f865641f4d53a215",
+      "originalReportSha256": "4cfb96a87d7de6662f4214f28b003543be4f52d8ffc5a4a2a4bdfe606d036d3c",
+      "originalOutcomeSha256": "f3847018381d21b35cb8d7ba36cd456ae9d96013c572e8d694c57aafd33328b5",
+      "originalTaskSuccess": true,
+      "sourceHashes": {
+        "src/money.py": "a892cc9ae0f3f5358d2b160c4aa246cccd7f9f8000a152185f6c89e18cc0199f",
+        "src/allocation.py": "ab9f63b477628eae520c0f454235985beda554abcda527f23cc6d7c35b7caa06"
+      },
+      "graderExitCode": 0,
+      "graderOutput": "Independent behavior checks passed\n",
+      "taskSuccess": true
+    }
+  ],
+  "originalWholeSuite": {
+    "baseline": 20,
+    "candidate": 22,
+    "totalPerArm": 24
+  },
+  "reassessedWholeSuite": {
+    "baseline": 21,
+    "candidate": 22,
+    "totalPerArm": 24
+  },
+  "originalGateRetained": "regressed",
+  "promotionReady": false,
+  "contentSha256": "1f11b37804ab0ee4d25ae0db70b9d4db42850633b7b4beea21e31e942d45553f"
+}

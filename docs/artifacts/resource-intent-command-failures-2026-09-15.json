@@ -1,0 +1,61 @@
+{
+  "kind": "napier.resource-intent-command-failures",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:54:13.020Z",
+  "runId": "run_7e7109bcf26e40ea89c0",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-resource-intent-core-v13/bm25_document_search_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "565c9818b69565d6c4843d9f635fa4a2649dc94ac9089471941b3844239a7c6d",
+  "observations": [
+    {
+      "callId": "call_00_kJXdLUQV5jTmpIAIbY9V0595",
+      "seq": 346,
+      "argumentsSha256": "130d83f7b05c94a0b5d1a846b6fd918aa174d74357a69df8b63e6775fac8e00d",
+      "runtime": "node",
+      "containsNewline": true,
+      "evaluationArgumentIndex": 2,
+      "diagnosticLines": [
+        "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\""
+      ],
+      "failureClass": "invalid_input"
+    },
+    {
+      "callId": "call_01_bkfPaOHDZwADz6EK7pw80509",
+      "seq": 347,
+      "argumentsSha256": "0d7f98f3b63bcb5785995aa4be9d6480b784f9ed0e29865eb35a557210e8c745",
+      "runtime": "node",
+      "containsNewline": true,
+      "evaluationArgumentIndex": 2,
+      "diagnosticLines": [
+        "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\""
+      ],
+      "failureClass": "invalid_input"
+    },
+    {
+      "callId": "call_02_5w4GSGVGRbQCfJZ2VivB5469",
+      "seq": 348,
+      "argumentsSha256": "0af747e4ce49f6eca2e23731380d45b1ac3fca678ff8cf28a9d7281af72c0eae",
+      "runtime": "node",
+      "containsNewline": true,
+      "evaluationArgumentIndex": 2,
+      "diagnosticLines": [
+        "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\""
+      ],
+      "failureClass": "invalid_input"
+    },
+    {
+      "callId": "call_03_ZQiNHBulSdJg7OnQZI1j1326",
+      "seq": 349,
+      "argumentsSha256": "5312f10e4c84354a71998e21aef27464c0214c0b5101da60ea0ff264571d82fc",
+      "runtime": "node",
+      "containsNewline": true,
+      "evaluationArgumentIndex": 2,
+      "diagnosticLines": [
+        "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\""
+      ],
+      "failureClass": "invalid_input"
+    }
+  ],
+  "taskSuccess": true,
+  "modelRequests": 0,
+  "scope": "Preserves failed command inputs and matching error diagnostics as hashes and structural facts. No source changes or new tests."
+}

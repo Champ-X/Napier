@@ -1,0 +1,127 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_core_quality_v3",
+  "cases": [
+    {
+      "path": "harness-optimization/http-retry-policy-v1",
+      "coverage": ["http-retry-policy"]
+    },
+    {
+      "path": "harness-optimization/rollout-dependency-plan-v1",
+      "coverage": ["rollout-dependency-plan"]
+    },
+    {
+      "path": "harness-optimization/access-rule-evaluation-v1",
+      "coverage": ["access-rule-evaluation"]
+    },
+    {
+      "path": "harness-optimization/booking-calendar-v1",
+      "coverage": ["booking-calendar"]
+    },
+    {
+      "path": "harness-optimization/safe-csv-export-v1",
+      "coverage": ["safe-csv-export"]
+    },
+    {
+      "path": "harness-optimization/inventory-event-projection-v1",
+      "coverage": ["inventory-event-projection"]
+    },
+    {
+      "path": "harness-optimization/weighted-expense-allocation-v1",
+      "coverage": ["weighted-expense-allocation"]
+    },
+    {
+      "path": "harness-optimization/http-etag-preconditions-v1",
+      "coverage": ["http-etag-preconditions"]
+    },
+    {
+      "path": "harness-optimization/incremental-ndjson-v1",
+      "coverage": ["incremental-ndjson"]
+    },
+    {
+      "path": "harness-optimization/bounded-async-queue-v3",
+      "coverage": ["bounded-async-queue"]
+    },
+    {
+      "path": "harness-optimization/semantic-version-order-v1",
+      "coverage": ["semantic-version-order"]
+    },
+    {
+      "path": "harness-optimization/ttl-lru-cache-v1",
+      "coverage": ["ttl-lru-cache"]
+    },
+    {
+      "path": "harness-optimization/http-byte-ranges-v1",
+      "coverage": ["http-byte-ranges"]
+    },
+    {
+      "path": "harness-optimization/sql-named-binding-v1",
+      "coverage": ["sql-named-binding"]
+    },
+    {
+      "path": "harness-optimization/transaction-savepoints-v1",
+      "coverage": ["transaction-savepoints"]
+    },
+    {
+      "path": "harness-optimization/atomic-json-patch-v1",
+      "coverage": ["atomic-json-patch"]
+    },
+    {
+      "path": "harness-optimization/weighted-route-planning-v1",
+      "coverage": ["weighted-route-planning"]
+    },
+    {
+      "path": "harness-optimization/resumable-byte-upload-v1",
+      "coverage": ["resumable-byte-upload"]
+    },
+    {
+      "path": "harness-optimization/binary-frame-decoder-v2",
+      "coverage": ["binary-frame-decoder"]
+    },
+    {
+      "path": "harness-optimization/path-glob-selection-v2",
+      "coverage": ["path-glob-selection"]
+    },
+    {
+      "path": "harness-optimization/streaming-csv-decoder-v1",
+      "coverage": ["streaming-csv-decoder"]
+    },
+    {
+      "path": "harness-optimization/business-calendar-v1",
+      "coverage": ["business-calendar"]
+    },
+    {
+      "path": "harness-optimization/source-map-vlq-v1",
+      "coverage": ["source-map-vlq"]
+    },
+    {
+      "path": "harness-optimization/bm25-document-search-v1",
+      "coverage": ["bm25-document-search"]
+    },
+    {
+      "path": "harness-optimization/config-layers-v1",
+      "coverage": ["config-layers"]
+    },
+    {
+      "path": "harness-optimization/cursor-pagination-v1",
+      "coverage": ["cursor-pagination"]
+    },
+    {
+      "path": "harness-optimization/ledger-reconciliation-v1",
+      "coverage": ["ledger-reconciliation"]
+    },
+    {
+      "path": "harness-optimization/memory-shipping-v1",
+      "coverage": ["memory-shipping"]
+    },
+    {
+      "path": "coding/loyalty-discount-debug-v1",
+      "coverage": ["loyalty-discount-debug"]
+    },
+    {
+      "path": "coding/pricing-options-migration-v1",
+      "coverage": ["pricing-options-migration"]
+    }
+  ]
+}

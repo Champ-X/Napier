@@ -2,7 +2,7 @@ import type { RunEvent, StreamFrame } from "@napier/contracts";
 import { describe, expect, it, vi } from "vitest";
 
 import { executeNextRunPrompt } from "../src/next-run-capability-preset-execution";
-import { DEFAULT_COMPOSER_PERMISSION_PRESET } from "../src/use-next-run-capability-preset";
+import { DEFAULT_COMPOSER_PERMISSION_PRESET } from "../src/use-next-run-options";
 
 describe("persistent Composer permission", () => {
   it("defaults to full access", () => {

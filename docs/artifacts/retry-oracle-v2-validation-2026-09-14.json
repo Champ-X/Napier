@@ -1,0 +1,67 @@
+{
+  "kind": "napier.retry-oracle-v2-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T10:39:19.713248+00:00",
+  "scope": "Offline oracle correction; no production Runtime change or old report rewrite. The separately scheduled HTTP model pair is not evidence in this receipt.",
+  "change": "Remove unspecified TypeError matching from retryDelay option validation. Add explicit parseRetryAfter invalid-clock TypeError checks and validation-before-nonretryable-status checks.",
+  "unchangedTaskAndReferenceFiles": {
+    "fixture/README.md": "7df580dd76bac99f749ba647023e1a1c48bbc2bb88bb4b075669a8a7364332d4",
+    "fixture/test/public.test.mjs": "2836c11ca241795b3ebfeff7b5be25869e26be8805cb3b0983b6d99389657058",
+    "fixture/src/retry-after.mjs": "f2ba1be57f3f1bd85d5b2f2048b39526e2e3951d9a9104db969a4b6a7b9eb897",
+    "fixture/src/retry.mjs": "3852de347487def79331b37213072a5ee62118bc46eb55bd601352b6dddf9318",
+    "expected/src/retry-after.mjs": "6c04e45115b92b57fb0015618a30f399888c6f77c9121f223cfea7877d87d6d8",
+    "expected/src/retry.mjs": "5484de62bf588f38a473d90b7202f1d99220d641cefc8ddc9d07c6917a395cc9",
+    "prompt.md": "9040418c8490b240cee9adfe234f7def5573ad710f33edcace7cfd67df30bd1b"
+  },
+  "checks": {
+    "passed": 10,
+    "failed": 0,
+    "reportPath": "/tmp/napier-retry-oracle-v2-final-tests-20260914.json",
+    "reportSha256": "526d4bbed0046f1a68f29248498cc112eff95525e02d905b2aa556872ffdbcff",
+    "tests": [
+      "retry v2 accepts TypeError where the retry-options contract specifies no error class",
+      "retry v2 accepts RangeError where the retry-options contract specifies no error class",
+      "retry v2 accepts Error where the retry-options contract specifies no error class",
+      "retry v2 rejects wrong explicit clock error type",
+      "retry v2 rejects nonretryable status bypassing validation",
+      "retry v2 rejects invalid retry options accepted as null",
+      "retry v2 rejects retry before server permission",
+      "retry v2 rejects unsafe infinite backoff multiplied by zero",
+      "retry oracle version preserves the task, public checks and reference",
+      "core v5 preserves thirty tasks and refuses to count retry versions twice"
+    ]
+  },
+  "bindings": [
+    {
+      "file": "benchmarks/harness-optimization/http-retry-policy-v1/outcome.mjs",
+      "sha256": "047cd448c4702df1d703b28943f974dd0899e1c6c134cf4edcafc13fe6d9378d"
+    },
+    {
+      "file": "benchmarks/harness-optimization/http-retry-policy-v2/outcome.mjs",
+      "sha256": "0862d71edc1e33d72edcfc76867608d5d4b37e414e4cb2b757e1630a107f164d"
+    },
+    {
+      "file": "benchmarks/harness-optimization/http-retry-policy-v2/manifest.json",
+      "sha256": "f01664b489b5937065fd49d33881a91b9b210e984fa4ea0859fbbe0da5c53e13"
+    },
+    {
+      "file": "scripts/harness-retry-oracle.test.mjs",
+      "sha256": "6bb18eb5e50259312764ae560e0beb2a2e640b09302d8f2cc670d68746ecd730"
+    },
+    {
+      "file": "benchmarks/harness-core-quality-suite-v5.json",
+      "sha256": "c9d808144c92c6b198ede2c7d677da378e45989afd45b889ca1e4da114e42374"
+    }
+  ],
+  "suite": {
+    "cases": 30,
+    "minimumTrials": 3,
+    "oldVersionsAreNotIndependentTasks": true,
+    "historicalReportsRewritten": false,
+    "olderQueuePairAutomaticallyRequalified": false
+  },
+  "paidApiCallsForOracleValidation": 0,
+  "productionSourceChanged": false,
+  "goalComplete": false,
+  "promotionReady": false
+}

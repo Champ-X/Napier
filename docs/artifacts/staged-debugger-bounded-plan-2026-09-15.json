@@ -1,0 +1,66 @@
+{
+  "kind": "napier.single-pair-with-retained-blocker-plan",
+  "createdAt": "2026-09-15T05:24:21.159Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/debugger-original-pair-v1/plan.json",
+  "planSha256": "d991e96028d76c2c80211780e0dcb37c9af22ba7caa4f1e7656b1768a128cf0b",
+  "source": "/tmp/napier-harness-staged-verification-v1",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "dispatchIndices": [
+    57,
+    56
+  ],
+  "retainedReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "0d154f1e8038c84385c22dd8310e76b4e8e62bdda27bbe99a41f5bc51fd4696a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "894b91b7d0255be49dc76887dd3ff8efc44fe4ee9b8f0084695d393d2f58cc87"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "57e48c2e1c9650e21d23cd2c4fa57381fb699377acad27daedcf2f29245be109"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "99d5cd702808590bb9f3d9696811f2404fe7ac117d12db403aee63872673e4de"
+    }
+  ],
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "clarificationPath": "/Users/champ/orca/Napier/docs/artifacts/staged-debugger-inherited-stop-clarification-2026-09-15.json",
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 3576,
+    "remainingFen": 6424,
+    "requests": 129,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "One original live-debugger repair task, not yet observed on the staged-verification source. Actual pre-edit paused-process variable inspection, session closure, permitted single-file repair and model completion cannot be established offline. No replay of NDJSON or availability probe.",
+  "scope": "Exactly one serial candidate-first pair under unchanged source/profile/driver, 180-job schedule, tasks, graders, request cadence and budgets. Retain all prior failed and ineligible reports and aggregate blockers. Stop on new candidate failure or evidence problem; existing aggregate blocker also stops the batch at its only pair boundary. No later jobs queued.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

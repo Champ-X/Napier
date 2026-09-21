@@ -1,0 +1,100 @@
+{
+  "kind": "napier.harness-product-acceptance",
+  "schemaVersion": 1,
+  "qualification": "entry-point smoke, not default-promotion evidence",
+  "model": "deepseek/deepseek-v4-flash",
+  "sandbox": "host-direct",
+  "stage": "Preset activation before persistent-memory-index addition",
+  "cli": {
+    "entry": "cli",
+    "done": [
+      {
+        "runId": "run_2da35f542b484d7184e5",
+        "status": "completed"
+      }
+    ],
+    "policies": [
+      "coding-python.v1"
+    ],
+    "graderExitCode": 0,
+    "changedPaths": [
+      "shipping.py"
+    ],
+    "eventCount": 550,
+    "toolFailures": 0
+  },
+  "web": {
+    "entry": "web",
+    "runId": "run_ff2878460bff4a8b926b",
+    "status": "completed",
+    "policies": [
+      "coding-python.v1"
+    ],
+    "graderExitCode": 0,
+    "changedPaths": [
+      "shipping.py"
+    ],
+    "toolFailures": [
+      {
+        "tool": "run_command",
+        "disposition": "correct_input"
+      }
+    ]
+  },
+  "webDefaultFollowup": {
+    "runId": "run_458e629276b040d1a53e",
+    "status": "completed",
+    "policyBindingCount": 0,
+    "tools": [
+      "read_file"
+    ]
+  },
+  "rawEvidence": [
+    {
+      "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-harness-product-4v6oeq4x/cli.jsonl",
+      "sha256": "a9d31ab6524e941492988155a08e75ea5d98776975fbe7b552b59ec79dd4678c"
+    },
+    {
+      "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-harness-product-4v6oeq4x/web-thread.json",
+      "sha256": "a371f5dfa889f1f15ef58d64d3302f53e1a5e571e0d4a952e1829416e7acfb99"
+    },
+    {
+      "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-harness-product-4v6oeq4x/web-followup-thread.json",
+      "sha256": "96b7e9e9d249f77ad5653b31157b62856cec9c7ab34b9062b761b6a1aaa55938"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "/tmp/napier-seven-web-policy-selected.png",
+      "sha256": "78e368644efa1f51fb2f8972d12afb7623f1b14c491a244d239b8b3db52e32fd"
+    },
+    {
+      "path": "/tmp/napier-seven-web-policy-completed.png",
+      "sha256": "47a62d88be007c33f469bbf9bf91d17fc98e6891f395bdbbda896bf307d3bdb6"
+    },
+    {
+      "path": "/tmp/napier-seven-web-policy-narrow-fixed.png",
+      "sha256": "3f872566b1c141f725fdf1dc781c749f4a8403714db103a3b902a97cf6f9ca65"
+    }
+  ],
+  "narrowViewport": {
+    "width": 390,
+    "height": 844,
+    "documentWidth": 390,
+    "optionsWithinViewport": true,
+    "floatingFollowButtonPresent": true,
+    "strategySelectHitTestPassed": true
+  },
+  "memoryIndexParity": {
+    "kind": "napier.memory-index-parity",
+    "comparisons": 30,
+    "facts": 1000,
+    "baseline": "context-v2 disposable FTS5",
+    "contextByteIdentical": true,
+    "warmMeanMilliseconds": {
+      "previous": 7.797663758620681,
+      "persistent": 5.619270241379312
+    },
+    "note": "Local CPU measurements with other validation running; not model cost or release qualification"
+  }
+}

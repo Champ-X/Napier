@@ -692,6 +692,37 @@ describe("execution plans", () => {
       }),
     ).not.toThrow();
 
+    const operatorEvent = {
+      ...structuredClone(event),
+      seq: 2,
+      runId: "runctl_0123456789abcdef",
+    };
+    expect(() =>
+      assertPlanArtifactEventBindings({
+        plans: [produced],
+        events: [event, operatorEvent],
+        label: "Inherited operator source",
+      }),
+    ).not.toThrow();
+    expect(() =>
+      assertPlanArtifactEventBindings({
+        plans: [produced],
+        events: [operatorEvent],
+        label: "Unproven operator source",
+      }),
+    ).toThrow("binding mismatch");
+    const changedSource = {
+      ...operatorEvent,
+      payload: { ...payload, sourceRunId: "run-other" },
+    };
+    expect(() =>
+      assertPlanArtifactEventBindings({
+        plans: [produced],
+        events: [event, changedSource],
+        label: "Changed operator source",
+      }),
+    ).toThrow("binding mismatch");
+
     const tampered = structuredClone(event);
     if (
       !tampered.payload ||

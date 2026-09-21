@@ -1,0 +1,94 @@
+{
+  "kind": "napier.node-verification-workspace-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:20:28.190374+00:00",
+  "snapshot": "/tmp/napier-harness-node-freshness-v1",
+  "files": [
+    {
+      "path": "packages/runtime/src/verification-workspace-snapshot.ts",
+      "sha256": "c73dfedd860c702f247bb206c29738a1400bf8fa355cf06f099ffe060fa185aa"
+    },
+    {
+      "path": "packages/runtime/src/verification.ts",
+      "sha256": "4abf4c684e3c7cb7b781cc93a434b1afb819109102515961e07235503a548488"
+    },
+    {
+      "path": "packages/runtime/src/verification-types.ts",
+      "sha256": "bf12dd5d1d2e6f6abb0cd126b2d4a29d223f37b0fc6c4a18deaa8dec48741b07"
+    },
+    {
+      "path": "packages/runtime/test/verification-workspace-freshness.test.ts",
+      "sha256": "5cc25bc425c540cbd09e890eecce8918c0988f047a9665b9ccb7e6d2a29707b9"
+    }
+  ],
+  "validation": {
+    "regressionsBeforeFix": 3,
+    "focusedPassed": 24,
+    "focusedOptionalOciSkipped": 1,
+    "runtime": {
+      "passed": 2602,
+      "failed": 2,
+      "skipped": 59,
+      "files": 521,
+      "durationSeconds": 310.63,
+      "failures": "Existing capability-vector and production Skill-readiness expectations"
+    },
+    "compilePassed": true,
+    "architectureExistingViolations": 7,
+    "limitsRaised": false,
+    "formatPassed": true,
+    "diffCheckPassed": true
+  },
+  "pairedEvidence": "docs/artifacts/node-verification-freshness-comparison-v2-2026-09-14.json",
+  "pairedEvidenceSha256": "57534a57462f618c3f58500d9761beaf7334433efc2eabe068ba843698ef99a9",
+  "assessment": "Mechanism verified but candidate paired trial 2 violates a string-only input contract, so this composition is rejected. The later failed unpaired baseline trial is retained; it does not cancel the earlier regression. No broader qualification or causal claim that snapshot telemetry created the semantic error.",
+  "initialInputExport": "/Users/champ/.cache/napier-seven-quality/mixed-service-freshness-v1/candidate-trial-2-input-export/reproduction.json",
+  "initialInputExportSha256": "6dcdb0accf01164b0a7fc12939846e561a9b25eb8729ca910d95b6ebdbbae237",
+  "logs": [
+    {
+      "path": "/tmp/napier-verification-freshness-before-v1.log",
+      "sha256": "7c740839a069618ae2a01a5c7faf014432010f69be1d0e82bf79372caac7a60e"
+    },
+    {
+      "path": "/tmp/napier-verification-freshness-tests-v1.log",
+      "sha256": "cf76a29c224294d09354bdb66169470d005034ab1896701344df3d5db4c868e9"
+    },
+    {
+      "path": "/tmp/napier-verification-freshness-compile-v2.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-verification-freshness-architecture-v2.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-verification-freshness-runtime-full-v1.log",
+      "sha256": "b0a70a0d9b3b24d21abfeb78a64ae77176eaf17d0192e134adee4bd7349d008a"
+    },
+    {
+      "path": "/tmp/napier-verification-freshness-format-check-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-harness-node-freshness-v1/freeze-receipt.json",
+      "sha256": "a82c1f8c87baa6b951dd5b4f126ee0380445280ec908944988215420793486bd"
+    },
+    {
+      "path": "/tmp/napier-mixed-freshness-evidence-v1.mjs",
+      "sha256": "18bc7fa461d2d1d3b8c66e95989af1d92728666d819c4e3d91ed087464f8654a"
+    },
+    {
+      "path": "/tmp/napier-mixed-freshness-evidence-v1.log",
+      "sha256": "5961fbcaef12b5333903945fba7f3dc21ab98ca6cc992a39f6b34c71470f14fc"
+    },
+    {
+      "path": "/tmp/napier-mixed-freshness-evidence-v2.mjs",
+      "sha256": "7cf696fc6df98c62de03047ded3c754c95c0c22cef3a863acc66d1b7202988fc"
+    },
+    {
+      "path": "/tmp/napier-mixed-freshness-evidence-v2.log",
+      "sha256": "d84ad6de5f6da244c4b89c1a7f424207e3cadcb43d7eb8e89abfe9bde446b107"
+    }
+  ],
+  "promotionReady": false
+}

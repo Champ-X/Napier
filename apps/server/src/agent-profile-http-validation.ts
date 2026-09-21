@@ -10,9 +10,7 @@ import {
   normalizeModelRoutePolicy,
   normalizePromptVariableDefinitions,
 } from "@napier/runtime/model";
-import {
-  normalizeToolLoopGuardPolicy,
-} from "@napier/runtime/tools";
+import { normalizeToolLoopGuardPolicy } from "@napier/runtime/tools";
 
 import {
   normalizeBoundedPrompt,
@@ -102,16 +100,8 @@ export function parseUpdateAgentProfileRequest(
     "toolLoopGuard",
     parseToolLoopGuardPolicy,
   );
-  const modelRoute = optionalField(
-    record,
-    "modelRoute",
-    parseModelRoutePolicy,
-  );
-  const clearModelRoute = optionalField(
-    record,
-    "clearModelRoute",
-    parseTrue,
-  );
+  const modelRoute = optionalField(record, "modelRoute", parseModelRoutePolicy);
+  const clearModelRoute = optionalField(record, "clearModelRoute", parseTrue);
   const threadId = optionalField(record, "threadId", (value) =>
     validThreadId(value) ? value : undefined,
   );
@@ -138,7 +128,8 @@ export function parseUpdateAgentProfileRequest(
   if (
     fields.some((field) => !field.valid) ||
     (modelRoute.value !== undefined && clearModelRoute.value === true)
-  ) return undefined;
+  )
+    return undefined;
   return {
     ...(name.value !== undefined ? { name: name.value } : {}),
     ...(description.value !== undefined
@@ -177,17 +168,15 @@ export function parseUpdateAgentProfileRequest(
     ...(toolLoopGuard.value !== undefined
       ? { toolLoopGuard: toolLoopGuard.value }
       : {}),
-    ...(modelRoute.value !== undefined
-      ? { modelRoute: modelRoute.value }
+    ...(modelRoute.value !== undefined ? { modelRoute: modelRoute.value } : {}),
+    ...(clearModelRoute.value === true
+      ? { clearModelRoute: true as const }
       : {}),
-    ...(clearModelRoute.value === true ? { clearModelRoute: true as const } : {}),
     ...(threadId.value !== undefined ? { threadId: threadId.value } : {}),
   };
 }
 
-function parseModelRoutePolicy(
-  input: unknown,
-): ModelRoutePolicyV2 | undefined {
+function parseModelRoutePolicy(input: unknown): ModelRoutePolicyV2 | undefined {
   try {
     return normalizeModelRoutePolicy(input as ModelRoutePolicyV2);
   } catch {
@@ -391,11 +380,10 @@ function parseRunLimits(
     "timeoutMs",
   ]);
   const maxTurns = parseBoundedInteger(record?.["maxTurns"], 1, 128);
-  const maxTotalTokens = parseBoundedInteger(
-    record?.["maxTotalTokens"],
-    1_000,
-    10_000_000,
-  );
+  const maxTotalTokens =
+    record?.["maxTotalTokens"] === 0
+      ? 0
+      : parseBoundedInteger(record?.["maxTotalTokens"], 1_000, 10_000_000);
   const maxCostUsd = parseBoundedFiniteNumber(
     record?.["maxCostUsd"],
     0.01,

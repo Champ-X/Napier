@@ -1,0 +1,79 @@
+{
+  "kind": "napier.contract-first-runner-rejection",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T23:30:02.723954+00:00",
+  "root": "/Users/champ/.cache/napier-seven-quality/contract-first-queue-v1",
+  "rows": [
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_2efcb9cf43cd4ee1b208",
+      "status": "completed",
+      "taskSuccess": false,
+      "graderExitCode": 0,
+      "report": "/Users/champ/.cache/napier-seven-quality/contract-first-queue-v1/candidate/trial-1/result.json",
+      "reportSha256": "0f7dc277e760f20ae811be74a97fb2630f1d1b2f8c1550b1654f7a6c166ec8e3",
+      "allowedChanges": true,
+      "requiredTools": true,
+      "processPassed": true,
+      "debuggerPassed": true,
+      "serviceObservations": 0
+    },
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_c8f17fd749f7459998ac",
+      "status": "completed",
+      "taskSuccess": false,
+      "graderExitCode": 0,
+      "report": "/Users/champ/.cache/napier-seven-quality/contract-first-queue-v1/baseline/trial-1/result.json",
+      "reportSha256": "4f5cc19d4c696a6a1daf09362658a26024c2c07fa2eb1a2ae632e0df2ba26a29",
+      "allowedChanges": true,
+      "requiredTools": true,
+      "processPassed": true,
+      "debuggerPassed": true,
+      "serviceObservations": 0
+    },
+    {
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_402fce90a4c943be9c35",
+      "status": "completed",
+      "taskSuccess": false,
+      "graderExitCode": 0,
+      "report": "/Users/champ/.cache/napier-seven-quality/contract-first-queue-v1/candidate/trial-2/result.json",
+      "reportSha256": "7fc5d862a3c565939170c0b0d398b177f673792a904f5f6e5a7f3f50f1314d18",
+      "allowedChanges": true,
+      "requiredTools": true,
+      "processPassed": true,
+      "debuggerPassed": true,
+      "serviceObservations": 0
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_511ba821d8754469b40b",
+      "status": "completed",
+      "taskSuccess": false,
+      "graderExitCode": 0,
+      "report": "/Users/champ/.cache/napier-seven-quality/contract-first-queue-v1/baseline/trial-2/result.json",
+      "reportSha256": "d87151ea1ce30e6cceae06a7a51b9b87108ff408d4a33134d4f41c41bde47df1",
+      "allowedChanges": true,
+      "requiredTools": true,
+      "processPassed": true,
+      "debuggerPassed": true,
+      "serviceObservations": 0
+    }
+  ],
+  "stoppedFor": "An unconditional mixed-service observation requirement was inherited into the library-task runner. Queue tasks have no HTTP service requirement, so this extra predicate invalidates the reported task-success metric. The independent behavior grader, allowed-file checks and required tool checks passed for all four settled Runs.",
+  "originalReportsUnchanged": true,
+  "inFlightTrialsCancelled": [
+    "baseline trial 3",
+    "candidate trial 3"
+  ],
+  "correctedDriver": "/tmp/napier-contract-first-driver-v2/run-harness-optimization-campaign.mjs",
+  "correction": "Service observation requires an explicit boolean flag; it is included in the acceptance hash and report. The observer is not run when disabled. Mixed-service tasks still require nonempty all-passing observations.",
+  "newCampaign": "/Users/champ/.cache/napier-seven-quality/contract-first-queue-v2",
+  "reuseOldResultsAsPassingTrials": false,
+  "promotionReady": false
+}

@@ -6,6 +6,10 @@ import type {
 } from "@napier/contracts/model-route";
 import type { SubagentRole } from "@napier/contracts";
 import {
+  HARNESS_POLICY_PRESET_IDS,
+  type HarnessPolicyPresetId,
+} from "@napier/contracts/harness-experiments";
+import {
   AGENT_CAPABILITY_PRESET_IDS,
   type AgentCapabilityPresetId,
 } from "@napier/contracts/agent-capabilities";
@@ -37,6 +41,7 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
     "model",
     "modelRoute",
     "capabilityPreset",
+    "harnessPolicyPreset",
     "sourceContinuityRunId",
   ]);
   if (!record) return undefined;
@@ -62,7 +67,35 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
       ? undefined
       : parseModelRouteRequest(record["modelRoute"]);
   if (record["modelRoute"] !== undefined && !modelRoute) return undefined;
+  const presets = parsePromptPresets(record);
+  if (!presets) return undefined;
+  const sourceContinuityRunId = parseRunId(record["sourceContinuityRunId"]);
+  if (record["sourceContinuityRunId"] !== undefined && !sourceContinuityRunId) {
+    return undefined;
+  }
+  return {
+    text,
+    ...presets,
+    ...(images ? { images } : {}),
+    ...(model ? { model } : {}),
+    ...(modelRoute ? { modelRoute } : {}),
+    ...(sourceContinuityRunId ? { sourceContinuityRunId } : {}),
+  };
+}
+
+function parsePromptPresets(
+  record: Record<string, unknown>,
+): Pick<PromptRequest, "capabilityPreset" | "harnessPolicyPreset"> | undefined {
   const capabilityPreset = record["capabilityPreset"];
+  const harnessPolicyPreset = record["harnessPolicyPreset"];
+  if (
+    harnessPolicyPreset !== undefined &&
+    (typeof harnessPolicyPreset !== "string" ||
+      !HARNESS_POLICY_PRESET_IDS.includes(
+        harnessPolicyPreset as HarnessPolicyPresetId,
+      ))
+  )
+    return undefined;
   if (
     capabilityPreset !== undefined &&
     (typeof capabilityPreset !== "string" ||
@@ -72,19 +105,13 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   ) {
     return undefined;
   }
-  const sourceContinuityRunId = parseRunId(record["sourceContinuityRunId"]);
-  if (record["sourceContinuityRunId"] !== undefined && !sourceContinuityRunId) {
-    return undefined;
-  }
   return {
-    text,
-    ...(images ? { images } : {}),
-    ...(model ? { model } : {}),
-    ...(modelRoute ? { modelRoute } : {}),
+    ...(harnessPolicyPreset !== undefined
+      ? { harnessPolicyPreset: harnessPolicyPreset as HarnessPolicyPresetId }
+      : {}),
     ...(typeof capabilityPreset === "string"
       ? { capabilityPreset: capabilityPreset as AgentCapabilityPresetId }
       : {}),
-    ...(sourceContinuityRunId ? { sourceContinuityRunId } : {}),
   };
 }
 

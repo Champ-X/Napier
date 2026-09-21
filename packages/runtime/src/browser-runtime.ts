@@ -10,7 +10,7 @@ import {
   BROWSER_VIEWPORT_HEIGHT,
   BROWSER_VIEWPORT_WIDTH,
 } from "./browser-session-model.js";
-import { sha256File } from "./command-execution.js";
+import { sha256File } from "./command-runtime.js";
 import type { FixedIpProxyBinding } from "./fixed-ip-http-proxy.js";
 import { verifiedPinnedBrowserRuntimeCandidate } from "./browser-runtime-verification.js";
 

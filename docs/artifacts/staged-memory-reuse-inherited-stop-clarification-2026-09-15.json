@@ -1,0 +1,21 @@
+{
+  "kind": "napier.original-baseline-stop-clarification",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:00:30.510Z",
+  "priorResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/savepoints-original-pair-v1/result.json",
+  "priorResultSha256": "fe4770f45ebb4dda1bcb2d765dbb16352ff1922a74b428eb5916e00ed9f6044a",
+  "priorAuditPath": "/Users/champ/orca/Napier/docs/artifacts/staged-savepoints-final-audit-2026-09-15.json",
+  "priorAuditSha256": "89dae0347271da871c3bfa04e6bde2197f754bdf88a017ea134666fca15403d4",
+  "candidateRunId": "run_9a1d0aec74c646499a50",
+  "baselineRunId": "run_76af8c7911754698b595",
+  "originalStop": "aggregate_quality_or_evidence_failed",
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "originalObservationEligible": false,
+  "originalReservationsReleased": false,
+  "sourceChanged": false,
+  "qualityGateChanged": false,
+  "reason": "The original NDJSON candidate succeeded but its baseline failed after a thinking guard, with incomplete provider usage. That observation remains ineligible. All later original reports and aggregate blockers are retained. One different unobserved original pair may add independent evidence without clearing the inherited blocker or enabling promotion. Only the current staged-verification candidate needs real observation for source-bound memory selection, stale-source exclusion and the original shipping repair. The exact same frozen baseline already has a complete original report under matching task/driver/model/budget conditions and will be referenced directly, with zero new baseline API calls.",
+  "modelRequests": 0
+}

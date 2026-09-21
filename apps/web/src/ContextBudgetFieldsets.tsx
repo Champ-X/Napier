@@ -43,7 +43,7 @@ export function ContextBudgetFieldsets({
         <ContextNumberField
           label={contextCopy.runMaxTokens}
           value={agentRunMaxTotalTokens}
-          min={1_000}
+          min={0}
           max={10_000_000}
           onChange={setAgentRunMaxTotalTokens}
         />

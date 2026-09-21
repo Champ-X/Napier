@@ -1,0 +1,1 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {evaluatePreconditions} from '../src/preconditions.mjs';test('weak If-None-Match cache comparison',()=>assert.equal(evaluatePreconditions({method:'GET',exists:true,etag:'"v1"',ifNoneMatch:'W/"v1"'}),304));

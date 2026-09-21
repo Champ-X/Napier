@@ -1,0 +1,1 @@
+export function evaluatePreconditions({method,exists,etag=null,ifMatch=null,ifNoneMatch=null}){if(ifMatch&&ifMatch!==etag)return 412;if(ifNoneMatch===etag&&etag)return method==='GET'?304:412;return null;}

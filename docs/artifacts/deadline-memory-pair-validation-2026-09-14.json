@@ -1,0 +1,1329 @@
+{
+  "kind": "napier.deadline-memory-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T15:48:01.938Z",
+  "source": "/tmp/napier-harness-progressive-verification-v1",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v6",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/plan.json",
+  "planSha256": "d33742a034fafd2164ff9b37cb1d032771a83f6416ed853115e2499b4bd20e30",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/result.json",
+  "resultSha256": "c94b5a78786c433da201b2a60daf343f5f3bcb7b83b16e2df061fa0cf5443a8c",
+  "audits": [
+    {
+      "kind": "napier.settled-harness-run-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T15:43:57.629Z",
+      "jobIndex": 0,
+      "runId": "run_509737d913f34732b37d",
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "candidate",
+      "status": "completed",
+      "taskSuccess": true,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/memory_shipping_current_source_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "b824b4bba626bc760ae1616a80c942c78ab3972499e7fa5d9e144d75469c1eed",
+      "auditedCapsules": 6,
+      "modelRequestBindingsVerified": true,
+      "toolCalls": [
+        {
+          "callId": "call_00_vXIXst736eOjR7u0aVVO7969",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "9ec672a2838433b69d8eb1b2a1c28136d11a3076d4ad9af507533029eca29e3e",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_PSo6cFdPibnuIu7Fta5o8441",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "11b84d1736c09e813ccac9ce34c811e6be7a2ca89266a740ff0e15c2d6e75f2c",
+          "terminal": "tool.completed"
+        }
+      ],
+      "toolFailures": 0,
+      "changed": [
+        "src/shipping.js"
+      ],
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "protocol": {
+        "firstPatchStartEventId": "event_954b340c066c400599f1",
+        "firstPatchStartSeq": 158,
+        "protocolSha256": "290a25cbd04c5cd15194b445186a47cdfbf431b9cd3d74f2e928ed8715635d72",
+        "invocations": [
+          {
+            "eventId": "event_62fd588d52a54670acb9",
+            "capsuleSha256": "3ed4e68d96e8f9cf344e37df5737eb6e1deaf02ccb163cb7e4ad6240fea31255",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_0c2ab340112f423b8200",
+            "capsuleSha256": "0ba148059c477f6cb18cda6532e565b0701572828a74e874b805958b3385d7c0",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_c67fecb14b484917af57",
+            "capsuleSha256": "33f653189683a854b351186dbe9928e0d63f101473f6ae3409e91e48591253c7",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_e769ddcbbea74dddb751",
+            "capsuleSha256": "b43e081b8b4f4242829ac030a866ad9076050f79399d5ef1edb1c4090e4031b1",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_86bd9463f7b142209d17",
+            "capsuleSha256": "4e65a0db466151fe9ba878ccec3c254d3f00012f852d330ce3c3cde8027ee4cc",
+            "protocolPresent": true
+          },
+          {
+            "eventId": "event_979be87d22cb4106bd96",
+            "capsuleSha256": "15e24e8f80fcddb9ffeb07edc9fadc137756153381dc1533194846a34ea8bcc9",
+            "protocolPresent": true
+          }
+        ],
+        "executions": [
+          {
+            "runId": "run_509737d913f34732b37d",
+            "callId": "call_00_vXIXst736eOjR7u0aVVO7969",
+            "toolName": "run_command",
+            "startedEventId": "event_7d98bd07f3b6427aa9e0",
+            "startedSeq": 122,
+            "phase": "before_first_patch",
+            "requestSha256": "9ec672a2838433b69d8eb1b2a1c28136d11a3076d4ad9af507533029eca29e3e",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_9bdb5ab6b63e4e38a6b7",
+            "settledSeq": 125,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "15e24e8f80fcddb9ffeb07edc9fadc137756153381dc1533194846a34ea8bcc9",
+            "settledBeforeFirstPatch": true
+          },
+          {
+            "runId": "run_509737d913f34732b37d",
+            "callId": "call_00_PSo6cFdPibnuIu7Fta5o8441",
+            "toolName": "run_command",
+            "startedEventId": "event_36ba0742a0704c549201",
+            "startedSeq": 194,
+            "phase": "after_first_patch",
+            "requestSha256": "11b84d1736c09e813ccac9ce34c811e6be7a2ca89266a740ff0e15c2d6e75f2c",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_3d35c30a3ca945438b01",
+            "settledSeq": 197,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "15e24e8f80fcddb9ffeb07edc9fadc137756153381dc1533194846a34ea8bcc9",
+            "settledBeforeFirstPatch": false
+          }
+        ],
+        "reusedRequests": [],
+        "unavailableCapsules": 0,
+        "complete": true,
+        "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+      },
+      "spendingRows": [
+        {
+          "id": 454,
+          "charged_fen": 2,
+          "status": "settled",
+          "prompt_tokens": 8446,
+          "completion_tokens": 100,
+          "cache_hit_tokens": 768,
+          "cache_miss_tokens": 7678,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 455,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 8766,
+          "completion_tokens": 125,
+          "cache_hit_tokens": 6144,
+          "cache_miss_tokens": 2622,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 456,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 9049,
+          "completion_tokens": 437,
+          "cache_hit_tokens": 6528,
+          "cache_miss_tokens": 2521,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 457,
+          "charged_fen": 2,
+          "status": "settled",
+          "prompt_tokens": 9893,
+          "completion_tokens": 617,
+          "cache_hit_tokens": 6784,
+          "cache_miss_tokens": 3109,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 458,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 10771,
+          "completion_tokens": 407,
+          "cache_hit_tokens": 7552,
+          "cache_miss_tokens": 3219,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 459,
+          "charged_fen": 2,
+          "status": "settled",
+          "prompt_tokens": 11754,
+          "completion_tokens": 616,
+          "cache_hit_tokens": 6272,
+          "cache_miss_tokens": 5482,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 460,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 1956,
+          "completion_tokens": 390,
+          "cache_hit_tokens": 128,
+          "cache_miss_tokens": 1828,
+          "accounting_mode": "provider_cache_split"
+        }
+      ],
+      "spendingMathVerified": true,
+      "settledFen": 10,
+      "unreceiptedReservedFen": 0,
+      "verificationStatuses": [],
+      "admissions": 7,
+      "minimumIntervalMs": 15000,
+      "conservativeCostFen": 10,
+      "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations",
+      "thinkingLoopDetections": []
+    },
+    {
+      "kind": "napier.settled-harness-run-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T15:47:04.214Z",
+      "jobIndex": 1,
+      "runId": "run_dac68d6495be4364b995",
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "baseline",
+      "status": "completed",
+      "taskSuccess": true,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "60f3b942561631f6ddad4add35712687e5cda9907538de91559d69f9acaf1daa",
+      "auditedCapsules": 12,
+      "modelRequestBindingsVerified": true,
+      "toolCalls": [
+        {
+          "callId": "call_00_cybKatoaVtkJDp3QGAwc1932",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "f1f12f7dbe7be974b844b327195b397f7b135d277d7bce63d5d62295a05943c6",
+          "terminal": "tool.completed"
+        }
+      ],
+      "toolFailures": 1,
+      "changed": [
+        "src/shipping.js"
+      ],
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "protocol": {
+        "firstPatchStartEventId": "event_0db10ed863cc48fd83dc",
+        "firstPatchStartSeq": 179,
+        "protocolSha256": null,
+        "invocations": [
+          {
+            "eventId": "event_5cc55ad755dd40979e45",
+            "capsuleSha256": "a2c09f797fa90b49ca54c4f328f88cae47c9b5f2d9546024250494ca7f94bd20",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_20b7689e711d4df39992",
+            "capsuleSha256": "170027eb233b3ad4be1c52b946b86e438080cab50f375d035ee265eaafbc024f",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_4e24847d52d04b659a9f",
+            "capsuleSha256": "24bfb3c0f98150aa38e35de60445de23dd63b65c89c82e5b11789c0abcbaad78",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_fe6f09872b9442e3b2c8",
+            "capsuleSha256": "c21cd9d1311797fd6f317ac18357b7ca618e5bde49eb296c36aae47a901e6665",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_f642a6463eb24bb58689",
+            "capsuleSha256": "b5f4d8108289d6b3ac2604ea0ccf5782b25108c1cbc770c367eacc3c967b2a23",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_3b573efa0f8b456cb7d8",
+            "capsuleSha256": "0169a6df313b7b13a672eea66e1c76a3b7411fd107d903135abfdad380865f2a",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_7cb316f6efe140188e5e",
+            "capsuleSha256": "8dbdc34444bdd918d662d5f71ef55d1c18d19d82b45bcddfcc6668194bbead55",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_3022057a1e854a829697",
+            "capsuleSha256": "96327516bd83fcbf6ca8de7fc1c014afe6c2b9d79da895b51c8eeb7a7cbfff0e",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_8ad4eae618684a6baf1d",
+            "capsuleSha256": "6459bc8e51c367745828b471160a7c5537644ac5aaa2c698691621d512df43ab",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_87741bcaa777418693ab",
+            "capsuleSha256": "40b0b6994112c84464382238fda093460aee5417edbe4378b25fca678745e22f",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_d66da7bc92f94d50b347",
+            "capsuleSha256": "1bdf40437f107170a72e7460a7dd08f759736a4c010863f2d0851b4e12c22dfb",
+            "protocolPresent": false
+          },
+          {
+            "eventId": "event_63fd7f51acea4dbba0bd",
+            "capsuleSha256": "5b898d83a142d9debb16445e477cd1d4e51e9d4728190a94cc3874cc86541504",
+            "protocolPresent": false
+          }
+        ],
+        "executions": [
+          {
+            "runId": "run_dac68d6495be4364b995",
+            "callId": "call_00_cybKatoaVtkJDp3QGAwc1932",
+            "toolName": "run_command",
+            "startedEventId": "event_8f54d81de96543c48822",
+            "startedSeq": 315,
+            "phase": "after_first_patch",
+            "requestSha256": "f1f12f7dbe7be974b844b327195b397f7b135d277d7bce63d5d62295a05943c6",
+            "classification": "inline_command",
+            "status": "completed",
+            "exitCode": 0,
+            "settledEventId": "event_abb674f9aa3841209f35",
+            "settledSeq": 318,
+            "verificationStatus": "succeeded",
+            "sourceCapsuleSha256": "5b898d83a142d9debb16445e477cd1d4e51e9d4728190a94cc3874cc86541504",
+            "settledBeforeFirstPatch": false
+          }
+        ],
+        "reusedRequests": [],
+        "unavailableCapsules": 0,
+        "complete": true,
+        "scope": "Chronology relative to first observed apply_patch request and byte-identical argument reuse. Other mutation paths may exist. Inline commands are not automatically classified as tests; passing executions do not establish oracle correctness or full contract coverage."
+      },
+      "spendingRows": [
+        {
+          "id": 461,
+          "charged_fen": 2,
+          "status": "settled",
+          "prompt_tokens": 6576,
+          "completion_tokens": 106,
+          "cache_hit_tokens": 512,
+          "cache_miss_tokens": 6064,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 462,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 6813,
+          "completion_tokens": 88,
+          "cache_hit_tokens": 6656,
+          "cache_miss_tokens": 157,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 463,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 7821,
+          "completion_tokens": 657,
+          "cache_hit_tokens": 6784,
+          "cache_miss_tokens": 1037,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 464,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 8659,
+          "completion_tokens": 94,
+          "cache_hit_tokens": 8448,
+          "cache_miss_tokens": 211,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 465,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 8930,
+          "completion_tokens": 221,
+          "cache_hit_tokens": 8704,
+          "cache_miss_tokens": 226,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 466,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 9270,
+          "completion_tokens": 60,
+          "cache_hit_tokens": 9088,
+          "cache_miss_tokens": 182,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 467,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 9382,
+          "completion_tokens": 394,
+          "cache_hit_tokens": 7040,
+          "cache_miss_tokens": 2342,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 468,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 10127,
+          "completion_tokens": 841,
+          "cache_hit_tokens": 9728,
+          "cache_miss_tokens": 399,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 469,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 11506,
+          "completion_tokens": 451,
+          "cache_hit_tokens": 10880,
+          "cache_miss_tokens": 626,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 470,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 12484,
+          "completion_tokens": 399,
+          "cache_hit_tokens": 11904,
+          "cache_miss_tokens": 580,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 471,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 13222,
+          "completion_tokens": 290,
+          "cache_hit_tokens": 12800,
+          "cache_miss_tokens": 422,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 472,
+          "charged_fen": 3,
+          "status": "settled",
+          "prompt_tokens": 14167,
+          "completion_tokens": 425,
+          "cache_hit_tokens": 2560,
+          "cache_miss_tokens": 11607,
+          "accounting_mode": "provider_cache_split"
+        },
+        {
+          "id": 473,
+          "charged_fen": 1,
+          "status": "settled",
+          "prompt_tokens": 2003,
+          "completion_tokens": 398,
+          "cache_hit_tokens": 128,
+          "cache_miss_tokens": 1875,
+          "accounting_mode": "provider_cache_split"
+        }
+      ],
+      "spendingMathVerified": true,
+      "settledFen": 16,
+      "unreceiptedReservedFen": 0,
+      "verificationStatuses": [],
+      "admissions": 13,
+      "minimumIntervalMs": 15000,
+      "conservativeCostFen": 16,
+      "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations",
+      "thinkingLoopDetections": []
+    }
+  ],
+  "memoryAudits": [
+    {
+      "kind": "napier.memory-task-invocation-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T15:45:38.940Z",
+      "arm": "candidate",
+      "runId": "run_509737d913f34732b37d",
+      "reportSha256": "b824b4bba626bc760ae1616a80c942c78ab3972499e7fa5d9e144d75469c1eed",
+      "taskSuccess": true,
+      "readmeSha256": "e1c74d854f64d3ae4033e430b10fb460c10be8828759600b4e6fb49c4229cd33",
+      "seedsSha256": "f6aa0964dd043ed71bd886de2dd211d3eca5cc19309d7d32da3c9a18c75b465e",
+      "seedIdentities": [
+        {
+          "seedIndex": 0,
+          "id": "memory_7e6a8531551a43f49545",
+          "contentSha256": "ea4e65be4842bb862ed7933dc8d8611aac8f9ed6b6d5d826af8383398501f238",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory.",
+            "fileDependencies": [
+              {
+                "path": "README.md",
+                "sha256": "e1c74d854f64d3ae4033e430b10fb460c10be8828759600b4e6fb49c4229cd33"
+              }
+            ]
+          }
+        },
+        {
+          "seedIndex": 1,
+          "id": "memory_60bcb671f47d435eb2ef",
+          "contentSha256": "a556c1fc6b4e713538ca36d8eaae1600e6fdc76880183ce21d3b8a508473112a",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 2,
+          "id": "memory_324bc547f337435a9d0f",
+          "contentSha256": "72e8b28b3587d1a8e9de5cdcd7ec87c783ab2406e5c342f0bac37f02189e9ac5",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 3,
+          "id": "memory_997134f40ba94021bc96",
+          "contentSha256": "ec4fa949147b4e4af3dc2a8398531c8ee63ecc5eb2869507df773f3a38bff877",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 4,
+          "id": "memory_817d477a1ca44992a586",
+          "contentSha256": "c9da243e2daa37655eebde5b7cd539b0a4aa61d903f7d3017386b976c66a6dbc",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 5,
+          "id": "memory_d16822e5cff9432bbede",
+          "contentSha256": "456a632582329a17e8605425d2fd33cba6ce7e608bc69c78c8eb6adf0560f7c9",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 6,
+          "id": "memory_5c6a82e732314e87bf45",
+          "contentSha256": "770d0c3be8a245a2fdde1ecc10c918efdf068bd476c566543e8994531054fb42",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 7,
+          "id": "memory_d85525a6dd80432f8997",
+          "contentSha256": "0b13e02700e56445f600983560990c679b5429d0974477d22513c9d0152a8ca4",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 8,
+          "id": "memory_64243ea1f6cc4b01b217",
+          "contentSha256": "9712f7cf664debafb552640d1ef54302e67eb21d2f432f7dcf1d5e2c99905b03",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 9,
+          "id": "memory_3dd4682c3a144a419eab",
+          "contentSha256": "1c18d49a316ac2d6653970c82b181c652e73ea143c5b38e43fea6c85cbc6a98d",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 10,
+          "id": "memory_7d3df320f3be4a59ba0e",
+          "contentSha256": "975aa72ad122777decf79d18b45a64de6f89772678b619b1b065ccb7778f5543",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 11,
+          "id": "memory_0fc5953e0a88480d9e34",
+          "contentSha256": "20e7a45c111ff13e11fe7f58e1125ea8b6d64fd66830075decd4b675190618f2",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 12,
+          "id": "memory_8c18877c1b7044cd9b46",
+          "contentSha256": "cb113097975619ae2d5f9d807869e706c9415ccca9f3446d4daa0cf6981ec592",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 13,
+          "id": "memory_093eebdf905a4d828e96",
+          "contentSha256": "a204b9e89326656608c32c9b6fa58db044fff73240b845a80575bcc91c7197b2",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 14,
+          "id": "memory_942f36ae79634d49bd02",
+          "contentSha256": "9ee54d491919b78a36bc09519acd096a6212652f7b1ea1021c5edf5c380e5197",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 15,
+          "id": "memory_754bb8414bc5421fb34a",
+          "contentSha256": "fa8350bc384ebefea59d3c6a3abcec1bc12ccd2896fbf9561f0550a8f4378286",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 16,
+          "id": "memory_c4a78984c82c40ecae42",
+          "contentSha256": "cf57fa5e2e980a64e41e31cebcc620b4307537181c7760330093955766ce762a",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 17,
+          "id": "memory_2ea80bce3cdb4927b1be",
+          "contentSha256": "f9521128f6d3e9cc6fc4e9a2ead6903b87079e74efad5a5d913a3361a502ca4c",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 18,
+          "id": "memory_c30488a94c4944e68c20",
+          "contentSha256": "f96f2a4d865971850f799f1bc724a1ffabc1900d7ee34752dfa5d21a990d78bc",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 19,
+          "id": "memory_62ceeba9c71941f2a0c1",
+          "contentSha256": "fd9e81c0103cd26adea3dc80814ae7b4b14a9cb4c0289455d050c8342409d9b3",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory.",
+            "fileDependencies": [
+              {
+                "path": "README.md",
+                "sha256": "12ee0e5caa4b765456655e4f95b241010460315dfdf07fd46bd991d7fa206ac3"
+              }
+            ]
+          }
+        }
+      ],
+      "inputs": [
+        {
+          "capsuleSha256": "3ed4e68d96e8f9cf344e37df5737eb6e1deaf02ccb163cb7e4ad6240fea31255",
+          "memoryEventId": "event_0914f6e5f8644320a92f",
+          "phase": "model_invocation",
+          "selection": {
+            "mode": "ranked_with_source_groups",
+            "queryTermCount": 21,
+            "eligibleCount": 19,
+            "matchedCount": 1,
+            "candidateCount": 19,
+            "excludedCount": 0
+          },
+          "projectedCount": 10,
+          "currentProjected": true,
+          "staleProjected": false,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": true,
+          "currentExactTextPresent": true,
+          "staleExactTextPresent": false
+        },
+        {
+          "capsuleSha256": "0ba148059c477f6cb18cda6532e565b0701572828a74e874b805958b3385d7c0",
+          "memoryEventId": "event_f79305f0ab21434096a2",
+          "phase": "model_invocation",
+          "selection": {
+            "mode": "ranked_with_source_groups",
+            "queryTermCount": 21,
+            "eligibleCount": 19,
+            "matchedCount": 1,
+            "candidateCount": 19,
+            "excludedCount": 0
+          },
+          "projectedCount": 10,
+          "currentProjected": true,
+          "staleProjected": false,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": true,
+          "currentExactTextPresent": true,
+          "staleExactTextPresent": false
+        },
+        {
+          "capsuleSha256": "33f653189683a854b351186dbe9928e0d63f101473f6ae3409e91e48591253c7",
+          "memoryEventId": "event_8ca9f167bb754a82b91d",
+          "phase": "model_invocation",
+          "selection": {
+            "mode": "ranked_with_source_groups",
+            "queryTermCount": 21,
+            "eligibleCount": 19,
+            "matchedCount": 1,
+            "candidateCount": 19,
+            "excludedCount": 0
+          },
+          "projectedCount": 10,
+          "currentProjected": true,
+          "staleProjected": false,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": true,
+          "currentExactTextPresent": true,
+          "staleExactTextPresent": false
+        },
+        {
+          "capsuleSha256": "b43e081b8b4f4242829ac030a866ad9076050f79399d5ef1edb1c4090e4031b1",
+          "memoryEventId": "event_09f997a6968440138f5e",
+          "phase": "model_invocation",
+          "selection": {
+            "mode": "ranked_with_source_groups",
+            "queryTermCount": 21,
+            "eligibleCount": 19,
+            "matchedCount": 1,
+            "candidateCount": 19,
+            "excludedCount": 0
+          },
+          "projectedCount": 10,
+          "currentProjected": true,
+          "staleProjected": false,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": true,
+          "currentExactTextPresent": true,
+          "staleExactTextPresent": false
+        },
+        {
+          "capsuleSha256": "4e65a0db466151fe9ba878ccec3c254d3f00012f852d330ce3c3cde8027ee4cc",
+          "memoryEventId": "event_312cac2865a545ceac6c",
+          "phase": "model_invocation",
+          "selection": {
+            "mode": "ranked_with_source_groups",
+            "queryTermCount": 21,
+            "eligibleCount": 19,
+            "matchedCount": 1,
+            "candidateCount": 19,
+            "excludedCount": 0
+          },
+          "projectedCount": 10,
+          "currentProjected": true,
+          "staleProjected": false,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": true,
+          "currentExactTextPresent": true,
+          "staleExactTextPresent": false
+        },
+        {
+          "capsuleSha256": "15e24e8f80fcddb9ffeb07edc9fadc137756153381dc1533194846a34ea8bcc9",
+          "memoryEventId": "event_f170db29028840dca974",
+          "phase": "model_invocation",
+          "selection": {
+            "mode": "ranked_with_source_groups",
+            "queryTermCount": 21,
+            "eligibleCount": 19,
+            "matchedCount": 1,
+            "candidateCount": 19,
+            "excludedCount": 0
+          },
+          "projectedCount": 10,
+          "currentProjected": true,
+          "staleProjected": false,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": true,
+          "currentExactTextPresent": true,
+          "staleExactTextPresent": false
+        }
+      ],
+      "modelRequests": 0,
+      "scope": "Read-only membership and source-version audit of actual hash-validated inputs. It does not prove causal use of memory, eliminate irrelevant facts, or establish broad semantic recall. Original task outputs and reports are unchanged."
+    },
+    {
+      "kind": "napier.memory-task-invocation-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T15:47:04.193Z",
+      "arm": "baseline",
+      "runId": "run_dac68d6495be4364b995",
+      "reportSha256": "60f3b942561631f6ddad4add35712687e5cda9907538de91559d69f9acaf1daa",
+      "taskSuccess": true,
+      "readmeSha256": "e1c74d854f64d3ae4033e430b10fb460c10be8828759600b4e6fb49c4229cd33",
+      "seedsSha256": "f6aa0964dd043ed71bd886de2dd211d3eca5cc19309d7d32da3c9a18c75b465e",
+      "seedIdentities": [
+        {
+          "seedIndex": 0,
+          "id": "memory_a814fdd80ad04475b061",
+          "contentSha256": "ea4e65be4842bb862ed7933dc8d8611aac8f9ed6b6d5d826af8383398501f238",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 1,
+          "id": "memory_163c423e21d44d5586e3",
+          "contentSha256": "a556c1fc6b4e713538ca36d8eaae1600e6fdc76880183ce21d3b8a508473112a",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 2,
+          "id": "memory_2144d80645594af88006",
+          "contentSha256": "72e8b28b3587d1a8e9de5cdcd7ec87c783ab2406e5c342f0bac37f02189e9ac5",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 3,
+          "id": "memory_1ebfb417cb334647ace5",
+          "contentSha256": "ec4fa949147b4e4af3dc2a8398531c8ee63ecc5eb2869507df773f3a38bff877",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 4,
+          "id": "memory_dfa77de1c75143258143",
+          "contentSha256": "c9da243e2daa37655eebde5b7cd539b0a4aa61d903f7d3017386b976c66a6dbc",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 5,
+          "id": "memory_26f07c0e1dbf4e85a76c",
+          "contentSha256": "456a632582329a17e8605425d2fd33cba6ce7e608bc69c78c8eb6adf0560f7c9",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 6,
+          "id": "memory_74a3139fd89b4009a8f0",
+          "contentSha256": "770d0c3be8a245a2fdde1ecc10c918efdf068bd476c566543e8994531054fb42",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 7,
+          "id": "memory_52fafaa134404e658dc0",
+          "contentSha256": "0b13e02700e56445f600983560990c679b5429d0974477d22513c9d0152a8ca4",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 8,
+          "id": "memory_87d534261f934105bfcc",
+          "contentSha256": "9712f7cf664debafb552640d1ef54302e67eb21d2f432f7dcf1d5e2c99905b03",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 9,
+          "id": "memory_2e3d4ba3c05d46e1b2fe",
+          "contentSha256": "1c18d49a316ac2d6653970c82b181c652e73ea143c5b38e43fea6c85cbc6a98d",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 10,
+          "id": "memory_3741a0b750d24505b243",
+          "contentSha256": "975aa72ad122777decf79d18b45a64de6f89772678b619b1b065ccb7778f5543",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 11,
+          "id": "memory_f69befe921d8406c8325",
+          "contentSha256": "20e7a45c111ff13e11fe7f58e1125ea8b6d64fd66830075decd4b675190618f2",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 12,
+          "id": "memory_2b9cddbc89d94242ac5c",
+          "contentSha256": "cb113097975619ae2d5f9d807869e706c9415ccca9f3446d4daa0cf6981ec592",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 13,
+          "id": "memory_b52e5cd1e3074f309e44",
+          "contentSha256": "a204b9e89326656608c32c9b6fa58db044fff73240b845a80575bcc91c7197b2",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 14,
+          "id": "memory_639041e843344618adca",
+          "contentSha256": "9ee54d491919b78a36bc09519acd096a6212652f7b1ea1021c5edf5c380e5197",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 15,
+          "id": "memory_3f34e92fa1a747ab82d6",
+          "contentSha256": "fa8350bc384ebefea59d3c6a3abcec1bc12ccd2896fbf9561f0550a8f4378286",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 16,
+          "id": "memory_64e92338d685419b9b74",
+          "contentSha256": "cf57fa5e2e980a64e41e31cebcc620b4307537181c7760330093955766ce762a",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 17,
+          "id": "memory_0b875644cd3443e8a4c8",
+          "contentSha256": "f9521128f6d3e9cc6fc4e9a2ead6903b87079e74efad5a5d913a3361a502ca4c",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 18,
+          "id": "memory_0f8e0a5775394346ad2a",
+          "contentSha256": "f96f2a4d865971850f799f1bc724a1ffabc1900d7ee34752dfa5d21a990d78bc",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        },
+        {
+          "seedIndex": 19,
+          "id": "memory_d55355b31a784cd1a72a",
+          "contentSha256": "fd9e81c0103cd26adea3dc80814ae7b4b14a9cb4c0289455d050c8342409d9b3",
+          "status": "active",
+          "source": {
+            "type": "manual",
+            "persistenceReason": "Explicitly proposed by the operator for long-term review.",
+            "differenceSummary": "Adds a new fact without replacing an existing reviewed memory."
+          }
+        }
+      ],
+      "inputs": [
+        {
+          "capsuleSha256": "a2c09f797fa90b49ca54c4f328f88cae47c9b5f2d9546024250494ca7f94bd20",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "170027eb233b3ad4be1c52b946b86e438080cab50f375d035ee265eaafbc024f",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "24bfb3c0f98150aa38e35de60445de23dd63b65c89c82e5b11789c0abcbaad78",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "c21cd9d1311797fd6f317ac18357b7ca618e5bde49eb296c36aae47a901e6665",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "b5f4d8108289d6b3ac2604ea0ccf5782b25108c1cbc770c367eacc3c967b2a23",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "0169a6df313b7b13a672eea66e1c76a3b7411fd107d903135abfdad380865f2a",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "8dbdc34444bdd918d662d5f71ef55d1c18d19d82b45bcddfcc6668194bbead55",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "96327516bd83fcbf6ca8de7fc1c014afe6c2b9d79da895b51c8eeb7a7cbfff0e",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "6459bc8e51c367745828b471160a7c5537644ac5aaa2c698691621d512df43ab",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "40b0b6994112c84464382238fda093460aee5417edbe4378b25fca678745e22f",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "1bdf40437f107170a72e7460a7dd08f759736a4c010863f2d0851b4e12c22dfb",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        },
+        {
+          "capsuleSha256": "5b898d83a142d9debb16445e477cd1d4e51e9d4728190a94cc3874cc86541504",
+          "memoryEventId": "event_04f22343f51a4936b8c2",
+          "phase": "initial",
+          "selection": null,
+          "projectedCount": 10,
+          "currentProjected": false,
+          "staleProjected": true,
+          "irrelevantProjected": 9,
+          "staleRejectedBySourceVersion": false,
+          "currentExactTextPresent": false,
+          "staleExactTextPresent": true
+        }
+      ],
+      "modelRequests": 0,
+      "scope": "Read-only membership and source-version audit of actual hash-validated inputs. It does not prove causal use of memory, eliminate irrelevant facts, or establish broad semantic recall. Original task outputs and reports are unchanged."
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "2f7e16bf18e716d3727e2c826dec3bc0c72c290b5bb6bd080b15d92a3b9ebc3b"
+  },
+  "stop": null,
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 4562,
+      "remainingFen": 5438,
+      "requests": 453,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 4588,
+      "remainingFen": 5412,
+      "requests": 473,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "settledConservativeFen": 3388,
+    "unreceiptedReservations": [
+      {
+        "id": 410,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 421,
+        "charged_fen": 600,
+        "status": "reserved"
+      }
+    ],
+    "providerBillVerified": false
+  },
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Bounded transfer pair on original source-versioned memory/shipping task and unchanged independent grader configuration. Exact observed scope only; no causal attribution to one protocol or detector change, and not proof of full seven-module non-regression. Previous candidate observations, two unreceipted historical reservations, and full 30-case/3-trial gate remain unchanged."
+}

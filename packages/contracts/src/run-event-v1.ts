@@ -126,7 +126,7 @@ export const RUN_EVENT_DEFINITION_GROUPS_V1 = [
     projectionOwner: "task-summary",
   }),
   defineEventGroup({
-    activeRunTypes: ["run.started", "turn.started"],
+    activeRunTypes: ["run.started", "turn.started", "run.inputs.captured"],
     runAnyTypes: [],
     terminalTransitionTypes: [],
     category: "lifecycle",

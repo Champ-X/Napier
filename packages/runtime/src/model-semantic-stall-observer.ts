@@ -46,9 +46,39 @@ export class ModelSemanticStallObserver {
     event: AssistantMessageEvent,
     attempt: 1 | 2,
   ): ModelThinkingLoopEvidence | undefined {
-    return event.type === "error"
-      ? this.evidence(event.error.errorMessage, attempt)
-      : undefined;
+    if (event.type === "error")
+      return this.evidence(event.error.errorMessage, attempt);
+    if (
+      event.type !== "done" ||
+      this.executableProgress ||
+      !["stop", "length"].includes(event.message.stopReason)
+    )
+      return undefined;
+    const blocks = event.message.content;
+    // Terminal content is authoritative even when a provider omits deltas.
+    if (
+      blocks.some(
+        (b) =>
+          b.type === "toolCall" ||
+          (b.type === "text" && b.text.trim().length > 0),
+      )
+    )
+      return undefined;
+    const thinking = blocks.filter((b) => b.type === "thinking");
+    const bytes = Math.max(
+      this.thinkingBytes,
+      thinking.reduce((n, b) => n + Buffer.byteLength(b.thinking, "utf8"), 0),
+    );
+    if (bytes === 0) return undefined;
+    const unit = `thinking_only_terminal:${event.message.stopReason}`;
+    return {
+      reason: "thinking_only_terminal",
+      attempt,
+      observedBytes: bytes,
+      observedThinkingChunks: Math.max(this.thinkingChunks, thinking.length),
+      repeatedUnitBytes: Buffer.byteLength(unit, "utf8"),
+      repeatedUnitSha256: sha256(unit),
+    };
   }
 }
 

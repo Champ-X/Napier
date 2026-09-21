@@ -1,0 +1,237 @@
+{
+  "kind": "napier.real-request-budget-context-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:19:29.403Z",
+  "runId": "run_139c468d0253478e8138",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/resumable_byte_upload_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "2d9a045787899031d031b87e73afa9a3de7e8d4a3ef6b3f7961d8ed5948158ff",
+  "profileFileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398",
+  "sourceFreezeSha256": "ab7dd3cce935478fccd2ff3a099ad51edfb72c1a697a6a1940ee8c3e91d3173d",
+  "status": "completed",
+  "taskSuccess": true,
+  "snapshots": [
+    {
+      "seq": 22,
+      "capsuleSha256": "fec5d0ff0dde356838be0cc8fc9292a2b565dc0f886361357e0dc3bb7b465304",
+      "sourceContentSha256": "8da6516920a9bd04975d41d2e5c880b073eff61edf0ac4194f1f48fb341a4b30",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 39,
+        "accountedTokens": 250000,
+        "accountedCostUsd": 0.05,
+        "seconds": 899
+      },
+      "observed": {
+        "primaryTurns": 1,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 0,
+        "accountedCostUsd": 0
+      },
+      "forecast": null
+    },
+    {
+      "seq": 70,
+      "capsuleSha256": "e8354bc0f056b64abae31d2081da034b067c9f7db5c1d9970612e7d260af0168",
+      "sourceContentSha256": "fe7b57b0c49f68486d30819c435b7e8de5f70ceb137f81f4d5a280c53a8ddcad",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 38,
+        "accountedTokens": 242850,
+        "accountedCostUsd": 0.0489846976,
+        "seconds": 898
+      },
+      "observed": {
+        "primaryTurns": 2,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 7150,
+        "accountedCostUsd": 0.0010153024
+      },
+      "forecast": {
+        "sampleCount": 1,
+        "uncachedCallTokens": 8529
+      }
+    },
+    {
+      "seq": 129,
+      "capsuleSha256": "067ad9e15357bab0f6d27a72c42a1062da4e37c41a3055ff78a2be9eee1907a2",
+      "sourceContentSha256": "ef8993ad928b2d81a2bdd456af5c96300d3aab27e2fbf8676b617cda1dc079c1",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 37,
+        "accountedTokens": 240553,
+        "accountedCostUsd": 0.048647124,
+        "seconds": 883
+      },
+      "observed": {
+        "primaryTurns": 3,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 9447,
+        "accountedCostUsd": 0.001352876
+      },
+      "forecast": {
+        "sampleCount": 2,
+        "uncachedCallTokens": 9070
+      }
+    },
+    {
+      "seq": 185,
+      "capsuleSha256": "3d6abfc6d8a2563b0d79666d8eb57a98102a2b0d8b6b709cef7f0743bdcdc5bc",
+      "sourceContentSha256": "2c39ccf54d32b1bf63c9b903f15e33f071aa26d853889dfca19b57362e983ea4",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 36,
+        "accountedTokens": 235477,
+        "accountedCostUsd": 0.0475774568,
+        "seconds": 858
+      },
+      "observed": {
+        "primaryTurns": 4,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 14523,
+        "accountedCostUsd": 0.0024225432
+      },
+      "forecast": {
+        "sampleCount": 3,
+        "uncachedCallTokens": 12351
+      }
+    },
+    {
+      "seq": 308,
+      "capsuleSha256": "552426ae7f882f41143dfd39570b7b9a3076f6b275cd7a81e1f667c25900d770",
+      "sourceContentSha256": "68fe473ceea3474ef825ae3d4228762d1452db6fba828e667995dd640ace339c",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 35,
+        "accountedTokens": 219900,
+        "accountedCostUsd": 0.0439780008,
+        "seconds": 809
+      },
+      "observed": {
+        "primaryTurns": 5,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 30100,
+        "accountedCostUsd": 0.0060219992
+      },
+      "forecast": {
+        "sampleCount": 3,
+        "uncachedCallTokens": 23730
+      }
+    },
+    {
+      "seq": 394,
+      "capsuleSha256": "efdf00d5f92deb4bf8c15ec9e72f7dac00cc51e49f8221e956c8dee6681aa9cd",
+      "sourceContentSha256": "6a922bfd69eef6ccb9749d451fc81b7e4f2dddf3c109a66abf8244bd73570fed",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 34,
+        "accountedTokens": 200767,
+        "accountedCostUsd": 0.0405773896,
+        "seconds": 792
+      },
+      "observed": {
+        "primaryTurns": 6,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 49233,
+        "accountedCostUsd": 0.0094226104
+      },
+      "forecast": {
+        "sampleCount": 3,
+        "uncachedCallTokens": 30798
+      }
+    },
+    {
+      "seq": 439,
+      "capsuleSha256": "290c04c7777de97ef6e7f4fe953ed11ef7f0796af1b46a0b2f888fe0631e975e",
+      "sourceContentSha256": "58aeee7490238d60fc09ab1c3661d88d67a83d567c968f38c94b0d42a6e5e9ea",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 33,
+        "accountedTokens": 186873,
+        "accountedCostUsd": 0.0380160056,
+        "seconds": 778
+      },
+      "observed": {
+        "primaryTurns": 7,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 63127,
+        "accountedCostUsd": 0.0119839944
+      },
+      "forecast": {
+        "sampleCount": 3,
+        "uncachedCallTokens": 37100
+      }
+    },
+    {
+      "seq": 486,
+      "capsuleSha256": "f55932e9a84ff5e911bbbbfd4b4b9aeb2e337a6236fd0710ac441ca47b0ee040",
+      "sourceContentSha256": "12692abc870b332f68c8fe5a7d2566373c57cfb1e4288d32ffeb2ddf5a4dd056",
+      "phase": "working",
+      "remaining": {
+        "primaryTurns": 32,
+        "accountedTokens": 176597,
+        "accountedCostUsd": 0.036304869600000005,
+        "seconds": 771
+      },
+      "observed": {
+        "primaryTurns": 8,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 73403,
+        "accountedCostUsd": 0.0136951304
+      },
+      "forecast": {
+        "sampleCount": 3,
+        "uncachedCallTokens": 40381
+      }
+    },
+    {
+      "seq": 556,
+      "capsuleSha256": "9eeecbdb286726431ad0d8051f1c899b5b1e162f0780fa3f1a0e82a8f34ad6b8",
+      "sourceContentSha256": "28e1831a64ece8ec9835396e00c5b8acf1872299af346443d2c00571f6f5e551",
+      "phase": "finalization",
+      "remaining": {
+        "primaryTurns": 31,
+        "accountedTokens": 166534,
+        "accountedCostUsd": 0.0343015424,
+        "seconds": 747
+      },
+      "observed": {
+        "primaryTurns": 9,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 83466,
+        "accountedCostUsd": 0.0156984576
+      },
+      "forecast": {
+        "sampleCount": 3,
+        "uncachedCallTokens": 45562
+      }
+    },
+    {
+      "seq": 607,
+      "capsuleSha256": "286da1be3c7250352a5740ca32bc42d7c3a76c52b21e666b94ef0a888800c4af",
+      "sourceContentSha256": "a7525bb5d7d67a1ef519a9050ff0ca3b5f3b71bd001d7bc04617901fcedc02f1",
+      "phase": "finalization",
+      "remaining": {
+        "primaryTurns": 30,
+        "accountedTokens": 157602,
+        "accountedCostUsd": 0.032908212000000006,
+        "seconds": 742
+      },
+      "observed": {
+        "primaryTurns": 10,
+        "inFlightPrimaryTurns": 1,
+        "accountedTokens": 92398,
+        "accountedCostUsd": 0.017091788
+      },
+      "forecast": {
+        "sampleCount": 3,
+        "uncachedCallTokens": 47316
+      }
+    }
+  ],
+  "allInvocationsHaveSingleBudgetSource": true,
+  "accountedTokensReplayed": true,
+  "limitsUnchanged": true,
+  "noLegacySyntheticReminder": true,
+  "modelRequests": 0,
+  "scope": "Read-only audit of actual captured inputs against preceding accounted usage. No counterfactual or causal performance claim."
+}

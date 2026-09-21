@@ -1,0 +1,21 @@
+{
+  "kind": "napier.original-baseline-stop-clarification",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T05:24:21.158Z",
+  "priorResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/lsp-original-pair-v1/result.json",
+  "priorResultSha256": "e3f425e97668a7ef0c3b6cca1c307bc289e7929c2132ad1a90713f4806baff2a",
+  "priorAuditPath": "/Users/champ/orca/Napier/docs/artifacts/staged-lsp-final-audit-2026-09-15.json",
+  "priorAuditSha256": "1e5073bfc15668884c0e4e00c07ba27bb21f57e565c2d2781e36bb798cb1ccb8",
+  "candidateRunId": "run_9a1d0aec74c646499a50",
+  "baselineRunId": "run_76af8c7911754698b595",
+  "originalStop": "aggregate_quality_or_evidence_failed",
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "originalObservationEligible": false,
+  "originalReservationsReleased": false,
+  "sourceChanged": false,
+  "qualityGateChanged": false,
+  "reason": "The prior current-source candidate succeeded; the frozen baseline failed after its overplanning-heading guard and left one unreceipted provider request. This is a recorded ineligible observation, not evidence of candidate regression. A single different original live-debugger task can add independent current-source tool-contract evidence. The completed LSP pair and its reports are retained. Retain both prior reports and every blocker in aggregate evaluation; this continuation cannot clear the old blocker or make promotion ready.",
+  "modelRequests": 0
+}

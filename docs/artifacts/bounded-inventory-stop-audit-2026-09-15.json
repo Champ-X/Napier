@@ -1,0 +1,109 @@
+{
+  "kind": "napier.bounded-inventory-stop-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T08:51:54.898Z",
+  "originalResultPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/result.json",
+  "originalResultSha256": "df2f87b4a88a0841622e9fc272583ddceb189f1ab49ecac39d2355198688301c",
+  "reconciledResultPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/full-statistics-v1/reconciled-result.json",
+  "reconciledResultSha256": "5ca520e7bb41105c5bdf4fa4260725af0145ae2859aa991663dc1cb2576208d2",
+  "baselineRunId": "run_0aa5c49110e54ca58a60",
+  "candidateRunId": "run_a03b91bc514d4a37976b",
+  "baselineGraderExitCode": 0,
+  "candidateTaskSuccess": true,
+  "baselineAdmissions": 12,
+  "baselineFinancialRequests": 11,
+  "baselineSettledFen": 19,
+  "newUnresolvedReservationFen": 600,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 8,
+    "cases": 8,
+    "regressions": [],
+    "evidenceBlockers": [
+      "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 8",
+      "incremental_ndjson_v1: need 3 paired trials; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "semantic_version_order_v1: need 3 paired trials; observed 1",
+      "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+      "http_retry_policy_v2: need 3 paired trials; observed 1",
+      "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+      "booking_calendar_v2: need 3 paired trials; observed 1",
+      "safe_csv_export_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "5ad4342804a38c5e914ca4ca6d7a8de5c1633a49f74e13ca60e0d8784c2d8ae0"
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 4847,
+      "remainingFen": 5153,
+      "requests": 311,
+      "reservedRequests": 3,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 6155,
+      "remainingFen": 3845,
+      "requests": 504,
+      "reservedRequests": 4,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "protocolPath": "/Users/champ/orca/Napier/docs/artifacts/bounded-inventory-missing-usage-protocol-2026-09-15.json",
+  "protocolSha256": "370cc54659c9876fd00f16f7642bfe3a21a591e6da62a53ddd1063b5be45a66c",
+  "cleanupPath": "/Users/champ/orca/Napier/docs/artifacts/bounded-inventory-post-terminal-cleanup-2026-09-15.json",
+  "scope": "Original failed collector result, failed baseline Run, passing code grader, missing usage and reservation remain intact. The existing prospective recovery protocol requires a completely new inventory trial 3 pair; no eligible failed baseline or candidate failure is discarded. No paid process remains running and no replacement is dispatched by this audit.",
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false
+}

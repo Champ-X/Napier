@@ -1,0 +1,280 @@
+{
+  "kind": "napier.toolchain-oci-current-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T01:00:35.396768+00:00",
+  "runtimeSnapshot": "/tmp/napier-harness-durable-pre-edit-v1",
+  "runtimeSourceAndDistUnchanged": true,
+  "runtimeBindings": [
+    {
+      "package": "runtime",
+      "part": "src",
+      "fileCount": 1171,
+      "inventorySha256": "194c8543334720ca4a0e132d3c9f97974e42eb9b261ee6b5389575e94bdd820d",
+      "matchesFrozenSnapshot": true,
+      "parentDifferences": [
+        "agent-runtime.ts",
+        "agent-tool-preflight.ts",
+        "harness-policy-profile.ts",
+        "pre-edit-verification.ts",
+        "verification-ledger.ts"
+      ]
+    },
+    {
+      "package": "runtime",
+      "part": "dist",
+      "fileCount": 3525,
+      "inventorySha256": "5c6ddbd0ae628dd37856e8399c61878e5a89eb75e3e3bd640b36a12088a55243",
+      "matchesFrozenSnapshot": true,
+      "parentDifferences": [
+        ".tsbuildinfo",
+        "agent-runtime.js",
+        "agent-tool-preflight.d.ts",
+        "agent-tool-preflight.d.ts.map",
+        "agent-tool-preflight.js",
+        "harness-policy-profile.js",
+        "pre-edit-verification.d.ts",
+        "pre-edit-verification.d.ts.map",
+        "pre-edit-verification.js",
+        "verification-ledger.d.ts.map",
+        "verification-ledger.js"
+      ]
+    },
+    {
+      "package": "contracts",
+      "part": "src",
+      "fileCount": 79,
+      "inventorySha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+      "matchesFrozenSnapshot": true,
+      "parentDifferences": [
+        "harness-experiments.ts"
+      ]
+    },
+    {
+      "package": "contracts",
+      "part": "dist",
+      "fileCount": 238,
+      "inventorySha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+      "matchesFrozenSnapshot": true,
+      "parentDifferences": [
+        ".tsbuildinfo",
+        "harness-experiments.d.ts",
+        "harness-experiments.d.ts.map"
+      ]
+    }
+  ],
+  "sourceArchive": "/tmp/napier-oci-acceptance-current-v1",
+  "archiveScope": "Changed collector and executed fixture/source files only; not a standalone environment.",
+  "files": [
+    {
+      "path": "scripts/sandbox-portable-dap-live.mjs",
+      "sha256": "cbcaaa3a71562ff91b40d21e237a15be1b28c530373bd0350f8f00756b71f4f1"
+    },
+    {
+      "path": "scripts/oci-crash-recovery-live.mjs",
+      "sha256": "d07b57dd62a14e3460bd7e2ab38fabc94262003d1d6d2221824d541e98dd508d"
+    },
+    {
+      "path": "scripts/oci-crash-recovery-fixture.mjs",
+      "sha256": "273ef8a416aa72b61bfb63a438e739f308a41f2b899704017be1217155f986a4"
+    },
+    {
+      "path": "packages/runtime/test/oci-python-debugger.test.ts",
+      "sha256": "a1adf9eb6b99a9c5021d33cb2d53adabf3023a6e55b3dc8baef99b38a8969639"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-offline-oci-python-current-v1.log",
+      "sha256": "e73b1426778f0e0e3616dfd3954582dbb5a27a0cdae4612402e831c19bf464ef"
+    },
+    {
+      "path": "/tmp/napier-offline-oci-components-v1.log",
+      "sha256": "f058fadfecf44c6d60a51a3be7ec9db7136c462700e2ab6edcaf5ebe56e47e8c"
+    },
+    {
+      "path": "/tmp/napier-offline-oci-components-v2.log",
+      "sha256": "75c75d01d97739f8c1b20157a42a88d14321cf28cb414e679174d858cac879a3"
+    },
+    {
+      "path": "/tmp/napier-offline-oci-components-v3.log",
+      "sha256": "31341ba015d922e61c77b498dc720cbecd65667ebd1296a11840603a89a13023"
+    },
+    {
+      "path": "/tmp/napier-offline-oci-components-v4.log",
+      "sha256": "31341ba015d922e61c77b498dc720cbecd65667ebd1296a11840603a89a13023"
+    },
+    {
+      "path": "/tmp/napier-oci-acceptance-receipt-tests-v1.log",
+      "sha256": "1689c2952eb66aca798a85ce1a8e01d73049265c22dbc04ddb98edbfc16eff1b"
+    },
+    {
+      "path": "/tmp/napier-oci-acceptance-architecture-v1.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-oci-acceptance-format-check-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-offline-oci-collector-v4.mjs",
+      "sha256": "9773aeb7b37fe1e64db71a672b090ebac33931a41c447272e13f630f232ee483"
+    },
+    {
+      "path": "/tmp/napier-oci-current-components-v4.json",
+      "sha256": "bbf595f41ad9d0e96186b041d96a969d53692e28c34ab25b2040efe84cbc576a"
+    },
+    {
+      "path": "/tmp/napier-oci-acceptance-final-state-v1.json",
+      "sha256": "af6b82e0c0119436fc9657e705072ff6828b72891f426672f0745ecc9cf4638a"
+    }
+  ],
+  "imageAndClosure": {
+    "image": {
+      "id": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+      "os": "linux",
+      "architecture": "arm64"
+    },
+    "legacyReleaseImagePresent": false,
+    "napierContainerCountAfter": 0
+  },
+  "pythonDebugger": {
+    "passed": 3,
+    "actualOciScenarios": 1,
+    "actualOciPassed": true,
+    "checks": [
+      "breakpoint",
+      "stack",
+      "evaluation",
+      "continue",
+      "exit code zero",
+      "read-only root and mounts",
+      "dropped capabilities",
+      "network-none",
+      "host sentinel unreadable and absent from ledger",
+      "owned container removed"
+    ]
+  },
+  "components": {
+    "imageId": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+    "startedAt": "2026-09-14T00:58:01.498Z",
+    "portableDap": {
+      "protocolBinding": {
+        "protocolWorkspaceRoot": "/workspace",
+        "workspaceRootMapped": true,
+        "sourceTargetMapped": true,
+        "programTargetMapped": true,
+        "relativeEvidencePaths": true,
+        "escapeRejected": true,
+        "bindingSha256": "98b8d87c5ba679465599df054a592650984f1cca0843a68dae091ceb82262bb8"
+      },
+      "productionParity": {
+        "hostPlatform": "darwin",
+        "sandbox": "oci-container",
+        "sameTarget": true,
+        "launchState": "paused",
+        "pauseReason": "breakpoint",
+        "breakpointExpected": true,
+        "evaluationExpected": true,
+        "completionExpected": true,
+        "frameProjectionEqual": true,
+        "evaluationProjectionEqual": true,
+        "completionProjectionEqual": true,
+        "allEqual": true,
+        "frameProjectionSha256": "b6dff0b2388cf02863c102bb7ac440f94d9f8cb528b6889cb4cb4e6bd3846252",
+        "evaluationProjectionSha256": "2ff2be401e4b07e2e537dd20c44e8a44876b3ed98c3b7ba9755e5565ef823024",
+        "completionProjectionSha256": "60595e3a619f73e475af799c7d194d0570275068364e2eb5345c1e65c38718fe",
+        "hostResultSetSha256": "4f9cf217fc639a3754542643afe878f2b3eb41dad088213c9b8290578339fb8b",
+        "portableResultSetSha256": "0686f620ded190892d71079ee3cf33a26ebf9ff2f71af35f0bdc6c6da6586a9f",
+        "evidenceSha256": "0d0a17e777e54b393a5d8d92445ca2fd599d1c80632616728d7b95fb88a5412d"
+      },
+      "resourceClosure": {
+        "exactBaselineRestored": true,
+        "containerDeltaCount": 0,
+        "networkDeltaCount": 0,
+        "scratchDeltaCount": 0,
+        "temporaryRootRemoved": true
+      }
+    },
+    "crashRecovery": [
+      {
+        "index": 1,
+        "runtimeSignal": "SIGKILL",
+        "serviceReady": true,
+        "serviceIdentitySha256": "3d932cb07839927aa17a27a8214c1bbfff5c30b0eda39d2983668736eeaa412b",
+        "endpointSha256": "73887f5b2a77127f54e06ee14a78effb0d297d4764adb8456da00cd873b4c5a2",
+        "containerDeltaCount": 1,
+        "networkDeltaCount": 1,
+        "scratchDeltaCount": 1,
+        "containerCleanupVerified": true,
+        "networkCleanupVerified": true,
+        "scratchCleanupVerified": true,
+        "endpointClosedVerified": true,
+        "exactBaselineRestored": true,
+        "cleanupDurationMs": 258
+      },
+      {
+        "index": 2,
+        "runtimeSignal": "SIGKILL",
+        "serviceReady": true,
+        "serviceIdentitySha256": "9f0d4ed5b9f4a97528b740d7d4e2788f5b9306252af8237a9ecb45a31fa4fe2b",
+        "endpointSha256": "5303adfc932cb95de35c8b85494e6919d56c6a33162d97d9a6109bcaa8fecd13",
+        "containerDeltaCount": 1,
+        "networkDeltaCount": 1,
+        "scratchDeltaCount": 1,
+        "containerCleanupVerified": true,
+        "networkCleanupVerified": true,
+        "scratchCleanupVerified": true,
+        "endpointClosedVerified": true,
+        "exactBaselineRestored": true,
+        "cleanupDurationMs": 258
+      }
+    ]
+  },
+  "initialFailure": {
+    "stage": "portableDap",
+    "reason": "Old collector borrowed a completed seeded Run; active Run event admission correctly rejected it.",
+    "guardRelaxed": false
+  },
+  "intermediateFailure": {
+    "stage": "portableDap",
+    "reason": "Invalid fixture lease-owner prefix; corrected before final collection."
+  },
+  "retainedReleaseReceipts": {
+    "files": [
+      {
+        "path": "docs/artifacts/sandbox-image-provenance-0.1.0.json",
+        "sha256": "2d089e12974793ffce17b89caf4a9ebce7fa4724d7732c2c57478feea38a5c18"
+      },
+      {
+        "path": "docs/artifacts/oci-crash-recovery-stage11.json",
+        "sha256": "794559d4d9aa89007d3376b412908ed9203f91f1af05b0dfc5d5c643216d50f6"
+      },
+      {
+        "path": "docs/artifacts/sandbox-portable-dap-stage17.json",
+        "sha256": "76b1b815daf215ebd4ffe47b8d61ebf0259cc7e002cb5ffbb3f29f1f3f1dfc8d"
+      }
+    ],
+    "unchangedFromGitHead": true,
+    "testsPassed": 4,
+    "testsFailed": 2,
+    "qualified": false
+  },
+  "architectureViolations": 7,
+  "architectureUnchanged": true,
+  "formatPassed": true,
+  "diffCheckPassed": true,
+  "apiTesting": {
+    "newPaidCalls": 0,
+    "newPaidCampaignsPaused": true
+  },
+  "colimaRestarted": false,
+  "zteServicesManaged": false,
+  "limits": [
+    "Current linux/arm64 image on macOS Colima only",
+    "Portable DAP compares OCI user mappings, not host-direct execution",
+    "No replacement of retained release/provenance evidence",
+    "No Windows-host or full Docker cleanup failure-injection qualification",
+    "No real-model task-quality qualification"
+  ],
+  "promotionReady": false
+}

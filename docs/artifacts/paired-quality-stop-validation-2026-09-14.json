@@ -1,0 +1,242 @@
+{
+  "kind": "napier.paired-quality-stop-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T09:37:31.233711+00:00",
+  "scope": "Failure-evaluation scheduler and test-spending controls only. No new model task-quality observation.",
+  "defaults": {
+    "scheduleMode": "paired-stop",
+    "concurrency": 1,
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "behavior": [
+    "One scheduled trial per child, with preassigned trial offset and unique output path.",
+    "Adjacent baseline/candidate pairs; alternate first arm by case and trial round.",
+    "Prioritized cases change order only; preserve every case and trial.",
+    "Stop new jobs after regression, invalid pair evidence, failed/missing child report, cancellation or insufficient API/CNY budget.",
+    "Persist per-job checkpoints, stop reason, adverse outcomes, monetary snapshots and missing/not_started jobs.",
+    "Sample insufficiency alone continues collection; gate still requires 30 cases and three paired trials.",
+    "Explicit batch mode retains prior batching; no automatic retry or resume."
+  ],
+  "sourceBindings": {
+    "scripts/harness-paired-schedule.mjs": "eb1da9cb0c527ab72b7f065280b0e3df88dac9aa7472d44df840d7c0947e46a6",
+    "scripts/harness-paired-schedule.test.mjs": "c9efee5dc2f335270ccae6488af87a61d01501567e6d561d8fa5ccb4f5b844c6",
+    "scripts/harness-paired-suite-cli.test.mjs": "53534488a66b750a726863f2bf1afdac22633b06d74a0800f9d3e4642ca390c9",
+    "scripts/run-harness-optimization-suite.mjs": "be79399e8e58792fe00216baefd6c45c8e7e9947ad6aab39151994e530a49ede",
+    "scripts/run-harness-optimization-campaign.mjs": "8ea69f7dd9828804abdc98d1a676b0299c301378e958d951cc9caed462bbe34f",
+    "scripts/harness-campaign-evidence.mjs": "572aa3d5c63f9aed8e3099097efc2699d55667a816c4415ce338c0164e46638c",
+    "scripts/harness-campaign-evidence.test.mjs": "bf48c1d5d7b21fdd03f5ea854b93f88ebf9a9f1aeb5a47864b49a227b6808292",
+    "scripts/harness-campaign-test-fixture.mjs": "aced3ed226ac5ae7b3403bc5555179a95086c30ec1ad4e4a5208ff91fe3a7220",
+    "scripts/harness-api-request-budget.test.mjs": "2ef3e0e93d6cf22c3fbf13cece12e1e7ff7002222546b5525dcd60f52b59b740",
+    "scripts/harness-campaign-profile.test.mjs": "f9030c5febf8c2043e838e1a268fddfbd6770cd4f31e1bcf50b1016ac1cf2e00",
+    "scripts/registry.json": "9b57fbbb512f986a9cea85e4891dba293112a51499359d6b4482684ae0f34392"
+  },
+  "tests": {
+    "passed": 63,
+    "failed": 0,
+    "reportSha256": "a2df7fc64bc905fd453d96bc7b2ad8a8a68f4da035bed893efeaab9f7f97a65e",
+    "files": [
+      {
+        "path": "scripts/harness-api-request-budget.test.mjs",
+        "passed": 9
+      },
+      {
+        "path": "scripts/harness-campaign-evidence.test.mjs",
+        "passed": 10
+      },
+      {
+        "path": "scripts/harness-campaign-profile.test.mjs",
+        "passed": 5
+      },
+      {
+        "path": "scripts/harness-observed-workspace.test.mjs",
+        "passed": 4
+      },
+      {
+        "path": "scripts/harness-paired-schedule.test.mjs",
+        "passed": 15
+      },
+      {
+        "path": "scripts/harness-paired-suite-cli.test.mjs",
+        "passed": 4
+      },
+      {
+        "path": "scripts/harness-sample-identity.test.mjs",
+        "passed": 11
+      },
+      {
+        "path": "scripts/harness-suite.test.mjs",
+        "passed": 5
+      }
+    ],
+    "finalCliSnapshotTestsPassed": 4,
+    "finalCliReportSha256": "8c4fb4202daaeaaeea4f7b4359167958b21f498afc0a37cdd99bc9d04e71628e",
+    "cliScope": "Actual CLI, filesystem, child-process scheduling and SQLite budget with synthetic report-generating campaign child in a disposable copy. No real provider, credential or task-success evidence."
+  },
+  "historicalReplay": {
+    "source": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2",
+    "originalObservationCount": 57,
+    "plannedJobs": 180,
+    "defaultOrder": {
+      "replayedJobs": 20,
+      "notStarted": 160,
+      "stop": {
+        "reason": "quality_regressed",
+        "job": {
+          "caseId": "bounded_async_queue_v1",
+          "caseRoot": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/cases/bounded_async_queue_v1",
+          "arm": "baseline",
+          "trial": 0,
+          "output": "/offline-only/bounded_async_queue_v1-baseline-trial-1"
+        },
+        "quality": {
+          "kind": "napier.harness-campaign-quality",
+          "schemaVersion": 1,
+          "required": {
+            "minimumCases": 30,
+            "minimumTrials": 3
+          },
+          "comparablePairs": 10,
+          "cases": 10,
+          "regressions": [
+            "bounded_async_queue_v1:0: task completion regressed",
+            "bounded_async_queue_v1:0: new false completion"
+          ],
+          "evidenceBlockers": [],
+          "blockers": [
+            "Need 30 cases; observed 10",
+            "http_retry_policy_v1: need 3 paired trials; observed 1",
+            "rollout_dependency_plan_v1: need 3 paired trials; observed 1",
+            "access_rule_evaluation_v1: need 3 paired trials; observed 1",
+            "booking_calendar_v1: need 3 paired trials; observed 1",
+            "safe_csv_export_v1: need 3 paired trials; observed 1",
+            "inventory_event_projection_v1: need 3 paired trials; observed 1",
+            "weighted_expense_allocation_v1: need 3 paired trials; observed 1",
+            "http_etag_preconditions_v1: need 3 paired trials; observed 1",
+            "incremental_ndjson_v1: need 3 paired trials; observed 1",
+            "bounded_async_queue_v1: need 3 paired trials; observed 1"
+          ],
+          "verdict": "regressed",
+          "promotionReady": false,
+          "contentSha256": "2c384bb803cfdd616392f7c1263a0878466320e19687c2930928e080494c788c"
+        }
+      }
+    },
+    "queueFirst": {
+      "priority": [
+        "bounded_async_queue_v1"
+      ],
+      "replayedJobs": 2,
+      "notStarted": 178,
+      "stop": {
+        "reason": "quality_regressed",
+        "job": {
+          "caseId": "bounded_async_queue_v1",
+          "caseRoot": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/cases/bounded_async_queue_v1",
+          "arm": "candidate",
+          "trial": 0,
+          "output": "/offline-only/bounded_async_queue_v1-candidate-trial-1"
+        },
+        "quality": {
+          "kind": "napier.harness-campaign-quality",
+          "schemaVersion": 1,
+          "required": {
+            "minimumCases": 30,
+            "minimumTrials": 3
+          },
+          "comparablePairs": 1,
+          "cases": 1,
+          "regressions": [
+            "bounded_async_queue_v1:0: task completion regressed",
+            "bounded_async_queue_v1:0: new false completion"
+          ],
+          "evidenceBlockers": [],
+          "blockers": [
+            "Need 30 cases; observed 1",
+            "bounded_async_queue_v1: need 3 paired trials; observed 1"
+          ],
+          "verdict": "regressed",
+          "promotionReady": false,
+          "contentSha256": "c1e87e377dac954afa48d380b9acc0407896ce646f13ade127875b1400b037b9"
+        }
+      }
+    },
+    "reportHashes": {
+      "access_rule_evaluation_v1-baseline/trial-1/result.json": "d08acb13337bb5fbc8dd127c88a18179215016674938ac48399e3b04ca26567c",
+      "access_rule_evaluation_v1-baseline/trial-2/result.json": "fdb5317b28b821e2e094f92625bbcee18fac8cd59efb9320aeb9eb7d803cd633",
+      "access_rule_evaluation_v1-baseline/trial-3/result.json": "eb363d29080fdc9893da89b99f9b811271100491150630340fda452f75b8067b",
+      "access_rule_evaluation_v1-candidate/trial-1/result.json": "602bedecdff18f1588d07c26315ac42915462c4e3bea6f432f84fe32e54b7627",
+      "access_rule_evaluation_v1-candidate/trial-2/result.json": "f36a81fffb841dd2f3fb330a92cb80f872f90372e1836a05046d156afabc51a2",
+      "access_rule_evaluation_v1-candidate/trial-3/result.json": "caf28ad9257633231d14b42d39ac28d991dde97a8466b2e514d6331436e30573",
+      "booking_calendar_v1-baseline/trial-1/result.json": "0b91301d0596337a975c88fffede0f5e2d63e5b70da51aacfb02dfabb866fb22",
+      "booking_calendar_v1-baseline/trial-2/result.json": "53581ec1e8fdb9409589e406a60969be1114eaa6639b38bf2d1880b3bf83dcca",
+      "booking_calendar_v1-baseline/trial-3/result.json": "edd40d2f9b9b265c1bbfe31799bc67cb45f935d76ae2c3d1ae98bd2aef4f092a",
+      "booking_calendar_v1-candidate/trial-1/result.json": "00c68debf48ec68315101499ac5b68fc3a2f90c0ee5f165ff5f3a95c13151f0d",
+      "booking_calendar_v1-candidate/trial-2/result.json": "dcc3c130df49aa1d79c3f76a73b5c3d16db61739ff69f47ac545ec31cfe2965b",
+      "booking_calendar_v1-candidate/trial-3/result.json": "1eebf0a020f6cb3cacdb9695b3c61287321584cfe9c91e7f6e7f17edf7f34e00",
+      "bounded_async_queue_v1-baseline/trial-1/result.json": "ee311f9f31fe0cb6d7451065773e93d460c6e83406448471edf7473bf16e16cc",
+      "bounded_async_queue_v1-candidate/trial-1/result.json": "f106a529ecefaa5ecf0697d4c54a93f0d13a05184d89b622b2ffa1cb7e06529f",
+      "bounded_async_queue_v1-candidate/trial-2/result.json": "35ad34c3941ef79ce28223cbc71872aa0bd753d770f985171874ad2c2041a0ac",
+      "bounded_async_queue_v1-candidate/trial-3/result.json": "82ed8ca7d4210c9b5f7070564091e0a73b4bc7292f6f1cf23839481d4e5bb51d",
+      "http_etag_preconditions_v1-baseline/trial-1/result.json": "d7585b90719fd21682c0039f01f661658aaa139355db4c9e5fda25c6f1da940a",
+      "http_etag_preconditions_v1-baseline/trial-2/result.json": "e4659483317be859879ebf1db8ba8a10e83170fd4c8aaf6d919e25b1ea418dbb",
+      "http_etag_preconditions_v1-baseline/trial-3/result.json": "6107393794aa1da9f76b91c7ae47321c76365e78d317c7c9b8231f55df430c6e",
+      "http_etag_preconditions_v1-candidate/trial-1/result.json": "90f779e8fc5b651e016dd196e24e6a79d644a85fa33c76ac939dca155ee8e420",
+      "http_etag_preconditions_v1-candidate/trial-2/result.json": "9f54a0af66cbb315cf515fc90e20e202ee6aa8809988ef9007b5908f45f5d1df",
+      "http_etag_preconditions_v1-candidate/trial-3/result.json": "494f16a0b93c425e743929b1f99edf5bedf6003ee964392c01d89dbd5a2d5e5a",
+      "http_retry_policy_v1-baseline/trial-1/result.json": "31cd020bc7ad6c1b7407e2322e02b5ef805af68c351d465e8e7eabaa1e088c7a",
+      "http_retry_policy_v1-baseline/trial-2/result.json": "b3a29a0bc552a5959039dc0abc2c314c34079c8e42b0fdd669daebad4931d0da",
+      "http_retry_policy_v1-baseline/trial-3/result.json": "3d6d696211fde3d2a3deb4568a05b373ce0ef6de39947575c8a544f6055ad41a",
+      "http_retry_policy_v1-candidate/trial-1/result.json": "66f1ab471510cbbd56df1485ff6f9c9ecd68142d4afec7b01c73ae10a8addb19",
+      "http_retry_policy_v1-candidate/trial-2/result.json": "29cfbf6a47a92345ef00e77f341d287fd2b1429c3cf4f17718e3596b7ca098a8",
+      "http_retry_policy_v1-candidate/trial-3/result.json": "baea877c8ffb5663f8ff715bfa0e16ade3aaf7fe379624b4f64741829911085d",
+      "incremental_ndjson_v1-baseline/trial-1/result.json": "34c0cc9ccc99493b341e4ddbe9adbd78779088116893b364ea78fde1ac93d0b9",
+      "incremental_ndjson_v1-baseline/trial-2/result.json": "d79a1d634d6aa77fce4dc28477f7704759c2984d187271a04c74f02418c6a12b",
+      "incremental_ndjson_v1-candidate/trial-1/result.json": "6d519e92529c65fb08deca8dd6a919c02d6991fff273c8221cbe11aac4cd3149",
+      "incremental_ndjson_v1-candidate/trial-2/result.json": "3d10fbfb40ac86b0241dc9926449de3322797a8161a638192b4960552ddfcec0",
+      "incremental_ndjson_v1-candidate/trial-3/result.json": "d7c3c534a0435150cb4c6b0ddcbd31226f63a33cc511b8ebf16611327a804ca2",
+      "inventory_event_projection_v1-baseline/trial-1/result.json": "9737378632f569da3362f7fc704fd80c34ae285691b7f6d8e4a50b3f513395a7",
+      "inventory_event_projection_v1-baseline/trial-2/result.json": "1c48f53db361abcaacfc91300b3b176a4d2a1ffb061bb73db03c881ff3682a43",
+      "inventory_event_projection_v1-baseline/trial-3/result.json": "4cbfdbf70e010dec8db29c2e5a5fcced02d87a304f5cf0b7efbbf6a1584f806d",
+      "inventory_event_projection_v1-candidate/trial-1/result.json": "72b12fc2e2b0a8d0aef7365dffa24ae1a209e839ed614bf1d5c34a164d670c0f",
+      "inventory_event_projection_v1-candidate/trial-2/result.json": "9f3093d4bd221b222e6f24aa767b7e4f8613b8f97cb489c625bd46e47e6f1d8a",
+      "inventory_event_projection_v1-candidate/trial-3/result.json": "35bb3793d703e9995f51d8e17addad04de2f99c08f747c21946cfc01587a5ca0",
+      "rollout_dependency_plan_v1-baseline/trial-1/result.json": "9d6f9b20be9a38abbd1aaa7ce6043ff4e204e1506dc878bbefd0d5f3fe16544c",
+      "rollout_dependency_plan_v1-baseline/trial-2/result.json": "0c566cb0fad91837b8191fc69383df2f30e9526eb159f0d16898189ef46e4496",
+      "rollout_dependency_plan_v1-baseline/trial-3/result.json": "1f42d888633b695904ba4d329c28d51f6889bd773948ae17b66afe63d9534cea",
+      "rollout_dependency_plan_v1-candidate/trial-1/result.json": "2fa503bd8f51377ea672c8166270574b61af3178747034019be1b99e948a53fb",
+      "rollout_dependency_plan_v1-candidate/trial-2/result.json": "eaaa43a2f02dc93bb770f31028f2076e7ede3090a6b0eff541cf743e21f50c65",
+      "rollout_dependency_plan_v1-candidate/trial-3/result.json": "2dbce9af75e868f4779308e9daeef3a68cd961a9217a99dca21ee2643a2632d0",
+      "safe_csv_export_v1-baseline/trial-1/result.json": "987f5b33cf428c59e67299e593ae9a5e90beb37cbc999825cbf894097c96d988",
+      "safe_csv_export_v1-baseline/trial-2/result.json": "9468b87fcd5de9cbdc52c9e49935e145a86c7cb396f7f7e151b4301b0e0b08af",
+      "safe_csv_export_v1-baseline/trial-3/result.json": "74d9070baad4634ea82c7548f441df3c0d15d884e0388d2cc9bc84187d12f47f",
+      "safe_csv_export_v1-candidate/trial-1/result.json": "753fce6c0b4b9445fe5f3af5b9287221c3adac7e8894be600964e73a4d05da83",
+      "safe_csv_export_v1-candidate/trial-2/result.json": "a0d8491454cd367585a84b8bedd4b7d3f6d4888d78d35a8b684e66f98c7709f0",
+      "safe_csv_export_v1-candidate/trial-3/result.json": "da64087ce69adfa0531e05a84a559bac9460e7155ce9c3ce9d3275921e4f4fbe",
+      "weighted_expense_allocation_v1-baseline/trial-1/result.json": "f382751140706ff8c0c0b2f40459b0365400d5faab76ef5d8acb073b3f94f1c7",
+      "weighted_expense_allocation_v1-baseline/trial-2/result.json": "6a1661ac1a4da2b3868a9c9ac19a55cf9cdf9d55b46c93d0cdbd46b15c8420af",
+      "weighted_expense_allocation_v1-baseline/trial-3/result.json": "edbfe330126b62fa2b896f3afe01f8552a032c745bab75d177a92c2739923802",
+      "weighted_expense_allocation_v1-candidate/trial-1/result.json": "c7fa7cdb94645dbd7ca59634745a9e45ea4fc8f41bcf7f9c87fb7bdf37e77e13",
+      "weighted_expense_allocation_v1-candidate/trial-2/result.json": "14f7489f0b8cd9372efec79d83ae908b6fa02c35033cebb1ba012e294d9a453d",
+      "weighted_expense_allocation_v1-candidate/trial-3/result.json": "ae33190180a6b84130bfd73d7a47d14b606d3071c974950ca1eb49e9aeb9f371"
+    },
+    "limitation": "Reorders already-recorded old-source outcomes; not a causal estimate of real execution outcomes, latency or money saved. No observations count toward current-source qualification."
+  },
+  "architecture": {
+    "knownViolations": 7,
+    "output": "Architecture audit failed:\n- apps/web/src/use-workspace-view-model.ts has 2317 lines, exceeding the 1884-line budget\n- packages/contracts/src/skill-load-standard.ts has 533 lines, exceeding the 500-line budget\n- packages/runtime/src/browser-session.ts has 506 lines, exceeding the 500-line budget\n- packages/runtime/src/standard-skill-snapshot-compose.ts has 506 lines, exceeding the 500-line budget\n- packages/runtime/test/agent-capability-contract.test.ts has 1018 lines, exceeding the 1000-line budget\n- apps/web/src/conversation-thinking-view-model.ts has function complexity 26, exceeding the 25 budget\n- apps/web/src/api.ts has change coupling (fan-in * fan-out) 111, exceeding the 102 budget\n",
+    "outputSha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+  },
+  "spending": {
+    "maxFen": 5000,
+    "priorSpendFen": 110,
+    "committedFen": 619,
+    "remainingFen": 4381,
+    "requests": 101,
+    "reservedRequests": 0,
+    "newPaidRequests": 0,
+    "scope": "Conservative accounting, not provider invoice."
+  },
+  "promotionReady": false,
+  "goalComplete": false
+}

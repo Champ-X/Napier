@@ -1,6 +1,7 @@
 import type {
   Api,
   Context,
+  Message,
   Model,
   SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
@@ -12,6 +13,8 @@ export interface RunContextCompactionInput {
   sourceContext: Context;
   prunedContext: Context;
   context: Context;
+  /** Reserve request-local data in measurements, never in summaries/checkpoints. */
+  runtimeContextMessages?: readonly Message[];
   model: Model<Api>;
   options: SimpleStreamOptions;
   compiledPrompt: CompiledPromptArtifact;

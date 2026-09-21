@@ -1,0 +1,230 @@
+{
+  "kind": "napier.cny-current-http-retry-pair-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T10:54:32.031890+00:00",
+  "productionSourceChanged": false,
+  "frozenInputsUnchangedAfterRun": true,
+  "candidateSource": "/tmp/napier-harness-history-linear-v1",
+  "baselineSource": "/tmp/napier-harness-baseline-c454a155",
+  "results": [
+    {
+      "arm": "baseline",
+      "runId": "run_95f03220d4ab4555a6fc",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/http_retry_policy_v2-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "f25e6004ac8ca631b886d00f9b3c32e8d86a600107238f5fa7d1d96428e674fa",
+      "status": "failed",
+      "error": "The model response made a contradicted capability claim",
+      "taskSuccess": false,
+      "externalGradePassed": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/retry-after.mjs",
+        "src/retry.mjs"
+      ],
+      "requests": 12,
+      "chargeFen": 127,
+      "durationMs": 386433,
+      "toolCalls": 28,
+      "toolFailures": 0,
+      "failureDetails": [],
+      "verificationStatuses": [],
+      "edits": [
+        "replace",
+        "replace"
+      ],
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "servingIdentityMatched": true,
+      "qualifyingEvidence": true
+    },
+    {
+      "arm": "candidate",
+      "runId": "run_1b6c1654d39843beab6a",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/http_retry_policy_v2-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "be3fe151eac7b8aea05c0cf4a6006735a0deb31bdfea75d67f8937c4bd1b295f",
+      "status": "completed",
+      "error": null,
+      "taskSuccess": true,
+      "externalGradePassed": true,
+      "allowedChanges": true,
+      "changed": [
+        "src/retry-after.mjs",
+        "src/retry.mjs"
+      ],
+      "requests": 14,
+      "chargeFen": 146,
+      "durationMs": 442334,
+      "toolCalls": 30,
+      "toolFailures": 2,
+      "failureDetails": [
+        {
+          "tool": "update_plan_artifact",
+          "message": "Cannot transition artifact from expected to verified"
+        },
+        {
+          "tool": "update_plan_artifact",
+          "message": "Cannot transition artifact from expected to verified"
+        }
+      ],
+      "verificationStatuses": [
+        "failed",
+        "passed"
+      ],
+      "edits": [
+        "replace",
+        "replace"
+      ],
+      "sourceStable": true,
+      "runtimeArtifactStable": true,
+      "servingIdentityMatched": true,
+      "qualifyingEvidence": true
+    }
+  ],
+  "invocationAudit": {
+    "kind": "napier.core-pair-invocation-audit",
+    "schemaVersion": 1,
+    "results": [
+      {
+        "arm": "baseline",
+        "runId": "run_95f03220d4ab4555a6fc",
+        "reportFileSha256": "f25e6004ac8ca631b886d00f9b3c32e8d86a600107238f5fa7d1d96428e674fa",
+        "capsulesAudited": 12,
+        "firstInvocationHasPreEditGuidance": false,
+        "preEditPolicyBlocks": 0,
+        "verificationCalls": [],
+        "allVerificationCallsCaptured": true,
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "observedWorkspaceSha256": "267c5f0850b9f8993225144444e21d68cabe7713c4f5146707671d58598c9989"
+      },
+      {
+        "arm": "candidate",
+        "runId": "run_1b6c1654d39843beab6a",
+        "reportFileSha256": "be3fe151eac7b8aea05c0cf4a6006735a0deb31bdfea75d67f8937c4bd1b295f",
+        "capsulesAudited": 13,
+        "firstInvocationHasPreEditGuidance": true,
+        "preEditPolicyBlocks": 0,
+        "verificationCalls": [
+          {
+            "callId": "call_01_1xwpph2cPBcF5vVkTQuw6852",
+            "arguments": {
+              "kind": "test",
+              "target": "test/public.test.mjs"
+            },
+            "sourceCapsuleSha256": "d24b54f737e6f93565d13315aa8a6d103225b046047d093775ed5098232dd763"
+          },
+          {
+            "callId": "call_05_aQ9RVhbtPWYywwlpG65z6275",
+            "arguments": {
+              "kind": "test",
+              "target": "test/public.test.mjs"
+            },
+            "sourceCapsuleSha256": "d24b54f737e6f93565d13315aa8a6d103225b046047d093775ed5098232dd763"
+          }
+        ],
+        "allVerificationCallsCaptured": true,
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "observedWorkspaceSha256": "0c4df60c5b656f7f83c8216a48e8ef228099b4a73056ad8b23def7f4fede6f34"
+      }
+    ]
+  },
+  "baselineFailure": {
+    "cause": "Old capability guard treats a statement about a write-linked test runner incompatibility as an unavailable editing claim. Both implementations pass the external behavior grader, but the baseline Run ends failed.",
+    "offlineReplay": {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/baseline-claim-replay.json",
+      "sha256": "02d2584e3fc1614c476533161fc1ed6c24d5c835070fe89e1c289d40fb7dd91d",
+      "draftResults": [
+        {
+          "baseline": [
+            "apply_patch",
+            "workspace_file_apply"
+          ],
+          "current": []
+        },
+        {
+          "baseline": [
+            "apply_patch",
+            "workspace_file_apply"
+          ],
+          "current": []
+        }
+      ]
+    },
+    "originalFailureRetained": true,
+    "regradedAsSuccess": false
+  },
+  "costAndFrequency": {
+    "newRequests": 26,
+    "newChargeFen": 273,
+    "minimumObservedIntervalMs": 30000,
+    "concurrency": 1,
+    "perRunRequestLimit": 20,
+    "ledger": "/Users/champ/.cache/napier-seven-quality/budget-50cny-2026-09-14.sqlite",
+    "maxFen": 5000,
+    "committedFen": 1104,
+    "remainingFen": 3896,
+    "requests": 154,
+    "reservedRequests": 0,
+    "denied": 0,
+    "providerInvoice": false
+  },
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "http_retry_policy_v2: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "d4f81c21ad2c474b12396502e9bbd5d555faa1ce977e033570c67372e2f5cc89"
+  },
+  "plannedJobs": 180,
+  "notStartedJobs": 178,
+  "bindings": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/plan.json",
+      "sha256": "755ee0de42248fd47e778bec89cb93b04a92fde29130fe372878a70c0723afb8"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/schedule.json",
+      "sha256": "38f9184862e5d4260558d9b211fd7c7dc040fe6edd2ddd9d1c6c2c1eb7e6c926"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/phase-1-result.json",
+      "sha256": "8c82c9cd54f0d30b5751f7df1df56525aae1c84145c4ddb611a368d36da01ea7"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/invocation-audit.json",
+      "sha256": "67bcf97546ad175161118943adc97fcf2fa1d6767d7e7bdfabc6c2dadd084a87"
+    },
+    {
+      "path": "/tmp/napier-cny-core-v5-first-pair-v1.mjs",
+      "sha256": "fc67b4cee626e78a5ea849e929661f62a38acf28ea2e3586f950c3836a548a46"
+    },
+    {
+      "path": "/tmp/napier-cny-core-v5-invocation-audit-v1.mjs",
+      "sha256": "69014ccd2854f463576e8708fb101d1962b3bdd0d0814bafd616077009a6b2ba"
+    }
+  ],
+  "limitations": [
+    "Only one paired trial on one case in core v5, with the full 30-case/three-trial gate unchanged.",
+    "Candidate takes more requests, time and conservative CNY than baseline in this observation; no speed/cost improvement claimed.",
+    "Candidate has two retained artifact-state transition failures; initial failed verification is also retained.",
+    "Both arms use replacement edits; no unified-diff adoption qualification.",
+    "Older v3 queue pair and pre-budget historical baselines are not pooled into the frozen v5 suite.",
+    "Linked external dependencies are not a hermetic installation.",
+    "Original intermittent offline Workflow failure remains unexplained."
+  ],
+  "promotionReady": false,
+  "goalComplete": false
+}

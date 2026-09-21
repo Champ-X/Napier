@@ -1,0 +1,24 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "inventory_event_projection_v1",
+  "title": "Inventory event projection",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": [
+    "src/events.py",
+    "src/inventory.py"
+  ],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": [
+    "apply_patch",
+    "run_command"
+  ]
+}

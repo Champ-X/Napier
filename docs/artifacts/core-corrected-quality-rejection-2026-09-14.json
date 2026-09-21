@@ -1,0 +1,102 @@
+{
+  "kind": "napier.corrected-core-quality-rejection",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:02:21.465Z",
+  "root": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2",
+  "baseline": "/tmp/napier-harness-baseline-c454a155",
+  "candidate": "/tmp/napier-harness-stream-timing-v1",
+  "composition": "coding-python.v1 + tail-v1 + request-aware-v1",
+  "model": "deepseek/deepseek-v4-flash",
+  "settled": 57,
+  "arms": {
+    "baseline": {
+      "settled": 27,
+      "passed": 22
+    },
+    "candidate": {
+      "settled": 30,
+      "passed": 27
+    }
+  },
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 27,
+    "cases": 10,
+    "regressions": [
+      "bounded_async_queue_v1:0: task completion regressed",
+      "bounded_async_queue_v1:0: new false completion"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:2: missing arm",
+      "bounded_async_queue_v1:1: missing arm",
+      "bounded_async_queue_v1:2: missing arm",
+      "Need 30 cases; observed 10",
+      "incremental_ndjson_v1: need 3 paired trials; observed 2",
+      "bounded_async_queue_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "regressed",
+    "promotionReady": false,
+    "contentSha256": "a8791f307cf8682dbe4ec0ef979dd71172103780ce573a29ec80a0eea0d69956"
+  },
+  "collectionComplete": false,
+  "suiteResultSha256": "7d436d025a2a7b2042c7cda2801e3b1810aa7eae07af852ff87ac303b1ba62bf",
+  "stop": "Supervisor PID 86312 received SIGINT after a comparable bounded-queue regression was observed; four in-flight case jobs received SIGTERM and remaining cases were not scheduled.",
+  "pairedRegression": [
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-baseline/trial-1/result.json",
+      "reportSha256": "ee311f9f31fe0cb6d7451065773e93d460c6e83406448471edf7473bf16e16cc",
+      "arm": "baseline",
+      "runId": "run_ca1b19c4f7404fc6aac9",
+      "status": "completed",
+      "taskSuccess": true,
+      "graderExitCode": 0,
+      "allowedChanges": true
+    },
+    {
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-1/result.json",
+      "reportSha256": "f106a529ecefaa5ecf0697d4c54a93f0d13a05184d89b622b2ffa1cb7e06529f",
+      "arm": "candidate",
+      "runId": "run_471803e6e7144f2b82f3",
+      "status": "completed",
+      "taskSuccess": false,
+      "graderExitCode": 1,
+      "allowedChanges": true
+    }
+  ],
+  "additionalUnchangedOutputProbe": [
+    {
+      "arm": "baseline",
+      "sourceSha256": "5f9ff14e09f6c14a3eab4d560afe4f0e0c99d95ec266cff7019fbb2b0e5afb87",
+      "invalidConcurrency": {
+        "synchronousError": null,
+        "returnedPromise": true,
+        "promiseOutcome": "TypeError"
+      },
+      "nullSignal": {
+        "outcome": "TypeError",
+        "jobsStarted": 0
+      }
+    },
+    {
+      "arm": "candidate",
+      "sourceSha256": "72e7f82e924a7884c301ede71b311291cc612a43f65623b77bc15663d400be77",
+      "invalidConcurrency": {
+        "synchronousError": "TypeError",
+        "returnedPromise": false,
+        "promiseOutcome": null
+      },
+      "nullSignal": {
+        "outcome": "resolved",
+        "jobsStarted": 1
+      }
+    }
+  ],
+  "assessment": "Candidate trial 1 changed the original async runJobs API to a function that throws synchronously on invalid concurrency; the frozen independent grader rejects that behavior. Independently, a supplied null signal is accepted and a job starts, while the passing baseline rejects it before any job. README explicitly requires supplied signal to be an AbortSignal and all validation before job dispatch, so this is also a behavioral defect regardless of validation-rejection style. Candidate trial 3 skips sparse array holes through Array.some, dispatching jobs before malformed input is rejected; NDJSON trial 3 also fails invalid-data behavior. Their corresponding baseline trial 3 results were unfinished, so neither is presented as another paired regression.",
+  "scope": "Original reports, inputs, observed outputs and failures retained. Supplemental null-signal check uses unchanged completed outputs and does not replace the original grader or create fresh Agent trials. Counts have unequal coverage and are not compared as success rates. No qualification or default promotion.",
+  "promotionReady": false
+}

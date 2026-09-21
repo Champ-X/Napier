@@ -1,0 +1,177 @@
+{
+  "kind": "napier.bounded-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:44:06.445Z",
+  "source": "/tmp/napier-harness-thinking-trace-v1",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-thinking-trace-core-v14/plan.json",
+  "planSha256": "fdd64e6b4159c2ec8274f835143b019370067631f25345a60bf7ae894d0fe2fa",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-thinking-trace-core-v14/result.json",
+  "resultSha256": "16190054883e4624a0db2b8b2f5b3b7f90901e8a99cd642cbb0bb08118af719b",
+  "dispatchIndices": [
+    33,
+    32
+  ],
+  "observations": [
+    {
+      "index": 33,
+      "caseId": "atomic_json_patch_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_6a44394f1c49408990b8",
+      "status": "failed",
+      "taskSuccess": false,
+      "graderExitCode": 1,
+      "error": "The model provider call failed. Verify the selected provider and model with Doctor, then retry or choose another configured model.",
+      "admissions": 4,
+      "settledFen": 3,
+      "unreceiptedReservedFen": 600,
+      "toolFailures": 0,
+      "durationMs": 125219,
+      "auditedCapsules": 4,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-thinking-trace-core-v14/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "e4260d751457f6448d1e9c4c9e8481c103ee9f8bac2ca0dd847b47ebcaf928ec",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-thinking-trace-core-v14/audit-33.json",
+      "auditSha256": "6cc0a7836a656e06ab1401b0dd746e10728818291b08aea9bca094619670715d",
+      "graderMode": "host"
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 0,
+    "cases": 0,
+    "regressions": [],
+    "evidenceBlockers": [
+      "atomic_json_patch_v1:0: missing arm"
+    ],
+    "blockers": [
+      "atomic_json_patch_v1:0: missing arm",
+      "Need 30 cases; observed 0"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "689c7856ee78961b5c5c26fdeb851f18efa2cdf82ad63fc8aa2753c9b32ab713"
+  },
+  "stop": {
+    "reason": "candidate_task_failed",
+    "runId": "run_6a44394f1c49408990b8",
+    "job": {
+      "caseId": "atomic_json_patch_v1",
+      "caseRoot": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/cases/atomic_json_patch_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "output": "/Users/champ/.cache/napier-seven-quality/cny-thinking-trace-core-v14/atomic_json_patch_v1-candidate-trial-1",
+      "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+      "graderMode": "host",
+      "graderRuntimes": "node"
+    }
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 8438,
+      "remainingFen": 1562,
+      "requests": 712,
+      "reservedRequests": 7,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 9041,
+      "remainingFen": 959,
+      "requests": 715,
+      "reservedRequests": 8,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "settledConservativeFen": 4241,
+    "unreceiptedReservations": [
+      {
+        "id": 410,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 421,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 633,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 646,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 647,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 674,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 712,
+        "charged_fen": 600,
+        "status": "reserved"
+      },
+      {
+        "id": 715,
+        "charged_fen": 600,
+        "status": "reserved"
+      }
+    ],
+    "providerBillVerified": false
+  },
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Only original observed tasks and immutable current-source reports qualify. No causal attribution or generalized efficiency claim. Historical failed/ineligible reports and the full 30-case/3-trial gate remain unchanged."
+}

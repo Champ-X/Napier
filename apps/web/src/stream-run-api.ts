@@ -21,6 +21,7 @@ import {
   throwNapierApiError,
 } from "./api-error";
 import { readSseJsonRecords } from "./sse-json";
+import { harnessPolicyEvidence } from "./stream-harness-policy-evidence";
 import {
   type StreamRunExpectation,
   verifyStreamRunPresetEvidence,
@@ -49,14 +50,14 @@ export async function streamRunFrames(
   if (!response.body) throw new Error("Streaming response is unavailable");
 
   const state = streamState();
+  const verifyPolicy =
+    expectation.kind === "prompt"
+      ? harnessPolicyEvidence(path, expectation.harnessPolicyPreset)
+      : async () => {};
   for await (const record of readSseJsonRecords(path, response.body)) {
-    await dispatchFrame(
-      path,
-      state,
-      expectation,
-      await validateStreamFrameRecord(path, record),
-      onFrame,
-    );
+    const parsed = await validateStreamFrameRecord(path, record);
+    await verifyPolicy(parsed.frame);
+    await dispatchFrame(path, state, expectation, parsed, onFrame);
   }
   if (!state.terminalFrameType) {
     throw new NapierStreamTerminationError(path, {

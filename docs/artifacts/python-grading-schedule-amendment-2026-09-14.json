@@ -1,0 +1,138 @@
+{
+  "kind": "napier.python-grading-schedule-amendment-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T12:47:48.997Z",
+  "amendment": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-grading-amendment-v1/amendment.json",
+    "sha256": "51036d0211bb6d2406533f143feaa5ecf595d06d65daf49fa34c1112c7185ab4"
+  },
+  "driverFreeze": {
+    "path": "/tmp/napier-cny-sandbox-quality-driver-v1/freeze.json",
+    "sha256": "84db160c5d36ae3a03c8cc71f8ea74a4723b9dd1ce7dd7640426f2316d1e2137"
+  },
+  "driverChanges": [
+    {
+      "path": "scripts/harness-campaign-evidence.mjs",
+      "previousSha256": "572aa3d5c63f9aed8e3099097efc2699d55667a816c4415ce338c0164e46638c",
+      "sha256": "4aa1511df60dc2c35a4f012ce5728b3fbae9deda722d49b87f40404550ccc644"
+    },
+    {
+      "path": "scripts/harness-paired-suite-cli.test.mjs",
+      "previousSha256": "53534488a66b750a726863f2bf1afdac22633b06d74a0800f9d3e4642ca390c9",
+      "sha256": "4f9ca1969f5560cfedb217ad81ca318bf7bd92a75f2d61b4c133128a3f9a0623"
+    },
+    {
+      "path": "scripts/run-harness-optimization-campaign.mjs",
+      "previousSha256": "8ea69f7dd9828804abdc98d1a676b0299c301378e958d951cc9caed462bbe34f",
+      "sha256": "aab63e689728cbeae0837bcfd81bdfe94b12e0f4901b418439178d0e4671123e"
+    },
+    {
+      "path": "scripts/run-harness-optimization-suite.mjs",
+      "previousSha256": "be79399e8e58792fe00216baefd6c45c8e7e9947ad6aab39151994e530a49ede",
+      "sha256": "aa03427b0321364e5514350034370b2b481ec9c4d9c513a64233ba85de2c56a8"
+    },
+    {
+      "path": "scripts/harness-grader-evidence.mjs",
+      "previousSha256": null,
+      "sha256": "5598e230f9140e451ec0dab4f2ec86e55d679bb4ae298f9391972631faa4aafe"
+    },
+    {
+      "path": "scripts/harness-sandbox-grader.mjs",
+      "previousSha256": null,
+      "sha256": "60574b3112910e65e56cebdd97a2c006d373b28e8ac9f7614cc71051043ab165"
+    },
+    {
+      "path": "scripts/harness-sandbox-grader.test.mjs",
+      "previousSha256": null,
+      "sha256": "ec6d35be6d656424e77613033b759c04f0eebb1d5692ab993722fa98971c6e57"
+    }
+  ],
+  "amendedJobCount": 42,
+  "totalJobs": 180,
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "pythonCases": [
+    "booking_calendar_v1",
+    "safe_csv_export_v1",
+    "inventory_event_projection_v1",
+    "weighted_expense_allocation_v1",
+    "incremental_ndjson_v1",
+    "sql_named_binding_v1",
+    "ledger_reconciliation_v1"
+  ],
+  "runtimeBindings": {
+    "baseline": {
+      "kind": "napier.harness-grader-configuration",
+      "schemaVersion": 1,
+      "mode": "sandbox",
+      "sandboxId": "oci-container",
+      "runtimes": [
+        {
+          "runtime": "node",
+          "executable": "/usr/local/bin/node",
+          "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+        },
+        {
+          "runtime": "python",
+          "executable": "/usr/bin/python3.13",
+          "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+          "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+        }
+      ],
+      "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+    },
+    "candidate": {
+      "kind": "napier.harness-grader-configuration",
+      "schemaVersion": 1,
+      "mode": "sandbox",
+      "sandboxId": "oci-container",
+      "runtimes": [
+        {
+          "runtime": "node",
+          "executable": "/usr/local/bin/node",
+          "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+        },
+        {
+          "runtime": "python",
+          "executable": "/usr/bin/python3.13",
+          "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+          "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+        }
+      ],
+      "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+    }
+  },
+  "existingReportsModified": false,
+  "existingDriverModified": false,
+  "existingRuntimeSourceModified": false,
+  "realModelRequests": 0,
+  "accessOracle": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/access-v3-oracle-freeze.json",
+    "sha256": "9a62f8d72c6f36dc388eb4a3c84817368b141156b72d4b382ee036835067b26b",
+    "tests": {
+      "path": "/tmp/napier-access-contract-oracle-tests-v1.json",
+      "sha256": "898af28dec32d9f48b3be109e6a3df8548b83d4e7b759bb75861f21bf74107e4",
+      "passed": 7
+    },
+    "baselineResultExistedAtFreeze": false,
+    "candidateResultExistedAtFreeze": false,
+    "outputsInspectedAtFreeze": false,
+    "files": {
+      "expected/src/access.mjs": "9b45033af6f837f4036d4c3954efa1c31e5bd4db5b744f68aa0515bf31bd7dca",
+      "expected/src/resource.mjs": "d112a54728bf0e1f4816a554eef3718878e1bdedada44f92cb645f188cac262d",
+      "fixture/README.md": "b8fc1843f40af0658459a87d8b548e2edad0a5ddd5015288ab2245c55f91f1ba",
+      "fixture/src/access.mjs": "8fb90e747c4edc55a1a6a092bccb2c8d1f50bc2f86dac5491c73306749fdfefb",
+      "fixture/src/resource.mjs": "23ecdbb26468c1b6b1eb55a76aa985816345b8fbd61c4fe6000e2e7d7ae037f3",
+      "fixture/test/public.test.mjs": "bd1e7f993b9fc74d9c2f6de5eb53a66e448fcfc6e1044f21011525769f8f235f",
+      "manifest.json": "810f38105917ecd1bd9ec293ebaeaf60508517899f4f65cce7c9721a6062e9ab",
+      "outcome.mjs": "50a9c3c4370b2d5b798c1e60d13cd3e8d333c021c9f8d6edd5e1cedff0555375",
+      "prompt.md": "628682aec0517d2c5a3b57e66e976115e4a407dde2309376eb882d94d3edf177"
+    }
+  },
+  "scope": "Execution plan only; no report reclassification, no added task, no repeated completed observation and no quality promotion",
+  "promotionReady": false
+}

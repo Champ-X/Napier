@@ -1,0 +1,179 @@
+{
+  "kind": "napier.user-reconciled-continuation-final-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:13:56.978Z",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "planSha256": "0599e7beafb358c4c3e0b5d5fdfb50435a1518bdd762b53b939403caf5f157eb",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/pagination-reused-baseline-pair-v1/result.json",
+  "resultSha256": "b1032156d6e174acaf22a00f50bbef33d56a758d1017087018b77fe48fdf535a",
+  "oldLedgerLogicalHashUnchanged": true,
+  "oldLedgerLogicalSha256": "38ba9c728635a172e5fdcfefdbd4b4fea42a7d2211b9deaf7190ef9d0b1314b2",
+  "reconciliation": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/user-reported-spending-checkpoint-2026-09-15.json",
+    "sha256": "50584e482d3cbf471cd688f12efcf3e11fef7090f73685500898ca1786a1b5cc"
+  },
+  "deliveries": [
+    {
+      "index": 53,
+      "caseId": "cursor_pagination_v1",
+      "runId": "run_f35c3763338840ffa908",
+      "primaryInvocations": [
+        {
+          "capsuleSha256": "3428722003e52f331a6d5c6586f1bf1a25616dcddf5c93be192faafe36a07250",
+          "contextEnvelopeSha256": "defd48864ee609d5b362c445bf6beedc6c7c82189e858089670679390b10fe6e",
+          "turnIndex": 0,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "c690a16e6916ff3532b7b14607096ba45d2de4b94038ee6903b1169cca9dd9a8",
+          "contextEnvelopeSha256": "11db6d069ba6c267504849ced24d9b735d800a7d0ba1ae56c4f03ab66e95440f",
+          "turnIndex": 1,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "d68c4be0f5657aba0ec2b7dfddf148847112ddf6f692293a0c6f5ba88265cdae",
+          "contextEnvelopeSha256": "4874624a5d0a9d3d9e69b13fac95222984db55963f103c7d19361f0c42f9445f",
+          "turnIndex": 2,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "838911afbe82f570027323fc132d4994146feac80ca2269603543375ac551944",
+          "contextEnvelopeSha256": "9a4e6de6fc433ed020f7c8a458eff4e0ebe8530a298223f4042359875ac75fb1",
+          "turnIndex": 3,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "1fa8cd04cfa6982572520da60153c806a5fead7ac6b93f3c16f4c7477437b872",
+          "contextEnvelopeSha256": "22c1f33604d6ceeab9d376d8198b6c30fab6d9ab89b71f08d4327034cb8eddb4",
+          "turnIndex": 4,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "0dead32b1d7c59d02173b265db40caeaee2449603d864f6e2d3a6f99dbe36a75",
+          "contextEnvelopeSha256": "7d38d896e532cdf99a15b7e9151aeeae6a587ec99f2bff91c7f6598428137820",
+          "turnIndex": 5,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "a7a15e84ebcbda5f7c54cbd0e16bf3a454b4152b9dd4447e4235b9ac1bf0313a",
+          "contextEnvelopeSha256": "ae72ba3d54446466912490f98a95e911b180855a867ec6a35cbc73503676c3a3",
+          "turnIndex": 6,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "344302992616c690f48cc378356a327be3045156d34c84ddeeae27b264c40481",
+          "contextEnvelopeSha256": "296d12a3477bc204e85b3e397f9edaee593682cf03d33348df003fba17cd2478",
+          "turnIndex": 7,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        },
+        {
+          "capsuleSha256": "8fb857a9e1122ee388b7a77857d25c17d12b07afbc05cef841caa49fb95c0a5e",
+          "contextEnvelopeSha256": "0e282d824ed13ffbf9f1a6e177072b99b2847b3842058f5cdd04b9d86fc4787d",
+          "turnIndex": 8,
+          "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9"
+        }
+      ],
+      "taskPhases": [
+        "coding"
+      ],
+      "thinkingGuardEvents": 0
+    }
+  ],
+  "financialEpoch": "/Users/champ/.cache/napier-seven-quality/budget-100cny-user-reconciled-2026-09-15.sqlite",
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 3905,
+      "remainingFen": 6095,
+      "requests": 222,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 3952,
+      "remainingFen": 6048,
+      "requests": 232,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "newBatchRequests": 10,
+  "newBatchCommittedFen": 47,
+  "minimumAdmissionSpacingAcrossAllRunsMs": 15000,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 7,
+    "cases": 7,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 7",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+      "transaction_savepoints_v1: need 3 paired trials; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "config_layers_v1: need 3 paired trials; observed 1",
+      "cursor_pagination_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "a9d4d276be6a6e895c93f3936975fc24951b156826484ef2cc8ed78448d0381f"
+  },
+  "statusCounts": {
+    "settled": 16,
+    "not_started": 164
+  },
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Read-only terminal report, actual input and admission audit. The historical starting amount is user-reported aggregate consumption, not an independently retrieved invoice. Historical failed reports and financial reservations remain unchanged. No causal or generalized quality claim."
+}

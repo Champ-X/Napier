@@ -1,0 +1,122 @@
+{
+  "kind": "napier.web-policy-terminal-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T00:51:42.850685+00:00",
+  "files": [
+    {
+      "path": "apps/web/src/stream-harness-policy-evidence.ts",
+      "sha256": "c1a7b9b1510391281617b26e827f1697e2439e38c31d6bf5f9aa25ece31808dc"
+    },
+    {
+      "path": "apps/web/src/next-run-capability-preset-execution.ts",
+      "sha256": "12dcab9ce400dd37ae4d5b15ac7e6b9d05eb2ea7ac12dd7911f37f4a2a115bb3"
+    },
+    {
+      "path": "apps/web/src/use-next-run-harness-policy.ts",
+      "sha256": "1492535331215c88676c498ae7d28173c3f8109cc664d93ecb59e866449cbd5d"
+    },
+    {
+      "path": "apps/web/test/harness-policy-terminal-stream.test.ts",
+      "sha256": "c76eb44bfdc0e1a267f2ca6a2b8616b2764c76c0ef987d41fa249f07f994041f"
+    },
+    {
+      "path": "apps/web/test/use-next-run-harness-policy.test.tsx",
+      "sha256": "caa5e2ac67e3ae145462c1c5d2de37e93875ab00a31d2b804eaaafb13875e356"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-harness-web-audit-full-v1.log",
+      "sha256": "4a311c3bf34667f2f4144c564eddfbf6bdb6374bbb1ced834b3a69cd33cbf993"
+    },
+    {
+      "path": "/tmp/napier-harness-web-audit-typecheck-v1.log",
+      "sha256": "09acbed051d4d391f79a776123dc8599e3b9a7e65146daf30ce300f28eb9df11"
+    },
+    {
+      "path": "/tmp/napier-policy-terminal-before-v1.log",
+      "sha256": "3d95981122368cc7112bc79b4e321553c26ed0d4a0d157381ac0407197fc2e5d"
+    },
+    {
+      "path": "/tmp/napier-policy-terminal-before-v2.log",
+      "sha256": "b859df8b2b90b9461496a98bf66a4056a327c74c23a7be5bd4cbf67fd7818880"
+    },
+    {
+      "path": "/tmp/napier-policy-terminal-targeted-v2.log",
+      "sha256": "eac37b2351c02d502e3b367fcb22346be7e0e2141d0bec7c12e748449e654d5c"
+    },
+    {
+      "path": "/tmp/napier-policy-terminal-web-full-v2.log",
+      "sha256": "d5c70b00543f025eb1396a90d52c6a2c8831bf34b214693ffd50a05b66020d90"
+    },
+    {
+      "path": "/tmp/napier-policy-terminal-web-build-v1.log",
+      "sha256": "5656452e406d3a9e5270a28aade990be1da0b77dc2839a046ba9dcb11d5d7f8e"
+    },
+    {
+      "path": "/tmp/napier-policy-terminal-web-build-v2.log",
+      "sha256": "47ee333a4bc09955d33e58d9df183fe5858463036292c786be77771c18ce1633"
+    },
+    {
+      "path": "/tmp/napier-policy-terminal-architecture-v1.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-policy-terminal-format-check-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    }
+  ],
+  "sourceArchive": "/tmp/napier-policy-terminal-web-v1",
+  "archiveScope": "Changed Web sources/tests only; not a standalone executable environment.",
+  "webBindings": [
+    {
+      "part": "src",
+      "fileCount": 823,
+      "inventorySha256": "3f4e18d8002b74bed99d95b3bdeb93180796dd2c169380028382721931b32710"
+    },
+    {
+      "part": "dist",
+      "fileCount": 325,
+      "inventorySha256": "85330a98b1e74545514b0a0cf69ea53b0c903e3948e5439762c4553762fedb5f"
+    }
+  ],
+  "runtimeSnapshot": "/tmp/napier-harness-durable-pre-edit-v1",
+  "runtimeSourceAndDistUnchanged": true,
+  "correctedBefore": {
+    "passed": 1,
+    "failed": 6,
+    "cause": "Valid SSE with absent/invalid current Run policy evidence was incorrectly accepted.",
+    "firstFixtureIterationLimit": "Two generic sequence-contract failures are not behavioral regression evidence; corrected before-v2 isolates all six cases."
+  },
+  "targeted": {
+    "passed": 81,
+    "files": 5
+  },
+  "fullWeb": {
+    "passed": 1155,
+    "files": 270,
+    "durationSeconds": 12.05
+  },
+  "beforeFullWeb": {
+    "passed": 1144,
+    "files": 269
+  },
+  "productionWebBuildPassed": true,
+  "formatPassed": true,
+  "diffCheckPassed": true,
+  "architectureViolations": 7,
+  "architectureUnchanged": true,
+  "limitsRaised": false,
+  "originalWorkspaceViewModelLines": 2317,
+  "apiTesting": {
+    "newPaidCalls": 0,
+    "newPaidCampaignsPaused": true
+  },
+  "limits": [
+    "SSE Response bodies and transport are local test fixtures",
+    "Actual Runtime preset builder and real Web protocol parser, not a running HTTP server",
+    "React hooks verified in local DOM; no rendered-browser session",
+    "No live task quality or whole-composition qualification"
+  ],
+  "promotionReady": false
+}

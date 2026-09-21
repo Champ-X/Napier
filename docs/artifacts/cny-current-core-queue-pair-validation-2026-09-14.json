@@ -1,0 +1,627 @@
+{
+  "kind": "napier.current-core-queue-pair-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T10:02:55.732389+00:00",
+  "candidate": "/tmp/napier-harness-history-linear-v1",
+  "driver": "/tmp/napier-cny-paired-quality-driver-v1",
+  "planSha256": "77cb92b66a67d0df69c634fc64cd13b9f7e0014a06f6f8c8a5e19c1b8de2c7dc",
+  "scheduleSha256": "d8b6aa45bb73519a006d20f5cd09ffc496435e5c17e240b3e4cc8c732acb5ff8",
+  "fullScope": {
+    "cases": 30,
+    "pairedTrials": 3,
+    "plannedJobs": 180,
+    "completedJobs": 2,
+    "notStarted": 178
+  },
+  "observations": [
+    {
+      "arm": "baseline",
+      "caseId": "bounded_async_queue_v3",
+      "trial": 0,
+      "runId": "run_55961b5a8b144811a768",
+      "status": "completed",
+      "taskSuccess": false,
+      "qualifyingEvidence": true,
+      "changed": [
+        "src/job-result.mjs",
+        "src/queue.mjs"
+      ],
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 1,
+      "sourceStable": true,
+      "sourceIdentity": {
+        "packages/runtime/src": "f2a8f20f1022d6b4a25d3ee6e2ca7441db1d330adcf5ce34c7fc05d357f0786c",
+        "packages/contracts/src": "1b56ae68c77f86c5d09c7605076e73db136367ee95eb64b1db4a591d52b59ddf",
+        "packages/contracts/dist": "cf69cee2add53d29ce74dd9af721bd5826f7d146873289902695dff2b1326925",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeArtifactStable": true,
+      "servingIdentityMatched": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 0,
+        "auditedCapsules": 0
+      },
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_55961b5a8b144811a768",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "0a9136180923ffe4c2a0c097457e27647fdee5b44497f6e54d2b3ca561c23312"
+      },
+      "environmentEvidence": {
+        "kind": "napier.harness-environment-evidence",
+        "schemaVersion": 1,
+        "runId": "run_55961b5a8b144811a768",
+        "sandboxId": "oci-container",
+        "configurationSha256": "e133d77896c7ea57dc7816fa35964c173418c42fa3a349e9f7531ffc0c3984d2",
+        "executionMode": "standard",
+        "valid": true,
+        "eligible": true,
+        "missingTools": [],
+        "receipts": [],
+        "blockers": [],
+        "contentSha256": "847c318e6765688472f7693c03d8b7b1b303b797fbc87159a00c9e050dbf9589"
+      },
+      "requestedModel": {
+        "provider": "deepseek",
+        "id": "deepseek-v4-flash"
+      },
+      "toolCalls": 28,
+      "toolFailures": 2,
+      "editOperationEvidence": {
+        "operations": [
+          {
+            "callId": "call_00_i2LzsapFPPwNIUnX7i0n0901",
+            "runId": "run_55961b5a8b144811a768",
+            "operation": "replace",
+            "status": "completed",
+            "sourceCapsuleSha256": "521369cc93fe67dacea2cfe72d977449673d03ca09c05a7274657e938e8fd936"
+          },
+          {
+            "callId": "call_01_pUUG6HKNzjMfyBQIPyKy0409",
+            "runId": "run_55961b5a8b144811a768",
+            "operation": "replace",
+            "status": "completed",
+            "sourceCapsuleSha256": "521369cc93fe67dacea2cfe72d977449673d03ca09c05a7274657e938e8fd936"
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true
+      },
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/bounded_async_queue_v3-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "499d934ba0df206ddfccd1c18ca422d46a4696ad1d029d3a7a98d05ca8a40e12",
+      "requests": 16,
+      "chargeFen": 110,
+      "verificationExecutions": [],
+      "spendingBudget": {
+        "before": {
+          "kind": "napier.harness-spending-budget",
+          "schemaVersion": 1,
+          "currency": "CNY",
+          "maxFen": 5000,
+          "priorSpendFen": 110,
+          "committedFen": 619,
+          "remainingFen": 4381,
+          "requests": 101,
+          "reservedRequests": 0,
+          "denied": 0,
+          "policy": {
+            "modelAliases": [
+              "deepseek-flash",
+              "deepseek-v4-flash"
+            ],
+            "inputFenPerMillion": 200,
+            "outputFenPerMillion": 800,
+            "maxInputTokens": 1000000,
+            "maxOutputTokens": 384000,
+            "reservationFen": 600,
+            "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+            "checkedOn": "2026-09-14"
+          }
+        },
+        "after": {
+          "kind": "napier.harness-spending-budget",
+          "schemaVersion": 1,
+          "currency": "CNY",
+          "maxFen": 5000,
+          "priorSpendFen": 110,
+          "committedFen": 729,
+          "remainingFen": 4271,
+          "requests": 117,
+          "reservedRequests": 0,
+          "denied": 0,
+          "policy": {
+            "modelAliases": [
+              "deepseek-flash",
+              "deepseek-v4-flash"
+            ],
+            "inputFenPerMillion": 200,
+            "outputFenPerMillion": 800,
+            "maxInputTokens": 1000000,
+            "maxOutputTokens": 384000,
+            "reservationFen": 600,
+            "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+            "checkedOn": "2026-09-14"
+          }
+        }
+      }
+    },
+    {
+      "arm": "candidate",
+      "caseId": "bounded_async_queue_v3",
+      "trial": 0,
+      "runId": "run_124a9cfb76934d2ca4ca",
+      "status": "completed",
+      "taskSuccess": true,
+      "qualifyingEvidence": true,
+      "changed": [
+        "src/job-result.mjs",
+        "src/queue.mjs"
+      ],
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "sourceStable": true,
+      "sourceIdentity": {
+        "packages/runtime/src": "ece8d9f23422c70aed944fb6e778397f678d2fac706fb18b7184ba07e10bf36f",
+        "packages/contracts/src": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+        "packages/contracts/dist": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+        "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+        "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "nodeVersion": "v24.19.0"
+      },
+      "runtimeArtifactSha256": "cdad69f2da7d7b1c4f4df1fb9df2891d8352a8539c1da86c2044263eea2179e5",
+      "runtimeArtifactStable": true,
+      "servingIdentityMatched": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 10,
+        "auditedCapsules": 10
+      },
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_124a9cfb76934d2ca4ca",
+        "beforeSha256": "28301e54f5453679b2d0d23ed19a5091ded451865365e4b36f8934680d3dc241",
+        "afterSha256": "28301e54f5453679b2d0d23ed19a5091ded451865365e4b36f8934680d3dc241",
+        "packageCount": 129,
+        "fileCount": 24864,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "7cf6e24118210b1e1cdd8564b8eb7c722625a6b54c9426374d7800ad34812fa9"
+      },
+      "environmentEvidence": {
+        "kind": "napier.harness-environment-evidence",
+        "schemaVersion": 1,
+        "runId": "run_124a9cfb76934d2ca4ca",
+        "sandboxId": "oci-container",
+        "configurationSha256": "b2a120655d828ad5f817a3647a19b228794a42bed3867bf0fdf4ed5fff4fe303",
+        "executionMode": "standard",
+        "valid": true,
+        "eligible": true,
+        "missingTools": [],
+        "receipts": [],
+        "blockers": [],
+        "contentSha256": "86af80f51ededae667f079140cdb96a89623e8dedcd084daaa71b899b77d0272"
+      },
+      "requestedModel": {
+        "provider": "deepseek",
+        "id": "deepseek-v4-flash"
+      },
+      "toolCalls": 24,
+      "toolFailures": 4,
+      "editOperationEvidence": {
+        "operations": [
+          {
+            "callId": "call_03_FK2G0huZUeO3jMyU03BD8245",
+            "runId": "run_124a9cfb76934d2ca4ca",
+            "operation": "replace",
+            "status": "completed",
+            "sourceCapsuleSha256": "176b7d3a25be6467ac9e6564843393ede43dbd9345ebd828c54cc01bfe6ce424"
+          },
+          {
+            "callId": "call_02_ACI8WX5qRquJZFtMV8H00337",
+            "runId": "run_124a9cfb76934d2ca4ca",
+            "operation": "replace",
+            "status": "completed",
+            "sourceCapsuleSha256": "176b7d3a25be6467ac9e6564843393ede43dbd9345ebd828c54cc01bfe6ce424"
+          }
+        ],
+        "unavailableCapsules": 0,
+        "complete": true
+      },
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/bounded_async_queue_v3-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "1fd61c2a839fe83f5571b09f04479db5130afa77769478ba4d4eabfffe69ddb9",
+      "requests": 11,
+      "chargeFen": 102,
+      "verificationExecutions": [
+        {
+          "eventId": "event_b531d5680852431c9cb8",
+          "callId": "call_01_ISwIqQYjl35b9G45lVqo4698",
+          "details": {
+            "sandboxSha256": "7a0c56f67bf0c5ec2e83048f271ab5721132915f085737c568cc0c254f643506",
+            "kind": "test",
+            "status": "failed",
+            "scopeSha256": "999e6c53f568e44a581d1804ab8b88c007cacb7988b02ec59bf8a34478ded53a",
+            "cwdPathSha256": "cdb4ee2aea69cc6a83331bbe96dc2caa9a299d21329efb0336fc02a82e1839a8",
+            "targetPathSha256": "8d49f4b52d85e36381e9e17554b9629b98269991039a082212243c1023134eb1",
+            "targetKind": "file",
+            "targetSnapshotSha256": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd",
+            "targetSnapshotFileCount": 1,
+            "targetSnapshotBytes": 299,
+            "targetSnapshotTruncated": false,
+            "verifierPathSha256": "95275b611231c0aeaac022a43c1a74bbcf6fd5e8ea95c3e18397ce0edf43077f",
+            "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+            "toolchainExternal": false,
+            "toolchainSha256": "2bcc528bc77e5f455afc5c079787672fec2521513631e6b402dba7ecd67e29e1",
+            "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+            "workspaceSnapshotSha256": "b9c9ea56c7196286fd74e7f7172eb7808d3a9d856a85cc711dbab056994d54fa",
+            "workspaceSnapshotScope": "workspace",
+            "observedWorkspaceSnapshotSha256": "b9c9ea56c7196286fd74e7f7172eb7808d3a9d856a85cc711dbab056994d54fa",
+            "snapshotStatus": "unchanged",
+            "diagnosticCount": 0,
+            "diagnosticsTruncated": false,
+            "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "diagnosticOutputSha256": "a63d92e7975d174222c2dd058eea6d95b361cff314c05cd3864b47daaf33f3a6",
+            "executionResultSha256": "1b0846ad6545fe6c4de5c60f271a382130ad4cbdd2ade04e8348ef6fb3175574",
+            "workspaceSnapshotFileCount": 4,
+            "workspaceSnapshotBytes": 1684,
+            "workspaceSnapshotTruncated": false,
+            "durationMs": 188,
+            "exitCode": 1,
+            "signal": null,
+            "stdoutChars": 920,
+            "stderrChars": 0,
+            "stdoutSha256": "6d0ebbf1ee9e22113ee5dd4d5381a11b901cb80e258cd2a02e3c3e52a7a79043",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "resultSha256": "da3f8b6ec4bd0c50e186c35999f0a79b087f78d2d1ed72947809776816aee944"
+          }
+        },
+        {
+          "eventId": "event_afaa55144eb84959b757",
+          "callId": "call_00_R7TnbmUfzYZrpuMShZXu2847",
+          "details": {
+            "sandboxSha256": "7a0c56f67bf0c5ec2e83048f271ab5721132915f085737c568cc0c254f643506",
+            "kind": "test",
+            "status": "passed",
+            "scopeSha256": "2e1f8d3f271d500a0b5d92d6e37c247f364715f0495f05cde457151c0e9f8ab4",
+            "cwdPathSha256": "cdb4ee2aea69cc6a83331bbe96dc2caa9a299d21329efb0336fc02a82e1839a8",
+            "targetPathSha256": "8d49f4b52d85e36381e9e17554b9629b98269991039a082212243c1023134eb1",
+            "targetKind": "file",
+            "targetSnapshotSha256": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd",
+            "targetSnapshotFileCount": 1,
+            "targetSnapshotBytes": 299,
+            "targetSnapshotTruncated": false,
+            "verifierPathSha256": "95275b611231c0aeaac022a43c1a74bbcf6fd5e8ea95c3e18397ce0edf43077f",
+            "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+            "toolchainExternal": false,
+            "toolchainSha256": "2bcc528bc77e5f455afc5c079787672fec2521513631e6b402dba7ecd67e29e1",
+            "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+            "workspaceSnapshotSha256": "9c7d671a0601b23373e92b351323b3b5ed88e6851c5e74ee6358c043a2f87654",
+            "workspaceSnapshotScope": "workspace",
+            "observedWorkspaceSnapshotSha256": "9c7d671a0601b23373e92b351323b3b5ed88e6851c5e74ee6358c043a2f87654",
+            "snapshotStatus": "unchanged",
+            "diagnosticCount": 0,
+            "diagnosticsTruncated": false,
+            "diagnosticSetSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "diagnosticOutputSha256": "766c65223b65e0c602dc3e11261dff14c840cf3ee5904e6825c5201ca395abc5",
+            "executionResultSha256": "018693a66fff1130f59312b864dedb353395f2dd5c5482333ea8e4682c102925",
+            "workspaceSnapshotFileCount": 4,
+            "workspaceSnapshotBytes": 3866,
+            "workspaceSnapshotTruncated": false,
+            "durationMs": 187,
+            "exitCode": 0,
+            "signal": null,
+            "stdoutChars": 235,
+            "stderrChars": 0,
+            "stdoutSha256": "da347b0bab5a1b735f2652a3fa1d7276a0a960322c2185456349187ea338063a",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "resultSha256": "84d04b3b44a7b3804ec9577ceb9f37f5c7e87246a07b1f3aeb8bc23931b44469"
+          }
+        }
+      ],
+      "spendingBudget": {
+        "before": {
+          "kind": "napier.harness-spending-budget",
+          "schemaVersion": 1,
+          "currency": "CNY",
+          "maxFen": 5000,
+          "priorSpendFen": 110,
+          "committedFen": 729,
+          "remainingFen": 4271,
+          "requests": 117,
+          "reservedRequests": 0,
+          "denied": 0,
+          "policy": {
+            "modelAliases": [
+              "deepseek-flash",
+              "deepseek-v4-flash"
+            ],
+            "inputFenPerMillion": 200,
+            "outputFenPerMillion": 800,
+            "maxInputTokens": 1000000,
+            "maxOutputTokens": 384000,
+            "reservationFen": 600,
+            "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+            "checkedOn": "2026-09-14"
+          }
+        },
+        "after": {
+          "kind": "napier.harness-spending-budget",
+          "schemaVersion": 1,
+          "currency": "CNY",
+          "maxFen": 5000,
+          "priorSpendFen": 110,
+          "committedFen": 831,
+          "remainingFen": 4169,
+          "requests": 128,
+          "reservedRequests": 0,
+          "denied": 0,
+          "policy": {
+            "modelAliases": [
+              "deepseek-flash",
+              "deepseek-v4-flash"
+            ],
+            "inputFenPerMillion": 200,
+            "outputFenPerMillion": 800,
+            "maxInputTokens": 1000000,
+            "maxOutputTokens": 384000,
+            "reservationFen": 600,
+            "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+            "checkedOn": "2026-09-14"
+          }
+        }
+      }
+    }
+  ],
+  "invocationAudit": {
+    "kind": "napier.core-pair-invocation-audit",
+    "schemaVersion": 1,
+    "results": [
+      {
+        "arm": "baseline",
+        "runId": "run_55961b5a8b144811a768",
+        "reportFileSha256": "499d934ba0df206ddfccd1c18ca422d46a4696ad1d029d3a7a98d05ca8a40e12",
+        "capsulesAudited": 15,
+        "firstInvocationHasPreEditGuidance": false,
+        "preEditPolicyBlocks": 0,
+        "verificationCalls": [],
+        "allVerificationCallsCaptured": true,
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "observedWorkspaceSha256": "34ee5415f6342b13d80d6660b6ad211b288c3486b38fc1eaa5ae57d97d03715f"
+      },
+      {
+        "arm": "candidate",
+        "runId": "run_124a9cfb76934d2ca4ca",
+        "reportFileSha256": "1fd61c2a839fe83f5571b09f04479db5130afa77769478ba4d4eabfffe69ddb9",
+        "capsulesAudited": 10,
+        "firstInvocationHasPreEditGuidance": true,
+        "preEditPolicyBlocks": 0,
+        "verificationCalls": [
+          {
+            "callId": "call_01_ISwIqQYjl35b9G45lVqo4698",
+            "arguments": {
+              "kind": "test",
+              "target": "test/public.test.mjs"
+            },
+            "sourceCapsuleSha256": "176b7d3a25be6467ac9e6564843393ede43dbd9345ebd828c54cc01bfe6ce424"
+          },
+          {
+            "callId": "call_00_R7TnbmUfzYZrpuMShZXu2847",
+            "arguments": {
+              "kind": "test",
+              "target": "test/public.test.mjs"
+            },
+            "sourceCapsuleSha256": "176b7d3a25be6467ac9e6564843393ede43dbd9345ebd828c54cc01bfe6ce424"
+          }
+        ],
+        "allVerificationCallsCaptured": true,
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "observedWorkspaceSha256": "a960ee9a212bd1f9f8d06a4e89ba66439108f9492344d8a8529267fccb0905c4"
+      }
+    ]
+  },
+  "qualification": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "bounded_async_queue_v3: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "7e8e52180321863ca557c4e8c8cfa630c2006532b5cade59a09b54680c723978"
+  },
+  "sourceBindingsVerified": true,
+  "requestSpacing": {
+    "configuredMinimumMs": 30000,
+    "minimumWithinPairMs": 30000,
+    "gapFromPriorCampaignMs": 1321820,
+    "requestsThisPhase": 27
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 5000,
+      "priorSpendFen": 110,
+      "committedFen": 619,
+      "remainingFen": 4381,
+      "requests": 101,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 5000,
+      "priorSpendFen": 110,
+      "committedFen": 831,
+      "remainingFen": 4169,
+      "requests": 128,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14"
+      }
+    }
+  },
+  "oracleCorrection": {
+    "case": "benchmarks/harness-optimization/bounded-async-queue-v4",
+    "suite": "benchmarks/harness-core-quality-suite-v4.json",
+    "reason": "README specifies TypeError only for settleJob(nonfunction). v3 incorrectly imposed it on runJobs validation too. v4 keeps required rejection and all validation-order/nominal-signal assertions.",
+    "newCaseFiles": {
+      "benchmarks/harness-optimization/bounded-async-queue-v4/expected/src/job-result.mjs": "e7b146fc46de7b1611145e8f89a1147fc542cc6885f965941a2d713ab6c01bcb",
+      "benchmarks/harness-optimization/bounded-async-queue-v4/expected/src/queue.mjs": "d073637f08a42e0acedd7eef8238fadeecac1839c3c953a138c686256dc9e9e4",
+      "benchmarks/harness-optimization/bounded-async-queue-v4/fixture/README.md": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+      "benchmarks/harness-optimization/bounded-async-queue-v4/fixture/src/job-result.mjs": "53b1e5ccc1dcc2046b5dfdac223f2c1bef03543189c6b7f89e8ddaa6594f1441",
+      "benchmarks/harness-optimization/bounded-async-queue-v4/fixture/src/queue.mjs": "22021953186778f427d6154a29ca75c02fd70785ab84c8f83fe672fde1fc916e",
+      "benchmarks/harness-optimization/bounded-async-queue-v4/fixture/test/public.test.mjs": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd",
+      "benchmarks/harness-optimization/bounded-async-queue-v4/manifest.json": "e9b373be21949b2b63b9e026c0fcfcb2c21f91e28c683ff4fab6be72e39695a3",
+      "benchmarks/harness-optimization/bounded-async-queue-v4/outcome.mjs": "8cdac35690d87780809a51d734c9cbf8a944154ffbd79bac135f13089a042f74",
+      "benchmarks/harness-optimization/bounded-async-queue-v4/prompt.md": "2e335728784b8d86367c1b842877ede68909c5adc33147080925ad2895a2141b"
+    },
+    "sourceAndTaskInputsUnchanged": true,
+    "testsPassed": 21,
+    "testsFailed": 0,
+    "testReportSha256": "48432408c0b7dd5503f54e5982f14d48889253652025a5f575bbe50acc2453b6",
+    "regrades": [
+      {
+        "kind": "napier.queue-v4-offline-regrade",
+        "schemaVersion": 1,
+        "scope": "Regrade preserved outputs in disposable copies; original reports and ledgers unchanged. No new model observation.",
+        "results": [
+          {
+            "reportFile": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/bounded_async_queue_v3-baseline-trial-1/trial-1/result.json",
+            "reportSha256": "499d934ba0df206ddfccd1c18ca422d46a4696ad1d029d3a7a98d05ca8a40e12",
+            "runId": "run_55961b5a8b144811a768",
+            "arm": "baseline",
+            "recordedTaskSuccess": false,
+            "recordedGraderPassed": false,
+            "grades": {
+              "v3": {
+                "passed": false,
+                "exitCode": 1,
+                "graderSha256": "bd1f291842adc01a96779470164e8ed34680952e152718e40c13f360355b67f3",
+                "diagnosticSha256": "8bb9284ae00e278ce6c84f7cb62b277176c67bcd8591402739ec7b32bdcadacd",
+                "failureCategory": "unspecified_validation_error_class"
+              },
+              "v4": {
+                "passed": false,
+                "exitCode": 1,
+                "graderSha256": "8cdac35690d87780809a51d734c9cbf8a944154ffbd79bac135f13089a042f74",
+                "diagnosticSha256": "892281fa65dbec4e7ce0198a76a44208254661de08211a8b5cac470c0eefbe75",
+                "failureCategory": "started_jobs_before_full_validation"
+              }
+            },
+            "supplemental": {
+              "sparseRejected": true,
+              "sparseJobsStarted": 2,
+              "nullRejected": false,
+              "nullJobsStarted": 1
+            },
+            "newModelObservation": false
+          }
+        ],
+        "paidApiCalls": 0
+      },
+      {
+        "kind": "napier.queue-v4-offline-regrade",
+        "schemaVersion": 1,
+        "scope": "Regrade preserved outputs in disposable copies; original reports and ledgers unchanged. No new model observation.",
+        "results": [
+          {
+            "reportFile": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/bounded_async_queue_v3-candidate-trial-1/trial-1/result.json",
+            "reportSha256": "1fd61c2a839fe83f5571b09f04479db5130afa77769478ba4d4eabfffe69ddb9",
+            "runId": "run_124a9cfb76934d2ca4ca",
+            "arm": "candidate",
+            "recordedTaskSuccess": true,
+            "recordedGraderPassed": true,
+            "grades": {
+              "v3": {
+                "passed": true,
+                "exitCode": 0,
+                "graderSha256": "bd1f291842adc01a96779470164e8ed34680952e152718e40c13f360355b67f3",
+                "diagnosticSha256": "252d31a3e7ab6900625687e3670800f432c5b689e0a51effe7f7cea0144da298",
+                "failureCategory": null
+              },
+              "v4": {
+                "passed": true,
+                "exitCode": 0,
+                "graderSha256": "8cdac35690d87780809a51d734c9cbf8a944154ffbd79bac135f13089a042f74",
+                "diagnosticSha256": "252d31a3e7ab6900625687e3670800f432c5b689e0a51effe7f7cea0144da298",
+                "failureCategory": null
+              }
+            },
+            "supplemental": {
+              "sparseRejected": true,
+              "sparseJobsStarted": 0,
+              "nullRejected": true,
+              "nullJobsStarted": 0
+            },
+            "newModelObservation": false
+          }
+        ],
+        "paidApiCalls": 0
+      }
+    ],
+    "regradeScope": "Original v3 reports and frozen inputs are retained. v4 regrades existing output; it is not a new model trial or an additional independent queue task."
+  },
+  "limitations": [
+    "One current-source comparable pair does not meet the unchanged 30-case/three-trial gate.",
+    "No causal performance, cost or unified-diff adoption claim. Both arms used replacement edits.",
+    "The baseline also violates required sparse-array and null-signal validation; removing unspecified error-class matching does not turn its output into a pass.",
+    "No further paid jobs dispatched; current Runtime full offline audit is recorded separately."
+  ],
+  "promotionReady": false,
+  "goalComplete": false
+}

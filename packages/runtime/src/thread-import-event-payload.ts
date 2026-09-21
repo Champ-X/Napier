@@ -1,4 +1,5 @@
 import type { JsonValue, RunEvent } from "@napier/contracts";
+import { rebindImportedHarnessPolicy } from "./harness-run-policy.js";
 
 import { isWebFetchStateToolName } from "./web-fetch-state-tool.js";
 import { WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT } from "./workflow-input-override.js";
@@ -16,6 +17,8 @@ export function remapImportedEventPayload(
   payload: JsonValue,
   idMap: ReadonlyMap<string, string>,
 ): JsonValue {
+  if (type === "harness.policy.bound")
+    return rebindImportedHarnessPolicy(payload, idMap);
   if (type === "run.started" && record(payload)) {
     const cloned = structuredClone(payload);
     delete cloned["sourceContinuityRunId"];

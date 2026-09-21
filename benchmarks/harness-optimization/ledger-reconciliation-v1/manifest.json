@@ -1,0 +1,24 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "ledger_reconciliation_v1",
+  "title": "CSV ledger reconciliation, exact money and UTC windows",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": [
+    "src/events.py",
+    "src/report.py"
+  ],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": [
+    "apply_patch",
+    "run_command"
+  ]
+}

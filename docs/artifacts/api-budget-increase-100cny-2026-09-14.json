@@ -1,0 +1,20 @@
+{
+  "kind": "napier.user-spending-ceiling-increase",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T13:03:53.503107+00:00",
+  "ledgerPath": "/Users/champ/.cache/napier-seven-quality/budget-50cny-2026-09-14.sqlite",
+  "oldMaxFen": 5000,
+  "newMaxFen": 10000,
+  "committedFen": 1804,
+  "remainingFen": 8196,
+  "retainedAdmissions": 238,
+  "reservedRequests": 0,
+  "authorization": "User: 加速推进，现在进度太慢了。预算提高到100",
+  "beforeBackup": {
+    "path": "/Users/champ/.cache/napier-seven-quality/budget-before-100cny-authorization-2026-09-14.sqlite",
+    "sha256": "0f9b8cfcb48ed377e7cecdd078b84fcece2df372bc38f6fbf91578443ee384d8"
+  },
+  "requestRowsUnmodified": true,
+  "existingReportSnapshotsUnmodified": true,
+  "scope": "Same authoritative cumulative ledger; only the authorized ceiling increases. Original filename is retained to prevent split accounting."
+}

@@ -1,0 +1,110 @@
+{
+  "kind": "napier.edit-format-calibration",
+  "schemaVersion": 1,
+  "adapterRevision": "edit-intent.exact-hashline-unified.v1",
+  "entries": [
+    {
+      "id": "deepseek-coding-diff-v2",
+      "preference": {
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "api": "openai-completions",
+        "taskPhase": "coding",
+        "dialect": "unified_diff"
+      },
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "unified-diff.v1",
+        "maxActiveTools": 28,
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-node",
+          "revision": 1,
+          "context": {
+            "prompt": "legacy",
+            "memory": "legacy",
+            "workingState": "legacy"
+          },
+          "toolSurface": {
+            "editReferences": true,
+            "unifiedDiff": true,
+            "editPreference": {
+              "provider": "deepseek",
+              "model": "deepseek-v4-flash",
+              "api": "openai-completions",
+              "taskPhase": "coding",
+              "dialect": "unified_diff"
+            }
+          },
+          "verification": "node-v1",
+          "contentSha256": "8cf87b0ba3e5257263fa7bac1ba136a37b7f4027a2ee588c258901fbe2d4c580"
+        },
+        "contentSha256": "6ca7f4fc160be47fd982d1157c55ac0d71685a10636dd1154d5a93869039ffad"
+      },
+      "runtimeArtifactSha256": "0ee60da7e47d006941acc467eefca7b1bc89c981962d3e8b1c8babefb8c5fe4a",
+      "reportSetSha256": "906c56640f562f0b88a5f97380cfc6f03ab29a293e8d21667507727dc75259c8",
+      "gateSha256": "5e8e60bd22f64c75285d445cfc8121df9756eee02190e92859268afffc5fa652",
+      "assessment": {
+        "cases": 2,
+        "minimumPairedTrials": 3,
+        "comparablePairs": 6,
+        "candidateFormatObserved": 4,
+        "regressions": 0,
+        "blockers": 1
+      }
+    },
+    {
+      "id": "deepseek-coding-hashline-v2",
+      "preference": {
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "api": "openai-completions",
+        "taskPhase": "coding",
+        "dialect": "hashline"
+      },
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "unified-diff.v1",
+        "maxActiveTools": 28,
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-node",
+          "revision": 1,
+          "context": {
+            "prompt": "legacy",
+            "memory": "legacy",
+            "workingState": "legacy"
+          },
+          "toolSurface": {
+            "editReferences": true,
+            "unifiedDiff": true,
+            "editPreference": {
+              "provider": "deepseek",
+              "model": "deepseek-v4-flash",
+              "api": "openai-completions",
+              "taskPhase": "coding",
+              "dialect": "hashline"
+            }
+          },
+          "verification": "node-v1",
+          "contentSha256": "a513d6b43bff59ff55fd317134205ba95bcd82320e079206a405c7449f30b7db"
+        },
+        "contentSha256": "c7aa7b36501bd4b5d8d282159b74978c602e480fadf379084a95fb7cbc0504ee"
+      },
+      "runtimeArtifactSha256": "0ee60da7e47d006941acc467eefca7b1bc89c981962d3e8b1c8babefb8c5fe4a",
+      "reportSetSha256": "6a3da52076421903e1c31a2a2190c75589ff7e12e486ed26ebe6c77e8cb29e68",
+      "gateSha256": "5e8e60bd22f64c75285d445cfc8121df9756eee02190e92859268afffc5fa652",
+      "assessment": {
+        "cases": 2,
+        "minimumPairedTrials": 3,
+        "comparablePairs": 6,
+        "candidateFormatObserved": 3,
+        "regressions": 0,
+        "blockers": 1
+      }
+    }
+  ],
+  "contentSha256": "535a107be59949feeb8f94bf5f47cd10914636be8c6635ae4a5a355516101a52"
+}

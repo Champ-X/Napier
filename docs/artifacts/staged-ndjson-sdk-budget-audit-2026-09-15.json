@@ -1,0 +1,44 @@
+{
+  "kind": "napier.offline-actual-sdk-payload-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T07:10:46.937Z",
+  "sourceRunId": "run_d2d2215e7ae242e19125",
+  "turnIndex": 2,
+  "inputCapsulePath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-4/trial-4/data/model-invocations/00ebcb693b9eac669f35a95d79cf1c1dd0409d7bc588f9b8cb8da6191ce8bbc9.json",
+  "inputCapsuleFileSha256": "898b6bc6b8a0db67b2961c1f8509388f4350d4176c3b8e911fa20e72b075129a",
+  "catalogPath": "/Users/champ/orca/Napier/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+  "catalogSha256": "0dcc807a4e5827b488c6ceac87884ff6e735e01cf4f2ddfec9dd812e6fde041b",
+  "sdkSerializerPath": "node_modules/@earendil-works/pi-ai/dist/api/openai-completions.js",
+  "sdkSerializerSha256": "0d50250fe2931e66e2078279a397814202e1ecddee58faf4b8bc04c278da177a",
+  "observations": [
+    {
+      "name": "captured_primary_options",
+      "requestedReasoning": "medium",
+      "requestedMaxTokens": 16384,
+      "wireThinking": {
+        "type": "enabled"
+      },
+      "wireReasoningEffort": "high",
+      "wireMaxTokens": 16384,
+      "toolCount": 13,
+      "httpDispatched": false
+    },
+    {
+      "name": "existing_retry_options",
+      "requestedReasoning": "off",
+      "requestedMaxTokens": 2048,
+      "wireThinking": {
+        "type": "disabled"
+      },
+      "wireReasoningEffort": null,
+      "wireMaxTokens": 2048,
+      "toolCount": 13,
+      "httpDispatched": false
+    }
+  ],
+  "networkCalls": 0,
+  "modelRequests": 0,
+  "sourceChanged": false,
+  "conclusion": "The captured medium setting maps to provider-supported high reasoning with max_tokens 16384. Existing retry would disable thinking and cap output at 2048, but this failed Run could not dispatch that retry because the prior provider usage was unresolved.",
+  "scope": "Actual installed SDK serialization of captured options/context, stopped in onPayload before HTTP. It does not prove what the provider received for the historical request, or that a lower initial reasoning/output budget would complete the task."
+}

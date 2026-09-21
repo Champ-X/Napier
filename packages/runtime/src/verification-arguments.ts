@@ -6,7 +6,16 @@ export function verificationArgs(
   kind: VerificationKind,
   cli: string,
   target: string | undefined,
+  nativeTargets?: string[],
 ): string[] {
+  if (kind === "test" && nativeTargets)
+    return [
+      "--test",
+      "--test-concurrency=2",
+      "--test-reporter=tap",
+      "--",
+      ...nativeTargets,
+    ];
   if (kind === "typecheck") {
     if (!target) throw new Error("typecheck requires a tsconfig target");
     return [

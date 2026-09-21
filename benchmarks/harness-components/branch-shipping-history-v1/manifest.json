@@ -1,0 +1,21 @@
+{
+  "id": "branch_shipping_history_component_v1",
+  "title": "Apply inherited shipping amendment after branching",
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "memorySeedPath": "memory.json",
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command"
+  ],
+  "requiredCompletedTools": [
+    "read_file",
+    "apply_patch",
+    "run_command"
+  ],
+  "allowedChangedPaths": [
+    "src/shipping.js"
+  ]
+}

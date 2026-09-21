@@ -1,0 +1,135 @@
+{
+  "kind": "napier.bounded-thinking-pilot-pair",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T07:41:20.945Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/plan.json",
+  "planSha256": "e76f4c900d0b43340cd3a8e5b61b9219e0e3417b45a1567091355c8bc1f323ef",
+  "resultPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/result.json",
+  "resultSha256": "3cd41f602a2d1dc4eb53a757aebb088bc376a787a847145efee1ddbfd0e24b0d",
+  "source": "/tmp/napier-harness-bounded-thinking-v1",
+  "sourceFreezeSha256": "f1738687b1d40df52f6ff9ce4388a4fad638ce36ad4e8c4720c7560dad3850cc",
+  "profileFileSha256": "68edc7d8664ba3b6d13f4db172d49a87ae88c4400662e774c3b683139a769db8",
+  "rows": [
+    {
+      "arm": "candidate",
+      "runId": "run_d0d7d0c37f5a4f59b195",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "durationMs": 268820,
+      "admissions": 13,
+      "settledFen": 56,
+      "reservedFen": 0,
+      "changed": [
+        "src/decoder.py",
+        "src/records.py"
+      ],
+      "toolFailures": 1,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "0f4e86dbc6205834612b8bfb763b4151bf1c10cc94a9d9506eae5857ade20455",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/audit-5.json",
+      "auditSha256": "cada0542de6301d75dc55a4d3ea0b80fe953e9e5c437682bd9bd428effd65a48"
+    },
+    {
+      "arm": "baseline",
+      "runId": "run_c553965d6ff14131a763",
+      "taskSuccess": false,
+      "status": "failed",
+      "graderExitCode": 0,
+      "durationMs": 253387,
+      "admissions": 9,
+      "settledFen": 47,
+      "reservedFen": 0,
+      "changed": [
+        "src/decoder.py",
+        "src/records.py"
+      ],
+      "toolFailures": 0,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "c77b837341c2a970f3819bf494faab758a1693d82436febdc4fc344242a5008d",
+      "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/audit-4.json",
+      "auditSha256": "0f874f2c845257c51d22c251a496cfc15fa0048cd0ed02c514224041df35e6df"
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "incremental_ndjson_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "91c43ad821e439072354303570beda07f26fd2df5df46d947e8bf4053235ac47"
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 4744,
+      "remainingFen": 5256,
+      "requests": 290,
+      "reservedRequests": 3,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 4847,
+      "remainingFen": 5153,
+      "requests": 311,
+      "reservedRequests": 3,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "newProviderRequests": 22,
+  "newSettledFen": 103,
+  "newReservedFen": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "New v6 cohort has exactly one eligible pair; candidate completes, original baseline Run fails after producing code that passes independent grading. All baseline usage is complete, so the failed Run is retained as an eligible observation. No original failed or unqualified v5 observation is rewritten. Remaining 89 trial pairs are prospectively scheduled with nine strictly bound baseline reuses."
+}

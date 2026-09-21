@@ -1,0 +1,18 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "bm25_document_search_v1",
+  "title": "Mutable document search with corpus statistics",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": ["src/tokenize.mjs", "src/search.mjs"],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": ["apply_patch", "run_command"]
+}

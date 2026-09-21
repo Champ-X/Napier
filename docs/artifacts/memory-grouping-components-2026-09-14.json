@@ -1,0 +1,1980 @@
+{
+  "kind": "napier.memory-grouping-component-evidence",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:59:13.093Z",
+  "experiments": [
+    {
+      "root": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-grouped-v3",
+      "scenario": "bilingual",
+      "snapshot": "grouping-v3",
+      "inputs": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-grouped-v3/inputs.json",
+        "sha256": "a1e9cb6ac1a1d137f432eee1336b780a049f0978f7353c01e60873c6a6b43c80"
+      },
+      "scenarioPairs": 3,
+      "collectionComplete": true,
+      "rows": [
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "stage": "answer",
+          "runId": "run_3ac269ba41404ff9a2a3",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-grouped-v3/baseline-trial-1/result.json",
+            "sha256": "b816b17458c2bad7fe46983752f167bb7c522e42e455f4a12b60b73e9a1b740c"
+          },
+          "observations": [
+            {
+              "eventId": "event_feb660e3164b47a8ac8f",
+              "capsuleSha256": "63c0b4b6930a929cc0eaeaba0c85d102334331a6b271ea7c489ca2588abe3a7d",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_e23fc6f75bc54a0d9859",
+                "memory_c254e548a53c4ebeac2e",
+                "memory_ab615ac8669f443ba430"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "stage": "answer",
+          "runId": "run_d8e80eb62a814382aff3",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-grouped-v3/candidate-trial-1/result.json",
+            "sha256": "5411ec77d8ed1b25ba9e5173681054d7e7ee6da74712bc719d2116dad836e93f"
+          },
+          "observations": [
+            {
+              "eventId": "event_7c6faf15ac5f497f9ee7",
+              "capsuleSha256": "81732ecbbfd37e5ea16320e9f6793ea21f8eb6cd685279c815e24c2378299877",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_5f9a38ac08244a9cbd26",
+                "memory_5544727a017045f9ab19",
+                "memory_5c8568e83eec4f928f7d"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "stage": "answer",
+          "runId": "run_2ff0ffe3365f45c9adfa",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-grouped-v3/baseline-trial-2/result.json",
+            "sha256": "7ce30996cfb788d2613e973d62f2739e6589fde52fe911efbcaf8d9a91e06d5d"
+          },
+          "observations": [
+            {
+              "eventId": "event_01725853983242a083c8",
+              "capsuleSha256": "e93330f2833851ccff3b24f2bc8da0a54d30ae2a442dc7ceb3a6194887abf9d0",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_13b8863122cc4e5fabe9",
+                "memory_3fd05f853f4c4b17a329",
+                "memory_9d090287fb944f8298cf"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "stage": "answer",
+          "runId": "run_bc818f161c214ddfb633",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-grouped-v3/candidate-trial-2/result.json",
+            "sha256": "b31116f69d2251bef5a34aefa630f36487311d9d70cfa13e1bb2a996a7b34d19"
+          },
+          "observations": [
+            {
+              "eventId": "event_d9a0e733029f4a979842",
+              "capsuleSha256": "2a195bc22aff6da2ed08189eeff0f78d1d3a15a91f7a8fffea1161f3d1dbdfc7",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_3cc62a452cfe4de2a4bb",
+                "memory_dc2ed709309a4b41ba92",
+                "memory_ed7699ca1c3145b4b0bc"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "baseline",
+          "trial": 3,
+          "stage": "answer",
+          "runId": "run_8f393c04db874b269b06",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-grouped-v3/baseline-trial-3/result.json",
+            "sha256": "e6d62e0dccd62f79d96eaa208e78e8118b66e068479940be012feb7d6bd54ad3"
+          },
+          "observations": [
+            {
+              "eventId": "event_a2552a17974a4a998d3a",
+              "capsuleSha256": "fd613b119ed2b158454513b0f72da2bedfe720b84cc72434f97a2c4a79ac0d28",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_f58381869f9f4dbbbf26",
+                "memory_91d3d352f31342078079",
+                "memory_21884d1fc48840eab65c"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 3,
+          "stage": "answer",
+          "runId": "run_3f9c573d975c4468b71c",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-bilingual-grouped-v3/candidate-trial-3/result.json",
+            "sha256": "1a5ca9901317599087d7ee429246c9fa6657b453ce96e527316cd5aa867aa7c7"
+          },
+          "observations": [
+            {
+              "eventId": "event_f8aa951b92264f03827e",
+              "capsuleSha256": "de0fef845591e25db2e74f981864c9d012a9b5292ae081242c4979f9e98ce7c8",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_3973b01931dc475d81dc",
+                "memory_2baee718f5a841c6a4a9",
+                "memory_bcfe06e0af0f43429efc"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "runs": 3,
+          "passed": 3,
+          "invocations": 3,
+          "relevantAvailable": 6,
+          "relevantRecalled": 6,
+          "renderedFactLines": 9,
+          "unrelatedFactLines": 3,
+          "memoryCharacters": 1065,
+          "unrelatedFactCharacters": 168
+        },
+        "candidate": {
+          "runs": 3,
+          "passed": 3,
+          "invocations": 3,
+          "relevantAvailable": 6,
+          "relevantRecalled": 6,
+          "renderedFactLines": 9,
+          "unrelatedFactLines": 3,
+          "memoryCharacters": 1065,
+          "unrelatedFactCharacters": 168
+        }
+      }
+    },
+    {
+      "root": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3",
+      "scenario": "transition",
+      "snapshot": "grouping-v3",
+      "inputs": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/inputs.json",
+        "sha256": "6aa91ba59ed824b7e74509adc7c54825c30b798833edc93dae33fbd860cea8ba"
+      },
+      "scenarioPairs": 3,
+      "collectionComplete": true,
+      "rows": [
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "stage": "edit",
+          "runId": "run_8a7ab2a106bc46948a37",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/baseline-trial-1/edit-result.json",
+            "sha256": "4b3f100a234e63e7b9ebcd7e69f5b9f3286e7b1f1d5904e495db2d8eb54a5782"
+          },
+          "observations": [
+            {
+              "eventId": "event_fc580c8c1bd843859905",
+              "capsuleSha256": "7fb9b585cd9b1b0895738014fbd9324a51d8eb6d990f3aef38200353161599e8",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_47160cbad6984ead8696",
+                "memory_97d1701f998443669a69",
+                "memory_ac4c426b384740e4aebc"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_8f8302dfa6fe4a0880a6",
+              "capsuleSha256": "f3973ed356a7cb524738f7d676d6a37fb83d5d05527b51b19698e7a417b2390d",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_47160cbad6984ead8696",
+                "memory_97d1701f998443669a69",
+                "memory_ac4c426b384740e4aebc"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_981c8f2ab95c48f8aabb",
+              "capsuleSha256": "8010dc4ef409f5fe1a3c2dab99e8ef7a9aeb6e7d0cc4166fa048e9a391201f83",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_97d1701f998443669a69",
+                "memory_ac4c426b384740e4aebc"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_537ffd9e51594263a337",
+              "capsuleSha256": "c7c97325cc8196575a4a21333cea1a26284c8e317e68a799c0affc0292b707c2",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_97d1701f998443669a69",
+                "memory_ac4c426b384740e4aebc"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "stage": "restart",
+          "runId": "run_a1b0fa502e654e74881c",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/baseline-trial-1/restart-result.json",
+            "sha256": "768a6f14baad0b0e76cb06ea56a4521f730d32b819cb1116e4e6c6a6250cb79c"
+          },
+          "observations": [
+            {
+              "eventId": "event_872f4250cb20453e9d2a",
+              "capsuleSha256": "4c2ac03ef67a0d1dd602296dafb377ab96c1467375ebfa5ffc69cb8116dc2a14",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_ac4c426b384740e4aebc"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_e728088f00414427b766",
+              "capsuleSha256": "d8bc41ab7cb5f241e66c2d50bdc4dd314f11e466aa3974ee0365c9cd37adb240",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_ac4c426b384740e4aebc"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "stage": "edit",
+          "runId": "run_2fbfed37faed46f68846",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/candidate-trial-1/edit-result.json",
+            "sha256": "11a0f12122b8d187a505ee9e931377421d8c45c6404b82cf134253e38b0c3732"
+          },
+          "observations": [
+            {
+              "eventId": "event_e2086973eb18450cb016",
+              "capsuleSha256": "5b0e49db4111d945cdace781d41c9873a3eb4c0298f15fc9f1e4bfbc055c64a8",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_7674d20e740248678c3c",
+                "memory_0bdc17194ee847b78bec",
+                "memory_71d490ea40dd46d5ac32"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_f53ec30e797346709166",
+              "capsuleSha256": "3e7ad59b32ba66aa23f36bcd24e207850bb30afe3d9623871ddf2962756fc357",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_7674d20e740248678c3c",
+                "memory_0bdc17194ee847b78bec",
+                "memory_71d490ea40dd46d5ac32"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_f4443675f8b8422c89e6",
+              "capsuleSha256": "396ee00d01a0e4fd64d6b8136740f7179b0d1d5d64f2c6b6766ec5638d525482",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_0bdc17194ee847b78bec",
+                "memory_71d490ea40dd46d5ac32"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_33c6a4757bc34f949d23",
+              "capsuleSha256": "4b36f29da66fb131c83af92952a555bcc3e95a3950e19c9056734297c2e8a763",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_0bdc17194ee847b78bec",
+                "memory_71d490ea40dd46d5ac32"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "stage": "restart",
+          "runId": "run_52aa3c3029b14145b405",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/candidate-trial-1/restart-result.json",
+            "sha256": "0103c247c2538b904e502d890c6dac73aa4cdb18b91d2cd7427b070d2a93c704"
+          },
+          "observations": [
+            {
+              "eventId": "event_7ab95a0a80d04afc9675",
+              "capsuleSha256": "31a344f08b04fecaf0d492f196063b027450bb16a715130553319d18cb141819",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_71d490ea40dd46d5ac32"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_851c503d073c422599ea",
+              "capsuleSha256": "01e3bdf0fcfc7d1144c5d376d4508c4dae05d894a5e11b444787f6164c5ba9bd",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_71d490ea40dd46d5ac32"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "stage": "edit",
+          "runId": "run_5a604315bbfa4c17851b",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/candidate-trial-2/edit-result.json",
+            "sha256": "3362972f3a272f7022a7fe5890eeb36dcfb8f9cfacb3d088ce7aa4135eff2921"
+          },
+          "observations": [
+            {
+              "eventId": "event_59f1fa0bfdff49e18d28",
+              "capsuleSha256": "0b2895676907415f5fffcef0a25db860dbc02cf76d66c3d54bc657af47d636bc",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_6827f40bb8024b9a868d",
+                "memory_8d784c435b264eb0a75d",
+                "memory_f76fb113e6ba486794f7"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_c8daa905bb3644488f26",
+              "capsuleSha256": "a8e112dbc0f430e2ac1321999373149227681c664bdeb482cbbc41ee1dcfda34",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_6827f40bb8024b9a868d",
+                "memory_8d784c435b264eb0a75d",
+                "memory_f76fb113e6ba486794f7"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_dfdb4d8c4c4f46dbabaf",
+              "capsuleSha256": "9d2425d1b64afcab25840f6be6c0ad1181bd96ad298aa51e924a78e53f84917d",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_8d784c435b264eb0a75d",
+                "memory_f76fb113e6ba486794f7"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_f9b06b64753948efbe0d",
+              "capsuleSha256": "b3b55b20891ab38ac52196c3e2cc4eb354b450b3e7c50c4ae235876ca1acd222",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_8d784c435b264eb0a75d",
+                "memory_f76fb113e6ba486794f7"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "stage": "restart",
+          "runId": "run_f6c254fc0dd64152abca",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/candidate-trial-2/restart-result.json",
+            "sha256": "60c89cb851418f58abc390e47bd328d220cae901ebfa57d861fca1ee7629a033"
+          },
+          "observations": [
+            {
+              "eventId": "event_42941bbc275248e699db",
+              "capsuleSha256": "da25fc0a9087ec7378495176bb8f223dcf937908e4598dd6144e3faac75c6167",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_f76fb113e6ba486794f7"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_cdc898e039714c1abb39",
+              "capsuleSha256": "2d069e94934991864d0e339a46e728883dc21cc478571bc696e83df1b1496f66",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_f76fb113e6ba486794f7"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "stage": "edit",
+          "runId": "run_1e6f34a95da24ae1942e",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/baseline-trial-2/edit-result.json",
+            "sha256": "307e87be674b88a4e33342741185bc522b149c2fcdf7bfc18004238d97a63cfd"
+          },
+          "observations": [
+            {
+              "eventId": "event_176e9d603ac34aa0a35b",
+              "capsuleSha256": "9d7562227705b0dc0b2eb51493b2cd2bbfee18f326c142abf371b51491b6c77b",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_b298942d2c30475c8050",
+                "memory_030e615bcee44fe4b896",
+                "memory_5eb64af1e3fe45719ace"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_bbda20fa7bd7457da6e6",
+              "capsuleSha256": "e6924c33f7509bf39ee954738c9665afb34eef299bc5159f8c72b61f720a0d6e",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_b298942d2c30475c8050",
+                "memory_030e615bcee44fe4b896",
+                "memory_5eb64af1e3fe45719ace"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_921e846c5b1044989667",
+              "capsuleSha256": "7b0500d9b2100ba59d9c6d9af2aca257ebf19dddb00a8bcf7379ccedc7025bda",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_030e615bcee44fe4b896",
+                "memory_5eb64af1e3fe45719ace"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_dc25c10f840b4803a99d",
+              "capsuleSha256": "25c28dcf4ce511bc188e2ed551ef78f77b563e2c78d96cd7285dcef8dc227c34",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_030e615bcee44fe4b896",
+                "memory_5eb64af1e3fe45719ace"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "stage": "restart",
+          "runId": "run_eb9aefd824b8473cbb29",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/baseline-trial-2/restart-result.json",
+            "sha256": "33df6d6862870e1e62b70723d6021bf937faed3944ce24c08e316584aa3868d8"
+          },
+          "observations": [
+            {
+              "eventId": "event_46247ee5c5f24c49a18f",
+              "capsuleSha256": "dfaf4ea11e6d061521e13451b92e5e0df9e1e45f837bc4678061a627645668b8",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_5eb64af1e3fe45719ace"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_1da8582562284daba7af",
+              "capsuleSha256": "b2d08cb160d8e139f92c70fa044d6dfcd504d095fb64ce78f1bc614685c962e1",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_5eb64af1e3fe45719ace"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "baseline",
+          "trial": 3,
+          "stage": "edit",
+          "runId": "run_3653e8da145f49178e3b",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/baseline-trial-3/edit-result.json",
+            "sha256": "ce02f72c707f689d9c25e8be3f083a351326a865a20b85eea5c4201e7ad9e985"
+          },
+          "observations": [
+            {
+              "eventId": "event_06180717daee41d785d8",
+              "capsuleSha256": "8c741e4786b026ac0cc71de30463c21044c07f672375af9ceec5c35116172565",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_dcd952b451c749b6a900",
+                "memory_6bc043e4fb3b4491b816",
+                "memory_88c2af0d1041487ba76e"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_9d1908e291384ac2a03d",
+              "capsuleSha256": "6ba55bb8a4af40e5efd7b839a4ec09363b41232d23f74ed335c4e858c6e9d334",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_dcd952b451c749b6a900",
+                "memory_6bc043e4fb3b4491b816",
+                "memory_88c2af0d1041487ba76e"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_c27ac4391d024092b1fd",
+              "capsuleSha256": "4a2525a65e6511cb5888768564553bb02cbb76e8673fae855f6ad13aae356608",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_6bc043e4fb3b4491b816",
+                "memory_88c2af0d1041487ba76e"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_1ee4625ddeda43689cdf",
+              "capsuleSha256": "5459d42ad1ff13c0d0b147cb22fa14150692fb072e52bc325d1e447144e408c5",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_6bc043e4fb3b4491b816",
+                "memory_88c2af0d1041487ba76e"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "baseline",
+          "trial": 3,
+          "stage": "restart",
+          "runId": "run_c019413d2cd3435ba357",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/baseline-trial-3/restart-result.json",
+            "sha256": "48f3cdad7d2d0d9bb97bc2f55393498c321543a71329c57b5963d7dc28224246"
+          },
+          "observations": [
+            {
+              "eventId": "event_226d7e8d7f3e4eefb1b8",
+              "capsuleSha256": "5fb73cd7b85760fcfbb3602ab29b5cd8d8d7a9d81fa656b87dfa241d66e58321",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_88c2af0d1041487ba76e"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_2d15b024b24546eda4e7",
+              "capsuleSha256": "6f8de2babb2b335f237b86f1fb8f64ebb14cc61af731b69c4df4459bddea2493",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_88c2af0d1041487ba76e"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "candidate",
+          "trial": 3,
+          "stage": "edit",
+          "runId": "run_c8852b861abf4ad998bf",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/candidate-trial-3/edit-result.json",
+            "sha256": "3221c87c3e2b0daa7d8b883512e61a99e495aa9ad7e8c322875f52ec71725b66"
+          },
+          "observations": [
+            {
+              "eventId": "event_486c3994575a42cc9fea",
+              "capsuleSha256": "368f7fe7c6c1381c6148f843b349185df22f06fd2c81939ddff3082f562199bc",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_547debc838b7443eac3d",
+                "memory_695b49ac28054b53b47b",
+                "memory_13cba5a6b6494c64a992"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_695e139908eb4ae0a7c7",
+              "capsuleSha256": "9d95c64af07609086d03accc3c15de07a85564c70395b0aff0f47b5766b1b64d",
+              "memorySha256": "89fb4dfa72993c29e1d863eebcaee944b754ea37f4ee049737e81202a9edf032",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_547debc838b7443eac3d",
+                "memory_695b49ac28054b53b47b",
+                "memory_13cba5a6b6494c64a992"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 445,
+              "factLineCharacters": 310,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_41f2859512d142aa9d8d",
+              "capsuleSha256": "41f795052153d9f6ecc4ed51706ac3d0db65ec6e39c8b8acc2f0653a3f31af7e",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_695b49ac28054b53b47b",
+                "memory_13cba5a6b6494c64a992"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_ab0e1ffde5984abba399",
+              "capsuleSha256": "daa44162da4c900ebca456c89c0fe209e6ef2bd10a0ab63cd58cdee330fb8c2e",
+              "memorySha256": "83dda04c55622fa3ccfe456ed6a5c4fbe13616f9c560d600bf919b916e482956",
+              "relevantAvailable": 1,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_695b49ac28054b53b47b",
+                "memory_13cba5a6b6494c64a992"
+              ],
+              "renderedFactLines": 2,
+              "memoryCharacters": 293,
+              "factLineCharacters": 159,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        },
+        {
+          "arm": "candidate",
+          "trial": 3,
+          "stage": "restart",
+          "runId": "run_d1b80fd828c9450fbc28",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-transition-v3/candidate-trial-3/restart-result.json",
+            "sha256": "b8d06fd64e6df908855593dcff0eb5bcd95b3d22c16db77f9666c6d6834c5f96"
+          },
+          "observations": [
+            {
+              "eventId": "event_5c7af163d46d498b9097",
+              "capsuleSha256": "203476f4a9f691523af551a6a7ee2d251fa7a0c64c5708dfcc33454a3e42cd46",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_13cba5a6b6494c64a992"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_4d902704ed7d413c976a",
+              "capsuleSha256": "05682f31be83be5fef71acc96640bf2586d3096609caf22b25332a6c74d2e7b5",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_13cba5a6b6494c64a992"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            },
+            {
+              "eventId": "event_dadff6360715449bb1a3",
+              "capsuleSha256": "dbc076cf6c51c6d1dc75d6cfc652c5db924306f4f42ecb08a2ffd8237dd0d871",
+              "memorySha256": "0dcbc9b6e9e55da0698c50b02a95cebce3cf70b290cce15e4acfc4d8f1a3f34a",
+              "relevantAvailable": 0,
+              "relevantRecalled": 0,
+              "representedFactIds": [
+                "memory_13cba5a6b6494c64a992"
+              ],
+              "renderedFactLines": 1,
+              "memoryCharacters": 215,
+              "factLineCharacters": 82,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 82,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "captured"
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "runs": 6,
+          "passed": 6,
+          "invocations": 18,
+          "relevantAvailable": 18,
+          "relevantRecalled": 18,
+          "renderedFactLines": 36,
+          "unrelatedFactLines": 18,
+          "memoryCharacters": 5718,
+          "unrelatedFactCharacters": 1476
+        },
+        "candidate": {
+          "runs": 6,
+          "passed": 6,
+          "invocations": 19,
+          "relevantAvailable": 18,
+          "relevantRecalled": 18,
+          "renderedFactLines": 37,
+          "unrelatedFactLines": 19,
+          "memoryCharacters": 5933,
+          "unrelatedFactCharacters": 1558
+        }
+      }
+    },
+    {
+      "root": "/Users/champ/.cache/napier-seven-quality/memory-grouping-noisy-v3b",
+      "scenario": "noisy",
+      "snapshot": "grouping-v3",
+      "inputs": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-noisy-v3b/inputs.json",
+        "sha256": "7d87b901698eb3d6dca9d976d8bca4d1ef8ceeac9e5cad7ac3f807dcbea7d112"
+      },
+      "scenarioPairs": 3,
+      "collectionComplete": true,
+      "rows": [
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "stage": "answer",
+          "runId": "run_a6222454ae23478c9967",
+          "taskSuccess": false,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-noisy-v3b/baseline-trial-1/result.json",
+            "sha256": "5a8f568ffb6909334bb29f75c43b47f5e16907dfbf4d88791927bbb6f7065943"
+          },
+          "observations": [
+            {
+              "eventId": "event_e470a23ed25943ff8039",
+              "capsuleSha256": "23a97282cd61db6be9cc399fc7599ce2ca46586d1a31a11867e8c2c6bf7b5b8c",
+              "memorySha256": "bff9d960d1c5ceb37d5e04350cabbaf6a8c7946d183e689a5f262cd62309497b",
+              "relevantAvailable": 2,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_8dadcb14db1e46ad9215",
+                "memory_7473af325eb840cdb425",
+                "memory_4abb29d2c95b4f39bfcd",
+                "memory_3bc375bf963549ffbdbb",
+                "memory_64d409e35f744355bb78",
+                "memory_c8b8a10172604377a544",
+                "memory_ed98b25a7ebc42dc8aea",
+                "memory_57b4e2b1f1224d6cb9d4",
+                "memory_a700ce5da0304b4aa869",
+                "memory_d6257bd91f96499b8261",
+                "memory_cfe1952966f34572b9d1",
+                "memory_c3699cddecdf49fdb538"
+              ],
+              "renderedFactLines": 12,
+              "memoryCharacters": 5997,
+              "factLineCharacters": 5853,
+              "unrelatedFactLines": 11,
+              "unrelatedFactCharacters": 5731,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "stage": "answer",
+          "runId": "run_04de116e34db4966921a",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-noisy-v3b/candidate-trial-1/result.json",
+            "sha256": "762c46628bd581f3a3cba869d4585cc7764ae5b384022481fc0f43cf4da10b84"
+          },
+          "observations": [
+            {
+              "eventId": "event_20449253a3cc49829cfe",
+              "capsuleSha256": "0b9989f1426fab50b0ad9b8a4fa9bc386a826a4f0867a9416de9f9f0378d4bde",
+              "memorySha256": "f9ccb7e75439cd21ea6187dcb3bd58de2863a3be0ef2d7ec1a4050ac02415318",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_01354248338e473aa4b0",
+                "memory_80b7d61673b74ddea51c",
+                "memory_3c059cf5aad04534852c",
+                "memory_74d7f3d059eb463492f7",
+                "memory_6562b7e7e55843429195",
+                "memory_320393575b0b48fdba70",
+                "memory_f520307d599140b4a2eb",
+                "memory_e4f2956d9c7e42048c90",
+                "memory_7b0673d03f9a483880b7",
+                "memory_36e0d973a06f45a8b25e",
+                "memory_8e609678a8504d70bbb3",
+                "memory_e85f192e2ff844b5bc82",
+                "memory_3cac6f0c6a5d4009b25c",
+                "memory_9a1e46b9873b47f9b623",
+                "memory_5365792004e048edbd75",
+                "memory_6003983ebd054c10b24c",
+                "memory_d730628e300d43598fe2",
+                "memory_76f2e117eea54caa813a"
+              ],
+              "renderedFactLines": 10,
+              "memoryCharacters": 4474,
+              "factLineCharacters": 4332,
+              "unrelatedFactLines": 8,
+              "unrelatedFactCharacters": 4168,
+              "sourceBoostedFactIds": [
+                "memory_80b7d61673b74ddea51c"
+              ],
+              "duplicateCandidateCount": 8
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "stage": "answer",
+          "runId": "run_f75910d6082845128a69",
+          "taskSuccess": false,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-noisy-v3b/baseline-trial-2/result.json",
+            "sha256": "1ece51574dee73c009a65b650568f0cc35ba20550084a8043cbc7a03e24fbcb1"
+          },
+          "observations": [
+            {
+              "eventId": "event_ac4547f0098b46b1bcd0",
+              "capsuleSha256": "72f388dc20e22d5f1dc342ef01ff293c7f780006c8ef22da3bc26137749635a0",
+              "memorySha256": "bff9d960d1c5ceb37d5e04350cabbaf6a8c7946d183e689a5f262cd62309497b",
+              "relevantAvailable": 2,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_3f6a2dc549bf45af8110",
+                "memory_ebffdf6a3ffe42dc8bf1",
+                "memory_15b7ab61fdee4e68a129",
+                "memory_2807b71c1708457296fa",
+                "memory_1ac207fd1ec54566bf3d",
+                "memory_435f3a2af131422a9eb3",
+                "memory_44c98450bbc64465ad60",
+                "memory_a24ae9b439144e78871c",
+                "memory_23d8454d2d2143efab3a",
+                "memory_cc329624611846b2a8f7",
+                "memory_8dbcbaaed1204133bcb5",
+                "memory_3386ed6f2f3d41b2b5b6"
+              ],
+              "renderedFactLines": 12,
+              "memoryCharacters": 5997,
+              "factLineCharacters": 5853,
+              "unrelatedFactLines": 11,
+              "unrelatedFactCharacters": 5731,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "stage": "answer",
+          "runId": "run_ed2184d785024992baf4",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-noisy-v3b/candidate-trial-2/result.json",
+            "sha256": "809592cee06a506bc5dcc2e8442732e1a8b2f30036c79a47daf1571b556c0f06"
+          },
+          "observations": [
+            {
+              "eventId": "event_21e2405df0df42af8328",
+              "capsuleSha256": "572a93abdb68b298ff86b4a67bca8b25a9363254eacad2c10d7936e19af1df1c",
+              "memorySha256": "f9ccb7e75439cd21ea6187dcb3bd58de2863a3be0ef2d7ec1a4050ac02415318",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_07366c6b3f73494988cc",
+                "memory_533ad9a53f5e4537bf4e",
+                "memory_0c795717f3f8455facf5",
+                "memory_b88fc0db79894b03824b",
+                "memory_1c500245b32c49f38df7",
+                "memory_3f19a01b962b41a6929e",
+                "memory_477829267ba84f9c9dff",
+                "memory_d6cce953cf7c42fda391",
+                "memory_5cd142b9954a46609dd8",
+                "memory_13fa95fc63634cb99afe",
+                "memory_4482351f06174bd6b554",
+                "memory_f23075a79d294f1cbf1a",
+                "memory_30751cf86c3646f7bb10",
+                "memory_7fa32cd5edb44934bb0c",
+                "memory_d0cccd74911742f0af54",
+                "memory_89e856a6bcf049e6b488",
+                "memory_ca275137f0b94f7bbc7e",
+                "memory_ae986b6d813c47e2a2bc"
+              ],
+              "renderedFactLines": 10,
+              "memoryCharacters": 4474,
+              "factLineCharacters": 4332,
+              "unrelatedFactLines": 8,
+              "unrelatedFactCharacters": 4168,
+              "sourceBoostedFactIds": [
+                "memory_533ad9a53f5e4537bf4e"
+              ],
+              "duplicateCandidateCount": 8
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "baseline",
+          "trial": 3,
+          "stage": "answer",
+          "runId": "run_b9b42db2bef548b1a880",
+          "taskSuccess": false,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-noisy-v3b/baseline-trial-3/result.json",
+            "sha256": "bede968dd3f8ba9a94765b4ebdc6f86c6d194fbc86ceb364c0e57f707483d7ad"
+          },
+          "observations": [
+            {
+              "eventId": "event_718551a51a1947bba4dd",
+              "capsuleSha256": "afc56154abde1d87efb2b610c0fd63bd79ee362d3d06cbf9d7d3155d92316105",
+              "memorySha256": "bff9d960d1c5ceb37d5e04350cabbaf6a8c7946d183e689a5f262cd62309497b",
+              "relevantAvailable": 2,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_aaac3ed039ad439cb499",
+                "memory_7521a6ee3342403dac23",
+                "memory_f7d9003b02c4405dae9e",
+                "memory_26e9bd0e4b25467ea905",
+                "memory_2305836d8c264b9caae4",
+                "memory_5bfeb97090434ffda50f",
+                "memory_01b19ff88a544a79ada6",
+                "memory_0a02c6be786d4411989e",
+                "memory_e621f1341c414b32baa3",
+                "memory_828dc019ae2e4180adb2",
+                "memory_7a3339e7ae984d78b446",
+                "memory_ec83ac97404f4cbf9dcb"
+              ],
+              "renderedFactLines": 12,
+              "memoryCharacters": 5997,
+              "factLineCharacters": 5853,
+              "unrelatedFactLines": 11,
+              "unrelatedFactCharacters": 5731,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 3,
+          "stage": "answer",
+          "runId": "run_b9d2bfbeeedb4d1186aa",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-grouping-noisy-v3b/candidate-trial-3/result.json",
+            "sha256": "87919ff6d398e7b4164297c44412a9269d262770da0da82a12255044be74171d"
+          },
+          "observations": [
+            {
+              "eventId": "event_261fedde17094e189c48",
+              "capsuleSha256": "2758afe3f1ace180ad4f55db2cab6bd8043ad559dedd489acd0715ebde48e23f",
+              "memorySha256": "f9ccb7e75439cd21ea6187dcb3bd58de2863a3be0ef2d7ec1a4050ac02415318",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_79257baab0304342a9f2",
+                "memory_35a81ba464b244888017",
+                "memory_cec98b2385424ebdb20c",
+                "memory_222b550f89fd49a8bb7e",
+                "memory_c9adb7ee4cf340569120",
+                "memory_178af868b244475d8fb8",
+                "memory_30bea1dc5b2f4e22ac14",
+                "memory_96d1da5d5e3049c7ab39",
+                "memory_a93bf10124694271948b",
+                "memory_f3469c4499374dd0993f",
+                "memory_164abb9b372c46069316",
+                "memory_6a2ecb9d419f4fd7b123",
+                "memory_57fc5a41e6154e488763",
+                "memory_b79be9ad35b64d6fb92d",
+                "memory_bb303d1ce4f04340980a",
+                "memory_49c1bd7e2b784b64b6cd",
+                "memory_1496e7972e5a44769338",
+                "memory_b09f92108a374c55b77f"
+              ],
+              "renderedFactLines": 10,
+              "memoryCharacters": 4474,
+              "factLineCharacters": 4332,
+              "unrelatedFactLines": 8,
+              "unrelatedFactCharacters": 4168,
+              "sourceBoostedFactIds": [
+                "memory_35a81ba464b244888017"
+              ],
+              "duplicateCandidateCount": 8
+            }
+          ],
+          "captureStatus": "unavailable"
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "runs": 3,
+          "passed": 0,
+          "invocations": 3,
+          "relevantAvailable": 6,
+          "relevantRecalled": 3,
+          "renderedFactLines": 36,
+          "unrelatedFactLines": 33,
+          "memoryCharacters": 17991,
+          "unrelatedFactCharacters": 17193
+        },
+        "candidate": {
+          "runs": 3,
+          "passed": 3,
+          "invocations": 3,
+          "relevantAvailable": 6,
+          "relevantRecalled": 6,
+          "renderedFactLines": 30,
+          "unrelatedFactLines": 24,
+          "memoryCharacters": 13422,
+          "unrelatedFactCharacters": 12504
+        }
+      }
+    },
+    {
+      "root": "/Users/champ/.cache/napier-seven-quality/memory-priority-bilingual-v1",
+      "scenario": "bilingual",
+      "snapshot": "priority-v1",
+      "inputs": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-bilingual-v1/inputs.json",
+        "sha256": "6bed65955371f26464a32a823807555aa8ee0720e2ed957184fb581108982282"
+      },
+      "scenarioPairs": 3,
+      "collectionComplete": true,
+      "rows": [
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "stage": "answer",
+          "runId": "run_a118b8cdf5594ed9a81b",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-bilingual-v1/baseline-trial-1/result.json",
+            "sha256": "fd4931c60526f7c27a967ec64f48b011176796f39bf094753a15216c5c66bff1"
+          },
+          "observations": [
+            {
+              "eventId": "event_fe95fe78b3bd45df8fa0",
+              "capsuleSha256": "25831677ab934a94330a4db54ea29388431aea98540a849868304c0b35af8a26",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_ae2c851cf9544e9a85b3",
+                "memory_76bf0205bb004114b728",
+                "memory_94c408154a554b7f92cb"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "stage": "answer",
+          "runId": "run_96c3a3ceb45648ca97b2",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-bilingual-v1/candidate-trial-1/result.json",
+            "sha256": "2b815618a8a36d076f2b97cb1a9072435f48d2d1104fde98f3b3d08c54ff8d2d"
+          },
+          "observations": [
+            {
+              "eventId": "event_b3ac8627cbdd47aa9e08",
+              "capsuleSha256": "8199c2a2cd4f2bae929c5362725518f4b8ba369675afe4d395ecc2caba61b964",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_d2a90704cda644aca515",
+                "memory_6183a07e69be46dabe45",
+                "memory_7c717d2fba894e59bb8c"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "stage": "answer",
+          "runId": "run_300e30c4f2044af197eb",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-bilingual-v1/baseline-trial-2/result.json",
+            "sha256": "6d4398738ffd00094d54c206d123583b5fee1b24f0f010a97c6336698974df10"
+          },
+          "observations": [
+            {
+              "eventId": "event_d77d58a608b04e7c87bd",
+              "capsuleSha256": "894ef28f3f4abf15b3b43737a7cfe86ea3245b55f54c1d0ea201e810f86c1f29",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_f30b8010633a453f84f0",
+                "memory_167e9e33039048369558",
+                "memory_34f5d405a8984e7f8d4e"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "stage": "answer",
+          "runId": "run_1110f8208d5644829b7d",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-bilingual-v1/candidate-trial-2/result.json",
+            "sha256": "60c9287a68011e93ca7196359394593fadf3126c9875234a28cf8d2c570bf55b"
+          },
+          "observations": [
+            {
+              "eventId": "event_555f59aa31514ca29f1a",
+              "capsuleSha256": "ccea1b280f5ac8787018fdc8ff0f04e667717416e2b3e4e4a114037451f244e0",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_43f11f13a4374b5ab9ad",
+                "memory_ba1a2b86d56d48b7adbe",
+                "memory_dc19443f69a0441b849b"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "baseline",
+          "trial": 3,
+          "stage": "answer",
+          "runId": "run_c557b202d74a417d907c",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-bilingual-v1/baseline-trial-3/result.json",
+            "sha256": "76bc89429173ee06c7d04f4f22a8e599c1f0d68c23708ecbad44031262cd29c1"
+          },
+          "observations": [
+            {
+              "eventId": "event_5616edec97aa473f8325",
+              "capsuleSha256": "fda845002985a7fef5c1bf435cd266bc2377f7dbea96b6120b15bfcc6576eff0",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_21df6a30bf764bada7f2",
+                "memory_c2a8e5cf31c3421f8722",
+                "memory_900714c556794fe5af44"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 3,
+          "stage": "answer",
+          "runId": "run_a69c35c3dfaa4dfea6ef",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-bilingual-v1/candidate-trial-3/result.json",
+            "sha256": "d44055f9cd0e8e3bd915bfbe17a970afba9c400503ea0f8bbc12bcfc15126792"
+          },
+          "observations": [
+            {
+              "eventId": "event_a0a49b2ce8704a74b0c4",
+              "capsuleSha256": "52cb170b96cfa4dca335c0943e56575a44087da1610bb211cd97e9661cc16ddb",
+              "memorySha256": "94fad3bc5c954f0966f68aaee46cb65340b0b1c04f5a9daf5c0a9028a1a24427",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_5146b92a31f74ed984dd",
+                "memory_ec0d036dea6146ae8c24",
+                "memory_e77d3be470374fc79c62"
+              ],
+              "renderedFactLines": 3,
+              "memoryCharacters": 355,
+              "factLineCharacters": 220,
+              "unrelatedFactLines": 1,
+              "unrelatedFactCharacters": 56,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "runs": 3,
+          "passed": 3,
+          "invocations": 3,
+          "relevantAvailable": 6,
+          "relevantRecalled": 6,
+          "renderedFactLines": 9,
+          "unrelatedFactLines": 3,
+          "memoryCharacters": 1065,
+          "unrelatedFactCharacters": 168
+        },
+        "candidate": {
+          "runs": 3,
+          "passed": 3,
+          "invocations": 3,
+          "relevantAvailable": 6,
+          "relevantRecalled": 6,
+          "renderedFactLines": 9,
+          "unrelatedFactLines": 3,
+          "memoryCharacters": 1065,
+          "unrelatedFactCharacters": 168
+        }
+      }
+    },
+    {
+      "root": "/Users/champ/.cache/napier-seven-quality/memory-priority-noisy-v1",
+      "scenario": "noisy",
+      "snapshot": "priority-v1",
+      "inputs": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-noisy-v1/inputs.json",
+        "sha256": "2f4a3e3892edaa6f8889cbe992add45d41ac4c3205cd9921272efbadfd12a1fd"
+      },
+      "scenarioPairs": 3,
+      "collectionComplete": true,
+      "rows": [
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "stage": "answer",
+          "runId": "run_1797e0d39e014b4284ef",
+          "taskSuccess": false,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-noisy-v1/baseline-trial-1/result.json",
+            "sha256": "38bdb6312e7d300ed41a9002e1f3b26e2be604fb92eb57b4a844f4eeadb32b6a"
+          },
+          "observations": [
+            {
+              "eventId": "event_a6b212de7cbc4d92adab",
+              "capsuleSha256": "e8a80eb286f7d1c67a1cb7b470901072572ebdd215a70fec0c99edac5640e4aa",
+              "memorySha256": "bff9d960d1c5ceb37d5e04350cabbaf6a8c7946d183e689a5f262cd62309497b",
+              "relevantAvailable": 2,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_0ff8380ad6ac4a56b075",
+                "memory_c934cc83ee914e3b9992",
+                "memory_a7b5ccbcaea94fe98f44",
+                "memory_3ed9b7fa008147168e78",
+                "memory_662ce92943754d4695b0",
+                "memory_d18b47a342104769be53",
+                "memory_b4acd6ee891a4f4d9674",
+                "memory_20f2c295b3a74af1bcb7",
+                "memory_001d4fb31a3d4009a8fe",
+                "memory_77c1b636f1194c1eb8fc",
+                "memory_2fb561db4c734e5a82b2",
+                "memory_4828ed79e4c044fe9a84"
+              ],
+              "renderedFactLines": 12,
+              "memoryCharacters": 5997,
+              "factLineCharacters": 5853,
+              "unrelatedFactLines": 11,
+              "unrelatedFactCharacters": 5731,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "stage": "answer",
+          "runId": "run_e96b8aae717748b7bac9",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-noisy-v1/candidate-trial-1/result.json",
+            "sha256": "10737fcc522faf688203261a22fa0ae25893878442e9d8f41edc617796136630"
+          },
+          "observations": [
+            {
+              "eventId": "event_d3bc862b6cb14bb08c98",
+              "capsuleSha256": "8910deef75be36be4cbd4a5e8d58525a5d4fb5d8d1644767c53a108234531ccb",
+              "memorySha256": "f9ccb7e75439cd21ea6187dcb3bd58de2863a3be0ef2d7ec1a4050ac02415318",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_c55e46bb0acb4e158514",
+                "memory_12f8a4588bb74e598c81",
+                "memory_cbaa7bcd14de4554b041",
+                "memory_37d570ba20774e4f99cc",
+                "memory_9ff482e5d6014efe9c2c",
+                "memory_907ca989b73b47bcb1d6",
+                "memory_dfb42ffb07e04f09b782",
+                "memory_8d30987ca49e46edb05b",
+                "memory_caa2cd591417432593dc",
+                "memory_9a7aaab389724960b535",
+                "memory_fb40dd240303484ea593",
+                "memory_728a04c91af34495a005",
+                "memory_639ab36cca294c91ab03",
+                "memory_8114089fbda74664b5f1",
+                "memory_9d2ae1b1a594455fbcbf",
+                "memory_377e56c639414b03a23a",
+                "memory_23654fc6814741f9837d",
+                "memory_41073fa0389a4bcc923f"
+              ],
+              "renderedFactLines": 10,
+              "memoryCharacters": 4474,
+              "factLineCharacters": 4332,
+              "unrelatedFactLines": 8,
+              "unrelatedFactCharacters": 4168,
+              "sourceBoostedFactIds": [
+                "memory_12f8a4588bb74e598c81"
+              ],
+              "duplicateCandidateCount": 8
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "stage": "answer",
+          "runId": "run_5da08d4ce690423284ce",
+          "taskSuccess": false,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-noisy-v1/baseline-trial-2/result.json",
+            "sha256": "88d39596196b1405772c15b5eca6e870d231d477c3f7d72aea82f614e3d51d28"
+          },
+          "observations": [
+            {
+              "eventId": "event_4c84d923b5184f119328",
+              "capsuleSha256": "474e848ddbd518b562de71da77a49634cd2072736ddfb517520c998bef8cd5dc",
+              "memorySha256": "bff9d960d1c5ceb37d5e04350cabbaf6a8c7946d183e689a5f262cd62309497b",
+              "relevantAvailable": 2,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_6d1cc5194a2e4a97b674",
+                "memory_2596d916e2994503b3f1",
+                "memory_30af4b7464ac40c3be7a",
+                "memory_8cbd6e96f6f64556ba10",
+                "memory_9c9a687e6d1049188c38",
+                "memory_9623fc9ec8da4a2092c2",
+                "memory_2a64acd7432141d083e0",
+                "memory_d547d965f2bc453b8387",
+                "memory_0c5d1c5cc7da41babf05",
+                "memory_4d54d3c6bc9a477fbbed",
+                "memory_cbd6cb31387f41e59a00",
+                "memory_5cc8191c6def4f3d9c89"
+              ],
+              "renderedFactLines": 12,
+              "memoryCharacters": 5997,
+              "factLineCharacters": 5853,
+              "unrelatedFactLines": 11,
+              "unrelatedFactCharacters": 5731,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "stage": "answer",
+          "runId": "run_de291bdf22fd4dd3b1ff",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-noisy-v1/candidate-trial-2/result.json",
+            "sha256": "23355951ac089e3a787e2a30fb7a485d0e67955ff33690add7b74ac7d3d1a535"
+          },
+          "observations": [
+            {
+              "eventId": "event_e2cadd70a9614bf58f06",
+              "capsuleSha256": "8d2b5df525510e0292a108d4358d4a0b42df39c53f3417d82f7f77f860e1b7a4",
+              "memorySha256": "f9ccb7e75439cd21ea6187dcb3bd58de2863a3be0ef2d7ec1a4050ac02415318",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_7847534866694b92b4cf",
+                "memory_d2a3b8e1824841baacc0",
+                "memory_b18539e0e2894997bcea",
+                "memory_218d1a385bcf470e8850",
+                "memory_c441e9bbb58146fd9669",
+                "memory_378fa66eb1fa4b859bbb",
+                "memory_04e9d511836f4c6fa185",
+                "memory_bc29acb22066457cae6f",
+                "memory_8294e193fabc4ffea134",
+                "memory_4c2c7836a7594da5a7a9",
+                "memory_b5f9c55722f44a71b063",
+                "memory_a9baf864ec5142d4ab7a",
+                "memory_e61aca07443c44b88919",
+                "memory_8e62ab779fff4f4abc49",
+                "memory_a04802a41b964d709c7a",
+                "memory_18a198cfbb1f413c8594",
+                "memory_0e11def0342642218821",
+                "memory_59ec8f0bed7244d3858a"
+              ],
+              "renderedFactLines": 10,
+              "memoryCharacters": 4474,
+              "factLineCharacters": 4332,
+              "unrelatedFactLines": 8,
+              "unrelatedFactCharacters": 4168,
+              "sourceBoostedFactIds": [
+                "memory_d2a3b8e1824841baacc0"
+              ],
+              "duplicateCandidateCount": 8
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "baseline",
+          "trial": 3,
+          "stage": "answer",
+          "runId": "run_caa06c90a96d43c395eb",
+          "taskSuccess": false,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-noisy-v1/baseline-trial-3/result.json",
+            "sha256": "97c9caf9b8ca0cd2fa7b9a418c814f867735454690c9e5e2006193a1b4113c8f"
+          },
+          "observations": [
+            {
+              "eventId": "event_62cd0849b4b3430cbe53",
+              "capsuleSha256": "acad4d50a921f9b358f4acd08026eb7ac4d7351f7d12a8b5798cae3b41f0d666",
+              "memorySha256": "bff9d960d1c5ceb37d5e04350cabbaf6a8c7946d183e689a5f262cd62309497b",
+              "relevantAvailable": 2,
+              "relevantRecalled": 1,
+              "representedFactIds": [
+                "memory_8289a79db7014a6f97bb",
+                "memory_2c355ba625e1483bbc1c",
+                "memory_9017faac9169445d97bc",
+                "memory_92028ab9ae524336a687",
+                "memory_2cc2c3b5df5440338aa8",
+                "memory_b3d5427d12f3407e8e59",
+                "memory_fa158d0075a64ed99a9a",
+                "memory_287931302aef4bb494ff",
+                "memory_fa490e37baa34ef0817e",
+                "memory_bff9e74204b14a74baac",
+                "memory_1954a1234f954932ad50",
+                "memory_f6401df8096f407a8722"
+              ],
+              "renderedFactLines": 12,
+              "memoryCharacters": 5997,
+              "factLineCharacters": 5853,
+              "unrelatedFactLines": 11,
+              "unrelatedFactCharacters": 5731,
+              "sourceBoostedFactIds": [],
+              "duplicateCandidateCount": 0
+            }
+          ],
+          "captureStatus": "unavailable"
+        },
+        {
+          "arm": "candidate",
+          "trial": 3,
+          "stage": "answer",
+          "runId": "run_f0c252f4f7184b8aa3ad",
+          "taskSuccess": true,
+          "report": {
+            "path": "/Users/champ/.cache/napier-seven-quality/memory-priority-noisy-v1/candidate-trial-3/result.json",
+            "sha256": "58e164a023d4be7d3492903e355c5a240f38876ad4ac948144ef1be150b5b6d8"
+          },
+          "observations": [
+            {
+              "eventId": "event_31fcdbd062a1417f8445",
+              "capsuleSha256": "ce94dbdcae2a08f1fbd242a6ca79c83237cea8efe0b3e3ace134b8995f14a5d9",
+              "memorySha256": "f9ccb7e75439cd21ea6187dcb3bd58de2863a3be0ef2d7ec1a4050ac02415318",
+              "relevantAvailable": 2,
+              "relevantRecalled": 2,
+              "representedFactIds": [
+                "memory_f1861a37e99b4f6abadc",
+                "memory_30395d7a15944aef8681",
+                "memory_7f92cc4f00e348b0baa2",
+                "memory_17112a3a4d7b4238a792",
+                "memory_b1a93d2ad6004db6a06a",
+                "memory_cea53dfc8c6c4098af86",
+                "memory_a4a9d8a44c6146349b25",
+                "memory_d77bf5a2f9794dea941a",
+                "memory_6086baf72c48492d8920",
+                "memory_827bd291e2ac45f3b2e0",
+                "memory_0ec4372b6abb4fdc8e7f",
+                "memory_42d52a2c796e495d8bfe",
+                "memory_e67d0fd8b2b946f0ad02",
+                "memory_82bccf8b1e15456e8af7",
+                "memory_df645a470db940ef82b1",
+                "memory_6299ddaa08b245b39149",
+                "memory_1f4b5be6796a4b34ae36",
+                "memory_e3f498d58b3b49758cd6"
+              ],
+              "renderedFactLines": 10,
+              "memoryCharacters": 4474,
+              "factLineCharacters": 4332,
+              "unrelatedFactLines": 8,
+              "unrelatedFactCharacters": 4168,
+              "sourceBoostedFactIds": [
+                "memory_30395d7a15944aef8681"
+              ],
+              "duplicateCandidateCount": 8
+            }
+          ],
+          "captureStatus": "unavailable"
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "runs": 3,
+          "passed": 0,
+          "invocations": 3,
+          "relevantAvailable": 6,
+          "relevantRecalled": 3,
+          "renderedFactLines": 36,
+          "unrelatedFactLines": 33,
+          "memoryCharacters": 17991,
+          "unrelatedFactCharacters": 17193
+        },
+        "candidate": {
+          "runs": 3,
+          "passed": 3,
+          "invocations": 3,
+          "relevantAvailable": 6,
+          "relevantRecalled": 6,
+          "renderedFactLines": 30,
+          "unrelatedFactLines": 24,
+          "memoryCharacters": 13422,
+          "unrelatedFactCharacters": 12504
+        }
+      }
+    }
+  ],
+  "promotionReady": false,
+  "assessment": "Grouping preserves the previously dropped multilingual rule. The noisy case combines two source-linked rules with eight unrelated texts duplicated legitimately across workspace and current-agent scopes. Exact text grouping preserves both eligible source IDs while rendering each text once. Candidate passes all retained component Runs. Direct-hit/general-priority correction is validated in a separate frozen snapshot; experiments from different snapshots are not pooled.",
+  "corrections": [
+    "The initial noisy fixture attempted repeated same-scope proposals, which the production MemoryRepository already deduplicates; it failed before any model Run. The corrected new fixture uses supported workspace/current-agent duplication. Original failed setup retained at memory-grouping-noisy-v3.",
+    "Original noisy runner unrelatedDelivered boolean compares unnormalized seed text including trailing whitespace; it is false despite actual unrelated lines. This audit ignores that boolean, re-reads the hash-bound capsule, reconstructs every rendered line from normalized stored facts, and reports actual unrelated-line/character counts. Original results remain unchanged."
+  ],
+  "limits": "Three paired repetitions per component; latest priority snapshot has two directly tested scenarios, while the parent grouping snapshot also has a two-stage source-transition scenario. No aggregation across snapshots and no 30-distinct-case x 3 qualification. Source affinity is ordering evidence, not semantic relevance or authority. Exact grouping cannot remove unique irrelevant content. Budget pressure can still omit facts. Character savings are not token, latency or cost gains. No production input export for direct no-tool Runs: file capture correctly remained unavailable without read_file."
+}

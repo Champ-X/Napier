@@ -1,8 +1,36 @@
 import { describe, expect, it } from "vitest";
 
 import { ModelThinkingLoopDetector } from "../src/model-thinking-loop-detector.js";
+import {
+  PROGRESSIVE_REASONING,
+  PROGRESSIVE_REASONING_SECTIONS,
+} from "./progressive-reasoning-fixture.js";
 
 describe("Model thinking-loop detector", () => {
+  it.each([1, 17, 4096])(
+    "allows distinct contract obligations delivered in %i-character chunks",
+    (size) => {
+      const detector = new ModelThinkingLoopDetector();
+      for (
+        let offset = 0;
+        offset < PROGRESSIVE_REASONING.length;
+        offset += size
+      )
+        expect(
+          detector.observe(
+            PROGRESSIVE_REASONING.slice(offset, offset + size),
+            1,
+          ),
+        ).toBeUndefined();
+    },
+  );
+
+  it("allows repeated section labels when their substantive reasoning changes", () => {
+    const text = PROGRESSIVE_REASONING_SECTIONS.map(
+      ([, body], index) => `## Step ${index + 1}\n${body}`,
+    ).join("\n");
+    expect(new ModelThinkingLoopDetector().observe(text, 1)).toBeUndefined();
+  });
   it("detects literal repetition and near-paragraph clusters", () => {
     const literal = new ModelThinkingLoopDetector();
     const unit =

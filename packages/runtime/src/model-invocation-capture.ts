@@ -11,7 +11,8 @@ import type {
 } from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
-import { sha256 } from "./ed25519.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
+import { PromptCacheProjection } from "./prompt-cache-projection.js";
 import {
   COMPILED_PROMPT_PACKAGE_EVENT,
   createCompiledPromptPackageReceiptV3,
@@ -29,6 +30,10 @@ import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { LocalStore } from "./store.js";
 
 type ModelInvocationCaptureStore = Pick<LocalStore, "appendEvent">;
+const cacheProjections = new WeakMap<
+  RunRecord,
+  Map<ModelInvocationPurpose, PromptCacheProjection>
+>();
 
 export async function captureCompiledModelInvocation(input: {
   store: ModelInvocationCaptureStore;
@@ -79,7 +84,46 @@ export async function captureCompiledModelInvocation(input: {
     input.compiledPrompt,
     input.onEvent,
   );
+  await append(
+    input.store,
+    {
+      threadId: input.run.threadId,
+      runId: input.run.id,
+      type: "context.prompt_cache_projection",
+      category: "model",
+      visibility: "debug",
+      payload: cacheProjection(input.run, input.purpose).observe({
+        turnIndex: input.turnIndex,
+        contextEnvelopeSha256: envelope.contentSha256,
+        context,
+        invocationIdentitySha256: sha256(
+          canonicalJson({
+            model: input.model,
+            adapter: modelAdapterReceipt(input.model, input.options),
+          }),
+        ),
+      }),
+    },
+    input.onEvent,
+  );
   return { context, envelope };
+}
+
+function cacheProjection(
+  run: RunRecord,
+  purpose: ModelInvocationPurpose,
+): PromptCacheProjection {
+  let purposes = cacheProjections.get(run);
+  if (!purposes) {
+    purposes = new Map();
+    cacheProjections.set(run, purposes);
+  }
+  let projection = purposes.get(purpose);
+  if (!projection) {
+    projection = new PromptCacheProjection();
+    purposes.set(purpose, projection);
+  }
+  return projection;
 }
 
 async function captureModelInvocation(

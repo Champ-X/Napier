@@ -1,0 +1,26 @@
+{
+  "kind": "napier.corpus-contract-conflict",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:18:33.396Z",
+  "caseId": "path_glob_selection_v1",
+  "evidence": [
+    {
+      "campaign": "core-contract-guidance-suite-v1",
+      "readmeSha256": "6b02ec7f3ca1afeb7a1090b8f4ed957a7bca0b7feaaf9e67ca5064d6bfae5eaa",
+      "graderSha256": "8a9d0ba6cf0955d2051fb4a0ead87d2ad8fce27890a3fdffcf06da959a80a0ec",
+      "documentedWildcard": "_",
+      "gradedWildcard": "*",
+      "readmeText": "# Workspace file selection\n\n`matchesPath(pattern,path)` in src/glob.mjs supports POSIX relative paths:\nnonempty string, no leading/trailing /, empty component, backslash, '.' or '..'\ncomponent. Patterns use the same structure; '?' matches one Unicode code point\nwithin a component, '_' zero or more code points within a component, and a whole\n'**' component matches zero or more whole components. '**' embedded in a larger\ncomponent is invalid. Everything else is literal, including brackets, punctuation\nand regex characters. File paths cannot contain _ or ? (reject TypeError).\nDot-prefixed files have no special status. Match case sensitively. Validate both\narguments, throwing TypeError for invalid input.\n`selectPaths(paths,rules)` in src/select.mjs takes dense arrays: paths are valid\npath strings and rules are plain objects {pattern,include}, include boolean.\nValidate ALL inputs before selection, including rules when paths is empty.\nA file is initially excluded; each matching rule overwrites inclusion (last wins).\nReturn included paths in input order with duplicates removed. Do not mutate inputs.\nUse no dependencies, filesystem, or RegExp features beyond the standard library.\n"
+    },
+    {
+      "campaign": "core-tool-surface-suite-v2",
+      "readmeSha256": "6b02ec7f3ca1afeb7a1090b8f4ed957a7bca0b7feaaf9e67ca5064d6bfae5eaa",
+      "graderSha256": "8a9d0ba6cf0955d2051fb4a0ead87d2ad8fce27890a3fdffcf06da959a80a0ec",
+      "documentedWildcard": "_",
+      "gradedWildcard": "*",
+      "readmeText": "# Workspace file selection\n\n`matchesPath(pattern,path)` in src/glob.mjs supports POSIX relative paths:\nnonempty string, no leading/trailing /, empty component, backslash, '.' or '..'\ncomponent. Patterns use the same structure; '?' matches one Unicode code point\nwithin a component, '_' zero or more code points within a component, and a whole\n'**' component matches zero or more whole components. '**' embedded in a larger\ncomponent is invalid. Everything else is literal, including brackets, punctuation\nand regex characters. File paths cannot contain _ or ? (reject TypeError).\nDot-prefixed files have no special status. Match case sensitively. Validate both\narguments, throwing TypeError for invalid input.\n`selectPaths(paths,rules)` in src/select.mjs takes dense arrays: paths are valid\npath strings and rules are plain objects {pattern,include}, include boolean.\nValidate ALL inputs before selection, including rules when paths is empty.\nA file is initially excluded; each matching rule overwrites inclusion (last wins).\nReturn included paths in input order with duplicates removed. Do not mutate inputs.\nUse no dependencies, filesystem, or RegExp features beyond the standard library.\n"
+    }
+  ],
+  "decision": "Reject this case as qualification evidence. Preserve existing snapshots and scores, stop later job scheduling, and use a new corrected case/suite version for fresh evaluation. A mechanical 30-case gate cannot qualify this semantically conflicting corpus.",
+  "promotionReady": false
+}

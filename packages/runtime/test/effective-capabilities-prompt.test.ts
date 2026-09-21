@@ -1,6 +1,37 @@
 import { describe, expect, it } from "vitest";
 
 import { formatEffectiveCapabilitiesPrompt } from "../src/effective-capabilities-prompt.js";
+import { PRE_EDIT_VERIFICATION_GUIDANCE } from "../src/pre-edit-verification.js";
+
+it("announces the active ordering rule for a visible or discoverable verifier, without inventing unavailable execution", () => {
+  const base = {
+    requestedTools: ["verify_workspace", "apply_patch"],
+    availableTools: ["verify_workspace", "apply_patch", "capability"],
+    activeTools: ["verify_workspace", "apply_patch"],
+    toolPolicy: "workspace" as const,
+    sandboxId: "host-direct",
+    restrictedReadOnlyExecution: false,
+    advisorCorrection: false,
+    browserInteractionConfirmationAvailable: false,
+    verificationOrder: "before-first-patch-v1" as const,
+  };
+  for (const activeTools of [["verify_workspace"], ["capability"]])
+    expect(
+      formatEffectiveCapabilitiesPrompt({ ...base, activeTools }),
+    ).toContain(PRE_EDIT_VERIFICATION_GUIDANCE);
+  for (const patch of [
+    { activeTools: ["read_file"] },
+    {
+      availableTools: ["read_file", "capability"],
+      activeTools: ["capability"],
+    },
+    { verificationOrder: undefined },
+    { restrictedReadOnlyExecution: true },
+  ])
+    expect(
+      formatEffectiveCapabilitiesPrompt({ ...base, ...patch }),
+    ).not.toContain(PRE_EDIT_VERIFICATION_GUIDANCE);
+});
 
 describe("Effective Capabilities Prompt layer", () => {
   it("reports the real policy, sandbox, Browser mode, and deterministic degradation", () => {
@@ -68,9 +99,7 @@ describe("Effective Capabilities Prompt layer", () => {
     expect(prompt).toContain(
       "workspace_process with runtime=shell runs one explicit POSIX shell script",
     );
-    expect(prompt).toContain(
-      "workspace_process is not a network grant",
-    );
+    expect(prompt).toContain("workspace_process is not a network grant");
     expect(prompt).toContain(
       "Before claiming that a needed tool is unavailable or requesting operator help",
     );

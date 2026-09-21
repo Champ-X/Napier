@@ -1,0 +1,506 @@
+{
+  "kind": "napier.ndjson-current-candidate-regression",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T14:52:58.279Z",
+  "batchResultPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/ndjson-after-cap-v1/result.json",
+  "batchResultSha256": "eb637fc47824252b32dfaebdd78c85b418848a81ffd35cedc16c4765b8a39b33",
+  "audits": [
+    {
+      "kind": "napier.settled-harness-run-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T14:45:34.651Z",
+      "jobIndex": 16,
+      "runId": "run_464d4320ef1b457baf93",
+      "caseId": "incremental_ndjson_v1",
+      "arm": "baseline",
+      "status": "failed",
+      "taskSuccess": false,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-grading-amendment-v1/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "2a875ef8804421d80c96dd51c4ddcb60965a7d771c895ac1fbdbafa81d6b86be",
+      "auditedCapsules": 13,
+      "modelRequestBindingsVerified": true,
+      "toolCalls": [
+        {
+          "callId": "call_01_hkgmfLMbi5CllrZbv37C3588",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "b549351c73338faf6e9cb8400d66291da6678f3bebcf35e32978bddfbd42150f",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_02_NPDGK6GKyZgc6ovyqIU97565",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "cbbbf9a867169064bef068a3883c2e91c95fa24f6570746007a00bf547d5f4e4",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_seilqdHeFMBQstGDwRdt4178",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "d7c3e0dd21ab2f86593c7f6cd54d3d34deebc218dcf3e6a981aab4a520585854",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_01_28iXhnUqUN1Nd3eLh2m05339",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "57e033a1d5e41cedcb2bc02dfb5201d957430cba4ae2a599c3edbe46bee9f652",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_01_92xeHkpxeNrl3RVNzNNj4956",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "2a9cef5802699c2966c7d166a85dd81ce4b8198c6ccf1c3d3157345de268df31",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_02_ltCf1tcJhtbUNgTZCmCf2898",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "dc0597a882162e3d89dc09a4d4ec61d4ec23c6f3663d5005e8a27d6117196806",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_iMZ0G5dW5tcTtYn93f7p7446",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "96924a6946fec758ca4ea0494490f5f19a73219669ca7ab7b45a4483c64c4062",
+          "terminal": "tool.completed"
+        }
+      ],
+      "toolFailures": 2,
+      "changed": [
+        "src/decoder.py",
+        "src/records.py"
+      ],
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "graderConfiguration": {
+        "kind": "napier.harness-grader-configuration",
+        "schemaVersion": 1,
+        "mode": "sandbox",
+        "sandboxId": "oci-container",
+        "runtimes": [
+          {
+            "runtime": "node",
+            "executable": "/usr/local/bin/node",
+            "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+            "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+          },
+          {
+            "runtime": "python",
+            "executable": "/usr/bin/python3.13",
+            "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+            "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+          }
+        ],
+        "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+      },
+      "graderExecution": {
+        "kind": "napier.harness-grader-execution",
+        "schemaVersion": 1,
+        "runId": "run_464d4320ef1b457baf93",
+        "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+        "graderSha256": "e7e7d774887051409a9b196be54c164ace4f3416f49051d0996d00675bb3b644",
+        "graderRelativePath": "__napier_external_grader__.mjs",
+        "observedWorkspaceSha256": "74f8f1d356a3979e9e374a29029cc8153b780ad92a6e5e4b01205bae34daf4e9",
+        "workspaceBeforeSha256": "bb0bf232cd00947c571ce0f2a247a971d47cf38d2c115f3eb332f50e4079be6a",
+        "workspaceAfterSha256": "bb0bf232cd00947c571ce0f2a247a971d47cf38d2c115f3eb332f50e4079be6a",
+        "workspaceUnchanged": true,
+        "processStatus": "exited",
+        "exitCode": 0,
+        "signal": null,
+        "stdoutSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reportOutputSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+        "stdoutTruncated": false,
+        "stderrTruncated": false,
+        "observationComplete": true,
+        "passed": true,
+        "contentSha256": "8886830182e43eab2e2c6ee8613fa621a4f81352ff8125bd823e5c0211dac730"
+      },
+      "verificationStatuses": [],
+      "admissions": 13,
+      "minimumIntervalMs": 15001,
+      "conservativeCostFen": 179,
+      "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+    },
+    {
+      "kind": "napier.settled-harness-run-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T14:47:47.466Z",
+      "jobIndex": 17,
+      "runId": "run_f58e9f7c07e84aafa46c",
+      "caseId": "incremental_ndjson_v1",
+      "arm": "candidate",
+      "status": "completed",
+      "taskSuccess": false,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/python-grading-amendment-v1/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "adc46425f628e96180c2e79fb02a41ad8eea37b5beb6a342d06507a8f58611cd",
+      "auditedCapsules": 15,
+      "modelRequestBindingsVerified": true,
+      "toolCalls": [
+        {
+          "callId": "call_01_dG2RGAzK35MOyb3o7WWc3507",
+          "toolName": "verify_workspace",
+          "runtime": "python",
+          "kind": "test",
+          "argumentsSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_02_vZErQyJpwZkfSc3gG0LD4886",
+          "toolName": "run_command",
+          "runtime": "python",
+          "kind": null,
+          "argumentsSha256": "b60290b9aa795872246fc9fc1745b17718cd8499e2bb76576839a683df00f642",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_01_ErhDsVXdVQY6uK9w6icU7414",
+          "toolName": "verify_workspace",
+          "runtime": "python",
+          "kind": "test",
+          "argumentsSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_QYLEMlb6CFNxoCJhNctj3979",
+          "toolName": "run_command",
+          "runtime": "python",
+          "kind": null,
+          "argumentsSha256": "25c049fa7de33a07f698f01bef643be8600bc14962d2df5b34949545357bfa74",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_eGK5D0sLGHyTI8yN41515060",
+          "toolName": "run_command",
+          "runtime": "python",
+          "kind": null,
+          "argumentsSha256": "5c052eb7547783bd7574fb20256ff82d59ec8a860bf8fbf0311e47ead1ef56b4",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_01_gEOruc2fjiLQqSl7wbCA9402",
+          "toolName": "verify_workspace",
+          "runtime": "python",
+          "kind": "test",
+          "argumentsSha256": "627f2cbfdbc8547e48275ff4a935fade6d42931bbb2bca5e5c5eabb54d53a4a5",
+          "terminal": "tool.completed"
+        }
+      ],
+      "toolFailures": 0,
+      "changed": [
+        "src/decoder.py",
+        "src/records.py"
+      ],
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "graderConfiguration": {
+        "kind": "napier.harness-grader-configuration",
+        "schemaVersion": 1,
+        "mode": "sandbox",
+        "sandboxId": "oci-container",
+        "runtimes": [
+          {
+            "runtime": "node",
+            "executable": "/usr/local/bin/node",
+            "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+            "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+          },
+          {
+            "runtime": "python",
+            "executable": "/usr/bin/python3.13",
+            "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+            "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+          }
+        ],
+        "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+      },
+      "graderExecution": {
+        "kind": "napier.harness-grader-execution",
+        "schemaVersion": 1,
+        "runId": "run_f58e9f7c07e84aafa46c",
+        "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+        "graderSha256": "e7e7d774887051409a9b196be54c164ace4f3416f49051d0996d00675bb3b644",
+        "graderRelativePath": "__napier_external_grader__.mjs",
+        "observedWorkspaceSha256": "4eaf2fb52628a812cdd260225de0384d90a7df07798b7caaa3812dc0055073c5",
+        "workspaceBeforeSha256": "c9a42c55198a096e3958cdf753f5f7bda619d6a6dce91ad2c0bf2738e5b4128a",
+        "workspaceAfterSha256": "c9a42c55198a096e3958cdf753f5f7bda619d6a6dce91ad2c0bf2738e5b4128a",
+        "workspaceUnchanged": true,
+        "processStatus": "exited",
+        "exitCode": 1,
+        "signal": null,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "409f403fedd5072acab227d9e1e225b4542606be9d8cc1c559c38b9b9b67107a",
+        "reportOutputSha256": "409f403fedd5072acab227d9e1e225b4542606be9d8cc1c559c38b9b9b67107a",
+        "stdoutTruncated": false,
+        "stderrTruncated": false,
+        "observationComplete": true,
+        "passed": false,
+        "contentSha256": "1bb9d5e2dc4a5a711d6d0d6a40deb377a0134f74b56c0eab5d0f34352fbf987b"
+      },
+      "verificationStatuses": [
+        "failed",
+        "passed",
+        "passed"
+      ],
+      "admissions": 16,
+      "minimumIntervalMs": 15000,
+      "conservativeCostFen": 149,
+      "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 8,
+    "cases": 8,
+    "regressions": [
+      "incremental_ndjson_v1:0: external behavior regressed"
+    ],
+    "evidenceBlockers": [
+      "http_etag_preconditions_v2:0: missing, changed or exhausted API request budget evidence",
+      "incremental_ndjson_v1:0: candidate external behavior did not pass"
+    ],
+    "blockers": [
+      "http_etag_preconditions_v2:0: missing, changed or exhausted API request budget evidence",
+      "incremental_ndjson_v1:0: candidate external behavior did not pass",
+      "Need 30 cases; observed 8",
+      "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+      "http_retry_policy_v2: need 3 paired trials; observed 1",
+      "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+      "booking_calendar_v2: need 3 paired trials; observed 1",
+      "safe_csv_export_v1: need 3 paired trials; observed 1",
+      "inventory_event_projection_v1: need 3 paired trials; observed 1",
+      "weighted_expense_allocation_v1: need 3 paired trials; observed 1",
+      "incremental_ndjson_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "regressed",
+    "promotionReady": false,
+    "contentSha256": "5960d2a1a71de896976130b5bd493e0029f66b7740392ee0d0dcbee0929096c1"
+  },
+  "spendingAtStop": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 3160,
+    "remainingFen": 6840,
+    "requests": 404,
+    "reservedRequests": 0,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14"
+    }
+  },
+  "diagnostic": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/ndjson-pending-cr-probe-v1.json",
+    "sha256": "28559da867f17fa226c913c7088aa726094f59a3edef41bbc2905c644f4b275f",
+    "kind": "napier.ndjson-pending-cr-regression-probe",
+    "schemaVersion": 1,
+    "createdAt": "2026-09-14T14:51:23.544Z",
+    "scriptSha256": "48fded2725375a63b18295ff480ab9c28f719c3f26923ab7f75432e35df5cf71",
+    "oracleSha256": "3fc55b40a6d546ec854542ce93960754142c26dbe07b75fcab8387da299311fb",
+    "configuration": {
+      "kind": "napier.harness-grader-configuration",
+      "schemaVersion": 1,
+      "mode": "sandbox",
+      "sandboxId": "oci-container",
+      "runtimes": [
+        {
+          "runtime": "node",
+          "executable": "/usr/local/bin/node",
+          "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+        },
+        {
+          "runtime": "python",
+          "executable": "/usr/bin/python3.13",
+          "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+          "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+        }
+      ],
+      "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+    },
+    "results": [
+      {
+        "arm": "baseline",
+        "runId": "run_464d4320ef1b457baf93",
+        "reportSha256": "2a875ef8804421d80c96dd51c4ddcb60965a7d771c895ac1fbdbafa81d6b86be",
+        "grade": {
+          "status": 0,
+          "stdout": "{\"invalidPending\": [{\"chunks\": [\"7b7d0d58\"], \"immediateRejection\": true, \"laterCallsRejected\": [true, true, true]}, {\"chunks\": [\"7b7d0d\", \"58\"], \"immediateRejection\": true, \"laterCallsRejected\": [true, true, true]}, {\"chunks\": [\"7b7d0d0d\"], \"immediateRejection\": true, \"laterCallsRejected\": [true, true, true]}], \"validSplitCRLF\": true}\n\n",
+          "stderr": "",
+          "receipt": {
+            "kind": "napier.harness-grader-execution",
+            "schemaVersion": 1,
+            "runId": "run_464d4320ef1b457baf93",
+            "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+            "graderSha256": "3fc55b40a6d546ec854542ce93960754142c26dbe07b75fcab8387da299311fb",
+            "graderRelativePath": "__napier_external_grader__.mjs",
+            "observedWorkspaceSha256": "74f8f1d356a3979e9e374a29029cc8153b780ad92a6e5e4b01205bae34daf4e9",
+            "workspaceBeforeSha256": "fa6d4d00d3aa0c7a878a9cc089ec859210f776a4049570d7968ff9ec57f78f30",
+            "workspaceAfterSha256": "fa6d4d00d3aa0c7a878a9cc089ec859210f776a4049570d7968ff9ec57f78f30",
+            "workspaceUnchanged": true,
+            "processStatus": "exited",
+            "exitCode": 0,
+            "signal": null,
+            "stdoutSha256": "b9ef34e728de19b082a3bc991614daf35127861ae52b2f4e22c9e8139349430d",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reportOutputSha256": "b9ef34e728de19b082a3bc991614daf35127861ae52b2f4e22c9e8139349430d",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "observationComplete": true,
+            "passed": true,
+            "contentSha256": "11533f32740c9aaa0f4948e8b2aa3bca05e0576543a89833fe342d6386db888f"
+          }
+        },
+        "observations": {
+          "invalidPending": [
+            {
+              "chunks": [
+                "7b7d0d58"
+              ],
+              "immediateRejection": true,
+              "laterCallsRejected": [
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "chunks": [
+                "7b7d0d",
+                "58"
+              ],
+              "immediateRejection": true,
+              "laterCallsRejected": [
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "chunks": [
+                "7b7d0d0d"
+              ],
+              "immediateRejection": true,
+              "laterCallsRejected": [
+                true,
+                true,
+                true
+              ]
+            }
+          ],
+          "validSplitCRLF": true
+        }
+      },
+      {
+        "arm": "candidate",
+        "runId": "run_f58e9f7c07e84aafa46c",
+        "reportSha256": "adc46425f628e96180c2e79fb02a41ad8eea37b5beb6a342d06507a8f58611cd",
+        "grade": {
+          "status": 1,
+          "stdout": "{\"invalidPending\": [{\"chunks\": [\"7b7d0d58\"], \"immediateRejection\": false, \"laterCallsRejected\": [false, true, true]}, {\"chunks\": [\"7b7d0d\", \"58\"], \"immediateRejection\": false, \"laterCallsRejected\": [false, true, true]}, {\"chunks\": [\"7b7d0d0d\"], \"immediateRejection\": false, \"laterCallsRejected\": [false, true, true]}], \"validSplitCRLF\": true}\n\n",
+          "stderr": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n1 !== 0\n\n    at file:///Users/champ/.cache/napier-oci-scratch/ndjson-pending-cr-wOElYu/__napier_external_grader__.mjs:1:1027\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:633:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 1,\n  expected: 0,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.16.0\n",
+          "receipt": {
+            "kind": "napier.harness-grader-execution",
+            "schemaVersion": 1,
+            "runId": "run_f58e9f7c07e84aafa46c",
+            "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+            "graderSha256": "3fc55b40a6d546ec854542ce93960754142c26dbe07b75fcab8387da299311fb",
+            "graderRelativePath": "__napier_external_grader__.mjs",
+            "observedWorkspaceSha256": "4eaf2fb52628a812cdd260225de0384d90a7df07798b7caaa3812dc0055073c5",
+            "workspaceBeforeSha256": "42b81e59b1fadd9dcf74de26c47fbd5c5539172cd3b82e44a38f45b4ef5e8992",
+            "workspaceAfterSha256": "42b81e59b1fadd9dcf74de26c47fbd5c5539172cd3b82e44a38f45b4ef5e8992",
+            "workspaceUnchanged": true,
+            "processStatus": "exited",
+            "exitCode": 1,
+            "signal": null,
+            "stdoutSha256": "89e076d5579a8188e1fc0f558a4576e3349ccefa56eed0508e6d3be59e6be8e2",
+            "stderrSha256": "ea34af9f53b98357eb9c18c563fd60ffa60492b5888f2995c164f7b8d565bba4",
+            "reportOutputSha256": "a5b930a8b9b3e8a194653b3cfc5f3f1af52f3638dd6191c20a1b1cacad154b9d",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "observationComplete": true,
+            "passed": false,
+            "contentSha256": "850d6301f7b87c7a271d809aa22fa35ea895e45c3706bdba68eba67d96b8d2fb"
+          }
+        },
+        "observations": {
+          "invalidPending": [
+            {
+              "chunks": [
+                "7b7d0d58"
+              ],
+              "immediateRejection": false,
+              "laterCallsRejected": [
+                false,
+                true,
+                true
+              ]
+            },
+            {
+              "chunks": [
+                "7b7d0d",
+                "58"
+              ],
+              "immediateRejection": false,
+              "laterCallsRejected": [
+                false,
+                true,
+                true
+              ]
+            },
+            {
+              "chunks": [
+                "7b7d0d0d"
+              ],
+              "immediateRejection": false,
+              "laterCallsRejected": [
+                false,
+                true,
+                true
+              ]
+            }
+          ],
+          "validSplitCRLF": true
+        }
+      }
+    ],
+    "regressionReproduced": true,
+    "originalsUnchanged": true,
+    "modelRequests": 0,
+    "scope": "Post-hoc diagnostic on disposable same-image copies of both actual outputs. It reproduces the existing frozen grader failure and extends only its chunk-boundary diagnosis; not an independent model trial or replacement score."
+  },
+  "source": "/tmp/napier-harness-validation-envelope-v1",
+  "candidateRejected": true,
+  "modelRequestsForDiagnosis": 0,
+  "scope": "Original frozen external grader reports a candidate behavior regression despite baseline Run failure. Same-image post-hoc diagnostics reproduce the pending-CR and split-input failures without changing either output or grader. No additional model observation and no default promotion.",
+  "promotionReady": false
+}

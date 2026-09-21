@@ -1,0 +1,1 @@
+Implement the shipping fix in src/shipping.js using the requirements inherited by this branch. The amendment in our earlier discussion overrides the README threshold; preserve the other requirements, including input validation. Read the relevant files before editing, verify the behavior, and modify only src/shipping.js.

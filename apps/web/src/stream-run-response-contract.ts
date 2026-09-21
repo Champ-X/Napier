@@ -15,6 +15,7 @@ export type StreamRunExpectation =
       threadId: string;
       model?: PromptRequest["model"];
       capabilityPreset?: PromptRequest["capabilityPreset"];
+      harnessPolicyPreset?: PromptRequest["harnessPolicyPreset"];
     }
   | {
       kind: "resume";

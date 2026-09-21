@@ -1,0 +1,28 @@
+{
+  "kind": "napier.stream-timing-entrypoint-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:29:02.569485+00:00",
+  "runtimeSnapshot": "/tmp/napier-harness-stream-timing-v1",
+  "builds": [
+    "harness-eval",
+    "cli",
+    "server",
+    "web"
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-stream-timing-entrypoint-builds-v1.log",
+      "sha256": "0924a13db5da3a5068a376410b05f37a6f178cab52610cc0b89682c5de71b70b"
+    },
+    {
+      "path": "/tmp/napier-stream-timing-evidence-v2.mjs",
+      "sha256": "e9f75afa66ba0057ba934636032636db41ae0ae8973dd12b5d44beea7018fa3c"
+    },
+    {
+      "path": "/tmp/napier-core-corpus-v2-preflight-v2.log",
+      "sha256": "04dde70451980007a8a57ce2b484ff27997d518c9b0a999fccd355df9d186d31"
+    }
+  ],
+  "scope": "Compile/build compatibility of the registered stream timing event; not new browser acceptance or full policy quality qualification.",
+  "promotionReady": false
+}

@@ -1,0 +1,215 @@
+{
+  "kind": "napier.pre-edit-verification-components",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T00:05:31.166Z",
+  "components": [
+    {
+      "scenario": "queue",
+      "artifact": {
+        "path": "docs/artifacts/pre-edit-queue-component-2026-09-14.json",
+        "sha256": "7f76ea1e8f63349d59394b8742efbd8dc7b1547800eb03e6ff2a55118a7d5e30"
+      }
+    },
+    {
+      "scenario": "ndjson",
+      "artifact": {
+        "path": "docs/artifacts/pre-edit-ndjson-component-2026-09-14.json",
+        "sha256": "5f907a8a92b7890fe7bcb007408191f37b47fb3df86c6115c08e0e7e7e71620c"
+      }
+    },
+    {
+      "scenario": "mixed",
+      "artifact": {
+        "path": "docs/artifacts/pre-edit-mixed-component-2026-09-14.json",
+        "sha256": "3ba53aa33466388258a97c2e4b6da9bd81e8403bc3c4e0404512380bca59d1ba"
+      }
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 9,
+    "cases": 3,
+    "regressions": [],
+    "blockers": [
+      "Need 30 cases; observed 3"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "b2513b8dabc3110b24e4957a16497ca3c08f017aa5b972fb8d471f731fdff1fe"
+  },
+  "arms": {
+    "baseline": {
+      "runs": 9,
+      "passed": 9,
+      "withPrePatchTestAttempts": 5,
+      "guardedRuns": 0,
+      "guardBlocks": 0
+    },
+    "candidate": {
+      "runs": 9,
+      "passed": 9,
+      "withPrePatchTestAttempts": 9,
+      "guardedRuns": 4,
+      "guardBlocks": 7
+    }
+  },
+  "inputExports": [
+    {
+      "runId": "run_932899ab946b41f6afcc",
+      "workspaceComplete": true,
+      "receiptSha256": "a2cec8e9863235539b35e28ef51eddb3b95de056ce8f02edec6a90a16053bed3",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-queue-v1/failure-run_932899ab946b41f6afcc-initial-input/reproduction.json",
+        "sha256": "970f68254087ce3b0d860e437c20070c888f9d66f13f4c401334d00a43215818"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_b530c756de8b4f98af39",
+      "workspaceComplete": true,
+      "receiptSha256": "0237a19123a170c8b2e18b476292333842d203e244950beff7e2aabc24a7b09d",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-queue-v1/failure-run_b530c756de8b4f98af39-initial-input/reproduction.json",
+        "sha256": "84d1838188f612590f30487086ad585bd3e63d80fd74c955d224a67f6d87446d"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_86205f26349e4956a8f4",
+      "workspaceComplete": true,
+      "receiptSha256": "a7268dbd9a0d3dba9a1ebaa1982bf3dc8df4b4ea47b0d3018f94db25f9fe22de",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-queue-v1/failure-run_86205f26349e4956a8f4-initial-input/reproduction.json",
+        "sha256": "65dfdac1e21de5b9b5c373ec86699f3a2ba2cbc87d096a01d6bbb0dbb373442f"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_5681aa2c7b4848c09023",
+      "workspaceComplete": true,
+      "receiptSha256": "61a09fd9b93187f3a7e39e24c3db4e83a7df90c43cdbd8df1727189a8a421a02",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-queue-v1/failure-run_5681aa2c7b4848c09023-initial-input/reproduction.json",
+        "sha256": "4e49c8dfdcec6c48bc772115dba4183ab0209eef77d2735aabee9c4ef00ec233"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_22b3138433d84934a198",
+      "workspaceComplete": true,
+      "receiptSha256": "bba3caaf02788defc5465722f70949740340da4172b79b7f2899225ed83ec708",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-queue-v1/failure-run_22b3138433d84934a198-initial-input/reproduction.json",
+        "sha256": "4cc54fb8ec336f75dc5894444f080df56abe0f9755e057b64bbf3e044125106c"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_e548980a301b48e39534",
+      "workspaceComplete": true,
+      "receiptSha256": "ff78ecadf044ac6f793ff4d8aba04ece7be560cd15e7022aa299a3d085e13df6",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_e548980a301b48e39534-initial-input/reproduction.json",
+        "sha256": "a7df994273027545662d4c38c015760b0fa210b6674dea9ced81e5409efbe1d0"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_29413e8336b04d6b8a03",
+      "workspaceComplete": true,
+      "receiptSha256": "27b34281a99fdb1d4088a0cad244436f8bf4e546660f2a47e09c4f78247f60a2",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_29413e8336b04d6b8a03-initial-input/reproduction.json",
+        "sha256": "6d787947b8d6448fd5295a3bf124f5cfe6116eb0cb11f2b45ecf8e7acfb64d7e"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_36a9b72bba9647e69926",
+      "workspaceComplete": true,
+      "receiptSha256": "3c35c5eaa90bac1fe073b631d8611afcadd6442b0dbd23c3e43d92efef37d09b",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_36a9b72bba9647e69926-initial-input/reproduction.json",
+        "sha256": "02d2b7360bd9e72ef38be1eaa801c3593f983555e6c17f755de4483142272bbc"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_952d40fa847144be9a89",
+      "workspaceComplete": true,
+      "receiptSha256": "fa8c5fa7732093471871e74195d460edc6ea48131a09c653c34d370c8fd55ff5",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-ndjson-v1/failure-run_952d40fa847144be9a89-initial-input/reproduction.json",
+        "sha256": "e3386a76d092188223a6f15d8858a36b55efed2040559e8e97bafcc3d8baa6f9"
+      },
+      "originalFilesRestored": 4
+    },
+    {
+      "runId": "run_bd101eb0fab94e6baacc",
+      "workspaceComplete": true,
+      "receiptSha256": "fb7a8528254930fb06db2a16c302b3b52d148ed49082f0c62fc3f9d292d167e4",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-mixed-v1/failure-run_bd101eb0fab94e6baacc-initial-input/reproduction.json",
+        "sha256": "5ba4bbff5a90bb29ccd51afdf99621f4f2b60b43dc936785ecf6c13132b5cc7b"
+      },
+      "originalFilesRestored": 11
+    },
+    {
+      "runId": "run_3a27ba20ab7841908e4e",
+      "workspaceComplete": true,
+      "receiptSha256": "b26b1d5b19ea5cbc1528987dddaf743ad0aa71db23d88e9330d7384c19d96fed",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-mixed-v1/failure-run_3a27ba20ab7841908e4e-initial-input/reproduction.json",
+        "sha256": "8e50e2e337f5d8e74f3b5df15c941745a1b2b42c567c818d1b9f503761d0f842"
+      },
+      "originalFilesRestored": 11
+    },
+    {
+      "runId": "run_cf6f3f09f1f645d1a932",
+      "workspaceComplete": true,
+      "receiptSha256": "3099f1d2b46adb39b4c84825104b589a59e908d7c73938272125b5ddc142eded",
+      "receipt": {
+        "path": "/Users/champ/.cache/napier-seven-quality/pre-edit-verification-mixed-v1/failure-run_cf6f3f09f1f645d1a932-initial-input/reproduction.json",
+        "sha256": "389efc530918f6f4042e5e511f750d2a532c982a6857760f78b49c3c2d1df918"
+      },
+      "originalFilesRestored": 11
+    }
+  ],
+  "cleanup": {
+    "recordedAt": "2026-09-14T00:05:31.167Z",
+    "runningContainers": 0,
+    "serviceUrlProbes": [
+      {
+        "urlSha256": "a53a84423a2186096cfc47b014112b890be8b820eeae1ef16b43beba1b912d23",
+        "reachable": false
+      },
+      {
+        "urlSha256": "8246ec547573b7c35dc20e837dd342068415700b5056366a2b2f9260b16f19ec",
+        "reachable": false
+      },
+      {
+        "urlSha256": "74494424d0290fb2bd5938f0fca49456f14047bcd2de8544dd69424342224bfc",
+        "reachable": false
+      },
+      {
+        "urlSha256": "8a2bfe20e7ac5be41107b72bdea90143f6e3b5719c7181797850db98e9a19eff",
+        "reachable": false
+      },
+      {
+        "urlSha256": "817b07aad5f0ca7fc19890fd791cdda18fac38ccb1cfe9a41e519ff4e982579b",
+        "reachable": false
+      },
+      {
+        "urlSha256": "fa6c7a7624ec96e9eb6e23536a5cdfcc49ffecbaa74604a5a44d6be267713193",
+        "reachable": false
+      }
+    ]
+  },
+  "scope": "Three distinct component cases, three paired trials each, same frozen Runtime and static protocol in both arms. This supports ordering feasibility only; no claim that the adapter caused the successful grades. Other mutation paths, unavailable verifiers, recovery and full-composition quality remain unqualified. Original baseline and previous rejected candidate trials are not pooled.",
+  "promotionReady": false
+}

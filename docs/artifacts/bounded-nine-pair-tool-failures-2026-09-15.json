@@ -1,0 +1,425 @@
+{
+  "kind": "napier.raw-tool-failure-taxonomy",
+  "createdAt": "2026-09-15T09:16:55.395Z",
+  "boundReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "0f4e86dbc6205834612b8bfb763b4151bf1c10cc94a9d9506eae5857ade20455"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "c77b837341c2a970f3819bf494faab758a1693d82436febdc4fc344242a5008d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/memory_shipping_current_source_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "d6b2c1c3582e92446551702206f83f27d964fcf21991988d879ab6c7a3e9c72d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/semantic_version_order_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "72fd1db43eb12338c31a0fb28229e4cdce550880770053c5a7b72df6d9b172e6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/semantic_version_order_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "560393a787a7451123bba60efb04f23b8fd59d3ed6161e32ee0939455300cca9"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/rollout_dependency_plan_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "6ff0aa362c16ac2091e14d470af6d14edbb732920afce8d860d187f63fec932b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/rollout_dependency_plan_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "e9c45835cce9d79d8f918f14273d3f08b84fd21d23ad3640f18d7c7d5849d8f9"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/http_retry_policy_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "c65b0253423eff48e9e3e856159d684d59f4371999d18b370b6213ecbca04b7e"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/http_retry_policy_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "f1f52db4fbfa8d445fad67c05fa4b9f57b098c5114dbb5fc06555e0c63d4e8a6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/access_rule_evaluation_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "023c8815b0beca992fe16693264be056b600a1c9becec97b95dd8611643a0132"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/access_rule_evaluation_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "068c1f7e1ed26bdbf0d159d66272813f92356e9c5ae0ace50c0c217b4fbca557"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/booking_calendar_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "ba6f95ad1e68fe6693be16b854bceaf7161badb85c371455f856e35e4b1b9d66"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/booking_calendar_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "3dc8c2910e03d78c7276576a1964efe0a962b04c3d0aa8ee3659c9b16830bfc3"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/safe_csv_export_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "be208528050453937d1f817a80d63193e28bde410fdd68d680972b74bd28a9d2"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/safe_csv_export_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "4f932ee5625754050adcd5b48424b86e227fedb1132af58ea33b8ff2a0b41a26"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "6e3a6a2fd77b4b2275186eea54701c8394ae2c47f1cbaee60c4d312da857fd3b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "c2718bb1f726cd1149c278403d590947e1efd3a56799dec4d93c7507d637e1cb"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-candidate-trial-4/trial-4/result.json",
+      "sha256": "fbb8d192d56aaf1e55d8fe994dfbd94eecfaf5cf34ec48e377a5a561be8c89bc"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-baseline-trial-4/trial-4/result.json",
+      "sha256": "3d56985c24d4e9986d5d784a76328c0523da9deff33b1df10af8003f72e91fae"
+    }
+  ],
+  "groups": [
+    {
+      "runId": "run_d0d7d0c37f5a4f59b195",
+      "caseId": "incremental_ndjson_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "run_command",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 1
+    },
+    {
+      "runId": "run_c553965d6ff14131a763",
+      "caseId": "incremental_ndjson_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": false,
+      "failures": [],
+      "reportedToolFailures": 0
+    },
+    {
+      "runId": "run_b975baf1b25e4c63835a",
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [],
+      "reportedToolFailures": 0
+    },
+    {
+      "runId": "run_569d84397d24401f893d",
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "update_plan_step",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 1
+    },
+    {
+      "runId": "run_65e9a552e12d4e6fbfa0",
+      "caseId": "semantic_version_order_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "verify_workspace",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 1
+        },
+        {
+          "dimensions": [
+            "run_command",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 1
+        },
+        {
+          "dimensions": [
+            "run_command",
+            "invalid_input",
+            "legacy_fallback"
+          ],
+          "count": 1
+        },
+        {
+          "dimensions": [
+            "apply_patch",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 4
+    },
+    {
+      "runId": "run_8ab5f0bbf220485eb0fc",
+      "caseId": "semantic_version_order_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [],
+      "reportedToolFailures": 0
+    },
+    {
+      "runId": "run_44a410b844d44bd38500",
+      "caseId": "rollout_dependency_plan_v2",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "apply_patch",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 6
+        },
+        {
+          "dimensions": [
+            "run_command",
+            "invalid_input",
+            "legacy_fallback"
+          ],
+          "count": 2
+        }
+      ],
+      "reportedToolFailures": 8
+    },
+    {
+      "runId": "run_a6be12f8ea8b42678559",
+      "caseId": "rollout_dependency_plan_v2",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "run_command",
+            "invalid_input",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 1
+    },
+    {
+      "runId": "run_25d9b1251fec41799900",
+      "caseId": "http_retry_policy_v2",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "apply_patch",
+            "policy",
+            "legacy_fallback"
+          ],
+          "count": 1
+        },
+        {
+          "dimensions": [
+            "apply_patch",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 1
+        },
+        {
+          "dimensions": [
+            "run_command",
+            "invalid_input",
+            "legacy_fallback"
+          ],
+          "count": 2
+        }
+      ],
+      "reportedToolFailures": 4
+    },
+    {
+      "runId": "run_c8ca77f81302448cad02",
+      "caseId": "http_retry_policy_v2",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "run_command",
+            "not_found",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 1
+    },
+    {
+      "runId": "run_d4a31c956de64408a75a",
+      "caseId": "access_rule_evaluation_v2",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "run_command",
+            "invalid_input",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 1
+    },
+    {
+      "runId": "run_9ab9042343c24c19a2a8",
+      "caseId": "access_rule_evaluation_v2",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": false,
+      "failures": [],
+      "reportedToolFailures": 0
+    },
+    {
+      "runId": "run_e672cb094ba74663ae8d",
+      "caseId": "booking_calendar_v2",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "run_command",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 1
+    },
+    {
+      "runId": "run_be8da810d6ae427c9e45",
+      "caseId": "booking_calendar_v2",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "run_command",
+            "invalid_input",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 1
+    },
+    {
+      "runId": "run_229899fbf331462a93a1",
+      "caseId": "safe_csv_export_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [],
+      "reportedToolFailures": 0
+    },
+    {
+      "runId": "run_eaa32b9b45b24f6cbb1e",
+      "caseId": "safe_csv_export_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "apply_patch",
+            "unknown",
+            "legacy_fallback"
+          ],
+          "count": 1
+        }
+      ],
+      "reportedToolFailures": 1
+    },
+    {
+      "runId": "run_a03b91bc514d4a37976b",
+      "caseId": "inventory_event_projection_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "taskSuccess": true,
+      "failures": [],
+      "reportedToolFailures": 0
+    },
+    {
+      "runId": "run_0aa5c49110e54ca58a60",
+      "caseId": "inventory_event_projection_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "taskSuccess": false,
+      "failures": [],
+      "reportedToolFailures": 0
+    },
+    {
+      "runId": "run_5c32c7b2899a4e1181a4",
+      "caseId": "inventory_event_projection_v1",
+      "arm": "candidate",
+      "trial": 3,
+      "taskSuccess": true,
+      "failures": [],
+      "reportedToolFailures": 0
+    },
+    {
+      "runId": "run_3e370deecb024214a472",
+      "caseId": "inventory_event_projection_v1",
+      "arm": "baseline",
+      "trial": 3,
+      "taskSuccess": true,
+      "failures": [
+        {
+          "dimensions": [
+            "run_command",
+            "invalid_input",
+            "legacy_fallback"
+          ],
+          "count": 2
+        }
+      ],
+      "reportedToolFailures": 2
+    }
+  ],
+  "scope": "Read-only raw observations including the retired ineligible inventory pair. Tool failures include recovered errors; no reasoning contents are exported. Counts are not a new quality metric or causal attribution."
+}

@@ -1,0 +1,42 @@
+{
+  "kind": "napier.staged-contract-verification-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T05:03:45.143Z",
+  "sourceFiles": {
+    "packages/contracts/src/harness-experiments.ts": "5882a2bc65bb328471bbc5d8f82d749423a19c3fe9038369a5a50b4f155be31a",
+    "packages/runtime/src/harness-policy-profile.ts": "e928b3c8abc6eb0df2754ce8c16c20cf9445eefca85cbc56718a94bf222a7edf",
+    "packages/runtime/src/agent-prompt-layers.ts": "16f078a767ad8676667b4ec1fbdfcc2df167d17fdf4b111b40163f30b0e61239",
+    "packages/runtime/src/contract-verification-protocol.ts": "8513057ea6b9c4f13ebb45aaf434c77091a11ed9e97c95d33ceac1826bcd4644"
+  },
+  "profilePath": "/Users/champ/orca/Napier/benchmarks/harness-profiles/current-integrated.v5.json",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "tests": {
+    "path": "/tmp/napier-staged-verification-offline-tests-2026-09-15.json",
+    "sha256": "24c769eb15fd3c95cd105649fc19b99f8d40300b7baa06e4cbb83de91fb1b643",
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0
+  },
+  "contractsCompile": "passed",
+  "runtimeCompile": "passed",
+  "runtimeReleaseBuild": "blocked_by_existing_source_manifest_drift",
+  "unchangedPriorProtocolConstants": true,
+  "unchangedPriorLayerCombinations": 12,
+  "allV2ContractObligationsRetained": true,
+  "failureEvidence": {
+    "runId": "run_ab7a541496f04ac382cd",
+    "reason": "semantic_stall",
+    "traceCapsuleSha256": "76ab14f007ba7028068840ec8bde5ae8d6853562ae70a6c786ace444bf364931",
+    "observedBytes": 87382,
+    "observedChunks": 22229,
+    "truncated": false,
+    "inputBindingVerified": true,
+    "privatePermissionsVerified": true,
+    "observedPattern": "Repeated speculation about unobserved grader exception expectations followed by rehearsal of implementation and a large check program before any test execution.",
+    "causality": "The observed pattern motivates a staged verification hypothesis; it does not prove the guidance is the sole cause or that the new strategy will improve model behavior."
+  },
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Explicit v5 changes only verification guidance. Original v1/v2 prompts, defaults, ordering gate, watchdog, task, grader and resource limits remain unchanged. Scripted-model integration tests exercise real Agent/store/verifier/patch behavior; they do not prove real-model task success."
+}

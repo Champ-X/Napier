@@ -17,6 +17,7 @@ import {
   resolveModelHarnessResolution,
 } from "../src/model-harness-profile.js";
 import { inferModelHarnessTaskPhases } from "../src/model-harness-resolution.js";
+import { bindRunHarnessProfile } from "../src/model-harness-experiment-profile.js";
 
 const TOOL_NAMES = [
   "request_operator_decision",
@@ -69,6 +70,79 @@ const TOOL_NAMES = [
 ];
 
 describe("model-aware Harness profile", () => {
+  it("keeps fixed-phase schemas stable across ordinary active-tool usage and registration order", () => {
+    const harnessExperimentProfile = bindRunHarnessProfile({
+      harnessPolicyPreset: "coding-python.v1" as const,
+      harnessExperimentProfile: undefined,
+    }).harnessExperimentProfile;
+    for (const [provider, api, id] of [
+      ["deepseek", "openai-completions", "deepseek-v4-flash"],
+      ["openai", "openai-responses", "gpt-5.4"],
+      ["generic", "custom-api", "generic-v1"],
+    ]) {
+      for (const prompt of [
+        "Fix the Python implementation and run tests.",
+        "Research official sources and summarize findings.",
+        "Inspect the website in the browser.",
+        "Analyze the CSV data.",
+        "Continue the task.",
+        "Research the API documentation and implement the code fix.",
+      ]) {
+        const initial = context(prompt);
+        const prepare = (messages: Message[], available = tools()) =>
+          prepareModelHarnessCall({
+            model: specificModel(provider!, api!, id!),
+            context: { ...initial, messages, tools: available },
+            options: {},
+            attempt: 1,
+            harnessExperimentProfile,
+          });
+        const first = prepare(initial.messages);
+        const expected = canonicalJson(first.context.tools);
+        expect(
+          canonicalJson(
+            prepare(initial.messages, tools().reverse()).context.tools,
+          ),
+        ).toBe(expected);
+        const ordinary = first.receipt.activeToolNames.filter(
+          (name) =>
+            ![
+              "create_plan",
+              "update_plan_step",
+              "update_plan_artifact",
+              "replan_plan",
+            ].includes(name),
+        );
+        // Exercise each available tool independently, then accumulated usage in
+        // both orders. Plan lifecycle and newly admitted tools are deliberate
+        // surface changes, covered separately from ordinary use here.
+        for (const sequence of [
+          ...ordinary.map((name) => [name]),
+          ordinary,
+          ordinary.toReversed(),
+        ]) {
+          const messages = [...initial.messages];
+          for (const name of sequence) {
+            messages.push({
+              role: "toolResult",
+              toolCallId: `call_${messages.length}`,
+              toolName: name,
+              content: [{ type: "text", text: "Completed" }],
+              isError: false,
+              timestamp: messages.length,
+            });
+            const next = prepare(messages);
+            expect(next.receipt.taskPhase).toBe(first.receipt.taskPhase);
+            expect(
+              canonicalJson(next.context.tools),
+              `${id}: ${prompt}: ${name}`,
+            ).toBe(expected);
+          }
+        }
+      }
+    }
+  });
+
   it("selects deterministic model-family policies", () => {
     expect(profile("anthropic-messages")).toEqual(
       expect.objectContaining({
@@ -166,6 +240,50 @@ describe("model-aware Harness profile", () => {
         maxRetryDelayMs: 5_000,
         maxRetryDelayMsSource: "caller",
       }),
+    );
+  });
+
+  it("retains the admitted Plan lifecycle after an operation succeeds under tool pressure", () => {
+    const messages: Message[] = [
+      {
+        role: "user",
+        content: "Verify and deliver the retained file.",
+        timestamp: 1,
+      },
+      {
+        role: "toolResult",
+        toolCallId: "reopen",
+        toolName: "update_plan_step",
+        content: [{ type: "text", text: "Plan step reopened" }],
+        isError: false,
+        timestamp: 2,
+      },
+    ];
+    const prepare = (names: string[]) =>
+      prepareModelHarnessCall({
+        model: specificModel("generic", "custom-api", "generic-v1"),
+        context: { messages, tools: namedTools(names) },
+        options: {},
+        attempt: 1,
+      });
+    const selected = prepare([
+      ...TOOL_NAMES,
+      "update_plan_artifact",
+      "replan_plan",
+    ]);
+    expect(selected.receipt.activeToolCount).toBe(24);
+    expect(selected.receipt.activeToolNames).toEqual(
+      expect.arrayContaining([
+        "update_plan_step",
+        "update_plan_artifact",
+        "replan_plan",
+        "apply_patch",
+        "verify_workspace",
+        "run_command",
+      ]),
+    );
+    expect(prepare(TOOL_NAMES).receipt.activeToolNames).not.toContain(
+      "update_plan_artifact",
     );
   });
 
@@ -732,3 +850,19 @@ function rule(id: string, overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 }
+
+it("selects the coding tool surface when the repair target is named search.mjs", () => {
+  const prepared = prepareModelHarnessCall({
+    model: specificModel("deepseek", "openai-completions", "deepseek-v4-flash"),
+    context: context(
+      "Repair the implementation. Preserve exports and tests. Change only src/search.mjs.",
+    ),
+    options: {},
+    attempt: 1,
+  });
+  expect(prepared.receipt.intents).toEqual(["coding"]);
+  expect(prepared.receipt.taskPhase).toBe("coding");
+  expect(prepared.receipt.activeToolNames).toEqual(
+    expect.arrayContaining(["read_file", "apply_patch", "run_command"]),
+  );
+});

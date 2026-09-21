@@ -1,0 +1,214 @@
+{
+  "kind": "napier.low-frequency-queue-probe",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T06:33:52.395452+00:00",
+  "userConstraint": "Only necessary small low-frequency real-model tests; no batch or automatic retries.",
+  "purpose": "Current integrated real-model compliance with async rejection, null signal and sparse-array contract is unresolved by scripted component tests.",
+  "runId": "run_9d21167a1eb64698920a",
+  "caseId": "bounded_async_queue_v1",
+  "runtimeRoot": "/tmp/napier-harness-container-visibility-v1",
+  "profileSha256": "c42365b5b8fc90d6344ad167e0766c509cfdf4d1a37502eb1e767a562e1635ef",
+  "policySha256": "6f74dacb81ea8e84b4e3d75781c4331c3a9204cb41cd68c4296f8c592f6f2ad4",
+  "runLimits": {
+    "maxTurns": 40,
+    "maxTotalTokens": 250000,
+    "maxCostUsd": 0.05,
+    "timeoutMs": 900000
+  },
+  "requestedModel": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "durationMs": 409720,
+  "apiRequests": {
+    "limit": 20,
+    "minimumIntervalMs": 30000,
+    "admitted": 14,
+    "denied": 0,
+    "observedMinimumIntervalMs": 30000,
+    "observedMaximumIntervalMs": 41798,
+    "remainingUnused": 6,
+    "auxiliaryAndSdkRetriesIncluded": true
+  },
+  "usage": {
+    "inputTokens": 107711,
+    "outputTokens": 34478,
+    "cacheReadTokens": 294784,
+    "cacheWriteTokens": 0,
+    "costUsd": 0.025558775200000005
+  },
+  "billingCeilingEstablished": false,
+  "sourceStable": true,
+  "runtimeArtifactStable": true,
+  "runtimeDependencies": {
+    "kind": "napier.runtime-dependency-evidence",
+    "schemaVersion": 1,
+    "runId": "run_9d21167a1eb64698920a",
+    "beforeSha256": "a8d426c32e4f6b55f8af74efe59b850dfb8202ea22a3b50c613bd97c04c050fa",
+    "afterSha256": "a8d426c32e4f6b55f8af74efe59b850dfb8202ea22a3b50c613bd97c04c050fa",
+    "packageCount": 129,
+    "fileCount": 24852,
+    "stable": true,
+    "eligible": true,
+    "contentSha256": "67901f90b990df34c0fe3761f3ca4fc9d8fc7c1c807e1fbd9ce58f47800bbc65"
+  },
+  "runtimeContext": {
+    "valid": true,
+    "auditedCapsules": 13
+  },
+  "originalReport": {
+    "status": "completed",
+    "taskSuccess": true,
+    "graderExitCode": 0,
+    "changed": [
+      "src/job-result.mjs",
+      "src/queue.mjs"
+    ],
+    "toolFailures": 3,
+    "toolFailureClasses": [
+      "cancelled",
+      "policy",
+      "policy"
+    ]
+  },
+  "supplementalContractAudit": {
+    "kind": "napier.queue-contract-audit",
+    "checks": [
+      {
+        "name": "Invalid concurrency rejects through a Promise before invoking jobs",
+        "passed": true
+      },
+      {
+        "name": "Null signal is invalid before invoking any job",
+        "passed": true
+      },
+      {
+        "name": "Sparse array rejects before invoking any job",
+        "passed": true
+      },
+      {
+        "name": "AbortSignal-shaped plain objects are invalid, even if already aborted",
+        "passed": false,
+        "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   resolved: true,\n+   started: 1,\n+   typeError: false\n-   resolved: false,\n-   started: 0,\n-   typeError: true\n  }\n"
+      }
+    ],
+    "passed": false
+  },
+  "strongerGraderOfflineReplay": {
+    "exitCode": 1,
+    "freshModelExecution": false,
+    "apiRequests": 0
+  },
+  "offlineValidation": {
+    "limitTestsPassed": 3,
+    "strongerGraderTestsPassed": 2,
+    "previousFullSuitesRepeated": false
+  },
+  "decision": {
+    "completeContractAccepted": false,
+    "promotionReady": false,
+    "qualification": "insufficient_evidence_with_observed_contract_failure",
+    "reason": "Legacy grader passed, but a forged AbortSignal-shaped plain object is accepted and a job starts. Current integrated model compliance remains unqualified.",
+    "freshBaselineRuns": 0,
+    "furtherPaidRunsScheduled": 0,
+    "newGraderCreatesDistinctTask": false,
+    "historicalReportsRewritten": false
+  },
+  "preflightAttempt": {
+    "path": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v1",
+    "phase": "preflight",
+    "reason": "Expected file hash mistakenly supplied as content hash",
+    "apiBudgetCreated": false,
+    "paidRequests": 0
+  },
+  "files": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v2/plan.json",
+      "sha256": "264ba0c832e49a4848a394dc4290ef97e56b4dfb65f22dba6e01a429f0b06a22"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v2/command.json",
+      "sha256": "61be4816d464656bf148d21d708fe3b93a99c362662b7a050607da47d6fcae81"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v2/candidate.log",
+      "sha256": "7b35b0281edefcd682e0385bf956dacd7e919c51d7f675497d04b02c9be481be"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v2/candidate/trial-1/result.json",
+      "sha256": "00cecab0291e0e35bd10f19797a14202b88b2b0abfb55cecbb2853bfdc6c481b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v2/contract-audit.json",
+      "sha256": "2be893eb4f994f759dfd5cf71d3f3ed8f41de494f5674372cde61e53733461ca"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/low-frequency-queue-v2/v2-offline-regrade.json",
+      "sha256": "8dd8de15925c8a30a9c33fcbaa8d3aaa3e11a4da90ffac6c7e034128959d22bc"
+    },
+    {
+      "path": "/tmp/napier-queue-contract-audit-v1.mjs",
+      "sha256": "3dd4e927a3338a5dddcb8d8871ddc0219a99a4e176f3ab790bdb20e9f2f5813b"
+    },
+    {
+      "path": "/tmp/napier-low-frequency-queue-launch-v2.mjs",
+      "sha256": "36b515552734ec70fc6c8fb623abc799dcd402c9abfc6852dc6b9d2db63c23f8"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-campaign-limits.mjs",
+      "sha256": "8f8ec4f65e87a89fb1c3c3cfddad8e8e4f015bffef61b9f975fb913032e35155"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-campaign-limits.test.mjs",
+      "sha256": "72445f7b910bf78665d7c5aa196a44d32aa2edf951bf65181d5ef0105d2bdf00"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/run-harness-optimization-campaign.mjs",
+      "sha256": "e73f7691c335acadc421a8eccc04ef1339d9336f5ce112a0e78f347fc9f8c253"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/run-harness-optimization-suite.mjs",
+      "sha256": "0a746428e35cf6ac765eadb2a3b1a464c70a3420397209412bf4f3b610239eac"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-queue-signal-grader.test.mjs",
+      "sha256": "a7378fb1df43f232293772dc3ef4f8dd0b42f6a877630b55b41d2602b24d0299"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/outcome.mjs",
+      "sha256": "505a6b596c19319dc50fd57c764a138f312aa0ceec6a645cbfcc3c803a001f0a"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/prompt.md",
+      "sha256": "2e335728784b8d86367c1b842877ede68909c5adc33147080925ad2895a2141b"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/manifest.json",
+      "sha256": "8d70b5b6da5dcc37b38d5271c043511baa57ebcbec91223823b3f6629549a397"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/fixture/README.md",
+      "sha256": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/expected/src/job-result.mjs",
+      "sha256": "e7b146fc46de7b1611145e8f89a1147fc542cc6885f965941a2d713ab6c01bcb"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/expected/src/queue.mjs",
+      "sha256": "d073637f08a42e0acedd7eef8238fadeecac1839c3c953a138c686256dc9e9e4"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/fixture/test/public.test.mjs",
+      "sha256": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/fixture/src/job-result.mjs",
+      "sha256": "53b1e5ccc1dcc2046b5dfdac223f2c1bef03543189c6b7f89e8ddaa6594f1441"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/bounded-async-queue-v2/fixture/src/queue.mjs",
+      "sha256": "22021953186778f427d6154a29ca75c02fd70785ab84c8f83fe672fde1fc916e"
+    }
+  ]
+}

@@ -17,6 +17,7 @@ import {
   ComposerImageError,
 } from "./composer-image-attachments";
 import { ComposerImageAttachments } from "./ComposerImageAttachments";
+import { ComposerHarnessPolicyControl } from "./ComposerHarnessPolicyControl";
 import { ConversationPlanProgress } from "./ConversationPlanProgress";
 import { shellCopy } from "./shell-copy";
 import {
@@ -70,6 +71,7 @@ export function Composer({
     | "browserInteractionConfirmation"
     | "nextRunCapabilityPreset"
     | "setNextRunCapabilityPreset"
+    | "nextRunHarnessPolicy"
     | "commitConfigurationBootstrap"
     | "bootstrap"
   >;
@@ -262,6 +264,10 @@ export function Composer({
                   onSelectedPresetChange={vm.setNextRunCapabilityPreset}
                   onReview={() => onOpenInspector("context")}
                   onReadinessChange={setRunReadiness}
+                />
+                <ComposerHarnessPolicyControl
+                  {...vm.nextRunHarnessPolicy}
+                  disabled={vm.isRunning || !vm.detail}
                 />
                 {!vm.bootstrap?.models.some(
                   (model) => model.provider !== "napier" && model.configured,

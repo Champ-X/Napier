@@ -1,0 +1,409 @@
+{
+  "kind": "napier.failure-invocations-http-retained-baseline-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T11:37:45.480066+00:00",
+  "candidateSource": "/tmp/napier-harness-failure-invocations-v1",
+  "baselineSource": "/tmp/napier-harness-baseline-c454a155",
+  "frozenInputsUnchangedAfterRun": true,
+  "results": [
+    {
+      "arm": "baseline",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/http_retry_policy_v2-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "f25e6004ac8ca631b886d00f9b3c32e8d86a600107238f5fa7d1d96428e674fa",
+      "runId": "run_95f03220d4ab4555a6fc",
+      "retainedObservation": true,
+      "status": "failed",
+      "taskSuccess": false,
+      "externalGradePassed": true,
+      "allowedChanges": true,
+      "changed": ["src/retry-after.mjs", "src/retry.mjs"],
+      "requests": 12,
+      "chargeFen": 127,
+      "durationMs": 386433,
+      "toolCalls": 28,
+      "toolFailures": 0,
+      "verificationStatuses": [],
+      "editOperations": ["replace", "replace"]
+    },
+    {
+      "arm": "candidate",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-failure-invocations-http-v1/http_retry_policy_v2-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "e3475ee8eddcf1ef613000e86f5a260ab716721db886182b0bc7e4fce0ac9a7f",
+      "runId": "run_5ccdc2b2e2ac454d8170",
+      "retainedObservation": false,
+      "status": "completed",
+      "taskSuccess": true,
+      "externalGradePassed": true,
+      "allowedChanges": true,
+      "changed": ["src/retry-after.mjs", "src/retry.mjs"],
+      "requests": 12,
+      "chargeFen": 100,
+      "durationMs": 363300,
+      "toolCalls": 22,
+      "toolFailures": 2,
+      "verificationStatuses": ["failed", "passed"],
+      "editOperations": ["replace", "replace"]
+    }
+  ],
+  "retainedBaseline": {
+    "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/http_retry_policy_v2-baseline-trial-1/trial-1/result.json",
+    "reportSha256": "f25e6004ac8ca631b886d00f9b3c32e8d86a600107238f5fa7d1d96428e674fa",
+    "runId": "run_95f03220d4ab4555a6fc",
+    "sourceCampaign": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5",
+    "originalOutcome": false,
+    "originalStatus": "failed",
+    "countsAsNewRun": false,
+    "rerun": false,
+    "metadataModified": false,
+    "preflightDependencySha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e"
+  },
+  "invocationAudit": [
+    {
+      "arm": "baseline",
+      "runId": "run_95f03220d4ab4555a6fc",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/http_retry_policy_v2-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "f25e6004ac8ca631b886d00f9b3c32e8d86a600107238f5fa7d1d96428e674fa",
+      "capsulesAudited": 12,
+      "modelRequestEvidenceValid": true,
+      "firstInvocationHasPreEditGuidance": false,
+      "preEditPolicyBlocks": 0,
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "failures": [],
+      "workingStates": []
+    },
+    {
+      "arm": "candidate",
+      "runId": "run_5ccdc2b2e2ac454d8170",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-failure-invocations-http-v1/http_retry_policy_v2-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "e3475ee8eddcf1ef613000e86f5a260ab716721db886182b0bc7e4fce0ac9a7f",
+      "capsulesAudited": 11,
+      "modelRequestEvidenceValid": true,
+      "firstInvocationHasPreEditGuidance": true,
+      "preEditPolicyBlocks": 0,
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "failures": [
+        {
+          "eventId": "event_afdcb1cb8e504b36b1d1",
+          "seq": 384,
+          "type": "tool.failed",
+          "callId": "call_00_K8Uxl3rwmKEKHclNjEHU0172",
+          "tool": "run_command",
+          "class": "invalid_input"
+        },
+        {
+          "eventId": "event_2c7d4276340d49f08a80",
+          "seq": 385,
+          "type": "tool.failed",
+          "callId": "call_01_l7wle34pqPPhkm42wh057498",
+          "tool": "run_command",
+          "class": "rate_limited"
+        }
+      ],
+      "workingStates": [
+        {
+          "seq": 22,
+          "capsuleSha256": "0edec5cd129430d5eea3a97ceea9b4d7892784f07fc35d99c24b46bc5a22603e",
+          "rejectedAttempts": [],
+          "pendingReviews": [],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 70,
+          "capsuleSha256": "3ee558d9f00648f1e304b2eb5cf3f2394e99908195583fb7ffa97693f720dab8",
+          "rejectedAttempts": [],
+          "pendingReviews": [],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 129,
+          "capsuleSha256": "b8bd5bae67a6b6bf920fb66610c1016ec862d860cbef23d625f80081855ac4e3",
+          "rejectedAttempts": [],
+          "pendingReviews": [],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 251,
+          "capsuleSha256": "a0cec6c3758562b61c2c6de02d491fba4417161496166ccdf3b7c1873b444d5e",
+          "rejectedAttempts": [],
+          "pendingReviews": [],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 302,
+          "capsuleSha256": "6c09e302f742cc08b4a8629f798621846159e3d2d3d9bae681002621eb47cbd3",
+          "rejectedAttempts": [],
+          "pendingReviews": [],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 350,
+          "capsuleSha256": "ed7eb6b1c9b5e9144c472c7f330ea66e02a2ff129e8a7971dfeb38e3c6ee198e",
+          "rejectedAttempts": [],
+          "pendingReviews": [],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 401,
+          "capsuleSha256": "bbbc7b2c385dca5be91284e05d6f293dd5726378f0a913773a3b117b11055649",
+          "rejectedAttempts": [
+            {
+              "tool": "run_command",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "callId": "call_00_K8Uxl3rwmKEKHclNjEHU0172",
+              "disposition": "correct_input",
+              "laterCompletionObserved": false,
+              "matchingCompletionObserved": false
+            },
+            {
+              "tool": "run_command",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "callId": "call_01_l7wle34pqPPhkm42wh057498",
+              "disposition": "retry_after",
+              "laterCompletionObserved": false,
+              "matchingCompletionObserved": false
+            }
+          ],
+          "pendingReviews": [
+            {
+              "action": "review_failure",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "reason": "correct_input"
+            },
+            {
+              "action": "review_failure",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "reason": "retry_after"
+            }
+          ],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 475,
+          "capsuleSha256": "34fc643d632b26c5217f5723aa75912bac3816968f5f6254193c77a6adfa5a9f",
+          "rejectedAttempts": [
+            {
+              "tool": "run_command",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "callId": "call_00_K8Uxl3rwmKEKHclNjEHU0172",
+              "disposition": "correct_input",
+              "laterCompletionObserved": true,
+              "matchingCompletionObserved": false
+            },
+            {
+              "tool": "run_command",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "callId": "call_01_l7wle34pqPPhkm42wh057498",
+              "disposition": "retry_after",
+              "laterCompletionObserved": true,
+              "matchingCompletionObserved": false
+            }
+          ],
+          "pendingReviews": [
+            {
+              "action": "review_failure",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "reason": "correct_input"
+            },
+            {
+              "action": "review_failure",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "reason": "retry_after"
+            }
+          ],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 530,
+          "capsuleSha256": "b25acdce2f35a878e333494ab7e03ccbdb67ab447600658e0491701798886776",
+          "rejectedAttempts": [
+            {
+              "tool": "run_command",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "callId": "call_00_K8Uxl3rwmKEKHclNjEHU0172",
+              "disposition": "correct_input",
+              "laterCompletionObserved": true,
+              "matchingCompletionObserved": false
+            },
+            {
+              "tool": "run_command",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "callId": "call_01_l7wle34pqPPhkm42wh057498",
+              "disposition": "retry_after",
+              "laterCompletionObserved": true,
+              "matchingCompletionObserved": false
+            }
+          ],
+          "pendingReviews": [
+            {
+              "action": "review_failure",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "reason": "correct_input"
+            },
+            {
+              "action": "review_failure",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "reason": "retry_after"
+            }
+          ],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 576,
+          "capsuleSha256": "65f14b6fcad45ebcee565ac18ca3bcbe983c3f9477536f8b3f501094741aa410",
+          "rejectedAttempts": [
+            {
+              "tool": "run_command",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "callId": "call_00_K8Uxl3rwmKEKHclNjEHU0172",
+              "disposition": "correct_input",
+              "laterCompletionObserved": true,
+              "matchingCompletionObserved": false
+            },
+            {
+              "tool": "run_command",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "callId": "call_01_l7wle34pqPPhkm42wh057498",
+              "disposition": "retry_after",
+              "laterCompletionObserved": true,
+              "matchingCompletionObserved": false
+            }
+          ],
+          "pendingReviews": [
+            {
+              "action": "review_failure",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "reason": "correct_input"
+            },
+            {
+              "action": "review_failure",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "reason": "retry_after"
+            }
+          ],
+          "completion": "not_determined"
+        },
+        {
+          "seq": 641,
+          "capsuleSha256": "3b2acef586f64a16fb489182b919a4b4491af11a8542c55bcf4ff530839f81b2",
+          "rejectedAttempts": [
+            {
+              "tool": "run_command",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "callId": "call_00_K8Uxl3rwmKEKHclNjEHU0172",
+              "disposition": "correct_input",
+              "laterCompletionObserved": true,
+              "matchingCompletionObserved": false
+            },
+            {
+              "tool": "run_command",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "callId": "call_01_l7wle34pqPPhkm42wh057498",
+              "disposition": "retry_after",
+              "laterCompletionObserved": true,
+              "matchingCompletionObserved": false
+            }
+          ],
+          "pendingReviews": [
+            {
+              "action": "review_failure",
+              "eventId": "event_afdcb1cb8e504b36b1d1",
+              "reason": "correct_input"
+            },
+            {
+              "action": "review_failure",
+              "eventId": "event_2c7d4276340d49f08a80",
+              "reason": "retry_after"
+            }
+          ],
+          "completion": "not_determined"
+        }
+      ]
+    }
+  ],
+  "failureContextObservation": {
+    "rejectedEvents": 2,
+    "subsequentAuditedInputs": 5,
+    "bothRecordsRetained": true,
+    "unrelatedCompletionClearedHints": false,
+    "agentCompletedWithPendingContext": true,
+    "pendingHintsAreNotExtraWorkObligations": true
+  },
+  "newDiagnosticFinding": {
+    "scope": "legacy tool failure classification",
+    "actualFailures": "Both calls failed tool-argument schema validation because multiline JavaScript was passed through control-character-free argv.",
+    "recordedClasses": ["invalid_input", "rate_limited"],
+    "causeToInvestigate": "The second echoed script contains HTTP status 429; legacy text classification may treat code in echoed arguments as an actual upstream rate-limit response. This is not evidence of DeepSeek throttling.",
+    "originalEventsPreserved": true
+  },
+  "costAndFrequency": {
+    "newRequests": 12,
+    "newChargeFen": 100,
+    "retainedBaselineRequestsNotRepeated": 12,
+    "minimumObservedIntervalMs": 30001,
+    "concurrency": 1,
+    "perRunRequestLimit": 20,
+    "maxFen": 5000,
+    "committedFen": 1204,
+    "remainingFen": 3796,
+    "requests": 166,
+    "reservedRequests": 0,
+    "denied": 0,
+    "providerInvoice": false
+  },
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "http_retry_policy_v2: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "d4f81c21ad2c474b12396502e9bbd5d555faa1ce977e033570c67372e2f5cc89"
+  },
+  "plannedJobs": 180,
+  "notStartedJobs": 178,
+  "bindings": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-failure-invocations-http-v1/plan.json",
+      "sha256": "645004aa9758bd0daec5ddf937e19ff48e5ecbcf9ed0a53e504124344eda3d47"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-failure-invocations-http-v1/phase-1-result.json",
+      "sha256": "a91280ed1a9f0ade853dd4fc2bf386f6f1f6e7c89e31bf73a97461a816196f97"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-failure-invocations-http-v1/invocation-audit.json",
+      "sha256": "5c1bd11b81c86bee0ba56ddcb49c7b266e1c20bff516d8fcfc7740b735388b71"
+    },
+    {
+      "path": "/tmp/napier-failure-invocations-live-once-v1.mjs",
+      "sha256": "b16f5bd920ebda2557ea3f346b38837f8da610a0f06ea6f8d7644a1dca13afd0"
+    },
+    {
+      "path": "/tmp/napier-failure-invocations-live-audit-v1.mjs",
+      "sha256": "887a1374d095e2485c87a116f679ac5d53065d8cb9dca9cf806f351d26545d73"
+    }
+  ],
+  "limitations": [
+    "One new candidate observation against an unchanged historical baseline; no new independent baseline Run and no pooling of different candidate sources.",
+    "The baseline retains its failed task status despite passing the external grader.",
+    "Fewer requests/time/cost in this observation do not establish a causal efficiency improvement.",
+    "Both failed calls were corrected using different arguments, so their original review hints remain context; this did not prevent task completion.",
+    "No live compaction/recovery occurred in this observation; those deterministic checks remain separate.",
+    "The 30-case/three-trial gate remains insufficient, with 178 jobs unstarted. No default promotion.",
+    "Current tool failure classifier has an observed misclassification pending offline investigation."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

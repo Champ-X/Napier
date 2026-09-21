@@ -1,0 +1,17 @@
+{
+  "kind": "napier.memory-selection-rejection-analysis",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:41:02.511750+00:00",
+  "rejectionArtifact": "/Users/champ/orca/Napier/docs/artifacts/memory-selection-quality-rejection-2026-09-14.json",
+  "rejectionArtifactSha256": "43b9cd798fcd597e86ff6b7b932928df4af123770431e0e9ded3e5c028a4fccb",
+  "captureAssessment": {
+    "reason": "capture_file_access_unavailable",
+    "reasonSha256": "5b07afcb6d0cb5340627352580c637b3da24f204a525ea53f4cdbc34e29ba100",
+    "readFileEnabled": false,
+    "assessment": "Both diagnostic Runs explicitly enabled no tools. captureRunInputs requires enabled read_file before inspecting workspace contents; the unavailable capture and rejected production export correctly preserve that boundary. Empty workspace contents are not authorization to inspect it. This is not an empty-workspace capture defect.",
+    "source": "packages/runtime/src/run-input-capture.ts"
+  },
+  "nextDesignRequirement": "A lexical hit in one reviewed rule must not establish that other reviewed rules are irrelevant. Qualify recall over mixed-language and multi-rule requests before any screening policy promotion; keep the no-match fallback and general constraints, but neither alone resolves this observed partial-match regression.",
+  "policyPromotionReady": false,
+  "overallGoalComplete": false
+}

@@ -1,0 +1,29 @@
+{
+  "kind": "napier.baseline-reuse-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T05:59:42.337Z",
+  "helperPath": "/tmp/napier-bound-baseline-reuse-v1.mjs",
+  "helperSha256": "05abfeedbf98ec0dbb0d512d034296ca58851bad55a4c20477c490c11a96ddb0",
+  "launcherPath": "/tmp/napier-staged-reuse-continuation-v1.mjs",
+  "launcherSha256": "37721a688d6586c5cfa4598b5f5c5e06971580fca516fa62c605c38681f92025",
+  "realExistingReportRunId": "run_569d84397d24401f893d",
+  "reusedBaselineSpawns": 0,
+  "reusedBaselineNewAdmissions": 0,
+  "reusedBaselineNewReservations": 0,
+  "candidateBranchReachedOnce": true,
+  "rejectedMismatchCases": [
+    "report_hash",
+    "audit_hash",
+    "run_identity",
+    "case_identity",
+    "trial_identity",
+    "runtime_artifact",
+    "interval_policy",
+    "model_identity",
+    "candidate_as_baseline"
+  ],
+  "budgetFileUnchanged": true,
+  "modelRequests": 0,
+  "qualityObservationsAdded": 0,
+  "scope": "Actual existing report/audit read and validation through the same branch used by the launcher. Fresh branch uses a local sentinel, not a model. Every mismatch rejects before process dispatch; no paid process or quality sample is created."
+}

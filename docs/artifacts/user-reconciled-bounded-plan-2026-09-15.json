@@ -1,0 +1,50 @@
+{
+  "kind": "napier.user-reconciled-bounded-plan",
+  "createdAt": "2026-09-15T04:25:20.937Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/plan.json",
+  "planSha256": "e4b82154fa788b6f271a3b27ed78c2e5dcba1b5adcc16df5d84eec37512c3650",
+  "source": "/tmp/napier-harness-patch-diagnostics-v1",
+  "sourceFreezeSha256": "2c89b872dccb8b89492c3b36c96b7e3edc967b5489049538b159dbbbf23d28c7",
+  "profileFileSha256": "f5406ee1a169f1060ee7c1648c0332eb0b340dfcc9389ff64be0d3767fa2bb75",
+  "dispatchIndices": [
+    50,
+    51,
+    53,
+    52
+  ],
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 2000,
+    "remainingFen": 8000,
+    "requests": 0,
+    "reservedRequests": 0,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "reconciliation": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/user-reported-spending-checkpoint-2026-09-15.json",
+    "sha256": "50584e482d3cbf471cd688f12efcf3e11fef7090f73685500898ca1786a1b5cc"
+  },
+  "necessity": "Two unobserved original repair tasks exercise configuration precedence/prototype safety and stable cursor pagination, extending representative current-source quality coverage. Actual model edit selection, completion and independent grader outcomes cannot be established offline. Reuse prior successful JSON Patch evidence only in its original cohort; do not repeat it here. Same frozen diagnostic candidate and explicit v4 policy throughout this batch.",
+  "scope": "At most two serial candidate-first original pairs. Stop on candidate/evidence failure or regression; no later batch queued. Original tasks/graders, 64 admissions/Run, 15-second spacing, token/cost limits and 15-minute Run deadline retained. Cumulative CNY100 ceiling starts from the user-reported CNY20 aggregate checkpoint, while new requests use the existing conservative tariff. No historical quality exclusions are repaired by reconciliation.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

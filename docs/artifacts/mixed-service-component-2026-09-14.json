@@ -1,0 +1,277 @@
+{
+  "kind": "napier.mixed-service-component",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:45:02.225Z",
+  "root": "/Users/champ/.cache/napier-seven-quality/mixed-service-component-v1",
+  "snapshot": "/tmp/napier-harness-stream-timing-v1",
+  "runId": "run_9cfa21571fff49c09975",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "status": "completed",
+  "taskSuccess": true,
+  "allowedChanges": true,
+  "changed": [
+    "backend/quote.py",
+    "frontend/booking.ts"
+  ],
+  "qualifyingEvidence": true,
+  "durationMs": 99911,
+  "toolFailures": 1,
+  "verifications": [
+    {
+      "eventId": "event_aef349f6f5f54187979a",
+      "callId": "call_00_trFaToNAWTLGROOQtVvs7390",
+      "name": "verify_workspace",
+      "args": {
+        "cwd": "frontend",
+        "kind": "typecheck",
+        "runtime": "node",
+        "target": "tsconfig.json",
+        "timeoutMs": 120000
+      },
+      "capsuleSha256": "9d529d12a6d72e1630b1a26f87a685da15f7267ac9a833cd5d7291beccaf2491",
+      "status": "passed",
+      "kind": "typecheck",
+      "runtime": "node",
+      "snapshotStatus": null,
+      "workspaceSnapshotSha256": "402129ed65f9c33f7c9484f39996d8a844e324c3790abd18b81aeb305bd47f41",
+      "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23"
+    },
+    {
+      "eventId": "event_8745cf5033c249619ca8",
+      "callId": "call_00_92bgXO0Wij4HqSVyJyVB8919",
+      "name": "verify_workspace",
+      "args": {
+        "kind": "test",
+        "runtime": "node",
+        "target": "frontend/booking.test.mjs",
+        "testRunner": "node-test",
+        "timeoutMs": 120000
+      },
+      "capsuleSha256": "9d529d12a6d72e1630b1a26f87a685da15f7267ac9a833cd5d7291beccaf2491",
+      "status": "passed",
+      "kind": "test",
+      "runtime": "node",
+      "snapshotStatus": null,
+      "workspaceSnapshotSha256": "176aef1ab781f0bc71a3e3daaa2c4bcec6df4c10a0a03dc501c04b766f5a6f14",
+      "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23"
+    },
+    {
+      "eventId": "event_2f52e45c1e974b89bc21",
+      "callId": "call_00_IRcyB4pODJd14CERRJbf2788",
+      "name": "verify_workspace",
+      "args": {
+        "cwd": "frontend",
+        "kind": "typecheck",
+        "runtime": "node",
+        "timeoutMs": 120000
+      },
+      "capsuleSha256": "9d529d12a6d72e1630b1a26f87a685da15f7267ac9a833cd5d7291beccaf2491",
+      "status": "passed",
+      "kind": "typecheck",
+      "runtime": "node",
+      "snapshotStatus": null,
+      "workspaceSnapshotSha256": "402129ed65f9c33f7c9484f39996d8a844e324c3790abd18b81aeb305bd47f41",
+      "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23"
+    },
+    {
+      "eventId": "event_0e7d607469864762b123",
+      "callId": "call_00_J28nXeWWocT0EErsyi4F4602",
+      "name": "verify_workspace",
+      "args": {
+        "cwd": "frontend",
+        "kind": "typecheck",
+        "runtime": "node",
+        "target": "booking.ts",
+        "timeoutMs": 120000
+      },
+      "capsuleSha256": "9d529d12a6d72e1630b1a26f87a685da15f7267ac9a833cd5d7291beccaf2491",
+      "status": "failed",
+      "kind": "typecheck",
+      "runtime": "node",
+      "snapshotStatus": null,
+      "workspaceSnapshotSha256": "402129ed65f9c33f7c9484f39996d8a844e324c3790abd18b81aeb305bd47f41",
+      "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23"
+    },
+    {
+      "eventId": "event_411a809fb9044e66a939",
+      "callId": "call_00_hj1aQK8X71xUeHTJNXoi2770",
+      "name": "verify_workspace",
+      "args": {
+        "cwd": "frontend",
+        "kind": "typecheck",
+        "runtime": "node",
+        "target": ".",
+        "timeoutMs": 120000
+      },
+      "capsuleSha256": "9d529d12a6d72e1630b1a26f87a685da15f7267ac9a833cd5d7291beccaf2491",
+      "status": "passed",
+      "kind": "typecheck",
+      "runtime": "node",
+      "snapshotStatus": null,
+      "workspaceSnapshotSha256": "402129ed65f9c33f7c9484f39996d8a844e324c3790abd18b81aeb305bd47f41",
+      "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23"
+    },
+    {
+      "eventId": "event_7b293323638f4924bb2f",
+      "callId": "call_00_VNQLWNMhxt3Be4H7gGVh2609",
+      "name": "verify_workspace",
+      "args": {
+        "cwd": "backend",
+        "kind": "test",
+        "runtime": "python",
+        "timeoutMs": 120000,
+        "verifier": "unittest"
+      },
+      "capsuleSha256": "9d529d12a6d72e1630b1a26f87a685da15f7267ac9a833cd5d7291beccaf2491",
+      "status": "passed",
+      "kind": "test",
+      "runtime": "python",
+      "snapshotStatus": "unchanged",
+      "workspaceSnapshotSha256": "a086b52f06ae97e300d363c10e56d1caf696f78b5b6acfc8b5819999efac05e0",
+      "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+    },
+    {
+      "eventId": "event_72a29b307f0a42d1abd5",
+      "callId": "call_00_JuI6fVwD5jraCjlvFMJZ1516",
+      "name": "verify_workspace",
+      "args": {
+        "cwd": ".",
+        "kind": "typecheck",
+        "runtime": "node",
+        "target": "frontend",
+        "timeoutMs": 120000
+      },
+      "capsuleSha256": "9d529d12a6d72e1630b1a26f87a685da15f7267ac9a833cd5d7291beccaf2491",
+      "status": "passed",
+      "kind": "typecheck",
+      "runtime": "node",
+      "snapshotStatus": null,
+      "workspaceSnapshotSha256": "176aef1ab781f0bc71a3e3daaa2c4bcec6df4c10a0a03dc501c04b766f5a6f14",
+      "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23"
+    }
+  ],
+  "failedToolCalls": [
+    {
+      "eventId": "event_86aeeeefa5a04feaa8c2",
+      "callId": "call_00_qTN9FdssBiXIt6uUqCYd0793",
+      "name": "verify_workspace",
+      "args": {
+        "affectedBy": [
+          "booking.ts"
+        ],
+        "cwd": "frontend",
+        "kind": "typecheck",
+        "runtime": "node",
+        "target": "tsconfig.json",
+        "timeoutMs": 120000
+      },
+      "capsuleSha256": "9d529d12a6d72e1630b1a26f87a685da15f7267ac9a833cd5d7291beccaf2491",
+      "diagnostic": "affectedBy supports kind=test and cannot be combined with target"
+    }
+  ],
+  "process": {
+    "observedBeforeCleanup": true,
+    "sessions": [
+      {
+        "processId": "process_d6c550fd69624fdfb754",
+        "runId": "run_9cfa21571fff49c09975",
+        "runtime": "node",
+        "status": "cancelled",
+        "actions": {
+          "start": 1,
+          "poll": 1,
+          "cancel": 1
+        }
+      }
+    ],
+    "runningSessions": 0,
+    "matchingProcessIds": [
+      "process_d6c550fd69624fdfb754"
+    ],
+    "requirements": {
+      "requiredActions": {
+        "start": 1,
+        "poll": 1,
+        "cancel": 1
+      },
+      "noRunningSessions": true
+    },
+    "passed": true,
+    "exchanges": {
+      "required": false,
+      "passed": true
+    }
+  },
+  "service": {
+    "passed": true,
+    "observedAt": "2026-09-13T21:41:56.169Z",
+    "url": "http://127.0.0.1:54455/",
+    "receipts": [
+      {
+        "route": "ready",
+        "status": 200,
+        "bodySha256": "4e5451726698ae4552eacc58e1339c7be5a0b638e8d2cc21cf83456b4071b7e5"
+      },
+      {
+        "route": "",
+        "status": 200,
+        "bodySha256": "4c95459fcc197692de2340b53477b0498fab58172410eefaef7e0478d27f9924"
+      },
+      {
+        "route": "app.js",
+        "status": 200,
+        "bodySha256": "ed634fec6b6ac3969b6d8383f464d26f9e15608ea9291da33db2b6fe3dad8611"
+      },
+      {
+        "route": "booking.js",
+        "status": 200,
+        "bodySha256": "19706b0c44a38b4a98aea222a5b8d88f4e23da600de8e5a5a968eb4e563280eb"
+      },
+      {
+        "route": "api/quote",
+        "status": 200,
+        "bodySha256": "9ea358c14c542742599173bf32304d4d931cd0a54ef520f10ea9017f11eb54f9"
+      },
+      {
+        "route": "api/quote",
+        "status": 200,
+        "bodySha256": "1b7a86953680c58b4be70f4ac026d8b02d32863ae6464cafb9cd1daa399bd841"
+      },
+      {
+        "route": "api/quote",
+        "status": 400,
+        "bodySha256": "a62a355bdd6a33358dd50530a37f4bf9709adc979e2f33045f8bd064d21fda66"
+      }
+    ],
+    "scope": "Independent HTTP observer: served HTML and transpiled TypeScript modules plus live Python API through Node proxy. No rendered browser acceptance.",
+    "processId": "process_d6c550fd69624fdfb754",
+    "runId": "run_9cfa21571fff49c09975",
+    "eventId": "event_e98b774cb9f94a4a882b",
+    "serviceIdentitySha256": "95fd4bac36248d9cf518ca7f1b80c7e926b46bbb8d12b0813fbad4eca098b46e"
+  },
+  "closedAfterAgentCancel": true,
+  "bindingsVerified": true,
+  "reportSha256": "27c0db748587b3e266999f1486cd6da9b7cddc4a8b8bc83ac038f22240f59d5c",
+  "finalTextSha256": "9b5f8eb22a289abcfcac29cc00bbb8ec09117ed70eb9def0905ce8706161f20c",
+  "finalReportAssessment": "Accurately reports both edits, separate frontend typecheck/tests and Python tests, ready/poll/cancel lifecycle. Correctly attributes observed POST log entries to unknown probe traffic rather than claiming Agent-issued requests; discloses missing browser verification.",
+  "limitation": "Working-state projection conservatively labels Node verification with non-root cwd as scope_not_observed. Agent repeated checks with root-relative target before finishing. One rejected Node typecheck combined affectedBy with kind=typecheck and target; one completed-but-failed TypeScript invocation targeted a .ts file as tsconfig. All failures are retained.",
+  "scope": "One real-model mixed TypeScript frontend/Python HTTP backend task. Independent observer checks served assets and API outcomes while Agent-started service is alive. Not paired quality qualification or rendered browser acceptance.",
+  "promotionReady": false,
+  "logs": [
+    {
+      "path": "/tmp/napier-mixed-service-component-v1.log",
+      "sha256": "50fe4f26cae291f47767c106864f12f9c11082d88e05cdd81502dff71d83d2c7"
+    },
+    {
+      "path": "/tmp/napier-mixed-service-evidence-v1.mjs",
+      "sha256": "2a0b132e2ce885f4b6fa1b02dffb42288c6a0477291d797a3a6713af96338ce2"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/mixed-service-component-v1/freeze-receipt.json",
+      "sha256": "11ee171e5c0058cab103aab316f80897ccafbc498e1a92b08260f02606beb0a4"
+    }
+  ]
+}

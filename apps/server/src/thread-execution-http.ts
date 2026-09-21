@@ -235,6 +235,9 @@ function registerPromptHttp(
       services.kernel.runPrompt({
         threadId,
         text: body.text,
+        ...(body.harnessPolicyPreset
+          ? { harnessPolicyPreset: body.harnessPolicyPreset }
+          : {}),
         ...(body.images ? { images: body.images } : {}),
         ...(body.model ? { model: body.model } : {}),
         ...(body.modelRoute ? { modelRoute: body.modelRoute } : {}),

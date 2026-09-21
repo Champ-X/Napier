@@ -1,0 +1,21 @@
+{
+  "kind": "napier.original-baseline-stop-clarification",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:13:57.084Z",
+  "priorResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/pagination-reused-baseline-pair-v1/result.json",
+  "priorResultSha256": "b1032156d6e174acaf22a00f50bbef33d56a758d1017087018b77fe48fdf535a",
+  "priorAuditPath": "/Users/champ/orca/Napier/docs/artifacts/staged-pagination-reuse-final-audit-2026-09-15.json",
+  "priorAuditSha256": "df04a3c6baf490aef3cb12d36c92ae6ad612f21e749993a0de4349f88784bdb9",
+  "candidateRunId": "run_9a1d0aec74c646499a50",
+  "baselineRunId": "run_76af8c7911754698b595",
+  "originalStop": "aggregate_quality_or_evidence_failed",
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "originalObservationEligible": false,
+  "originalReservationsReleased": false,
+  "sourceChanged": false,
+  "qualityGateChanged": false,
+  "reason": "The original NDJSON candidate succeeded but its baseline failed after a thinking guard, with incomplete provider usage. That observation remains ineligible. All later original reports and aggregate blockers are retained. One different unobserved original pair may add independent evidence without clearing the inherited blocker or enabling promotion. Observe the original resumable-byte-upload contract on the current staged-verification candidate and frozen baseline. Actual model repair of out-of-order chunks, idempotent repeats, overlapping conflicts, write atomicity and ownership must be checked with real tool execution and independent grading. No current-source pair or same-epoch prequalified baseline exists for this task; keep every earlier report and reuse binding.",
+  "modelRequests": 0
+}

@@ -1,0 +1,850 @@
+{
+  "kind": "napier.contract-guidance-component-qualification",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T19:56:50.576169+00:00",
+  "campaignRoot": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1",
+  "baselineSnapshot": "/tmp/napier-harness-input-capture-v2",
+  "candidateSnapshot": "/tmp/napier-harness-contract-guidance-v1",
+  "model": "deepseek/deepseek-v4-flash",
+  "sourceChange": [
+    "packages/runtime/src/agent-working-state-context.ts"
+  ],
+  "collectionComplete": true,
+  "inputsStable": true,
+  "suiteResultSha256": "3de7aa509a666938eff9d5419c418d90a7c4092f234aa3b268f859d0bb7160c7",
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 9,
+    "cases": 3,
+    "regressions": [],
+    "blockers": [
+      "Need 30 cases; observed 3"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "b2513b8dabc3110b24e4957a16497ca3c08f017aa5b972fb8d471f731fdff1fe"
+  },
+  "counts": {
+    "baseline": {
+      "settled": 9,
+      "passed": 9,
+      "toolFailures": 11,
+      "toolCalls": 188
+    },
+    "candidate": {
+      "settled": 9,
+      "passed": 9,
+      "toolFailures": 15,
+      "toolCalls": 195
+    }
+  },
+  "observations": [
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_11a555b362d94358b875",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 0,
+      "toolCalls": 22,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/http_retry_policy_v1-baseline/trial-1/result.json",
+      "reportFileSha256": "c6f61cdaeecb8f130be36e76d46a524f4c6f40521e36f963d037b4408b52af9b",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "5dd08de7b208fc15ddd036679e047300deb615fde086098eb0d33e6f8fe3ec0a"
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_7c5c7dc94e47419f8310",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 2,
+      "toolCalls": 21,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/http_retry_policy_v1-baseline/trial-2/result.json",
+      "reportFileSha256": "d1e0e074a31f43e8b570da807799f10215ae66d0c6af77c7d5ac7893b5873f32",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "c393dd518876ba828cc2298122521045a678bbacf588d772dc255a24e788535d"
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_37c782531d194a14b9d2",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 1,
+      "toolCalls": 26,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/http_retry_policy_v1-baseline/trial-3/result.json",
+      "reportFileSha256": "3d5b02f14181311f235df75686a8e649b725e4c0da2f60f449705142292b7a95",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "6e8e3198136e77c6475d50c06428f55a82f7b653fdca8cda252f7b42ec98e38b"
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_51b1ac987af54c2a8afb",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 2,
+      "toolCalls": 25,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/http_retry_policy_v1-candidate/trial-1/result.json",
+      "reportFileSha256": "01940cb90659f4d895aabaec3256399103cce3e7b1b5b2f44711d680939eeff8",
+      "postEditGuidanceInvocations": 9,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "8c4e3c59b3dfaa11aece18fe62daecb284835ef70e84ec583e3fe35f067fa4af"
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_06a925d35ea247b19e17",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 4,
+      "toolCalls": 20,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/http_retry_policy_v1-candidate/trial-2/result.json",
+      "reportFileSha256": "55ffc1d9c3bdd79a4dddfaa43eb14af41590b6023abd272023653f065f31807c",
+      "postEditGuidanceInvocations": 6,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "252a9a55211c77a209349cfa379e8f9764de0b3f789b9da782422383c11bfd2f"
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_cff90b1db7d04b5e844d",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 3,
+      "toolCalls": 20,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/http_retry_policy_v1-candidate/trial-3/result.json",
+      "reportFileSha256": "d0f997c7834ccc830a4f3df25ce5671263d28622f4796eb07b7e24b5684bd8bf",
+      "postEditGuidanceInvocations": 4,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "e62666f231af30b9af0c0d28f3f015838bb9f6ceae0b9b81e7d5aafc19a5fce4"
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_9cc73f4bfe0243fdbb2b",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 1,
+      "toolCalls": 20,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/semantic_version_order_v1-baseline/trial-1/result.json",
+      "reportFileSha256": "1d6130384dcef161795769d613b65af73e4b5e769c0eb28f438942cc81d3d581",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "06d41db80a35c8004cf7aa5ced1b6c2393f326a2e76b379f107dd8d8846d2221"
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_0926deccdd5c4497b847",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 0,
+      "toolCalls": 19,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/semantic_version_order_v1-baseline/trial-2/result.json",
+      "reportFileSha256": "173c2934be5ce3d01d3232f3e64123066b5cd49ba3fd8823c0c6b4ea4f7f6d50",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "7352a5e39cd5585944ce9ccbc90b4645e0db1a2abc8c850e6091f0c2d64e2b89"
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_606af314ad4c4454b7f7",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 3,
+      "toolCalls": 21,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/semantic_version_order_v1-baseline/trial-3/result.json",
+      "reportFileSha256": "b823b7082c201af95545e42479160e8766d5dc7fad0ffd883a4e256dec92eecc",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "b1785d8b89970203c47930087302c3042194487d66a64db94456300f2035de32"
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_8912df6be2a14405a29e",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 0,
+      "toolCalls": 28,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/semantic_version_order_v1-candidate/trial-1/result.json",
+      "reportFileSha256": "57531fc610080e42e61ca39bb1311d825b701b454d00eb53c1d4d53da6b66014",
+      "postEditGuidanceInvocations": 10,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "49a6bb5a2d85fff749ce1150b63a5011007a39b74c31ea7f2331a0bc8c713aed"
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_7161c246d5134b3d9805",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 2,
+      "toolCalls": 21,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/semantic_version_order_v1-candidate/trial-2/result.json",
+      "reportFileSha256": "f6b819105bb1d44aac2fef3e857115e2521b8c9707955f3ff0fa2b9bb482c881",
+      "postEditGuidanceInvocations": 8,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "51f65d61e32c0cd145ab825a44baeb3bccd4e817450e7af34ab37986f7a1bdb6"
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_10c1e5e7327842809d03",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 1,
+      "toolCalls": 20,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/semantic_version_order_v1-candidate/trial-3/result.json",
+      "reportFileSha256": "9f46c34aa531d6537599a5ad01aadc5f639a790420d59f396f7ffa80637a46dd",
+      "postEditGuidanceInvocations": 6,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "33176b1f7edf873a633c691eb4caeafb7bf910b398b539b6a90dfcb6303fa658"
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_7a7a8fa1c59a4c90b5ec",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 2,
+      "toolCalls": 18,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/ttl_lru_cache_v1-baseline/trial-1/result.json",
+      "reportFileSha256": "a38abc8c20afad85da888ce5bab4d0ef9b6fbebd8e904a05d51d79c1ddbb4eaa",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "390ceb431716ace44e317d6b4e1109bce497c63d2cd7f75a895a4526adf393d5"
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_ec3526628ec8426a98cf",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 1,
+      "toolCalls": 23,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/ttl_lru_cache_v1-baseline/trial-2/result.json",
+      "reportFileSha256": "93f206f4909113df73d37cb55c1fef1b42f3ae2492e41e0eabb859c1ab775632",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "d3475936b0f1289b3d35b9124f967a56021f508ad53df5e2d5aaaec503298f54"
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_f3d25d60b2b2439f96af",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 1,
+      "toolCalls": 18,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/ttl_lru_cache_v1-baseline/trial-3/result.json",
+      "reportFileSha256": "1dfcd4f87476b1a4c4433f93500c1572cea54266e0f8ec320ae8e9b38ad9ca5a",
+      "postEditGuidanceInvocations": 0,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "40647abae3a589474081c996a7e164dfd08b5338f444cf709859cf3b8ad2ca6c"
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_0c893e2a3b9c458a97cb",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 0,
+      "toolCalls": 22,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/ttl_lru_cache_v1-candidate/trial-1/result.json",
+      "reportFileSha256": "50d19f0417f626efb3de83f5e92f8a180bb87052ace5c983b3e46c89b1e9a2bd",
+      "postEditGuidanceInvocations": 5,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "48c3544fd730f4ad8648004fc974da422d3a266c1c22825d1757cc1307978acf"
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_783eecd7222b428d8581",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 0,
+      "toolCalls": 18,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/ttl_lru_cache_v1-candidate/trial-2/result.json",
+      "reportFileSha256": "bd5db9f2a0a5195cce365adc9e14124aa5d1fb1845385dc3c23e04680f8e6075",
+      "postEditGuidanceInvocations": 6,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "59935a458a558b39fca8009075d7fb9ad133106784353a73762d2fda6c1d6cb8"
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_1e200fc8faff42fcb453",
+      "taskSuccess": true,
+      "status": "completed",
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeArtifactSha256": "9d0a45f5e120387ef85329c5d5907aa242256d93a29cc6bfe17f882c9ebc22a4",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      "toolFailures": 3,
+      "toolCalls": 21,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/contract-guidance-suite-v1/ttl_lru_cache_v1-candidate/trial-3/result.json",
+      "reportFileSha256": "a068c15b128560191cfe9cdfad81a19ede8e46660eb7cb64345062c6c834d182",
+      "postEditGuidanceInvocations": 6,
+      "preEditGuidanceInvocations": 0,
+      "invocationBindingsVerified": true,
+      "deliveryAuditSha256": "15d69a945e7c8b2e66a0e00f598d49793f0e1618c5a618b6f81d5eaa8694390f"
+    }
+  ],
+  "scope": "Three-family component pilot within the previously rejected composition; not original-baseline qualification, automatic semantic verification, or evidence of lower latency/cost. All original failures remain retained.",
+  "promotionReady": false,
+  "actualEditOperations": {
+    "baseline": {
+      "replace:completed": 18
+    },
+    "candidate": {
+      "replace:completed": 20
+    }
+  }
+}

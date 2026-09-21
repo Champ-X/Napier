@@ -711,7 +711,7 @@ describe("transactional LocalStore", () => {
     expect(migrated.getThread(thread.id).eventCount).toBe(3);
     expect(migrated.listAgents()[0]?.runLimits).toEqual({
       maxTurns: 64,
-      maxTotalTokens: 1_000_000,
+      maxTotalTokens: 0,
       maxCostUsd: 25,
       timeoutMs: 1_800_000,
     });

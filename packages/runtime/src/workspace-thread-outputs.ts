@@ -47,7 +47,9 @@ export function formatThreadOutputGuidance(threadId: string): string {
   const directory = threadOutputDirectory(threadId);
   return [
     `This Thread's generated output directory is ${directory}/.`,
-    "For new standalone deliverables (slides, HTML sites, reports, documents, images, or data exports), create a new subdirectory there and keep all scripts, styles, assets, and verification files together. Declare the exact paths in the Plan and link those paths in the final answer. Never reuse a previous task's index.html or verification directory for a new deliverable.",
+    "This directory convention does not request extra deliverables or widen the user's permitted edit paths. For source maintenance, preserve explicit single-file or other scope limits: use existing tests or inline command checks instead of creating unrequested verification helpers. A Plan cannot authorize extra files.",
+    "Use the generated output directory only when the user has not specified a destination. A user-specified relative file path, including a filename alone, is relative to the workspace root unless the user established another destination; preserve that path exactly in the Plan, writes, and final link. Do not relocate a requested file into the generated output directory.",
+    "For new standalone deliverables without a user-specified destination (slides, HTML sites, reports, documents, images, or data exports), create a new subdirectory in the generated output directory and keep required assets together. Declare the exact paths in the Plan and link those paths in the final answer. Never reuse a previous task's index.html or verification directory for a new deliverable.",
     "Continue this Thread's existing deliverable in place. Read other Threads' outputs as inputs, but copy them into this Thread's output directory before changing them. Existing project/source-code maintenance stays at its requested repository paths; do not relocate application source into the output directory.",
   ].join("\n");
 }

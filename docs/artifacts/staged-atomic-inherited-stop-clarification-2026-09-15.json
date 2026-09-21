@@ -1,0 +1,21 @@
+{
+  "kind": "napier.original-baseline-stop-clarification",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:25:39.915Z",
+  "priorResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/upload-original-pair-v1/result.json",
+  "priorResultSha256": "9c4676872fa1ab20c70f2ee0b5e05b3e1c5897fb525cdfe9c4098c18fc013abe",
+  "priorAuditPath": "/Users/champ/orca/Napier/docs/artifacts/staged-upload-final-audit-2026-09-15.json",
+  "priorAuditSha256": "8f8e690edc293c958340a29449ddae0bf4b35960ac77313daea1f1e7c00433c1",
+  "candidateRunId": "run_9a1d0aec74c646499a50",
+  "baselineRunId": "run_76af8c7911754698b595",
+  "originalStop": "aggregate_quality_or_evidence_failed",
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "originalObservationEligible": false,
+  "originalReservationsReleased": false,
+  "sourceChanged": false,
+  "qualityGateChanged": false,
+  "reason": "The original NDJSON candidate succeeded but its baseline failed after a thinking guard, with incomplete provider usage. That observation remains ineligible. All later original reports and aggregate blockers are retained. One different unobserved original pair may add independent evidence without clearing the inherited blocker or enabling promotion. The original atomic JSON Patch task previously exposed pre-verification semantic stalls and token exhaustion in older candidates. The frozen staged-verification candidate has no observation for this original task. A single unchanged candidate-first pair is necessary to test whether the actual model executes the supplied pointer, own-key, copy/move and rollback contract within the original limits; offline protocol delivery tests cannot establish live completion. Preserve every old failure and stop immediately on a new candidate failure or evidence problem.",
+  "modelRequests": 0
+}

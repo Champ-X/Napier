@@ -219,7 +219,9 @@ function limitSummaries(view: RunEventTraceView): string[] {
       ? [`max-turns ${formatNumber(view.maxTurns)}`]
       : []),
     ...(view.maxTotalTokens !== undefined
-      ? [`max-tokens ${formatNumber(view.maxTotalTokens)}`]
+      ? [
+          `max-tokens ${view.maxTotalTokens === 0 ? "unlimited" : formatNumber(view.maxTotalTokens)}`,
+        ]
       : []),
     ...(view.maxCostUsd !== undefined
       ? [`max-cost ${formatNumber(view.maxCostUsd)}`]

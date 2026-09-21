@@ -28,6 +28,7 @@ export function createContextProjectionReceipt(input: {
   prepared: ContextProjectionPreparationReceipt;
   pressure: ModelContextTokenPressureReceipt;
   runCompactionReceiptSha256?: string;
+  runtimeContextReceiptSha256?: string;
 }): ContextProjectionReceiptV1 {
   const promptSources = input.compiledPrompt.layers.flatMap((layer) =>
     layer.sources.map((source) => ({
@@ -39,6 +40,7 @@ export function createContextProjectionReceipt(input: {
   );
   const projected =
     Boolean(input.runCompactionReceiptSha256) ||
+    Boolean(input.runtimeContextReceiptSha256) ||
     input.prepared.pruning.replacementCount > 0 ||
     input.pressure.status === "projected";
   const content = {
@@ -110,6 +112,9 @@ export function createContextProjectionReceipt(input: {
     tokenPressureReceiptSha256: input.pressure.contentSha256,
     ...(input.runCompactionReceiptSha256
       ? { runCompactionReceiptSha256: input.runCompactionReceiptSha256 }
+      : {}),
+    ...(input.runtimeContextReceiptSha256
+      ? { runtimeContextReceiptSha256: input.runtimeContextReceiptSha256 }
       : {}),
   };
   return validateContextProjectionReceipt({
@@ -220,7 +225,12 @@ export function validateContextProjectionReceipt(
       ...(receipt.runCompactionReceiptSha256 !== undefined
         ? ["runCompactionReceiptSha256"]
         : []),
+      ...(receipt.runtimeContextReceiptSha256 !== undefined
+        ? ["runtimeContextReceiptSha256"]
+        : []),
     ]) ||
+    (receipt.runtimeContextReceiptSha256 !== undefined &&
+      !hash(receipt.runtimeContextReceiptSha256)) ||
     (receipt.runCompactionReceiptSha256 !== undefined &&
       !hash(receipt.runCompactionReceiptSha256)) ||
     !validIdentity(receipt) ||
@@ -313,7 +323,9 @@ function componentState(
 function validProjectionState(receipt: ContextProjectionReceiptV1): boolean {
   const pruned = receipt.prunedToolResultCount > 0;
   const pressure = receipt.removedMessageCount > 0;
-  const compacted = Boolean(receipt.runCompactionReceiptSha256);
+  const compacted = Boolean(
+    receipt.runCompactionReceiptSha256 || receipt.runtimeContextReceiptSha256,
+  );
   return (
     (receipt.toolResultPruning === "applied") === pruned &&
     receipt.prunedToolResultBytes > 0 === pruned &&

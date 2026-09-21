@@ -1,0 +1,211 @@
+{
+  "kind": "napier.recovered-trial-failure-closeout",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T07:07:45.736Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/recovered-ndjson-pair-v1/plan.json",
+  "planSha256": "b922864cd7681fa4a83a0cae2803d8930bbfa0db008db300b55023de6668c8f7",
+  "originalCollectorResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/recovered-ndjson-pair-v1/result.json",
+  "originalCollectorResultSha256": "9e97458bded99c47c2628af46fbc4193c204e08bd57dbddbaac4f082be11b34d",
+  "reconciledResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/recovered-ndjson-pair-v1/reconciled-result.json",
+  "reconciledResultSha256": "4e0f23d7a108b956b85a07cc9b35f9c4e6298663d4b2b34aa4fc1b101b314156",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-4/trial-4/result.json",
+  "reportSha256": "c93497d2aa8d9cb02ebbbc1965a186c85e4542bf35c51653a6bb6dcee4e346a5",
+  "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/audit-180.json",
+  "auditSha256": "209a55e9ba79eeef47cb81e1b0ed13c4dce9f390d6f0d13997fcdf0c5e8f42fd",
+  "runId": "run_d2d2215e7ae242e19125",
+  "status": "failed",
+  "taskSuccess": false,
+  "graderExitCode": 1,
+  "durationMs": 125558,
+  "changed": [],
+  "toolFailures": 0,
+  "localAdmissions": 4,
+  "newFinancialRequests": 3,
+  "newSettledFen": 3,
+  "newReservedFen": 600,
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 4141,
+      "remainingFen": 5859,
+      "requests": 287,
+      "reservedRequests": 2,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 2000,
+      "committedFen": 4744,
+      "remainingFen": 5256,
+      "requests": 290,
+      "reservedRequests": 3,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "unreceiptedReservations": [
+    {
+      "id": 88,
+      "status": "reserved",
+      "charged_fen": 600
+    },
+    {
+      "id": 109,
+      "status": "reserved",
+      "charged_fen": 600
+    },
+    {
+      "id": 290,
+      "status": "reserved",
+      "charged_fen": 600
+    }
+  ],
+  "qualification": {
+    "kind": "napier.recovered-campaign-quality",
+    "schemaVersion": 1,
+    "recoveryProtocolSha256": "c952f1ca5477f2c89bd094f4d49dbc07ea034d35ea242d68b6ea7d8380b8cd91",
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "rawQuality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 9,
+      "cases": 9,
+      "regressions": [],
+      "evidenceBlockers": [
+        "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+        "incremental_ndjson_v1:3: missing arm"
+      ],
+      "blockers": [
+        "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+        "incremental_ndjson_v1:3: missing arm",
+        "Need 30 cases; observed 9",
+        "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+        "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+        "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+        "transaction_savepoints_v1: need 3 paired trials; observed 1",
+        "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+        "config_layers_v1: need 3 paired trials; observed 1",
+        "cursor_pagination_v1: need 3 paired trials; observed 1",
+        "resumable_byte_upload_v1: need 3 paired trials; observed 1",
+        "atomic_json_patch_v1: need 3 paired trials; observed 1"
+      ],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "d2c381f8311d19579424d60ce77fbdb3358b5c6ab277e0b989bfeb8cbd5ab2e2"
+    },
+    "qualificationQuality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 9,
+      "cases": 9,
+      "regressions": [],
+      "evidenceBlockers": [
+        "incremental_ndjson_v1:3: missing arm"
+      ],
+      "blockers": [
+        "incremental_ndjson_v1:3: missing arm",
+        "Need 30 cases; observed 9",
+        "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+        "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+        "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+        "transaction_savepoints_v1: need 3 paired trials; observed 1",
+        "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+        "config_layers_v1: need 3 paired trials; observed 1",
+        "cursor_pagination_v1: need 3 paired trials; observed 1",
+        "resumable_byte_upload_v1: need 3 paired trials; observed 1",
+        "atomic_json_patch_v1: need 3 paired trials; observed 1"
+      ],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "f84c555807b16d788082bf1f03856186a75e34f83b11e916128cf3383ee81876"
+    },
+    "unexpectedBlockers": [
+      "incremental_ndjson_v1:3: missing arm"
+    ],
+    "retiredIneligibleObservations": [
+      {
+        "runId": "run_76af8c7911754698b595",
+        "caseId": "incremental_ndjson_v1",
+        "trial": 0,
+        "arm": "baseline",
+        "status": "failed",
+        "taskSuccess": false,
+        "reportDigest": "e21211d142753536461610b896cbd732d08e648055d864e350e8ce65953ca7ea"
+      },
+      {
+        "runId": "run_9a1d0aec74c646499a50",
+        "caseId": "incremental_ndjson_v1",
+        "trial": 0,
+        "arm": "candidate",
+        "status": "completed",
+        "taskSuccess": true,
+        "reportDigest": "6904c467d518685bfda058265e255ebf3b292cd2cf9294004e933adbf38bd5ce"
+      }
+    ],
+    "supplementalTrialRequired": true,
+    "supplementalTrial": 3,
+    "originalCampaignPromotionReady": false,
+    "promotionReady": false,
+    "scope": "A new prospective qualification cohort, not repair or promotion of the original campaign. Preserve the original schedule and append one whole new trial; require three eligible pairs per case. No candidate failure or eligible baseline failure may be retired. No reservation is released."
+  },
+  "baselineStarted": false,
+  "originalFailedReportsPreserved": true,
+  "originalCollectorErrorPreserved": true,
+  "newCandidateFailureRetirable": false,
+  "paidChildPidsConfirmedExited": [
+    50733
+  ],
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "modelRequestsDuringReconciliation": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Original candidate failed before edits/verification; the offset report path was corrected in a separate projection without rerunning or rewriting original evidence. Preserve candidate failure and all reservations; stop qualification for this source."
+}

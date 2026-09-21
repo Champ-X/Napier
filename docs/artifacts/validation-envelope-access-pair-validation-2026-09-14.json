@@ -1,0 +1,234 @@
+{
+  "kind": "napier.validation-envelope-access-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T12:59:18.398Z",
+  "phaseSha256": "8bde11bde7727dcd71769278aed6d63957b3331a948782193d359845254a199d",
+  "oracleFreezeSha256": "9a62f8d72c6f36dc388eb4a3c84817368b141156b72d4b382ee036835067b26b",
+  "baselineClaimReplay": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/access-baseline-claim-replay.json",
+    "sha256": "aec922eab1dcc8be1ffbb9a32a47b6325dacc8b5dedc95d916e7b1f5a9d83a08",
+    "evidence": {
+      "kind": "napier.access-retained-capability-claim-replay",
+      "schemaVersion": 1,
+      "runId": "run_6114db809a3d4ff09c11",
+      "reportSha256": "2ce941a1d384cafd0f63ca256fb35b616476582e02ebd6624f506693945de3f9",
+      "baselineRunStatus": "failed",
+      "baselineError": "The model response made a contradicted capability claim",
+      "results": [
+        {
+          "index": 6,
+          "textSha256": "e893e02c1c6435e4e010358378ce275e4248787f623a312dbed2508b82b83c9f",
+          "baselineClaims": [
+            "apply_patch",
+            "workspace_file_apply"
+          ],
+          "currentClaims": []
+        },
+        {
+          "index": 15,
+          "textSha256": "e746f49ecbbf5457a000387fc29e4963a0441ef70fccdb83bdba1356c8108c99",
+          "baselineClaims": [
+            "apply_patch",
+            "workspace_file_apply",
+            "workspace_process",
+            "git_inspect"
+          ],
+          "currentClaims": []
+        },
+        {
+          "index": 16,
+          "textSha256": "9c39fc1e670b8a23f69753cd1c403604a54d2612c15b085ebad40467aee8711a",
+          "baselineClaims": [
+            "run_command"
+          ],
+          "currentClaims": []
+        }
+      ],
+      "realModelRequests": 0,
+      "scope": "Pure classifier replay of original baseline text; does not change original Run status or establish a new Agent trajectory"
+    }
+  },
+  "results": [
+    {
+      "arm": "baseline",
+      "runId": "run_6114db809a3d4ff09c11",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/access_rule_evaluation_v2-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "2ce941a1d384cafd0f63ca256fb35b616476582e02ebd6624f506693945de3f9",
+      "originalTaskSuccess": false,
+      "originalRunStatus": "failed",
+      "originalGraderExitCode": 0,
+      "toolFailures": 0,
+      "changed": [
+        "src/access.mjs",
+        "src/resource.mjs"
+      ],
+      "verificationStatuses": [],
+      "modelRequests": 17,
+      "minimumIntervalMs": 30000,
+      "capsulesAudited": 17,
+      "modelRequestBindingsVerified": true,
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "originalReportUnchanged": true,
+      "regrade": {
+        "output": "/tmp/napier-access-v3-regrade-baseline-v1",
+        "oracleSha256": "50a9c3c4370b2d5b798c1e60d13cd3e8d333c021c9f8d6edd5e1cedff0555375",
+        "copied": {
+          "receipt": {
+            "kind": "napier.harness-observed-workspace",
+            "schemaVersion": 1,
+            "runId": "run_6114db809a3d4ff09c11",
+            "files": {
+              "README.md": "b8fc1843f40af0658459a87d8b548e2edad0a5ddd5015288ab2245c55f91f1ba",
+              "src/access.mjs": "eb7c47b3d7b5dee8057f8a5eb35299cf151b936664c20b950ba7fba57f14a0e0",
+              "src/resource.mjs": "da56270d14d70071860d89be74cbf36bdfb9d5eb099c570d503dfaf0f42a76bb",
+              "test/public.test.mjs": "bd1e7f993b9fc74d9c2f6de5eb53a66e448fcfc6e1044f21011525769f8f235f"
+            },
+            "contentSha256": "ccac1113e3eec5c012e3a31ee64c0b6b14a9ad9bea61315bbfd6e681a46f3647"
+          },
+          "fileCount": 4,
+          "bytes": 9506,
+          "scope": "File bytes only; modes, dependencies and external services are not restored"
+        },
+        "exitCode": 0,
+        "signal": null,
+        "error": null,
+        "stdout": "Wildcard boundaries, complete validation and deny precedence passed\nLexicographic IDs, conjunction, full validation and independent outputs passed\n",
+        "stderr": "",
+        "workspaceUnchanged": true,
+        "taskSuccess": false
+      }
+    },
+    {
+      "arm": "candidate",
+      "runId": "run_2f5185dbf8674c59a4cc",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/access_rule_evaluation_v2-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "afc8deb4de1d62fd798ac8a635b18f7c78d21542470618e15de71f493c47364d",
+      "originalTaskSuccess": true,
+      "originalRunStatus": "completed",
+      "originalGraderExitCode": 0,
+      "toolFailures": 0,
+      "changed": [
+        "src/access.mjs",
+        "src/resource.mjs"
+      ],
+      "verificationStatuses": [
+        "failed",
+        "passed"
+      ],
+      "modelRequests": 14,
+      "minimumIntervalMs": 30000,
+      "capsulesAudited": 13,
+      "modelRequestBindingsVerified": true,
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "originalReportUnchanged": true,
+      "regrade": {
+        "output": "/tmp/napier-access-v3-regrade-candidate-v1",
+        "oracleSha256": "50a9c3c4370b2d5b798c1e60d13cd3e8d333c021c9f8d6edd5e1cedff0555375",
+        "copied": {
+          "receipt": {
+            "kind": "napier.harness-observed-workspace",
+            "schemaVersion": 1,
+            "runId": "run_2f5185dbf8674c59a4cc",
+            "files": {
+              "README.md": "b8fc1843f40af0658459a87d8b548e2edad0a5ddd5015288ab2245c55f91f1ba",
+              "src/access.mjs": "874e84fb6621f92a66765442071459814bd139896712058968acf5c1c3ca84a4",
+              "src/resource.mjs": "97fa221259b8d70847941a3c14c3c40305f8e6525b8b80dbdb7e4c5f99554b0e",
+              "test/public.test.mjs": "bd1e7f993b9fc74d9c2f6de5eb53a66e448fcfc6e1044f21011525769f8f235f"
+            },
+            "contentSha256": "b2739ed72b7187d61d0f3abb8a51889d721f416b51cacb6170050c5fb9e9bdd3"
+          },
+          "fileCount": 4,
+          "bytes": 8708,
+          "scope": "File bytes only; modes, dependencies and external services are not restored"
+        },
+        "exitCode": 0,
+        "signal": null,
+        "error": null,
+        "stdout": "Wildcard boundaries, complete validation and deny precedence passed\nLexicographic IDs, conjunction, full validation and independent outputs passed\n",
+        "stderr": "",
+        "workspaceUnchanged": true,
+        "taskSuccess": true
+      }
+    }
+  ],
+  "originalQuality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 3,
+    "cases": 3,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 3",
+      "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+      "http_retry_policy_v2: need 3 paired trials; observed 1",
+      "access_rule_evaluation_v2: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "c192fdc5520a84fc1991dcacbf133af6362578e26ea68ad64d5feb7047931b07"
+  },
+  "supplementalRegression": false,
+  "supplementalCandidatePassed": true,
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 5000,
+      "priorSpendFen": 110,
+      "committedFen": 1512,
+      "remainingFen": 3488,
+      "requests": 207,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 5000,
+      "priorSpendFen": 110,
+      "committedFen": 1804,
+      "remainingFen": 3196,
+      "requests": 238,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14"
+      }
+    }
+  },
+  "unstartedJobs": 174,
+  "scope": "Supplemental regrades in disposable copies of exact retained outputs; zero additional model observations. Original outcomes remain unchanged.",
+  "promotionReady": false
+}

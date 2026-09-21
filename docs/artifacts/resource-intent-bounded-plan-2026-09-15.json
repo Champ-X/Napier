@@ -1,0 +1,62 @@
+{
+  "kind": "napier.resource-intent-collection-plan",
+  "createdAt": "2026-09-15T01:46:13.754Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-resource-intent-core-v13/plan.json",
+  "planSha256": "c1d9f058b2a605fb5f00e229cb02d57642f4c8629199473f6105de1807504985",
+  "sourceFreezePath": "/tmp/napier-harness-resource-intent-v1/freeze.json",
+  "sourceFreezeSha256": "a66da1e9aa9e6af8e95ffb7b25bea6d32927cf13620b250038422c5a46699687",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+  "driverFreezeSha256": "cb2cf2fb5e473ff1a46b18af04e2d46bb2b9b7b9418c661f981d5dbbc394588d",
+  "profileFileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398",
+  "dispatchIndices": [
+    49,
+    48
+  ],
+  "scheduledJobs": 180,
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 7709,
+    "remainingFen": 2291,
+    "requests": 674,
+    "reservedRequests": 6,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "host": {
+    "kind": "napier.harness-host-awake",
+    "schemaVersion": 1,
+    "platform": "darwin",
+    "observedAt": 1789436773751,
+    "lastTransition": {
+      "at": "2026-09-15 09:12:03 +0800",
+      "state": "Wake",
+      "detail": "DarkWake to FullWake from Deep Idle [CDNVA] : due to UserActivity Assertion Using AC (Charge:80%)"
+    },
+    "eligible": true,
+    "reason": "full_wake",
+    "contentSha256": "efc15c3008e8c05a6b4d129dc655646a4059fb71b62a17a29f62b41811ae14ed"
+  },
+  "necessity": "Offline replay establishes that resource identifiers misclassified the original BM25 repair task as research. New source classifies it as coding with no task, grader, watchdog, deadline or token/request changes. One candidate-first paired observation is needed to measure actual tool selection, repair completion and grader outcome; offline tests cannot establish those model behaviors. This is not an availability probe or evidence that the previous semantic stall is fixed. Stop after this pair or the first candidate/evidence failure; no config or later batch queued.",
+  "scope": "New immutable source cohort preserves the complete original 30-case/3-trial qualification schedule. Dispatch only one original BM25 pair, candidate first. Old upload success and failed BM25 observation retained separately and not counted here. Serial admissions >=15 seconds, equal 64-request ceilings, unchanged 15-minute Run windows and cumulative CNY100 ledger. No promotion from a single pair.",
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false
+}

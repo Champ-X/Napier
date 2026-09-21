@@ -1,0 +1,57 @@
+{
+  "kind": "napier.request-budget-context-bounded-plan",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T17:55:47.508Z",
+  "source": "/tmp/napier-harness-request-budget-context-v1",
+  "sourceFreezeSha256": "ab7dd3cce935478fccd2ff3a099ad51edfb72c1a697a6a1940ee8c3e91d3173d",
+  "profileFileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v6",
+  "driverChanged": false,
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-request-budget-context-core-v10/plan.json",
+  "planSha256": "d30a0457bf9e772301c942e3d9da11126a66998a6751dcaad9d7fe8ab6d1b2a3",
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "jobCount": 180,
+  "dispatchIndices": [
+    33,
+    32
+  ],
+  "requestLimits": {
+    "perRun": 64,
+    "minIntervalMs": 15000,
+    "concurrency": 1
+  },
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 5767,
+    "remainingFen": 4233,
+    "requests": 639,
+    "reservedRequests": 3,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "The prior atomic JSON Patch candidate passed independent code grading but exhausted its Run token budget. Offline replay verifies the new per-request remaining-budget context, not actual model completion behavior. One candidate-first pair on unchanged original task and grader is necessary to test that behavior. Stop before baseline on candidate failure or invalid usage evidence; do not reuse prior-source pairs or replay unrelated completed cases.",
+  "scope": "One serial pair on new frozen source, original full 30-case/3-trial cohort and graders. Equal 64 admissions per Run, >=15 seconds spacing, unchanged 15-minute deadlines and task limits. Cumulative CNY100 ledger including all historical charges and reservations. Prior unpaired failure and six old-source pairs retained separately; no later batch queued.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

@@ -1,0 +1,363 @@
+{
+  "kind": "napier.sample-identity-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T02:28:19.498Z",
+  "paidApiCalls": 0,
+  "promotionReady": false,
+  "qualificationReady": false,
+  "scope": "Offline sample identity validation; no current model execution or production behavior qualification.",
+  "validation": {
+    "before": {
+      "passed": 1,
+      "failed": 6
+    },
+    "final": {
+      "passed": 32,
+      "failed": 0,
+      "files": 5
+    },
+    "sourceBindings": [
+      {
+        "path": "scripts/harness-sample-identity.mjs",
+        "sha256": "112c2c8cf6d6c64121759d63ddf4f0d841eaf2182d76379ba974760980a8af82",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/harness-sample-identity.mjs"
+      },
+      {
+        "path": "scripts/harness-sample-identity.test.mjs",
+        "sha256": "9189b87ecfc76cce4e72c65c357d24a5f7c7ec616ac11520738fa9c8ab488340",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/harness-sample-identity.test.mjs"
+      },
+      {
+        "path": "scripts/harness-campaign-evidence.mjs",
+        "sha256": "52e53ebf5e3ff6fd99737a6bff17c06e41efba05b3ec179628793bae9baf228c",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/harness-campaign-evidence.mjs"
+      },
+      {
+        "path": "scripts/harness-campaign-evidence.test.mjs",
+        "sha256": "9223c7bf0ef1f896e045cde6533f9d87b0d74478e4359bba81af146896dde0f5",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/harness-campaign-evidence.test.mjs"
+      },
+      {
+        "path": "scripts/harness-suite.mjs",
+        "sha256": "cd925c4c7513e3a06b24169296cb2293a06e6ea75b7f37f77ea36233bb7ecbcb",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/harness-suite.mjs"
+      },
+      {
+        "path": "scripts/harness-suite.test.mjs",
+        "sha256": "0fa7040840bac09fab43e6133eefe3db5599171082913fd677444cf1ce84228b",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/harness-suite.test.mjs"
+      },
+      {
+        "path": "scripts/edit-format-calibration-evidence.mjs",
+        "sha256": "431c697a5666faa1c7c3bdaf4e053465473cb5759a53ae16aec3499c6252d162",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/edit-format-calibration-evidence.mjs"
+      },
+      {
+        "path": "scripts/edit-format-calibration-evidence.test.mjs",
+        "sha256": "bed7ef81645bf6d25fc4d042c603cd35a0cc897cfa76ec867479d8977d5409aa",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/edit-format-calibration-evidence.test.mjs"
+      },
+      {
+        "path": "scripts/harness-core-corpus.test.mjs",
+        "sha256": "6e16cbefbf05d1923e87950cea6995b3b8458b49449d089b347f50d046addcb2",
+        "archive": "/tmp/napier-sample-identity-current-v1/scripts/harness-core-corpus.test.mjs"
+      }
+    ],
+    "evidence": [
+      {
+        "path": "/tmp/napier-sample-identity-before-v2.log",
+        "sha256": "c9e4cbaf21b0a03a58050053794837d94dc575e18a67c36e708a240078d6fda1"
+      },
+      {
+        "path": "/tmp/napier-sample-identity-focused-v1.log",
+        "sha256": "031502a97e18ab047c551f1db88d981c5b5ad190641dd19636eefa63f68bac9c"
+      },
+      {
+        "path": "/tmp/napier-sample-identity-focused-v2.log",
+        "sha256": "86923610a72b070e4901d4fd85904dff9c77dea465ef4bd5f28d8d814c60b531"
+      },
+      {
+        "path": "/tmp/napier-sample-identity-focused-v2.json",
+        "sha256": "88aeec12dc6fb28e712a703cebb99464e0e95b62632167ac8266606b3883215f"
+      },
+      {
+        "path": "/tmp/napier-sample-identity-audit-v1.mjs",
+        "sha256": "b2de6cba615c71dc17ce6d36238bfc712ef166e39de1b5cebbc822ee0b8e2771"
+      },
+      {
+        "path": "/tmp/napier-sample-identity-architecture-v1.log",
+        "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+      }
+    ]
+  },
+  "historicalReassessment": {
+    "observations": 57,
+    "originalBytesUnchanged": true,
+    "originalQualityUnchanged": true,
+    "quality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 27,
+      "cases": 10,
+      "regressions": [
+        "bounded_async_queue_v1:0: task completion regressed",
+        "bounded_async_queue_v1:0: new false completion"
+      ],
+      "blockers": [
+        "incremental_ndjson_v1:2: missing arm",
+        "bounded_async_queue_v1:1: missing arm",
+        "bounded_async_queue_v1:2: missing arm",
+        "Need 30 cases; observed 10",
+        "incremental_ndjson_v1: need 3 paired trials; observed 2",
+        "bounded_async_queue_v1: need 3 paired trials; observed 1"
+      ],
+      "verdict": "regressed",
+      "promotionReady": false,
+      "contentSha256": "a8791f307cf8682dbe4ec0ef979dd71172103780ce573a29ec80a0eea0d69956"
+    },
+    "bindings": [
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/suite-result.json",
+        "sha256": "7d436d025a2a7b2042c7cda2801e3b1810aa7eae07af852ff87ac303b1ba62bf"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_retry_policy_v1-baseline/trial-1/result.json",
+        "sha256": "31cd020bc7ad6c1b7407e2322e02b5ef805af68c351d465e8e7eabaa1e088c7a"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_retry_policy_v1-baseline/trial-2/result.json",
+        "sha256": "b3a29a0bc552a5959039dc0abc2c314c34079c8e42b0fdd669daebad4931d0da"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_retry_policy_v1-baseline/trial-3/result.json",
+        "sha256": "3d6d696211fde3d2a3deb4568a05b373ce0ef6de39947575c8a544f6055ad41a"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_retry_policy_v1-candidate/trial-1/result.json",
+        "sha256": "66f1ab471510cbbd56df1485ff6f9c9ecd68142d4afec7b01c73ae10a8addb19"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_retry_policy_v1-candidate/trial-2/result.json",
+        "sha256": "29cfbf6a47a92345ef00e77f341d287fd2b1429c3cf4f17718e3596b7ca098a8"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_retry_policy_v1-candidate/trial-3/result.json",
+        "sha256": "baea877c8ffb5663f8ff715bfa0e16ade3aaf7fe379624b4f64741829911085d"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/rollout_dependency_plan_v1-candidate/trial-1/result.json",
+        "sha256": "2fa503bd8f51377ea672c8166270574b61af3178747034019be1b99e948a53fb"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/rollout_dependency_plan_v1-candidate/trial-2/result.json",
+        "sha256": "eaaa43a2f02dc93bb770f31028f2076e7ede3090a6b0eff541cf743e21f50c65"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/rollout_dependency_plan_v1-candidate/trial-3/result.json",
+        "sha256": "2dbce9af75e868f4779308e9daeef3a68cd961a9217a99dca21ee2643a2632d0"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/rollout_dependency_plan_v1-baseline/trial-1/result.json",
+        "sha256": "9d6f9b20be9a38abbd1aaa7ce6043ff4e204e1506dc878bbefd0d5f3fe16544c"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/rollout_dependency_plan_v1-baseline/trial-2/result.json",
+        "sha256": "0c566cb0fad91837b8191fc69383df2f30e9526eb159f0d16898189ef46e4496"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/rollout_dependency_plan_v1-baseline/trial-3/result.json",
+        "sha256": "1f42d888633b695904ba4d329c28d51f6889bd773948ae17b66afe63d9534cea"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/access_rule_evaluation_v1-baseline/trial-1/result.json",
+        "sha256": "d08acb13337bb5fbc8dd127c88a18179215016674938ac48399e3b04ca26567c"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/access_rule_evaluation_v1-baseline/trial-2/result.json",
+        "sha256": "fdb5317b28b821e2e094f92625bbcee18fac8cd59efb9320aeb9eb7d803cd633"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/access_rule_evaluation_v1-baseline/trial-3/result.json",
+        "sha256": "eb363d29080fdc9893da89b99f9b811271100491150630340fda452f75b8067b"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/access_rule_evaluation_v1-candidate/trial-1/result.json",
+        "sha256": "602bedecdff18f1588d07c26315ac42915462c4e3bea6f432f84fe32e54b7627"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/access_rule_evaluation_v1-candidate/trial-2/result.json",
+        "sha256": "f36a81fffb841dd2f3fb330a92cb80f872f90372e1836a05046d156afabc51a2"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/access_rule_evaluation_v1-candidate/trial-3/result.json",
+        "sha256": "caf28ad9257633231d14b42d39ac28d991dde97a8466b2e514d6331436e30573"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/booking_calendar_v1-candidate/trial-1/result.json",
+        "sha256": "00c68debf48ec68315101499ac5b68fc3a2f90c0ee5f165ff5f3a95c13151f0d"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/booking_calendar_v1-candidate/trial-2/result.json",
+        "sha256": "dcc3c130df49aa1d79c3f76a73b5c3d16db61739ff69f47ac545ec31cfe2965b"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/booking_calendar_v1-candidate/trial-3/result.json",
+        "sha256": "1eebf0a020f6cb3cacdb9695b3c61287321584cfe9c91e7f6e7f17edf7f34e00"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/booking_calendar_v1-baseline/trial-1/result.json",
+        "sha256": "0b91301d0596337a975c88fffede0f5e2d63e5b70da51aacfb02dfabb866fb22"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/booking_calendar_v1-baseline/trial-2/result.json",
+        "sha256": "53581ec1e8fdb9409589e406a60969be1114eaa6639b38bf2d1880b3bf83dcca"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/booking_calendar_v1-baseline/trial-3/result.json",
+        "sha256": "edd40d2f9b9b265c1bbfe31799bc67cb45f935d76ae2c3d1ae98bd2aef4f092a"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/safe_csv_export_v1-baseline/trial-1/result.json",
+        "sha256": "987f5b33cf428c59e67299e593ae9a5e90beb37cbc999825cbf894097c96d988"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/safe_csv_export_v1-baseline/trial-2/result.json",
+        "sha256": "9468b87fcd5de9cbdc52c9e49935e145a86c7cb396f7f7e151b4301b0e0b08af"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/safe_csv_export_v1-baseline/trial-3/result.json",
+        "sha256": "74d9070baad4634ea82c7548f441df3c0d15d884e0388d2cc9bc84187d12f47f"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/safe_csv_export_v1-candidate/trial-1/result.json",
+        "sha256": "753fce6c0b4b9445fe5f3af5b9287221c3adac7e8894be600964e73a4d05da83"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/safe_csv_export_v1-candidate/trial-2/result.json",
+        "sha256": "a0d8491454cd367585a84b8bedd4b7d3f6d4888d78d35a8b684e66f98c7709f0"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/safe_csv_export_v1-candidate/trial-3/result.json",
+        "sha256": "da64087ce69adfa0531e05a84a559bac9460e7155ce9c3ce9d3275921e4f4fbe"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/inventory_event_projection_v1-candidate/trial-1/result.json",
+        "sha256": "72b12fc2e2b0a8d0aef7365dffa24ae1a209e839ed614bf1d5c34a164d670c0f"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/inventory_event_projection_v1-candidate/trial-2/result.json",
+        "sha256": "9f3093d4bd221b222e6f24aa767b7e4f8613b8f97cb489c625bd46e47e6f1d8a"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/inventory_event_projection_v1-candidate/trial-3/result.json",
+        "sha256": "35bb3793d703e9995f51d8e17addad04de2f99c08f747c21946cfc01587a5ca0"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/inventory_event_projection_v1-baseline/trial-1/result.json",
+        "sha256": "9737378632f569da3362f7fc704fd80c34ae285691b7f6d8e4a50b3f513395a7"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/inventory_event_projection_v1-baseline/trial-2/result.json",
+        "sha256": "1c48f53db361abcaacfc91300b3b176a4d2a1ffb061bb73db03c881ff3682a43"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/inventory_event_projection_v1-baseline/trial-3/result.json",
+        "sha256": "4cbfdbf70e010dec8db29c2e5a5fcced02d87a304f5cf0b7efbbf6a1584f806d"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/weighted_expense_allocation_v1-baseline/trial-1/result.json",
+        "sha256": "f382751140706ff8c0c0b2f40459b0365400d5faab76ef5d8acb073b3f94f1c7"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/weighted_expense_allocation_v1-baseline/trial-2/result.json",
+        "sha256": "6a1661ac1a4da2b3868a9c9ac19a55cf9cdf9d55b46c93d0cdbd46b15c8420af"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/weighted_expense_allocation_v1-baseline/trial-3/result.json",
+        "sha256": "edbfe330126b62fa2b896f3afe01f8552a032c745bab75d177a92c2739923802"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/weighted_expense_allocation_v1-candidate/trial-1/result.json",
+        "sha256": "c7fa7cdb94645dbd7ca59634745a9e45ea4fc8f41bcf7f9c87fb7bdf37e77e13"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/weighted_expense_allocation_v1-candidate/trial-2/result.json",
+        "sha256": "14f7489f0b8cd9372efec79d83ae908b6fa02c35033cebb1ba012e294d9a453d"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/weighted_expense_allocation_v1-candidate/trial-3/result.json",
+        "sha256": "ae33190180a6b84130bfd73d7a47d14b606d3071c974950ca1eb49e9aeb9f371"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_etag_preconditions_v1-candidate/trial-1/result.json",
+        "sha256": "90f779e8fc5b651e016dd196e24e6a79d644a85fa33c76ac939dca155ee8e420"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_etag_preconditions_v1-candidate/trial-2/result.json",
+        "sha256": "9f54a0af66cbb315cf515fc90e20e202ee6aa8809988ef9007b5908f45f5d1df"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_etag_preconditions_v1-candidate/trial-3/result.json",
+        "sha256": "494f16a0b93c425e743929b1f99edf5bedf6003ee964392c01d89dbd5a2d5e5a"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_etag_preconditions_v1-baseline/trial-1/result.json",
+        "sha256": "d7585b90719fd21682c0039f01f661658aaa139355db4c9e5fda25c6f1da940a"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_etag_preconditions_v1-baseline/trial-2/result.json",
+        "sha256": "e4659483317be859879ebf1db8ba8a10e83170fd4c8aaf6d919e25b1ea418dbb"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/http_etag_preconditions_v1-baseline/trial-3/result.json",
+        "sha256": "6107393794aa1da9f76b91c7ae47321c76365e78d317c7c9b8231f55df430c6e"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/incremental_ndjson_v1-baseline/trial-1/result.json",
+        "sha256": "34c0cc9ccc99493b341e4ddbe9adbd78779088116893b364ea78fde1ac93d0b9"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/incremental_ndjson_v1-baseline/trial-2/result.json",
+        "sha256": "d79a1d634d6aa77fce4dc28477f7704759c2984d187271a04c74f02418c6a12b"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/incremental_ndjson_v1-candidate/trial-1/result.json",
+        "sha256": "6d519e92529c65fb08deca8dd6a919c02d6991fff273c8221cbe11aac4cd3149"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/incremental_ndjson_v1-candidate/trial-2/result.json",
+        "sha256": "3d10fbfb40ac86b0241dc9926449de3322797a8161a638192b4960552ddfcec0"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/incremental_ndjson_v1-candidate/trial-3/result.json",
+        "sha256": "d7c3c534a0435150cb4c6b0ddcbd31226f63a33cc511b8ebf16611327a804ca2"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-1/result.json",
+        "sha256": "f106a529ecefaa5ecf0697d4c54a93f0d13a05184d89b622b2ffa1cb7e06529f"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-2/result.json",
+        "sha256": "35ad34c3941ef79ce28223cbc71872aa0bd753d770f985171874ad2c2041a0ac"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-candidate/trial-3/result.json",
+        "sha256": "82ed8ca7d4210c9b5f7070564091e0a73b4bc7292f6f1cf23839481d4e5bb51d"
+      },
+      {
+        "path": "/Users/champ/.cache/napier-seven-quality/core-corrected-corpus-suite-v2/bounded_async_queue_v1-baseline/trial-1/result.json",
+        "sha256": "ee311f9f31fe0cb6d7451065773e93d460c6e83406448471edf7473bf16e16cc"
+      }
+    ]
+  },
+  "limits": [
+    "Captured byte identity does not prove semantic independence.",
+    "Input reports are not authenticated by this evaluator.",
+    "Historical observations use frozen predecessor sources; they do not qualify current composition."
+  ],
+  "contentSha256": "b0c02762a0040c50eaa6dfa1f149a4475f4b2dbed2e8855bf49d3eac2d8eafda"
+}

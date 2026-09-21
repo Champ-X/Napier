@@ -1,0 +1,210 @@
+{
+  "kind": "napier.thread-memory-boundary-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T08:38:01.769153+00:00",
+  "snapshot": "/tmp/napier-harness-thread-memory-v1",
+  "parentPaidSnapshot": "/tmp/napier-harness-visible-order-v1",
+  "changes": [
+    "Query memory from validated current-thread user/workflow history, including ordinary prior turns without parentRunId.",
+    "Share one current-thread event snapshot when memory is enabled; working-state tool evidence still filters to current Run and same-thread recovery ancestry.",
+    "Stop working-state ancestry at an explicit local branch cutoff; copied local history supplies context and foreign source parents are not traversed."
+  ],
+  "reproductions": {
+    "ordinaryFollowUpBefore": "Missing prior user event in the retrieval query.",
+    "branchRecoveryBefore": "Working state recovery source is unavailable in this thread.",
+    "bothPassedAfter": true
+  },
+  "validation": {
+    "boundaryAndWorkingStateTestsPassed": 16,
+    "actualAgentRuntimeThreadAndBranchTestPassed": 1,
+    "actualProviderOverflowCompactionTestPassed": 1,
+    "manualRecoveryTestPassed": 1,
+    "uniqueChecksPassed": 19,
+    "runtimeCompilePassed": true,
+    "architectureExistingViolations": 7,
+    "architectureNewViolations": 0,
+    "fullSuiteRepeated": false,
+    "integrationFixtureCorrection": "The first thread integration callback attempted structuredClone on tool functions; cloning only message data corrected the local test provider. No remote provider was involved."
+  },
+  "observedIntegration": [
+    "Three scripted-model Runs completed across two ordinary turns and one branched-thread follow-up.",
+    "All three model inputs retained the required reviewed fact under a 6000-character memory budget.",
+    "Branch model input excluded the later original-thread FUTURE_ONLY_MARKER.",
+    "Actual context overflow performed one compaction, preserved user amendment provenance, and completed three tool calls without replay.",
+    "Existing inherited-policy manual recovery completed."
+  ],
+  "scopeLimits": [
+    "Scripted models establish runtime/data-path behavior, not stochastic model task quality.",
+    "The tested branch copies ordinary user messages. Legacy branch copies of delivered steering metadata require separate compatibility validation; source inspection shows copied control fields without copied delivery events.",
+    "Current-thread query projection reads thread history; cost at very large thread sizes has not been qualified.",
+    "Bounded requirement selection, 64 query terms and fixed memory budget still limit recall.",
+    "No fresh paid comparison qualifies this source; do not pool earlier snapshot results."
+  ],
+  "qualityGate": {
+    "requiredCases": 30,
+    "requiredPairedTrials": 3,
+    "promotionReady": false,
+    "overallGoalComplete": false
+  },
+  "spending": {
+    "newApiRequests": 0,
+    "sharedRequests": 84,
+    "committedFen": 555,
+    "remainingFen": 4445,
+    "reservedRequests": 0,
+    "denied": 0
+  },
+  "freeze": {
+    "kind": "napier.harness-runtime-freeze",
+    "schemaVersion": 1,
+    "snapshot": "/tmp/napier-harness-thread-memory-v1",
+    "parentSnapshot": "/tmp/napier-harness-visible-order-v1",
+    "recordedAt": "2026-09-14T08:36:08.862097+00:00",
+    "runtimeSourceChanges": [
+      "agent-invocation-context.ts",
+      "agent-memory-context.ts",
+      "agent-working-state-context.ts",
+      "task-memory-query.ts"
+    ],
+    "bindings": [
+      {
+        "path": "packages/runtime/src",
+        "fileCount": 1176,
+        "inventorySha256": "73e919a4f0bc86b475514a0ffe39a3bbabf282ee9310b80bb29c12d5cb1ad958",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/runtime/dist",
+        "fileCount": 3540,
+        "inventorySha256": "dbaba8e061fdc387c2a5fbac17fdfe9da35acbc7f89ffd7f0d3cee8ff4ccf18c",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/runtime/test",
+        "fileCount": 564,
+        "inventorySha256": "9d785d467a5aa27f16e5612bd5e40cf3640c5e03c5d3d256a32736fe2ad925a7",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/src",
+        "fileCount": 79,
+        "inventorySha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/dist",
+        "fileCount": 238,
+        "inventorySha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/test",
+        "fileCount": 11,
+        "inventorySha256": "451e3f5a93653aa9e548a73b437b13e230b22145ff7953a9782ec66d4f117296",
+        "matchesWorkspaceAtFreeze": true
+      }
+    ],
+    "workspaceAliases": {
+      "runtime": "/private/tmp/napier-harness-thread-memory-v1/packages/runtime",
+      "contracts": "/private/tmp/napier-harness-thread-memory-v1/packages/contracts"
+    },
+    "profileFileSha256": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4",
+    "scope": "Runtime/Contracts source, dist and tests frozen. Scripts and third-party dependency links are inherited, not current or hermetic; any paid execution must bind a separate current driver and fresh dependency inventory.",
+    "paidApiCalls": 0,
+    "qualityQualified": false
+  },
+  "files": [
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/agent-invocation-context.ts",
+      "sha256": "5ca29a15b59b725eec62094eb5132627628ff84c3ce38487e4c4f991b63830ea"
+    },
+    {
+      "path": "/tmp/napier-harness-thread-memory-v1/packages/runtime/src/agent-invocation-context.ts",
+      "sha256": "5ca29a15b59b725eec62094eb5132627628ff84c3ce38487e4c4f991b63830ea"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/agent-working-state-context.ts",
+      "sha256": "e93d5fc896d7b28542978a4ba12b561b2ec981c45a983ac6ce348252bd1d4ce3"
+    },
+    {
+      "path": "/tmp/napier-harness-thread-memory-v1/packages/runtime/src/agent-working-state-context.ts",
+      "sha256": "e93d5fc896d7b28542978a4ba12b561b2ec981c45a983ac6ce348252bd1d4ce3"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/task-memory-query.ts",
+      "sha256": "fb980bb7d46db15065bc9e3e09d604e12b59755c6087750b85433074a6e88773"
+    },
+    {
+      "path": "/tmp/napier-harness-thread-memory-v1/packages/runtime/src/task-memory-query.ts",
+      "sha256": "fb980bb7d46db15065bc9e3e09d604e12b59755c6087750b85433074a6e88773"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/agent-memory-context.ts",
+      "sha256": "358e9905c00778230f194079e2ac0e6063550a0b9f752a8d84d82c7968af3054"
+    },
+    {
+      "path": "/tmp/napier-harness-thread-memory-v1/packages/runtime/src/agent-memory-context.ts",
+      "sha256": "358e9905c00778230f194079e2ac0e6063550a0b9f752a8d84d82c7968af3054"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/task-memory-query-provenance.test.ts",
+      "sha256": "04c4a4eba433930717124af399317b13775111cf5ed403ceba0a9829da6dcd64"
+    },
+    {
+      "path": "/tmp/napier-harness-thread-memory-v1/packages/runtime/test/task-memory-query-provenance.test.ts",
+      "sha256": "04c4a4eba433930717124af399317b13775111cf5ed403ceba0a9829da6dcd64"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/task-memory-thread-history.test.ts",
+      "sha256": "5a4c6a149e3431f0cf311e8d752b302288a96e38cdad5c33ddd34d6bd3070502"
+    },
+    {
+      "path": "/tmp/napier-harness-thread-memory-v1/packages/runtime/test/task-memory-thread-history.test.ts",
+      "sha256": "5a4c6a149e3431f0cf311e8d752b302288a96e38cdad5c33ddd34d6bd3070502"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/run-context-compaction-runtime.test.ts",
+      "sha256": "181e70899fcc109b6019c5e71756f9777dff0f3c794e9378fdaa35d33ab4065d"
+    },
+    {
+      "path": "/tmp/napier-harness-thread-memory-v1/packages/runtime/test/run-context-compaction-runtime.test.ts",
+      "sha256": "181e70899fcc109b6019c5e71756f9777dff0f3c794e9378fdaa35d33ab4065d"
+    },
+    {
+      "path": "/tmp/napier-thread-memory-before-v1.log",
+      "sha256": "bf4d932afc733d95869474ca28b278938d3ead2be20740b488adaac7ffd762ff"
+    },
+    {
+      "path": "/tmp/napier-thread-memory-after-v1.log",
+      "sha256": "8757777f19dabdcf8e2163c5be17b53da5b1a516f19413e31a9022a2ccfb99e4"
+    },
+    {
+      "path": "/tmp/napier-thread-memory-integration-v1.log",
+      "sha256": "12d7f8e8f9ac406e4a1d2298ae9778389a4c9053325759b3e6c51a4712faf28b"
+    },
+    {
+      "path": "/tmp/napier-thread-memory-integration-v2.log",
+      "sha256": "184d3092e5fb3fac4134138ed338aadcdb98619ff7d8604cdb0b84ed0b61306e"
+    },
+    {
+      "path": "/tmp/napier-thread-memory-recovery-v1.log",
+      "sha256": "fc73fd1323d214b02071ef1071d864e581dfa627daa6c37a47bf45b1cc933f8c"
+    },
+    {
+      "path": "/tmp/napier-thread-memory-build-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-thread-memory-architecture-v1.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-harness-thread-memory-v1/freeze-receipt.json",
+      "sha256": "30c0ca4d2b64ae50045bb953a22c62222fbe7acd21efcec9a614df522d5653ba"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/thread-branches.ts",
+      "sha256": "3f4092d282e19e6b1a09dd0a4ed90f476e1533ac7cc590d8e981f80f97f6abd0"
+    }
+  ]
+}

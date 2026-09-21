@@ -1,0 +1,778 @@
+{
+  "kind": "napier.dependency-research-qualification",
+  "schemaVersion": 1,
+  "realAgentExecutions": 12,
+  "batches": [
+    {
+      "batch": "dependency-evidence-smoke-v1",
+      "suiteResultSha256": "8587b6c0d347092125b440c59314bfe85225efb5ed36ba4ac073295242b287f5",
+      "collectionComplete": true,
+      "inputsStable": true,
+      "quality": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 3,
+        "cases": 1,
+        "regressions": [],
+        "blockers": [
+          "Need 30 cases; observed 1"
+        ],
+        "verdict": "insufficient_evidence",
+        "promotionReady": false,
+        "contentSha256": "cee63fe51a931861cf37b63b68bbb0fd61051661e01137d75ea8912f198d0d50"
+      },
+      "observations": [
+        {
+          "caseId": "requested_report_scope_v1",
+          "arm": "baseline",
+          "trial": 0,
+          "runId": "run_2e5ec67aac1d48aca56d",
+          "taskSuccess": true,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 0,
+          "reportSha256": "f5902703035ae636a67396bbcde265b96ebae4ae0041593302b33b3db1a081e9",
+          "usage": {
+            "inputTokens": 32462,
+            "outputTokens": 5152,
+            "cacheReadTokens": 127360,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.006343848000000001
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_2e5ec67aac1d48aca56d",
+            "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "packageCount": 129,
+            "fileCount": 24572,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "7a00fc2448983f61fd808066f56931a31a6628b77cbc043f75a8004caec84eca"
+          },
+          "taskPhases": [
+            "coding"
+          ],
+          "changed": [
+            "REPORT.md"
+          ]
+        },
+        {
+          "caseId": "requested_report_scope_v1",
+          "arm": "baseline",
+          "trial": 1,
+          "runId": "run_1fdb0784f19347bc8098",
+          "taskSuccess": false,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 1,
+          "reportSha256": "3e871f691c6fcd8b929335c4973b0d5edfbc9197ef24fdfe44d9ce79821f255d",
+          "usage": {
+            "inputTokens": 33023,
+            "outputTokens": 6683,
+            "cacheReadTokens": 217856,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.007104456799999999
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_1fdb0784f19347bc8098",
+            "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "packageCount": 129,
+            "fileCount": 24572,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "7151c90ab1f17c5d9247a7d9dcaa8c288316787999f08d26f12b89e20b0bc5e8"
+          },
+          "taskPhases": [
+            "coding"
+          ],
+          "changed": [
+            "REPORT.md"
+          ]
+        },
+        {
+          "caseId": "requested_report_scope_v1",
+          "arm": "baseline",
+          "trial": 2,
+          "runId": "run_eaaa4bb07b0343f3b190",
+          "taskSuccess": true,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 0,
+          "reportSha256": "a86b7526c9d1039443b3570210a3677a5d53f493a340e8144db5a714ff355b97",
+          "usage": {
+            "inputTokens": 33741,
+            "outputTokens": 6535,
+            "cacheReadTokens": 101760,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.006838468
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_eaaa4bb07b0343f3b190",
+            "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "packageCount": 129,
+            "fileCount": 24572,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "0e708c44aeddc54931034108f31324d21063a9e445b7fe26b29f6a64350aee0f"
+          },
+          "taskPhases": [
+            "coding"
+          ],
+          "changed": [
+            "REPORT.md"
+          ]
+        },
+        {
+          "caseId": "requested_report_scope_v1",
+          "arm": "candidate",
+          "trial": 0,
+          "runId": "run_6ce053d2c71f404eb792",
+          "taskSuccess": true,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 1,
+          "reportSha256": "a4ed0a6982c646b0a307b5f7bce02a819284e06491894b9bbd5c429f2c486edf",
+          "usage": {
+            "inputTokens": 27720,
+            "outputTokens": 5842,
+            "cacheReadTokens": 89728,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0057677984
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_6ce053d2c71f404eb792",
+            "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "packageCount": 129,
+            "fileCount": 24199,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "1a1e5a2420af5eaef6f79065a07d0792929043ff0ad6e7ae35bac729f07a4bab"
+          },
+          "taskPhases": [
+            "coding"
+          ],
+          "changed": [
+            "REPORT.md"
+          ]
+        },
+        {
+          "caseId": "requested_report_scope_v1",
+          "arm": "candidate",
+          "trial": 1,
+          "runId": "run_24141a3935c04c8fb29b",
+          "taskSuccess": true,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 0,
+          "reportSha256": "fc35150d316acf850aacf494fd57202b7f8f08361ab682fcf534a1ac53d66a4d",
+          "usage": {
+            "inputTokens": 22440,
+            "outputTokens": 5755,
+            "cacheReadTokens": 56192,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.004910337600000001
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_24141a3935c04c8fb29b",
+            "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "packageCount": 129,
+            "fileCount": 24199,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "1f3560801675e8d42b84a78baf494c5ea1a48a26bdcc2167b3aa751cc6ce1495"
+          },
+          "taskPhases": [
+            "coding"
+          ],
+          "changed": [
+            "REPORT.md"
+          ]
+        },
+        {
+          "caseId": "requested_report_scope_v1",
+          "arm": "candidate",
+          "trial": 2,
+          "runId": "run_06720b308a1946f6af86",
+          "taskSuccess": true,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 0,
+          "reportSha256": "c24b08507dad381ec50ceb6472036caaed53191bbf932d84499257f0aa5af21a",
+          "usage": {
+            "inputTokens": 31409,
+            "outputTokens": 6243,
+            "cacheReadTokens": 112768,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0064610504
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_06720b308a1946f6af86",
+            "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "packageCount": 129,
+            "fileCount": 24199,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "c222280a25d8e6cbd5e4c393d849e4e071548ec962619cb868417333664e36ba"
+          },
+          "taskPhases": [
+            "coding"
+          ],
+          "changed": [
+            "REPORT.md"
+          ]
+        }
+      ]
+    },
+    {
+      "batch": "source-research-v1",
+      "suiteResultSha256": "a21b9397f26d22c52f20b0286d97c8b1180f2cb145d4d53d06d1631687d00548",
+      "collectionComplete": true,
+      "inputsStable": true,
+      "quality": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 3,
+        "cases": 1,
+        "regressions": [],
+        "blockers": [
+          "Need 30 cases; observed 1"
+        ],
+        "verdict": "insufficient_evidence",
+        "promotionReady": false,
+        "contentSha256": "cee63fe51a931861cf37b63b68bbb0fd61051661e01137d75ea8912f198d0d50"
+      },
+      "observations": [
+        {
+          "caseId": "provider_reasoning_audit_v1",
+          "arm": "baseline",
+          "trial": 0,
+          "runId": "run_b3dd6cb5d3d24ca19a44",
+          "taskSuccess": false,
+          "qualifyingEvidence": true,
+          "allowedChanges": false,
+          "environmentEligible": true,
+          "toolFailures": 1,
+          "reportSha256": "1a604adda1a331ba0b7cdc5e1e69854f26c2489de29415994dde4a8f67a4b44e",
+          "usage": {
+            "inputTokens": 64911,
+            "outputTokens": 25699,
+            "cacheReadTokens": 455936,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.017559880800000004
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_b3dd6cb5d3d24ca19a44",
+            "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "packageCount": 129,
+            "fileCount": 24572,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "621482e292653852f023257cf81f55202cbed3062e30f7ee4c316e2847a09dce"
+          },
+          "taskPhases": [
+            "research",
+            "coding"
+          ],
+          "changed": [
+            "outputs/thread_0e393ff02c824af3bf89/findings.json",
+            "outputs/thread_0e393ff02c824af3bf89/REPORT.md"
+          ]
+        },
+        {
+          "caseId": "provider_reasoning_audit_v1",
+          "arm": "baseline",
+          "trial": 1,
+          "runId": "run_aef88747671f4ada8b03",
+          "taskSuccess": false,
+          "qualifyingEvidence": true,
+          "allowedChanges": false,
+          "environmentEligible": true,
+          "toolFailures": 2,
+          "reportSha256": "95a54da8732218f327fd74bdc8c5c8f37d81c5d5c8bdc43ca958556ffb9f8264",
+          "usage": {
+            "inputTokens": 71129,
+            "outputTokens": 26618,
+            "cacheReadTokens": 510336,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0188400408
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_aef88747671f4ada8b03",
+            "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "packageCount": 129,
+            "fileCount": 24572,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "8e370d74ec76e011181802fb6c3ba51466821420c8ae8073da244bda7d4c9c24"
+          },
+          "taskPhases": [
+            "research",
+            "coding"
+          ],
+          "changed": [
+            "outputs/thread_6f2f72dc62f645f088fe/deepseek-v4-flash-reasoning-retry/findings.json",
+            "outputs/thread_6f2f72dc62f645f088fe/deepseek-v4-flash-reasoning-retry/REPORT.md"
+          ]
+        },
+        {
+          "caseId": "provider_reasoning_audit_v1",
+          "arm": "baseline",
+          "trial": 2,
+          "runId": "run_4666b7de546041a787f0",
+          "taskSuccess": false,
+          "qualifyingEvidence": true,
+          "allowedChanges": false,
+          "environmentEligible": true,
+          "toolFailures": 1,
+          "reportSha256": "3c69a6353bde9df59a260cc801150e1cf5b9a0ffffdab7625a6b038280c9a246",
+          "usage": {
+            "inputTokens": 65644,
+            "outputTokens": 25289,
+            "cacheReadTokens": 594048,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0179344144
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_4666b7de546041a787f0",
+            "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+            "packageCount": 129,
+            "fileCount": 24572,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "2ed04bfdbb19690c56875c3858fa8e83130fa81bb68d612a118c6326ec9dfb3a"
+          },
+          "taskPhases": [
+            "research",
+            "coding"
+          ],
+          "changed": [
+            "outputs/thread_a47198deacda44c3a49d/findings.json",
+            "outputs/thread_a47198deacda44c3a49d/REPORT.md"
+          ]
+        },
+        {
+          "caseId": "provider_reasoning_audit_v1",
+          "arm": "candidate",
+          "trial": 0,
+          "runId": "run_2eea02d374e24b6b8124",
+          "taskSuccess": false,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 0,
+          "reportSha256": "b4605e9f607a681bfab93adec9e0d06400b93573eee6dd9d7255ab90d272b956",
+          "usage": {
+            "inputTokens": 87724,
+            "outputTokens": 27454,
+            "cacheReadTokens": 413312,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.021125753599999998
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_2eea02d374e24b6b8124",
+            "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "packageCount": 129,
+            "fileCount": 24199,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "b0374277eac1f7375b44be32887f90aa50fe28fdac464bf151cdfdc327c33a04"
+          },
+          "taskPhases": [
+            "research",
+            "coding"
+          ],
+          "changed": [
+            "findings.json",
+            "REPORT.md"
+          ]
+        },
+        {
+          "caseId": "provider_reasoning_audit_v1",
+          "arm": "candidate",
+          "trial": 1,
+          "runId": "run_11a9d805bf4a431f814a",
+          "taskSuccess": false,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 0,
+          "reportSha256": "ff2fa087c561092657724a2fc38f316bcd7d1a548d39a413877d42ab5771ff9a",
+          "usage": {
+            "inputTokens": 71827,
+            "outputTokens": 23606,
+            "cacheReadTokens": 481920,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.018014836
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_11a9d805bf4a431f814a",
+            "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "packageCount": 129,
+            "fileCount": 24199,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "8125f5bd98d580085dfa0cf4fab5503fd93d2b8be3f49eedf076797c5f37c47e"
+          },
+          "taskPhases": [
+            "research",
+            "coding"
+          ],
+          "changed": [
+            "findings.json",
+            "REPORT.md"
+          ]
+        },
+        {
+          "caseId": "provider_reasoning_audit_v1",
+          "arm": "candidate",
+          "trial": 2,
+          "runId": "run_bfc8886cd70745cc8e0e",
+          "taskSuccess": true,
+          "qualifyingEvidence": true,
+          "allowedChanges": true,
+          "environmentEligible": true,
+          "toolFailures": 3,
+          "reportSha256": "d23527b2f9857fed6cc50bdbb558e6df15aa5ac812297119d5e3faeb12be1580",
+          "usage": {
+            "inputTokens": 68768,
+            "outputTokens": 24129,
+            "cacheReadTokens": 400128,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0175039984
+          },
+          "runtimeDependencyEvidence": {
+            "kind": "napier.runtime-dependency-evidence",
+            "schemaVersion": 1,
+            "runId": "run_bfc8886cd70745cc8e0e",
+            "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+            "packageCount": 129,
+            "fileCount": 24199,
+            "stable": true,
+            "eligible": true,
+            "contentSha256": "aa474f532d0ed86acdf47302fa0738ec47445494f1d47a0836cda46905a676d8"
+          },
+          "taskPhases": [
+            "research",
+            "coding"
+          ],
+          "changed": [
+            "findings.json",
+            "REPORT.md"
+          ]
+        }
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "batch": "dependency-evidence-smoke-v1",
+      "runId": "run_1fdb0784f19347bc8098",
+      "failure": "task_failure",
+      "reportSha256": "3e871f691c6fcd8b929335c4973b0d5edfbc9197ef24fdfe44d9ce79821f255d",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_1fdb0784f19347bc8098",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "7151c90ab1f17c5d9247a7d9dcaa8c288316787999f08d26f12b89e20b0bc5e8"
+      }
+    },
+    {
+      "batch": "dependency-evidence-smoke-v1",
+      "runId": "run_6ce053d2c71f404eb792",
+      "failure": "recovered_tool_failure",
+      "reportSha256": "a4ed0a6982c646b0a307b5f7bce02a819284e06491894b9bbd5c429f2c486edf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_6ce053d2c71f404eb792",
+        "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+        "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+        "packageCount": 129,
+        "fileCount": 24199,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "1a1e5a2420af5eaef6f79065a07d0792929043ff0ad6e7ae35bac729f07a4bab"
+      }
+    },
+    {
+      "batch": "source-research-v1",
+      "runId": "run_b3dd6cb5d3d24ca19a44",
+      "failure": "task_failure",
+      "reportSha256": "1a604adda1a331ba0b7cdc5e1e69854f26c2489de29415994dde4a8f67a4b44e",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_b3dd6cb5d3d24ca19a44",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "621482e292653852f023257cf81f55202cbed3062e30f7ee4c316e2847a09dce"
+      }
+    },
+    {
+      "batch": "source-research-v1",
+      "runId": "run_aef88747671f4ada8b03",
+      "failure": "task_failure",
+      "reportSha256": "95a54da8732218f327fd74bdc8c5c8f37d81c5d5c8bdc43ca958556ffb9f8264",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_aef88747671f4ada8b03",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "8e370d74ec76e011181802fb6c3ba51466821420c8ae8073da244bda7d4c9c24"
+      }
+    },
+    {
+      "batch": "source-research-v1",
+      "runId": "run_4666b7de546041a787f0",
+      "failure": "task_failure",
+      "reportSha256": "3c69a6353bde9df59a260cc801150e1cf5b9a0ffffdab7625a6b038280c9a246",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_4666b7de546041a787f0",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "2ed04bfdbb19690c56875c3858fa8e83130fa81bb68d612a118c6326ec9dfb3a"
+      }
+    },
+    {
+      "batch": "source-research-v1",
+      "runId": "run_2eea02d374e24b6b8124",
+      "failure": "task_failure",
+      "reportSha256": "b4605e9f607a681bfab93adec9e0d06400b93573eee6dd9d7255ab90d272b956",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_2eea02d374e24b6b8124",
+        "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+        "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+        "packageCount": 129,
+        "fileCount": 24199,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "b0374277eac1f7375b44be32887f90aa50fe28fdac464bf151cdfdc327c33a04"
+      }
+    },
+    {
+      "batch": "source-research-v1",
+      "runId": "run_11a9d805bf4a431f814a",
+      "failure": "task_failure",
+      "reportSha256": "ff2fa087c561092657724a2fc38f316bcd7d1a548d39a413877d42ab5771ff9a",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_11a9d805bf4a431f814a",
+        "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+        "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+        "packageCount": 129,
+        "fileCount": 24199,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "8125f5bd98d580085dfa0cf4fab5503fd93d2b8be3f49eedf076797c5f37c47e"
+      }
+    },
+    {
+      "batch": "source-research-v1",
+      "runId": "run_bfc8886cd70745cc8e0e",
+      "failure": "recovered_tool_failure",
+      "reportSha256": "d23527b2f9857fed6cc50bdbb558e6df15aa5ac812297119d5e3faeb12be1580",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_bfc8886cd70745cc8e0e",
+        "beforeSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+        "afterSha256": "aa2355b183f9b938b6f9e1affd9c963091f0b86c5a743a1b17d7b75da08913f7",
+        "packageCount": 129,
+        "fileCount": 24199,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "aa474f532d0ed86acdf47302fa0738ec47445494f1d47a0836cda46905a676d8"
+      }
+    }
+  ],
+  "reassessment": [
+    {
+      "runId": "run_b3dd6cb5d3d24ca19a44",
+      "arm": "baseline",
+      "trial": 0,
+      "originalReportSha256": "1a604adda1a331ba0b7cdc5e1e69854f26c2489de29415994dde4a8f67a4b44e",
+      "originalGraderSha256": "9b38c0df2b8e5575982930577044a94dfd6a7a28286373c2d578accec8e8f347",
+      "finalGraderSha256": "071e81c91064a0fdbfa4da5fc4e0a32eb6b56a74607f1e641c76d00d22079433",
+      "originalTaskSuccess": false,
+      "revisedStructuredGradePassed": false,
+      "reassessedTaskSuccess": false,
+      "manualReviewApplied": false,
+      "error": "ENOENT: no such file or directory, open '/Users/champ/.cache/napier-seven-quality/source-research-v1/provider_reasoning_audit_v1-baseline/trial-1/workspace/findings.json'"
+    },
+    {
+      "runId": "run_aef88747671f4ada8b03",
+      "arm": "baseline",
+      "trial": 1,
+      "originalReportSha256": "95a54da8732218f327fd74bdc8c5c8f37d81c5d5c8bdc43ca958556ffb9f8264",
+      "originalGraderSha256": "9b38c0df2b8e5575982930577044a94dfd6a7a28286373c2d578accec8e8f347",
+      "finalGraderSha256": "071e81c91064a0fdbfa4da5fc4e0a32eb6b56a74607f1e641c76d00d22079433",
+      "originalTaskSuccess": false,
+      "revisedStructuredGradePassed": false,
+      "reassessedTaskSuccess": false,
+      "manualReviewApplied": false,
+      "error": "ENOENT: no such file or directory, open '/Users/champ/.cache/napier-seven-quality/source-research-v1/provider_reasoning_audit_v1-baseline/trial-2/workspace/findings.json'"
+    },
+    {
+      "runId": "run_4666b7de546041a787f0",
+      "arm": "baseline",
+      "trial": 2,
+      "originalReportSha256": "3c69a6353bde9df59a260cc801150e1cf5b9a0ffffdab7625a6b038280c9a246",
+      "originalGraderSha256": "9b38c0df2b8e5575982930577044a94dfd6a7a28286373c2d578accec8e8f347",
+      "finalGraderSha256": "071e81c91064a0fdbfa4da5fc4e0a32eb6b56a74607f1e641c76d00d22079433",
+      "originalTaskSuccess": false,
+      "revisedStructuredGradePassed": false,
+      "reassessedTaskSuccess": false,
+      "manualReviewApplied": false,
+      "error": "ENOENT: no such file or directory, open '/Users/champ/.cache/napier-seven-quality/source-research-v1/provider_reasoning_audit_v1-baseline/trial-3/workspace/findings.json'"
+    },
+    {
+      "runId": "run_2eea02d374e24b6b8124",
+      "arm": "candidate",
+      "trial": 0,
+      "originalReportSha256": "b4605e9f607a681bfab93adec9e0d06400b93573eee6dd9d7255ab90d272b956",
+      "originalGraderSha256": "9b38c0df2b8e5575982930577044a94dfd6a7a28286373c2d578accec8e8f347",
+      "finalGraderSha256": "071e81c91064a0fdbfa4da5fc4e0a32eb6b56a74607f1e641c76d00d22079433",
+      "originalTaskSuccess": false,
+      "revisedStructuredGradePassed": true,
+      "reassessedTaskSuccess": false,
+      "manualReviewApplied": true
+    },
+    {
+      "runId": "run_11a9d805bf4a431f814a",
+      "arm": "candidate",
+      "trial": 1,
+      "originalReportSha256": "ff2fa087c561092657724a2fc38f316bcd7d1a548d39a413877d42ab5771ff9a",
+      "originalGraderSha256": "9b38c0df2b8e5575982930577044a94dfd6a7a28286373c2d578accec8e8f347",
+      "finalGraderSha256": "071e81c91064a0fdbfa4da5fc4e0a32eb6b56a74607f1e641c76d00d22079433",
+      "originalTaskSuccess": false,
+      "revisedStructuredGradePassed": false,
+      "reassessedTaskSuccess": false,
+      "manualReviewApplied": false,
+      "error": "level-filter does not support its claim"
+    },
+    {
+      "runId": "run_bfc8886cd70745cc8e0e",
+      "arm": "candidate",
+      "trial": 2,
+      "originalReportSha256": "d23527b2f9857fed6cc50bdbb558e6df15aa5ac812297119d5e3faeb12be1580",
+      "originalGraderSha256": "9b38c0df2b8e5575982930577044a94dfd6a7a28286373c2d578accec8e8f347",
+      "finalGraderSha256": "071e81c91064a0fdbfa4da5fc4e0a32eb6b56a74607f1e641c76d00d22079433",
+      "originalTaskSuccess": true,
+      "revisedStructuredGradePassed": true,
+      "reassessedTaskSuccess": true,
+      "manualReviewApplied": false
+    }
+  ],
+  "manualReview": {
+    "kind": "napier.research-manual-review",
+    "schemaVersion": 1,
+    "runId": "run_2eea02d374e24b6b8124",
+    "reportFileSha256": "a26d8d04451e2229ae1947b4e259f81ea7d03255613c38a7bb23155d6a82c8b1",
+    "originalReportSha256": "62c6b380e9ce8821b156c849c631048b4f999b7e6d61b59b0a5442fc03672ec7",
+    "taskSuccess": false,
+    "findings": [
+      {
+        "claim": "A minimal retry raises effective reasoning to the highest mapped level",
+        "assessment": "incorrect",
+        "reason": "The supported level max is above high. The upward scan returns the first supported level at or above the requested position, not the highest available level.",
+        "sourcePaths": [
+          "sources/models.js",
+          "sources/deepseek.json"
+        ]
+      },
+      {
+        "claim": "Omitting reasoning is the only way to reach disabled thinking",
+        "assessment": "incorrect",
+        "reason": "The wrapper maps the supported off level to undefined reasoningEffort as well. Omission is a valid recommendation but not the only supported disabling path.",
+        "sourcePaths": [
+          "sources/models.js",
+          "sources/simple-wrapper.js"
+        ]
+      }
+    ],
+    "scope": "Manual source-based assessment of factual prose beyond the structured grader; no live-provider conclusion"
+  },
+  "validation": {
+    "scriptTests": 22,
+    "logSha256": "4dc2e29b57fd256144e1ac8d573db0d829dc37f1b8dd09dbf8af43dc51e1a603"
+  },
+  "limitations": [
+    "One research case and one repeated pipeline smoke do not meet the thirty-case gate",
+    "Research and coding policy compositions are not pooled",
+    "Installed declared package closure excludes undeclared dynamic imports, OS libraries, credentials and external services",
+    "Historical reports have no contemporaneous dependency graphs and cannot be retroactively qualified by a current scan",
+    "Structured source grading does not fully validate explanatory prose; manual review retains two factual errors",
+    "Original grades and every failed Run remain retained; no policy was promoted"
+  ]
+}

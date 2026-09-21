@@ -1,0 +1,124 @@
+{
+  "kind": "napier.memory-grouping-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T23:08:50.449173+00:00",
+  "currentSnapshot": "/tmp/napier-harness-memory-grouping-final-v1",
+  "measuredSnapshot": "/tmp/napier-harness-memory-priority-v1",
+  "policy": "task-aware-grouped-v3",
+  "retrievalVersion": "sqlite-fts5-grouped-v3",
+  "focused": {
+    "passed": 57,
+    "failed": 0
+  },
+  "priorityRegression": {
+    "beforeFailed": 2,
+    "afterPassed": 2
+  },
+  "runtime": {
+    "passed": 2641,
+    "skipped": 59,
+    "failed": 2,
+    "files": 524,
+    "durationSeconds": 299.43,
+    "existingFailures": [
+      "capability-vector history/current V5",
+      "production Skill loader readiness"
+    ]
+  },
+  "parentRuntime": {
+    "passed": 2639,
+    "skipped": 59,
+    "failed": 2,
+    "durationSeconds": 302.1
+  },
+  "compilation": "passed",
+  "architecture": {
+    "existingViolations": 7,
+    "newViolations": 0,
+    "budgetRaised": false
+  },
+  "formatting": "passed",
+  "finalSnapshotEquivalence": "Only Contracts union-type formatting and compiler source-map/bookkeeping differ from the measured snapshot. Parsed AST structure/literal values and emitted JavaScript/declarations match; Runtime source/dist are byte-identical. The final formatting snapshot was not counted as another model campaign.",
+  "realModelEvidence": "docs/artifacts/memory-grouping-components-2026-09-14.json",
+  "qualificationReady": false,
+  "remaining": [
+    "30 distinct cases x 3 whole-composition quality gate",
+    "Unique unrelated facts still consume budget; only exact duplicate bodies are compressed",
+    "No guarantee of complete semantic recall when the fixed budget is exceeded",
+    "No controlled token, cost, latency or long-window automatic-compaction attribution"
+  ],
+  "files": [
+    {
+      "path": "/tmp/napier-memory-grouping-tests-v3.log",
+      "sha256": "db7e2f15c5d4cff42e05d7d510b31195142b78528826e6b7caf0b3afdacd92fd"
+    },
+    {
+      "path": "/tmp/napier-memory-grouping-runtime-full-v1.log",
+      "sha256": "7565cc15116bfd7e51a4031f27d006c5e3d7d314d5380072d1d8eb782e99ca69"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-before-v1.log",
+      "sha256": "d9fc3f8ace63f315f6f9b18e7aac96f83e3921d392c9b5838cdab3af3c6a7e9c"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-tests-v1.log",
+      "sha256": "36b7580abe388fd7fcaa3f8670d5aba24150e0ba499f58f2830b9f2dbf9fe5b6"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-compile-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-runtime-full-v1.log",
+      "sha256": "0680570353d474dce6090202b26754a5bbdc5f49d6074d2ed5bfdfce308dd1ae"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-architecture-v1.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-format-check-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-contract-format-v2.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-contract-format-proof-v3.json",
+      "sha256": "c7b8b3c98c47ee93f6ea8ac60518fd6a0fb2957474176ecfa3a87be0bfb89842"
+    },
+    {
+      "path": "/tmp/napier-harness-memory-grouping-final-v1/freeze-receipt.json",
+      "sha256": "c8fc79fba9a83b84e0ea75523c309838d9ab93bd2179bcc7174141c00f21ae7c"
+    },
+    {
+      "path": "/tmp/napier-memory-grouping-evidence-v1.mjs",
+      "sha256": "917b069107cbfb571d9f756b7cccf7083ea419f094725d260f4e8130d098ae60"
+    },
+    {
+      "path": "/tmp/napier-memory-grouping-evidence-v1.log",
+      "sha256": "1e011cfd17ab1a74713be773a347f31c9bea76aff9b776c071f9d0aff39864c1"
+    },
+    {
+      "path": "/tmp/napier-memory-bilingual-grouped-v3.mjs",
+      "sha256": "2c34ddec3eccdab8b1876fec9650b373d93eee7bca007783ff7c929b4e62ae62"
+    },
+    {
+      "path": "/tmp/napier-memory-grouping-transition-v3.mjs",
+      "sha256": "b63bf3d5d053270800369b91ad203b2ca9e6ff15ffa3f807b9a07ed56bb682b8"
+    },
+    {
+      "path": "/tmp/napier-memory-grouping-noisy-v3b.mjs",
+      "sha256": "cb8ab87cc414bb8fe9a18443b0d234a76426fa6ba3a3b41c8fc24dade93c1ab1"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-bilingual-v1.mjs",
+      "sha256": "9a336e70ebd37ce8217523a462af3be34fea7847fd59d614cc040d6cf07b5ea2"
+    },
+    {
+      "path": "/tmp/napier-memory-priority-noisy-v1.mjs",
+      "sha256": "16c7e1a36716d821f97adc558d13ae2c3dc2dd57db1e8449e679d70e23fbff22"
+    }
+  ]
+}

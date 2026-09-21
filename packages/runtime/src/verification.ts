@@ -1,9 +1,18 @@
+import { verificationScopeReceipt } from "./verification-scope.js";
+import {
+  captureVerificationWorkspace,
+  settleVerificationWorkspace,
+} from "./verification-workspace-snapshot.js";
+import { resolveExistingPath, isPathInside } from "./verification-paths.js";
+import { runSelectedVerificationTests } from "./verification-selected-tests.js";
+import { selectVerificationTestRunner } from "./verification-test-runner.js";
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { Type } from "typebox";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { runSandboxedProcess } from "./sandboxed-process.js";
 import { verificationArgs } from "./verification-arguments.js";
+import { containerVerificationArgs } from "./verification-container-entry.js";
 import {
   assertVerificationRuntimeStable,
   resolveVerificationRuntime,
@@ -58,6 +67,9 @@ const verifyWorkspaceSchema = Type.Object(
         maxLength: 500,
       }),
     ),
+    testRunner: Type.Optional(
+      Type.Union([Type.Literal("node-test"), Type.Literal("vitest")]),
+    ),
     timeoutMs: Type.Optional(
       Type.Integer({
         minimum: MIN_TIMEOUT_MS,
@@ -92,58 +104,60 @@ export class VerificationRunner {
     const nodeExecutable = await realpath(
       path.resolve(this.options.nodeExecutable ?? process.execPath),
     );
+    const target = await resolveVerificationTarget(workspaceRoot, cwd, input);
+    const selection =
+      input.kind === "test"
+        ? await selectVerificationTestRunner(
+            workspaceRoot,
+            [target ?? cwd],
+            input.testRunner,
+          )
+        : undefined;
     const runtime = await resolveVerificationRuntime({
       workspaceRoot,
       sandbox: this.options.sandbox,
       kind: input.kind,
+      ...(selection ? { testRunner: selection.runner } : {}),
       nodeExecutable,
       nodeExecutableExplicit: this.options.nodeExecutable !== undefined,
       ...(this.options.toolchainRoot
         ? { toolchainRoot: this.options.toolchainRoot }
         : {}),
     });
-    const target = await resolveVerificationTarget(workspaceRoot, cwd, input);
     const cwdPath = path.relative(workspaceRoot, cwd) || ".";
     const targetPath = target
       ? path.relative(workspaceRoot, target) || "."
       : undefined;
-    const workspaceSnapshot = await createPathSnapshot(workspaceRoot, cwd);
+    const workspaceSnapshot = await captureVerificationWorkspace(
+      workspaceRoot,
+      signal,
+    );
     const targetSnapshot = target
       ? await createPathSnapshot(workspaceRoot, target)
       : undefined;
-    const scopeReceipt = {
+    const scopeReceipt = verificationScopeReceipt({
       kind: input.kind,
-      cwdPathSha256: sha256(cwdPath),
-      ...(targetPath ? { targetPathSha256: sha256(targetPath) } : {}),
-      ...(targetSnapshot
-        ? {
-            targetKind: targetSnapshot.kind,
-            targetSnapshotSha256: targetSnapshot.sha256,
-            targetSnapshotFileCount: targetSnapshot.fileCount,
-            targetSnapshotBytes: targetSnapshot.bytes,
-            targetSnapshotTruncated: targetSnapshot.truncated,
-          }
-        : {}),
-      verifierPathSha256: runtime.verifierPathSha256,
-      verifierSha256: runtime.verifierSha256,
-      toolchainExternal: runtime.toolchainExternal,
-      toolchainSha256: runtime.toolchainSha256,
-      ...(runtime.verifierVersion
-        ? { verifierVersion: runtime.verifierVersion }
-        : {}),
-      ...(runtime.runtimeIdentitySha256
-        ? { runtimeIdentitySha256: runtime.runtimeIdentitySha256 }
-        : {}),
-      workspaceSnapshotSha256: workspaceSnapshot.sha256,
-      workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
-      workspaceSnapshotBytes: workspaceSnapshot.bytes,
-      workspaceSnapshotTruncated: workspaceSnapshot.truncated,
-    };
+      cwdPath,
+      targetPath,
+      targetSnapshot,
+      workspaceSnapshot,
+      runtime,
+      selection,
+    });
     const execution = await runSandboxedProcess({
       sandbox: this.options.sandbox,
       launch: {
         command: runtime.nodeExecutable,
-        args: verificationArgs(input.kind, runtime.verifierPath, target),
+        args: containerVerificationArgs(
+          this.options.sandbox.id,
+          workspaceRoot,
+          verificationArgs(
+            input.kind,
+            runtime.verifierPath,
+            target,
+            selection?.runner === "node-test" ? selection.targets : undefined,
+          ),
+        ),
         cwd,
         env: {
           CI: "1",
@@ -168,40 +182,29 @@ export class VerificationRunner {
           : "failed"
         : execution.status;
     await assertVerificationRuntimeStable(runtime, this.options.sandbox);
+    if (
+      selection &&
+      (
+        await selectVerificationTestRunner(
+          workspaceRoot,
+          [target ?? cwd],
+          input.testRunner,
+        )
+      ).sourceSha256 !== selection.sourceSha256
+    )
+      throw new Error("Test runner selection changed during execution");
     const detailsBase = {
-      kind: input.kind,
-      status,
+      ...scopeReceipt,
+      ...(await settleVerificationWorkspace(
+        workspaceRoot,
+        workspaceSnapshot,
+        status,
+        signal,
+      )),
       sandbox: this.options.sandbox.id,
       cwd: cwdPath,
       ...(targetPath ? { target: targetPath } : {}),
       scopeSha256: sha256(canonicalJson(scopeReceipt)),
-      cwdPathSha256: scopeReceipt.cwdPathSha256,
-      ...(scopeReceipt.targetPathSha256
-        ? { targetPathSha256: scopeReceipt.targetPathSha256 }
-        : {}),
-      ...(targetSnapshot
-        ? {
-            targetKind: targetSnapshot.kind,
-            targetSnapshotSha256: targetSnapshot.sha256,
-            targetSnapshotFileCount: targetSnapshot.fileCount,
-            targetSnapshotBytes: targetSnapshot.bytes,
-            targetSnapshotTruncated: targetSnapshot.truncated,
-          }
-        : {}),
-      verifierPathSha256: scopeReceipt.verifierPathSha256,
-      verifierSha256: runtime.verifierSha256,
-      toolchainExternal: runtime.toolchainExternal,
-      toolchainSha256: runtime.toolchainSha256,
-      ...(runtime.verifierVersion
-        ? { verifierVersion: runtime.verifierVersion }
-        : {}),
-      ...(runtime.runtimeIdentitySha256
-        ? { runtimeIdentitySha256: runtime.runtimeIdentitySha256 }
-        : {}),
-      workspaceSnapshotSha256: workspaceSnapshot.sha256,
-      workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
-      workspaceSnapshotBytes: workspaceSnapshot.bytes,
-      workspaceSnapshotTruncated: workspaceSnapshot.truncated,
       durationMs: execution.durationMs,
       exitCode: execution.exitCode,
       signal: execution.signal,
@@ -222,110 +225,17 @@ export class VerificationRunner {
     };
   }
 
-  async runSelectedTests(
+  runSelectedTests(
     targets: string[],
     timeoutMs = DEFAULT_TIMEOUT_MS,
     signal?: AbortSignal,
   ): Promise<SelectedTestExecutionResult> {
-    if (
-      targets.length < 1 ||
-      targets.length > 8 ||
-      new Set(targets).size !== targets.length ||
-      targets.some(
-        (target) =>
-          !target ||
-          target.length > 500 ||
-          path.isAbsolute(target) ||
-          /[\u0000-\u001f\u007f]/u.test(target),
-      ) ||
-      !Number.isInteger(timeoutMs) ||
-      timeoutMs < MIN_TIMEOUT_MS ||
-      timeoutMs > MAX_TIMEOUT_MS
-    ) {
-      throw new Error("Selected test verification request is invalid");
-    }
-    const workspaceRoot = await realpath(this.workspaceRoot);
-    const nodeExecutable = await realpath(
-      path.resolve(this.options.nodeExecutable ?? process.execPath),
-    );
-    const runtime = await resolveVerificationRuntime({
-      workspaceRoot,
-      sandbox: this.options.sandbox,
-      kind: "test",
-      nodeExecutable,
-      nodeExecutableExplicit: this.options.nodeExecutable !== undefined,
-      ...(this.options.toolchainRoot
-        ? { toolchainRoot: this.options.toolchainRoot }
-        : {}),
-    });
-    const resolvedTargets = [];
-    for (const target of targets) {
-      const resolved = await resolveExistingPath(
-        workspaceRoot,
-        target,
-        "selected test target",
-      );
-      if (!(await stat(resolved)).isFile()) {
-        throw new Error("selected test target must be a file");
-      }
-      resolvedTargets.push(resolved);
-    }
-    const execution = await runSandboxedProcess({
-      sandbox: this.options.sandbox,
-      launch: {
-        command: runtime.nodeExecutable,
-        args: [
-          runtime.verifierPath,
-          "run",
-          "--pool=threads",
-          "--maxWorkers=2",
-          ...resolvedTargets,
-        ],
-        cwd: workspaceRoot,
-        env: {
-          CI: "1",
-          FORCE_COLOR: "0",
-          NO_COLOR: "1",
-        },
-        workspaceRoot,
-        approvedCapabilities: ["process.spawn", "workspace.read"],
-        ...(runtime.runtimeReadPaths.length > 0
-          ? { runtimeReadPaths: runtime.runtimeReadPaths }
-          : {}),
-      },
+    return runSelectedVerificationTests(
+      this.options,
+      targets,
       timeoutMs,
-      maxOutputChars: MAX_OUTPUT_CHARS,
-      ...(signal ? { signal } : {}),
-      abortedMessage: "selected test verification was aborted",
-    });
-    const status: VerificationStatus =
-      execution.status === "exited"
-        ? execution.exitCode === 0
-          ? "passed"
-          : "failed"
-        : execution.status;
-    await assertVerificationRuntimeStable(runtime, this.options.sandbox);
-    return {
-      status,
-      sandbox: this.options.sandbox.id,
-      verifierSha256: runtime.verifierSha256,
-      ...(runtime.verifierVersion
-        ? { verifierVersion: runtime.verifierVersion }
-        : {}),
-      toolchainSha256: runtime.toolchainSha256,
-      ...(runtime.runtimeIdentitySha256
-        ? { runtimeIdentitySha256: runtime.runtimeIdentitySha256 }
-        : {}),
-      durationMs: execution.durationMs,
-      exitCode: execution.exitCode,
-      signal: execution.signal,
-      stdout: execution.stdout,
-      stderr: execution.stderr,
-      stdoutSha256: sha256(execution.stdout),
-      stderrSha256: sha256(execution.stderr),
-      stdoutTruncated: execution.stdoutTruncated,
-      stderrTruncated: execution.stderrTruncated,
-    };
+      signal,
+    );
   }
 }
 
@@ -335,7 +245,7 @@ export function createVerificationTool(options: VerificationRunnerOptions) {
     name: "verify_workspace",
     label: "Verify workspace",
     description:
-      "Run bounded typecheck/test/format via pinned TypeScript/Vitest/Prettier toolchain in a read-only offline OS sandbox. workspace-relative cwd defaults root; target defaults to tsconfig/all tests/cwd respectively; timeoutMs bounds it. No package script/shell; output bounded.",
+      "Read-only offline typecheck/test/format, pinned toolchain. cwd=root (relative); target defaults: tsconfig/all tests/cwd. testRunner overrides inference. No package script/shell.",
     parameters: verifyWorkspaceSchema,
     async execute(_toolCallId, input, signal) {
       const result = await runner.run(input, signal);
@@ -354,6 +264,9 @@ export function createVerificationTool(options: VerificationRunnerOptions) {
 
 function validateVerificationRequest(input: VerificationRequest): void {
   if (
+    (input.testRunner !== undefined &&
+      (input.kind !== "test" ||
+        !["node-test", "vitest"].includes(input.testRunner))) ||
     typeof input.kind !== "string" ||
     !VERIFICATION_KINDS.has(input.kind as VerificationKind)
   ) {
@@ -383,30 +296,6 @@ function validateVerificationRequest(input: VerificationRequest): void {
       `verification timeoutMs must be ${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS}`,
     );
   }
-}
-
-async function resolveExistingPath(
-  workspaceRoot: string,
-  candidate: string,
-  label: string,
-): Promise<string> {
-  const lexical = path.resolve(workspaceRoot, candidate);
-  if (!isPathInside(lexical, workspaceRoot)) {
-    throw new Error(`${label} escapes the workspace`);
-  }
-  let resolved: string;
-  try {
-    resolved = await realpath(lexical);
-  } catch (error) {
-    if (isMissingFileError(error)) {
-      throw new Error(`${label} does not exist: ${candidate}`);
-    }
-    throw error;
-  }
-  if (!isPathInside(resolved, workspaceRoot)) {
-    throw new Error(`${label} resolves outside the workspace`);
-  }
-  return resolved;
 }
 
 async function resolveVerificationTarget(
@@ -458,6 +347,7 @@ function formatVerificationResult(result: VerificationResult): string {
       : []),
     `Toolchain SHA-256: ${details.toolchainSha256}`,
     `Workspace snapshot SHA-256: ${details.workspaceSnapshotSha256}`,
+    `Workspace stability: ${details.snapshotStatus ?? "not observed"}`,
     `Workspace snapshot: ${details.workspaceSnapshotFileCount} files / ${details.workspaceSnapshotBytes} bytes${
       details.workspaceSnapshotTruncated ? " / truncated" : ""
     }`,
@@ -474,24 +364,4 @@ function formatVerificationResult(result: VerificationResult): string {
     result.stderr || "(empty)",
   ];
   return sections.join("\n");
-}
-
-function isPathInside(candidate: string, root: string): boolean {
-  const relative = path.relative(path.resolve(root), path.resolve(candidate));
-  return (
-    relative === "" ||
-    (!relative.startsWith(`..${path.sep}`) &&
-      relative !== ".." &&
-      !path.isAbsolute(relative))
-  );
-}
-
-function errorCode(error: unknown): string | undefined {
-  return error instanceof Error && "code" in error
-    ? String(error.code)
-    : undefined;
-}
-
-function isMissingFileError(error: unknown): boolean {
-  return errorCode(error) === "ENOENT";
 }

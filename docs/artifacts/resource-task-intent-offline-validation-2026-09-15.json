@@ -1,0 +1,66 @@
+{
+  "kind": "napier.resource-task-intent-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:41:22.394873+00:00",
+  "sourceFiles": {
+    "packages/runtime/src/model-harness-resolution.ts": "9d1098fc9536b67d4fce13597ce989e31630ab248702a11cdfb6841032f01dbe",
+    "packages/runtime/src/model-harness-task-text.ts": "a64bc6703e1f928d3e4f8a82aa42279b65884a681eb35d0219449feb12b5960c",
+    "packages/runtime/test/model-harness-task-phase.test.ts": "17c40f48d8332de407b3c8b87d0ea2435f86c527fcb3e3bfd2252697920d537d",
+    "packages/runtime/test/model-harness-profile.test.ts": "72c30395399a682e2011cdc5880a92ef8b3602e0d64d1d6faefa0327654a838d"
+  },
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/resource-task-intent-final-offline-tests-2026-09-15.json",
+    "sha256": "41c034f5b6394c69ef6183aa6d2a7ffae5b863b67000fc988452108cbfd982b2",
+    "passed": 62,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runtimeCompilePassed": true,
+  "corpusReplay": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/resource-task-intent-corpus-replay-2026-09-15.json",
+    "sha256": "eda1266a751af7e14d2911ec31a9210e52ce82e94a2987df53a39065c9c6e438",
+    "casePlanPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/plan.json",
+    "casePlanSha256": "ef5a31707ab27c20c3d05d1e72eebcd426fdcdca6f5812709d26cc06ad25b847",
+    "cases": 30,
+    "changedClassifications": 15
+  },
+  "originalFailure": {
+    "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/audit-49.json",
+    "auditSha256": "6d4f3019191c6734c623e9e9601e6ac1ff40304c45efdfe9e69d2d42fb5e221f",
+    "runId": "run_1a5a98c8cf484e4686b3",
+    "taskSuccess": false,
+    "classification": "research",
+    "reason": "semantic_stall",
+    "localApiAdmissions": 4,
+    "financialReservations": 3,
+    "settledFen": 3,
+    "unreceiptedReservedFen": 600
+  },
+  "architecture": {
+    "baselineViolations": 11,
+    "currentViolations": 6,
+    "currentViolationPaths": [
+      "apps/web/src/use-workspace-view-model.ts",
+      "packages/contracts/src/skill-load-standard.ts",
+      "packages/runtime/src/browser-session.ts",
+      "packages/runtime/src/standard-skill-snapshot-compose.ts",
+      "apps/web/src/conversation-thinking-view-model.ts",
+      "apps/web/src/api.ts"
+    ],
+    "allCurrentViolationKindsExistInBaseline": true,
+    "fullyPassing": false
+  },
+  "profileUnchanged": {
+    "id": "napier.current-integrated.v3",
+    "fileSha256": "611fe6a7b506ab1610db8d2ec8700e05688ca1fbc486ca6a2594c33a4c0f7398"
+  },
+  "modelRequests": 0,
+  "limitations": [
+    "The resource-name task misclassification is established, but a causal link to semantic timeout is not proven.",
+    "New source has no real-model quality observations. The prior source upload pair and failed search Run remain unchanged and cannot qualify it.",
+    "Run limits, watchdogs, grader bytes, request cadence and cumulative financial ceiling were not relaxed.",
+    "Existing architecture failures and all six financial reservations remain preserved."
+  ],
+  "collectionComplete": false,
+  "promotionReady": false
+}

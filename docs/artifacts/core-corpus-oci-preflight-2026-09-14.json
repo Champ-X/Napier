@@ -1,0 +1,86 @@
+{
+  "kind": "napier.harness-core-corpus-oci-preflight",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T19:13:23.126811+00:00",
+  "image": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+  "readOnlyFixtureMount": true,
+  "network": "none",
+  "cases": [
+    {
+      "case": "atomic-json-patch-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "binary-frame-decoder-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "bm25-document-search-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "business-calendar-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "http-byte-ranges-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "path-glob-selection-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "resumable-byte-upload-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "semantic-version-order-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "source-map-vlq-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "sql-named-binding-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "streaming-csv-decoder-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "transaction-savepoints-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "ttl-lru-cache-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    },
+    {
+      "case": "weighted-route-planning-v1",
+      "exitCode": 0,
+      "diagnostic": null
+    }
+  ],
+  "passed": 14,
+  "total": 14,
+  "exitCode": 0,
+  "logSha256": "ea6c5da1021d51641e094c926b184c0657d3129c100135ca1d809ad3e4080f6a",
+  "scope": "Public reference tests in the actual OCI image; not Agent task outcomes or a production sandbox-adapter acceptance",
+  "promotionReady": false
+}

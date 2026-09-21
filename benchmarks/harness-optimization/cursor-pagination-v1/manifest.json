@@ -1,0 +1,24 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "cursor_pagination_v1",
+  "title": "Keyset pagination, strict cursors and concurrent data changes",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": [
+    "src/cursor.mjs",
+    "src/paginate.mjs"
+  ],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": [
+    "apply_patch",
+    "run_command"
+  ]
+}

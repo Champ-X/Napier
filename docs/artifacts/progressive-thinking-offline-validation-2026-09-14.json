@@ -1,0 +1,83 @@
+{
+  "kind": "napier.progressive-thinking-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T15:21:11.379Z",
+  "triggerRunId": "run_ddb9d6e6d5c34afd9cc3",
+  "triggerInterpretation": "The original cancelled reasoning was buffered and discarded. Only the heading-based reason and hashes remain; this audit does not establish that historical invocation was a false positive.",
+  "source": {
+    "path": "packages/runtime/src/model-thinking-loop-detector.ts",
+    "sha256": "d5b66e07c3d516e8505d15366d30f89445749e696375c93c67c491a240715890",
+    "compiledSha256": "d99e14855e92e780e8540b0ae4cd0da3d2be8e0ba8b922b1ab3cce11ad92f17c"
+  },
+  "syntheticFixtureSha256": "e48b7559d2387746c2c07909b7dce46c9aff1373019c20933088e9719b08484f",
+  "observations": [
+    {
+      "chunkSize": 1,
+      "previousDetection": {
+        "reason": "overplanning_headings",
+        "attempt": 1,
+        "observedBytes": 1351,
+        "observedThinkingChunks": 1351,
+        "repeatedUnitBytes": 131,
+        "repeatedUnitSha256": "137688cf5ec43dff95487220c0dcc6c2ae3bf5831bb18d844a78ecb193943188"
+      },
+      "currentDetection": null
+    },
+    {
+      "chunkSize": 17,
+      "previousDetection": {
+        "reason": "overplanning_headings",
+        "attempt": 1,
+        "observedBytes": 1360,
+        "observedThinkingChunks": 80,
+        "repeatedUnitBytes": 138,
+        "repeatedUnitSha256": "2653a03002ae6ac4409a8166d855b0a8e2f08b88110f25fc266840ea194d3393"
+      },
+      "currentDetection": null
+    },
+    {
+      "chunkSize": 4096,
+      "previousDetection": {
+        "reason": "overplanning_headings",
+        "attempt": 1,
+        "observedBytes": 1919,
+        "observedThinkingChunks": 1,
+        "repeatedUnitBytes": 130,
+        "repeatedUnitSha256": "0a80f91bb486cf7e210839c4540a3fdd3a26ea59d05d597af4a56a99c484b0cc"
+      },
+      "currentDetection": null
+    }
+  ],
+  "stalledReasoning": {
+    "old": {
+      "reason": "overplanning_headings",
+      "attempt": 1,
+      "observedBytes": 2162,
+      "observedThinkingChunks": 1,
+      "repeatedUnitBytes": 82,
+      "repeatedUnitSha256": "f6f9359c15b59105e86296f0aff263c7deef5a98f0144bb4f463c360024395f9"
+    },
+    "current": {
+      "reason": "overplanning_headings",
+      "attempt": 1,
+      "observedBytes": 2162,
+      "observedThinkingChunks": 1,
+      "repeatedUnitBytes": 168,
+      "repeatedUnitSha256": "6a13fea26ac66e536237103ea5896509864a0e0c29d7cc40d917433a5cdf7b8e"
+    }
+  },
+  "tests": {
+    "path": "/tmp/napier-progressive-thinking-after-v2.json",
+    "sha256": "e0146aeb6e321b47aa1e7f3e68c094c52fcd1264df274c5d37509a7d4b9f3512",
+    "passed": 23,
+    "failed": 0,
+    "files": [
+      "/Users/champ/orca/Napier/packages/runtime/test/agent-thinking-loop-guard.test.ts",
+      "/Users/champ/orca/Napier/packages/runtime/test/model-thinking-loop-detector.test.ts",
+      "/Users/champ/orca/Napier/packages/runtime/test/model-thinking-retry-options.test.ts",
+      "/Users/champ/orca/Napier/packages/runtime/test/model-thinking-terminal.test.ts"
+    ]
+  },
+  "modelRequests": 0,
+  "scope": "Deterministic false-positive reproduction and real local Runtime/tool dispatch with a faux provider. Existing repetition, terminal recovery, retry and budget protections remain tested. No real-model quality or cost claim; old evidence and spending remain unchanged."
+}

@@ -1,0 +1,19 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_stream_queue_v1",
+  "cases": [
+    {
+      "path": "harness-optimization/incremental-ndjson-v1",
+      "coverage": [
+        "incremental-utf8-ndjson-decoding",
+        "validation",
+        "ownership"
+      ]
+    },
+    {
+      "path": "harness-optimization/bounded-async-queue-v1",
+      "coverage": ["bounded-asynchronous-job-queue", "validation", "ownership"]
+    }
+  ]
+}

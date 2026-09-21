@@ -1,0 +1,115 @@
+{
+  "kind": "napier.mixed-service-corpus-preflight",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:42:48.856519+00:00",
+  "snapshot": "/tmp/napier-harness-stream-timing-v1",
+  "files": {
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/README.md": "8104b46fda2a96bcc165ce84b29b154d286b71bcb1c90aad88aa297e47d16590",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/backend/quote.py": "065045163c6061d9730002045ef46a6255e310a225bfcb24595d5a001908a4ed",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/backend/server.py": "b7aeafbbf861119ac056d75cba3d6689cdec3c33574393d6ba8caed86c0a1823",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/backend/test_quote.py": "e44d71a53a5144e3b806a9e0199b317c1c946bc4df67e4d54b221d53aa018703",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/dev-server.mjs": "00e835a88606ac1b38f85c5846b1edd226fb3d2b35c3c4ecd60f4b2edbc69836",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/frontend/app.ts": "eb3fe8826f7a4ac59123aa5290fd1f2d0245f98847f8ffb7bbb21df525d42840",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/frontend/booking.test.mjs": "8082d879bc097a71c3639abedbed7dd0041f3ed4a8eddaafb12c81a716aea510",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/frontend/booking.ts": "2339b0ef8a5be669d52637cf2efdf1a938df68fa700741443de4d529d3e630c6",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/frontend/index.html": "4c95459fcc197692de2340b53477b0498fab58172410eefaef7e0478d27f9924",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/frontend/tsconfig.json": "4a4175d22b870f50208a0b625b348f9dcbdf5735e8bc09eb53a9fe09a120fed2",
+    "benchmarks/harness-optimization/mixed-service-v1/fixture/package.json": "34519ff8e43b28a99df00baf05a2e35326d3313308f7fe71dbf6ffa62d62d82a",
+    "benchmarks/harness-optimization/mixed-service-v1/manifest.json": "c947db3368ce7e90e4f06650d3e23072625324dd1e04170df4fbe8647451cfdb",
+    "benchmarks/harness-optimization/mixed-service-v1/outcome.mjs": "8f6c6f969456c1bed92388963a16b9a5aa5570d51e72072ed894336de3d8c6a0",
+    "benchmarks/harness-optimization/mixed-service-v1/prompt.md": "846a7bd781ac89b0c4b634d2a295b77f62f13f69eb2eb53b2362534679826e47",
+    "benchmarks/harness-optimization/mixed-service-v1/reference/backend/quote.py": "bd1c044987dbb17ef10b2e214b7fb56de1f06dea3a099c0029abc2c834e07b86",
+    "benchmarks/harness-optimization/mixed-service-v1/reference/frontend/booking.ts": "9613bac0de97e28a1c6402a4d478f2b398705c93bd87d8215f7d0e1c07fcc02d"
+  },
+  "checks": {
+    "host": "Initial frontend and backend tests fail; grader requires both edits; complete reference passes public tests, independent grader and TypeScript no-emit checks.",
+    "oci": "Complete reference passes frontend tests, Python tests, independent grader and TypeScript no-emit checks in pinned read-only network-none OCI container.",
+    "service": {
+      "passed": true,
+      "observedAt": "2026-09-13T21:39:16.820Z",
+      "url": "http://127.0.0.1:54054/",
+      "receipts": [
+        {
+          "route": "ready",
+          "status": 200,
+          "bodySha256": "4e5451726698ae4552eacc58e1339c7be5a0b638e8d2cc21cf83456b4071b7e5"
+        },
+        {
+          "route": "",
+          "status": 200,
+          "bodySha256": "4c95459fcc197692de2340b53477b0498fab58172410eefaef7e0478d27f9924"
+        },
+        {
+          "route": "app.js",
+          "status": 200,
+          "bodySha256": "ed634fec6b6ac3969b6d8383f464d26f9e15608ea9291da33db2b6fe3dad8611"
+        },
+        {
+          "route": "booking.js",
+          "status": 200,
+          "bodySha256": "13a7207bf6610c8529dbd8d6319bf2206a732fe7895a53716a2e0b921f61791b"
+        },
+        {
+          "route": "api/quote",
+          "status": 200,
+          "bodySha256": "9ea358c14c542742599173bf32304d4d931cd0a54ef520f10ea9017f11eb54f9"
+        },
+        {
+          "route": "api/quote",
+          "status": 200,
+          "bodySha256": "1b7a86953680c58b4be70f4ac026d8b02d32863ae6464cafb9cd1daa399bd841"
+        },
+        {
+          "route": "api/quote",
+          "status": 400,
+          "bodySha256": "a62a355bdd6a33358dd50530a37f4bf9709adc979e2f33045f8bd064d21fda66"
+        }
+      ],
+      "scope": "Independent HTTP observer: served HTML and transpiled TypeScript modules plus live Python API through Node proxy. No rendered browser acceptance.",
+      "binding": {
+        "protocol": "http",
+        "containerPort": 8090,
+        "host": "127.0.0.1",
+        "hostPort": 54054,
+        "url": "http://127.0.0.1:54054/",
+        "healthPathSha256": "9b3d87a2245c10677936035852371df2fc6b2ea7b4a969cf4c829ca98cf148e7",
+        "identitySha256": "9ab3e026d55b99e02830c1c21736f6536609982612abe37e6b6bf2225f9de037",
+        "readyAt": "2026-09-13T21:39:16.692Z"
+      },
+      "closedAfterTermination": true
+    }
+  },
+  "imageId": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+  "logs": [
+    {
+      "path": "/tmp/napier-mixed-service-preflight-v1.log",
+      "sha256": "b5b7c465d12250f16e3be7986eb45633a856507b367b43875e872384a88b3ddd"
+    },
+    {
+      "path": "/tmp/napier-mixed-service-oci-preflight-v1.log",
+      "sha256": "e7bdc7292c641ecc80674db3046e932eaa1c33a8c9f0baaeb2ebfe3323deb393"
+    },
+    {
+      "path": "/tmp/napier-mixed-service-oci-checks-v1.log",
+      "sha256": "7b8c638b055a8867bd78bf55f5604a2fc91454763ed6bc99964ec581df190bff"
+    },
+    {
+      "path": "/tmp/napier-mixed-service-oci-types-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/napier-mixed-service-preflight-v1.mjs",
+      "sha256": "3ad2cf0d320c73331229332a912650647dbab5a5808abc8b0fb1051fa155a25f"
+    },
+    {
+      "path": "/tmp/napier-mixed-service-driver-v1/service-observer.mjs",
+      "sha256": "a2e08b58f3b5e7576a6aff93fcdd558e9f75be89efa628aff701e497c92535ca"
+    },
+    {
+      "path": "scripts/harness-mixed-service-case.test.mjs",
+      "sha256": "8673157315af49ac7378243dab06f17c43a25cf86cffbdc03c3abb6923ce5427"
+    }
+  ],
+  "scope": "Corpus and real OCI adapter preflight using reference implementation; not Agent execution or paired quality evidence. HTTP service and asset checks are not browser rendering acceptance.",
+  "promotionReady": false
+}

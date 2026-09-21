@@ -1,0 +1,82 @@
+{
+  "kind": "napier.single-pair-with-retained-blocker-plan",
+  "createdAt": "2026-09-15T05:44:42.777Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/savepoints-original-pair-v1/plan.json",
+  "planSha256": "4a8b6b662975d33444967316ff3cd44420743d90bf8b7beaf59e8bc317281956",
+  "source": "/tmp/napier-harness-staged-verification-v1",
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "dispatchIndices": [
+    30,
+    31
+  ],
+  "retainedReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "0d154f1e8038c84385c22dd8310e76b4e8e62bdda27bbe99a41f5bc51fd4696a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "894b91b7d0255be49dc76887dd3ff8efc44fe4ee9b8f0084695d393d2f58cc87"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "57e48c2e1c9650e21d23cd2c4fa57381fb699377acad27daedcf2f29245be109"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_pricing_options_migration_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "99d5cd702808590bb9f3d9696811f2404fe7ac117d12db403aee63872673e4de"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "f9a52dcbade13bdba946156c8d246924c7c529e3027ac4454edbaebf9de8cf0b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/coding_loyalty_discount_debug_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "76a5f9afbec5ac7e576d2059e55dbf0896aa3273f34186ae509a4a5428ffa099"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "ba28a0382c99b8a8bb15d01b6da0b8ae2bb736fb57f3075b89297357398df3f0"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/ttl_lru_cache_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "d0567e11ae01730c3adb38143d7bcd32c3da781ef28e57cd10168facf27da2c6"
+    }
+  ],
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "clarificationPath": "/Users/champ/orca/Napier/docs/artifacts/staged-savepoints-inherited-stop-clarification-2026-09-15.json",
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 3717,
+    "remainingFen": 6283,
+    "requests": 181,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "Observe the original transactional savepoint contract on the current staged-verification source: real model handling of nested rollback, committed inner changes, value ownership, literal object keys and invalid-call atomicity requires actual tool execution and independent grading. This original current-source task has no prior observation; do not change fixtures or add an availability probe.",
+  "scope": "Exactly one serial candidate-first pair under unchanged source/profile/driver, 180-job schedule, tasks, graders, request cadence and budgets. Retain all prior failed and ineligible reports and aggregate blockers. Stop on new candidate failure or evidence problem; existing aggregate blocker also stops the batch at its only pair boundary. No later jobs queued.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

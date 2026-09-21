@@ -52,6 +52,23 @@ export function legacyToolFailureLedgerProjection(
 
 /** Text inference exists solely to replay and execute undeclared v1 tools. */
 function legacyClassifyText(value: string): ToolFailureClassV1 {
+  // Pi rejects length-terminated arguments before invoking any tool. This
+  // needs a smaller complete call, not a different capability or permission.
+  if (
+    /^Tool call "[^"\r\n]+" was not executed: the response hit the output token limit,/u.test(
+      value,
+    )
+  )
+    return "invalid_input";
+  // The SDK's schema error echoes rejected arguments after its diagnostic.
+  // Code/data there can contain 429, timeout or session-closed text without
+  // an upstream request or tool execution having occurred.
+  if (
+    /^(?:Error: )?Validation failed for tool "[^"\r\n]+":\r?\n(?:[ \t]+- |Unknown validation error\b)/u.test(
+      value,
+    )
+  )
+    return "invalid_input";
   if (/\b(?:abort(?:ed)?|cancel(?:led)?)\b/iu.test(value)) return "cancelled";
   if (/\b(?:timeout|timed\s*out|etimedout|deadline\s+exceeded)\b/iu.test(value))
     return "timeout";

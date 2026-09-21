@@ -1,0 +1,20 @@
+{
+  "kind": "napier.expense-supplemental-oracle-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T14:19:23.452Z",
+  "files": {
+    "benchmarks/harness-supplemental/weighted-expense-allocation-v1.mjs": "fcf5fc238ea917383faecf4c04ed90458041af5b0f46ff16459da952c3e671bc",
+    "scripts/harness-expense-contract-oracle.test.mjs": "dc05d4040014077c2a6d27409f05415a79b83bbb15c8492327dcb56d4cc1b0ab",
+    "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/expense-supplemental-oracle-freeze.json": "c8654d856f6e8e30ab8231991bb85a4b564c2f86999cf67f002ef6f18293ab4f",
+    "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/mixed-pairs-after-fast-v2-admission.json": "d93d0438a806b8ef2430373384abc5eec6517944ec83c3a09f90f9239dfd081d"
+  },
+  "tests": {
+    "report": "/tmp/napier-expense-oracle-tests-v1.json",
+    "passed": 4,
+    "failed": 0
+  },
+  "scope": "Explicit README requirements only; reference passes both graders. Three mutated references pass original grader and fail supplement. Original frozen tasks and outcomes unchanged. Both Agent reports absent at oracle freeze; original output not used to construct checks.",
+  "dispatchGate": "The prior waiting continuation was stopped before dispatch, and replaced by v2 which runs supplemental OCI grading before preparing new paired Runs.",
+  "modelRequests": 0,
+  "promotionReady": false
+}

@@ -641,3 +641,10 @@ describe("Agent profile updates", () => {
     expect(cleared.revision).toBe(3);
   });
 });
+
+it("persists an explicitly unlimited cumulative token budget", () => {
+  const updated = updateAgentProfile(PROFILE, {
+    runLimits: { ...PROFILE.runLimits!, maxTotalTokens: 0 },
+  });
+  expect(updated.runLimits?.maxTotalTokens).toBe(0);
+});

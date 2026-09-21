@@ -1,0 +1,197 @@
+{
+  "kind": "napier.pre-edit-verification-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T00:07:54.857756+00:00",
+  "files": [
+    {
+      "path": "scripts/harness-pre-edit-verification-policy.mjs",
+      "sha256": "1b1b9adf25b437ac221e246f30813425284067dd59f4317b7ee30323c61052f4"
+    },
+    {
+      "path": "scripts/harness-pre-edit-verification-policy.test.mjs",
+      "sha256": "7a9be79f612ac2dc834f84428594557c01e67a8e736ae089c8d67340ebcd990e"
+    },
+    {
+      "path": "scripts/harness-campaign-evidence.mjs",
+      "sha256": "46424127f6227099a9839ad5b4a39432e937dd8b640b92a3a83ef4cdf05358fb"
+    },
+    {
+      "path": "scripts/harness-campaign-evidence.test.mjs",
+      "sha256": "c84fe66d06c3079caf63670fa1d23c72bf6038f6062526e06959d7d446016c93"
+    },
+    {
+      "path": "scripts/harness-service-observation.test.mjs",
+      "sha256": "5917b88922e870cdf2863cfa5500a5356f6e453c64e2cec0cc387f39c5b346e2"
+    },
+    {
+      "path": "scripts/harness-verification-protocol-evidence.test.mjs",
+      "sha256": "c95d5854ea66501fb587a8e3f623d7cbac4ac2f22cebced9f3341ff127082cef"
+    },
+    {
+      "path": "scripts/registry.json",
+      "sha256": "06c35061ee2e251d9d608621769c88a7496733299618c58e670d1aba8a286c98"
+    },
+    {
+      "path": "knip.json",
+      "sha256": "b14590ad3c6f94fc4d3fa9e18174477abfba8a596b9907a692a8eef884935b14"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-pre-edit-policy-tests-v1.log",
+      "sha256": "4c771b0c2fff7115dd4afbfd32b7e09165ea7be353881b06001c4a8acb7e9ce2"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-policy-tests-v2.log",
+      "sha256": "ac8275c33b6d9b7cc575f14bc107a810d43580b4a6a4dcc7d74fb14ab0448b10"
+    },
+    {
+      "path": "/tmp/napier-pipeline-identity-before-v1.log",
+      "sha256": "6eb685cdcced3bf184a67b5524be0ff40b03dc6f25326417e27374d215420546"
+    },
+    {
+      "path": "/tmp/napier-pipeline-identity-after-v1.log",
+      "sha256": "8be0cfb1db4c3e9e7b54764161e22fb82b6299c30a8f39068068f3ff1376150e"
+    },
+    {
+      "path": "/tmp/napier-audit-runner-before-v1.log",
+      "sha256": "3cca0167c04198f5bd7fc9cadab2c7581983e7a0547a31c9ae4f43a77c5ab6ab"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-final-targeted-v1.log",
+      "sha256": "228866d8d2058029fd2dba012f7f94f383d2192310f4e15fae4a2394aa5e3766"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-root-tests-v1.log",
+      "sha256": "80796a710de62d19bfb73eab21dfd6811faf8aef79e02e8e1f35129a6104ce55"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-root-tests-v2.log",
+      "sha256": "8d0f869a0e5d4f7534290657e4af144fa522c111c3d98858320b0102714efb9f"
+    },
+    {
+      "path": "/tmp/napier-root-prerequisite-build-v1.log",
+      "sha256": "874e6e2d3881170842b19bfca5a75e8203f0d4d8db8dbaf3aff5a58b6550bf0a"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-original-gates-v1.log",
+      "sha256": "f19be13904268acd6f24e562fc45663c390da4fe51e25e4e50a5571485a58af8"
+    },
+    {
+      "path": "/tmp/napier-harness-entry-check-v1.log",
+      "sha256": "312627c160942ec4b7e8e44270ea515eb09a4a5253c1575e3370684f96f1b27c"
+    },
+    {
+      "path": "/tmp/napier-harness-entry-check-v2.log",
+      "sha256": "ca857a5d29106f6541acfdb8cc345b9c45c95d40f8d7041a946de19efc576293"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-architecture-v1.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-format-check-v2.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-queue-audit-v1.log",
+      "sha256": "f688649862bc5fe0f043fe5f62ef90fa63b28504b330624b9d98eed076e5d619"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-ndjson-audit-v1.log",
+      "sha256": "1623ec39326b80cb154a3daf4ab39b54ca87c5d4365093d2fb3d7c3f62b74e45"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-mixed-audit-v1.log",
+      "sha256": "9498cf291a9daabc291fe4efcd66654131ed35fbb98d8476d82cb15eb9a31d75"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-component-audit-v1.mjs",
+      "sha256": "ae627ec34fafcbaa897b65417e3398fc38dce6511ae3ed554a815e919add50c9"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-component-audit-v2.mjs",
+      "sha256": "ca9e678c58147a2d8ddc7fd7688725b2fe3cef7be044da40b5342d626901cb37"
+    },
+    {
+      "path": "/tmp/napier-pre-edit-driver-v1/freeze-receipt.json",
+      "sha256": "44a7a3e808f765e435346550cb257bb96653fcc7f920b336f6a3c1efd0b5402a"
+    }
+  ],
+  "runtimeSnapshot": "/tmp/napier-harness-contract-first-v1",
+  "runtimeBindings": [
+    {
+      "package": "runtime",
+      "part": "src",
+      "fileCount": 1170,
+      "inventorySha256": "813330c186e1fc5d3cf2944e0f33dd7a5f6fc0619929fa746e81e8177953458c",
+      "matchesFrozenSnapshot": true
+    },
+    {
+      "package": "runtime",
+      "part": "dist",
+      "fileCount": 3522,
+      "inventorySha256": "dd4c4e2eb4d2567666c78c1e0fca4e7a076996faf982a9df9454348e1821453c",
+      "matchesFrozenSnapshot": true
+    },
+    {
+      "package": "contracts",
+      "part": "src",
+      "fileCount": 79,
+      "inventorySha256": "a13fe850542588761cc178b35b75356aceeda717bccc3cab4860d57d632aa4a1",
+      "matchesFrozenSnapshot": true
+    },
+    {
+      "package": "contracts",
+      "part": "dist",
+      "fileCount": 238,
+      "inventorySha256": "a4bb98549c26f1938f0102793c1374dd98d389d7bf2478896fc284eb523e8405",
+      "matchesFrozenSnapshot": true
+    }
+  ],
+  "targeted": {
+    "passed": 32,
+    "files": 9
+  },
+  "rootSuiteAfterPrerequisiteBuild": {
+    "passed": 529,
+    "failed": 71,
+    "files": 113,
+    "durationSeconds": 22.0,
+    "qualified": false
+  },
+  "originalBaselineSubset": {
+    "snapshot": "/tmp/napier-harness-baseline-c454a155",
+    "passed": 15,
+    "failed": 2,
+    "scope": "OCI crash-recovery and portable-DAP receipt suites passed; repository hygiene retained dead-code and public-API failures. This subset does not classify every current root failure as original."
+  },
+  "deadCodeIssuesAfterRegistration": [
+    "scripts/check-workspace-html-preview.mjs",
+    "integrations/tessmora/scripts/mma-rag.mjs",
+    "apps/server/test/workspace-html-preview-browser-fixture.ts"
+  ],
+  "deadCodeMatchesOriginalSubset": true,
+  "architectureViolations": 7,
+  "limitsRaised": false,
+  "formatPassed": true,
+  "diffCheckPassed": true,
+  "prerequisiteBuildsPassed": [
+    "sdk",
+    "cli",
+    "benchmark-kit",
+    "harness-eval",
+    "server"
+  ],
+  "evidence": {
+    "path": "docs/artifacts/pre-edit-verification-components-2026-09-14.json",
+    "sha256": "b7b29570ae098ce1a9c76ef78a8510b9239442b77a8591b70dc78aa531c72a91"
+  },
+  "apiTesting": {
+    "newPaidCampaignsPaused": true,
+    "reason": "User reported insufficient DeepSeek balance and requested lower API test frequency. Establish explicit call-count/cost budget before any further paid testing.",
+    "activeCampaignWorkers": 0
+  },
+  "assessment": "Ordering feasibility passed three cases with nine paired trials and actual intervention in four candidate Runs. Not integrated in product defaults and not whole-composition quality qualification. Root release/source evidence gates remain unresolved.",
+  "promotionReady": false
+}

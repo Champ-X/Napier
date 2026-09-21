@@ -1,0 +1,2 @@
+# Provider reasoning audit
+The model-metadata and level-filter evidence leave off, high and max available. The clamp-fallback evidence rounds an unsupported minimal request up to high. The simple-wrapper passes that clamped effort to the wire serializer, which enables thinking. For a bounded retry, omit reasoning and retain the 2048-token ceiling; wire-disable then selects disabled thinking. Preserve ordinary calls. This is offline source inspection only: no live request was made and no Agent task-success conclusion follows from it.

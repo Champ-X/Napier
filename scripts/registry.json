@@ -137,6 +137,66 @@
       "credentialClass": "none",
       "retainedUntil": "runtime-v1",
       "outputArtifacts": []
+    },
+    {
+      "path": "scripts/build-edit-format-calibration.mjs",
+      "kind": "evidence",
+      "owner": "harness-eval",
+      "entryCommand": "node scripts/build-edit-format-calibration.mjs --id ID --report REPORT --output NEW_FILE",
+      "networkRequired": false,
+      "credentialClass": "none",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["caller-specified output path"]
+    },
+    {
+      "path": "scripts/build-harness-failure-case.mjs",
+      "kind": "evidence",
+      "owner": "harness-eval",
+      "entryCommand": "node scripts/build-harness-failure-case.mjs --report REPORT --case-root ORIGINAL_CASE --output NEW_DIRECTORY",
+      "networkRequired": false,
+      "credentialClass": "none",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["caller-specified output path"]
+    },
+    {
+      "path": "scripts/export-run-input-reproduction.mjs",
+      "kind": "evidence",
+      "owner": "harness-eval",
+      "entryCommand": "node scripts/export-run-input-reproduction.mjs --workspace WORKSPACE --data-root DATA --thread THREAD_ID --run RUN_ID --output NEW_DIRECTORY",
+      "networkRequired": false,
+      "credentialClass": "none",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["caller-specified output path"]
+    },
+    {
+      "path": "scripts/run-harness-optimization-campaign.mjs",
+      "kind": "live",
+      "owner": "harness-eval",
+      "entryCommand": "node --env-file-if-exists=.env scripts/run-harness-optimization-campaign.mjs --runtime-root SNAPSHOT --case-root CASE --output NEW_DIRECTORY --arm baseline|candidate --max-api-requests REQUEST_LIMIT --api-request-interval-ms MIN_INTERVAL",
+      "networkRequired": true,
+      "credentialClass": "deepseek",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["caller-specified output path"]
+    },
+    {
+      "path": "scripts/run-harness-optimization-suite.mjs",
+      "kind": "live",
+      "owner": "harness-eval",
+      "entryCommand": "node --env-file-if-exists=.env scripts/run-harness-optimization-suite.mjs --suite SUITE --baseline-runtime BASELINE --candidate-runtime CANDIDATE --output NEW_DIRECTORY --max-api-requests SHARED_REQUEST_LIMIT --api-request-interval-ms MIN_INTERVAL --schedule-mode paired-stop --concurrency 1 --spending-budget SHARED_CNY_BUDGET",
+      "networkRequired": true,
+      "credentialClass": "deepseek",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["caller-specified output path"]
+    },
+    {
+      "path": "scripts/run-harness-recovery-scenario.mjs",
+      "kind": "live",
+      "owner": "harness-eval",
+      "entryCommand": "node --env-file-if-exists=.env scripts/run-harness-recovery-scenario.mjs --runtime-root SNAPSHOT --case-root CASE --output NEW_DIRECTORY",
+      "networkRequired": true,
+      "credentialClass": "deepseek",
+      "retainedUntil": "0.1.x",
+      "outputArtifacts": ["caller-specified output path"]
     }
   ]
 }

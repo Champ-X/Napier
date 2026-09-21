@@ -1,0 +1,361 @@
+{
+  "kind": "napier.task-failure-invocation-projection-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T11:10:42.231690+00:00",
+  "problem": "Working-state failures were keyed only by tool name: one failure overwrote another, and any later completion suppressed the remaining review hint, even for another input/target.",
+  "change": "Retain individual rejected attempts. Resolve only a review hint with unique, preceding invocation bindings for identical tool/input within the same thread. Bind invocation lookup to Run and call ID. Expose family completion separately from matching completion, preserve bounded histories and disclose omitted counts. No permission, execution replay or task-completion authority is added.",
+  "source": {
+    "bindings": [
+      {
+        "file": "packages/runtime/src/task-tool-failures.ts",
+        "sha256": "49b0fa16dd39ecea8307afd85af80cc36d22284088a39e67b8fc4ab38cdd7172"
+      },
+      {
+        "file": "packages/runtime/src/task-working-state.ts",
+        "sha256": "e28d9fa1d04d5dfc5530ff93a4dbb87a44ce7511f28f555bf3c25edaa27298f1"
+      },
+      {
+        "file": "packages/runtime/src/agent-working-state-context.ts",
+        "sha256": "302cf67a569cce851f0beb139c5581f334b733d936ef623ad60d1d51ef778e42"
+      },
+      {
+        "file": "packages/runtime/test/task-tool-failure-projection.test.ts",
+        "sha256": "ea3437afbdb3dbf84bb98e5c87e55ee9bc608a35d6237f1b5a5a188631fa335d"
+      },
+      {
+        "file": "packages/runtime/test/task-working-state.test.ts",
+        "sha256": "0548545494f2303241664205bf1a03bc1faf0c0c2e6749bad818e9bd0b79df4d"
+      },
+      {
+        "file": "packages/runtime/test/task-plan-revisions.test.ts",
+        "sha256": "a431831b483cb6bd4a3879c8e3dd11e7ba021d8ef9cfe9ed31ed82122415280e"
+      },
+      {
+        "file": "packages/runtime/test/task-plan-tool-snapshot.test.ts",
+        "sha256": "341a7423de321019001f6db9e5af0504d8c610245918269ee75de8e99f9d7899"
+      },
+      {
+        "file": "packages/runtime/test/task-memory-query-provenance.test.ts",
+        "sha256": "1a31094bdeecd024e52f32967f46d3a1d1fda28bfa292a65b6717ed18a274fb7"
+      },
+      {
+        "file": "packages/runtime/test/task-memory-thread-history.test.ts",
+        "sha256": "5a4c6a149e3431f0cf311e8d752b302288a96e38cdad5c33ddd34d6bd3070502"
+      },
+      {
+        "file": "packages/runtime/test/task-branch-control-history.test.ts",
+        "sha256": "d0147b0d83efefadeca55c70f239926b811d1d8e82eaeb84068fde1025ff079c"
+      }
+    ],
+    "argv": [
+      "/Users/champ/orca/Napier/node_modules/vitest/vitest.mjs",
+      "run",
+      "test/task-tool-failure-projection.test.ts",
+      "test/task-working-state.test.ts",
+      "test/task-plan-revisions.test.ts",
+      "test/task-plan-tool-snapshot.test.ts",
+      "test/task-memory-query-provenance.test.ts",
+      "test/task-memory-thread-history.test.ts",
+      "test/task-branch-control-history.test.ts",
+      "--maxWorkers=2",
+      "--testTimeout=30000",
+      "--reporter=json",
+      "--outputFile=/tmp/napier-task-failure-validation-v1.json"
+    ],
+    "scope": "Seven affected source/projection/lineage test files; credentials and live flags removed; no paid model calls."
+  },
+  "freeze": {
+    "path": "/tmp/napier-harness-failure-invocations-v1/freeze-receipt.json",
+    "sha256": "6429bb0a893096f94698ec75ed8cbea1b395f21cfcfbfd944bdd2945806cf5f5",
+    "receipt": {
+      "kind": "napier.harness-runtime-freeze",
+      "schemaVersion": 1,
+      "snapshot": "/tmp/napier-harness-failure-invocations-v1",
+      "parentSnapshot": "/tmp/napier-harness-history-linear-v1",
+      "parentReceiptSha256": "db59296538f8177e7788ac57b0806a3df9608bf82e3870f3a95f7d8074d1733a",
+      "recordedAt": "2026-09-14T11:08:29.158124+00:00",
+      "runtimeSourceChanges": [
+        "agent-working-state-context.ts",
+        "task-tool-failures.ts",
+        "task-working-state.ts"
+      ],
+      "bindings": [
+        {
+          "path": "packages/runtime/src",
+          "fileCount": 1178,
+          "inventorySha256": "24410e3998a9dc1537dd51832af2c5bd496e7f9366706c5fa26a4a184869b5e8",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/runtime/dist",
+          "fileCount": 3546,
+          "inventorySha256": "22a29ad05a86ba66877c787f85442e40c0ad8c2b2c7cc75a8f27b0d516954157",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/runtime/test",
+          "fileCount": 568,
+          "inventorySha256": "75ed059ca2a64d8d67ff9d0a1c3b9ee1365d85b6fa7475e416dc4d537fbc101e",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/contracts/src",
+          "fileCount": 79,
+          "inventorySha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/contracts/dist",
+          "fileCount": 238,
+          "inventorySha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+          "matchesWorkspaceAtFreeze": true
+        },
+        {
+          "path": "packages/contracts/test",
+          "fileCount": 11,
+          "inventorySha256": "451e3f5a93653aa9e548a73b437b13e230b22145ff7953a9782ec66d4f117296",
+          "matchesWorkspaceAtFreeze": true
+        }
+      ],
+      "workspaceAliases": {
+        "runtime": "/private/tmp/napier-harness-failure-invocations-v1/packages/runtime",
+        "contracts": "/private/tmp/napier-harness-failure-invocations-v1/packages/contracts"
+      },
+      "reboundLinks": [
+        "node_modules/@napier/contracts",
+        "node_modules/@napier/runtime"
+      ],
+      "profileFileSha256": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4",
+      "scope": "Current Runtime/Contracts source, compiled dist and tests; inherited scripts are not a new execution driver. External dependencies remain linked. Old dependency preflight receipt deliberately not copied.",
+      "paidApiCalls": 0,
+      "qualityQualified": false
+    }
+  },
+  "verification": {
+    "initialRegressionTests": {
+      "reportPath": "/tmp/napier-task-tool-failure-before-20260914.json",
+      "sha256": "a3e886038739b60e0507d342b8431e333ebb9380343803434ff65efb31527161",
+      "failed": 7,
+      "sameNamedRegressionsNowPassed": 7
+    },
+    "final": {
+      "reportPath": "/tmp/napier-task-failure-validation-v1.json",
+      "sha256": "a195b9c90c312af127d591ee2681e24e0f021cdfb361bc7a68daa09caedc7dea",
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "files": 7
+    },
+    "runtimeCompilation": {
+      "command": "node node_modules/typescript/bin/tsc -p packages/runtime/tsconfig.json",
+      "passed": true
+    },
+    "formattingAndDiffCheckPassed": true,
+    "architecture": {
+      "passed": false,
+      "existingViolations": 6,
+      "newViolations": 0,
+      "budgetsRaised": false
+    }
+  },
+  "retainedLedgerPrefixReplay": [
+    {
+      "path": "/tmp/napier-task-failure-retained-prefix-before.json",
+      "sha256": "09c6da2729170d3150f5052ada300b72ae29a16b72574cfaa3329bc401fef451",
+      "result": {
+        "kind": "napier.retained-task-failure-prefix-reproduction",
+        "source": "/tmp/napier-harness-history-linear-v1",
+        "runId": "run_1b6c1654d39843beab6a",
+        "reportSha256": "be3fe151eac7b8aea05c0cf4a6006735a0deb31bdfea75d67f8937c4bd1b295f",
+        "actualFailureEventIds": [
+          "event_98d797d6bb024ba49949",
+          "event_15b8a45b9e814c27a05c"
+        ],
+        "prefixes": [
+          {
+            "throughSeq": 787,
+            "rejectedAttempts": [
+              {
+                "tool": "update_plan_artifact",
+                "eventId": "event_15b8a45b9e814c27a05c",
+                "seq": 787,
+                "disposition": "alternate_route",
+                "laterCompletionObserved": false
+              }
+            ],
+            "pendingFailures": [
+              {
+                "action": "review_failure",
+                "eventId": "event_15b8a45b9e814c27a05c",
+                "reason": "alternate_route"
+              }
+            ],
+            "planArtifactStates": [
+              {
+                "id": "src-retry-after",
+                "status": "expected"
+              },
+              {
+                "id": "src-retry",
+                "status": "expected"
+              }
+            ]
+          },
+          {
+            "throughSeq": 825,
+            "rejectedAttempts": [
+              {
+                "tool": "update_plan_artifact",
+                "eventId": "event_15b8a45b9e814c27a05c",
+                "seq": 787,
+                "disposition": "alternate_route",
+                "laterCompletionObserved": true
+              }
+            ],
+            "pendingFailures": [],
+            "planArtifactStates": [
+              {
+                "id": "src-retry-after",
+                "status": "produced"
+              },
+              {
+                "id": "src-retry",
+                "status": "expected"
+              }
+            ]
+          }
+        ],
+        "scope": "Offline projection of actual retained ledger prefixes; no process replay, compaction execution or new model call."
+      }
+    },
+    {
+      "path": "/tmp/napier-task-failure-retained-prefix-after.json",
+      "sha256": "71aef06cbfdfc6b17290f9c2511f4f0cca028804bc49bc1573a42db1970f65cb",
+      "result": {
+        "kind": "napier.retained-task-failure-prefix-reproduction",
+        "source": "/Users/champ/orca/Napier",
+        "runId": "run_1b6c1654d39843beab6a",
+        "reportSha256": "be3fe151eac7b8aea05c0cf4a6006735a0deb31bdfea75d67f8937c4bd1b295f",
+        "actualFailureEventIds": [
+          "event_98d797d6bb024ba49949",
+          "event_15b8a45b9e814c27a05c"
+        ],
+        "prefixes": [
+          {
+            "throughSeq": 787,
+            "rejectedAttempts": [
+              {
+                "tool": "update_plan_artifact",
+                "eventId": "event_98d797d6bb024ba49949",
+                "seq": 776,
+                "callId": "call_01_RS0HfXzXK2CoP0fmF9Oq8342",
+                "callInputSha256": "6e05de5fd69314eb2309f854cb17c41794693e9ca62713d27124217aea0b8836",
+                "disposition": "alternate_route",
+                "laterCompletionObserved": false,
+                "matchingCompletionObserved": false
+              },
+              {
+                "tool": "update_plan_artifact",
+                "eventId": "event_15b8a45b9e814c27a05c",
+                "seq": 787,
+                "callId": "call_02_uG3jILF52HXt3NHQFutL2596",
+                "callInputSha256": "c7078c6b3df8e64e852a9ed6e8abd81d045aa5ab42e857d61ec373122abedff1",
+                "disposition": "alternate_route",
+                "laterCompletionObserved": false,
+                "matchingCompletionObserved": false
+              }
+            ],
+            "pendingFailures": [
+              {
+                "action": "review_failure",
+                "eventId": "event_98d797d6bb024ba49949",
+                "reason": "alternate_route"
+              },
+              {
+                "action": "review_failure",
+                "eventId": "event_15b8a45b9e814c27a05c",
+                "reason": "alternate_route"
+              }
+            ],
+            "planArtifactStates": [
+              {
+                "id": "src-retry-after",
+                "status": "expected"
+              },
+              {
+                "id": "src-retry",
+                "status": "expected"
+              }
+            ]
+          },
+          {
+            "throughSeq": 825,
+            "rejectedAttempts": [
+              {
+                "tool": "update_plan_artifact",
+                "eventId": "event_98d797d6bb024ba49949",
+                "seq": 776,
+                "callId": "call_01_RS0HfXzXK2CoP0fmF9Oq8342",
+                "callInputSha256": "6e05de5fd69314eb2309f854cb17c41794693e9ca62713d27124217aea0b8836",
+                "disposition": "alternate_route",
+                "laterCompletionObserved": true,
+                "matchingCompletionObserved": false
+              },
+              {
+                "tool": "update_plan_artifact",
+                "eventId": "event_15b8a45b9e814c27a05c",
+                "seq": 787,
+                "callId": "call_02_uG3jILF52HXt3NHQFutL2596",
+                "callInputSha256": "c7078c6b3df8e64e852a9ed6e8abd81d045aa5ab42e857d61ec373122abedff1",
+                "disposition": "alternate_route",
+                "laterCompletionObserved": true,
+                "matchingCompletionObserved": false
+              }
+            ],
+            "pendingFailures": [
+              {
+                "action": "review_failure",
+                "eventId": "event_98d797d6bb024ba49949",
+                "reason": "alternate_route"
+              },
+              {
+                "action": "review_failure",
+                "eventId": "event_15b8a45b9e814c27a05c",
+                "reason": "alternate_route"
+              }
+            ],
+            "planArtifactStates": [
+              {
+                "id": "src-retry-after",
+                "status": "produced"
+              },
+              {
+                "id": "src-retry",
+                "status": "expected"
+              }
+            ]
+          }
+        ],
+        "scope": "Offline projection of actual retained ledger prefixes; no process replay, compaction execution or new model call."
+      }
+    }
+  ],
+  "complexity": "Two binding/event passes with pending indexes; each attempt and binding source list is consumed at most once per index. No scan of the entire failure history for every completion.",
+  "paidApiCalls": 0,
+  "spending": {
+    "maxFen": 5000,
+    "requests": 154,
+    "committedFen": 1104,
+    "remainingFen": 3896,
+    "reservedRequests": 0
+  },
+  "limitations": [
+    "These are deterministic projection/context/lineage checks and offline projection of retained real-model ledger prefixes, not a new real-model comparison or actual compaction/recovery campaign.",
+    "Semantically corrected but different inputs do not count as an identical-input retry; their failure review hints remain contextual and do not mandate extra work.",
+    "The full Runtime suite was not repeated; original intermittent Workflow failure remains unexplained.",
+    "Parent history-linear-v1 paid results do not qualify this changed source. External dependencies remain linked and new snapshot has no fresh dependency preflight receipt.",
+    "Overall 30-case/three-paired-trial qualification, actual preferred edit-format adoption and long-task/cache-cost scope remain unproven."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

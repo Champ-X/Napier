@@ -1,0 +1,32 @@
+{
+  "kind": "napier.manual-compaction-restart-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T18:40:39.997Z",
+  "snapshot": "/tmp/napier-harness-input-capture-v2",
+  "model": "deepseek/deepseek-v4-flash",
+  "sourceRunId": "run_a55fefaeaf24437a83e8",
+  "sourceThreadId": "thread_7b0d2b2f932a4e2abf8d",
+  "targetThreadId": "thread_384efc9de4de4167904b",
+  "sourceRuntimeSha256": "b943fd7ba0f271c252b65cc8074b0fffdc0b3d301121907f5dd4369b1dd9d9c3",
+  "sourceMessageCount": 6,
+  "sourceEventCount": 738,
+  "compactedMessageCount": 4,
+  "retainedMessageCount": 2,
+  "previewSha256": "76516ab74e170d207baac297697a08f7af4299bbde1ce14ab959b52fa19562a9",
+  "checkpointId": "checkpoint_730cfa98a2f74c04b0f2",
+  "workspaceUnchangedByCompaction": true,
+  "continued": {
+    "runId": "run_f4cf4f6f924540b8a2a2",
+    "status": "completed",
+    "error": null,
+    "verificationCompleted": 1,
+    "workspaceUnchanged": true,
+    "finalAnswer": "Read-only inspection and verification complete; no files were edited.\n\n**README (`README.md`, 1330 bytes, sha256 `7df580dd…4332d4`)**\n- Documents `parseRetryAfter(value, nowMs)`: returns nonnegative delay ms or `null` for absent/invalid; trims; accepts unsigned-integer delta-seconds or exact canonical IMF-fixdate; past dates → 0; rejects fractional/negative/nonfinite/overflow and noncanonical/impossible dates; `nowMs` must be a nonnegative safe integer or `TypeError`.\n- Documents `retryDelay(...)`: validates all options even for nonretryable statuses; retries only {408,429,500,502,503,504} with `attempt < maxRetries`, and GET/HEAD/OPTIONS/PUT/DELETE, or POST with a nonblank idempotency key; backoff `floor(min(maxMs, baseMs*2**attempt)*jitter)` including huge attempts without overflow; delay is `max(backoff, valid Retry-After)`; a valid Retry-After exceeding `maxMs` returns `null` rather than retrying early; invalid Retry-After ignored; options never mutated.\n- Names the public check: `node --test test/public.test.mjs`.\n\n**`verify_workspace` (kind=test, target `test/public.test.mjs`, node-test, cwd `.`)**\n- Result: **PASSED** — exit 0, duration 161 ms, empty stderr.\n- TAP: `1..1`, tests 1, pass 1, fail 0, skipped 0, todo 0; the single test `429 honors Retry-After` is `ok 1`.\n- Target snapshot: 1 file / 242 bytes; workspace snapshot 5 files / 8163 bytes; toolchain image-bound, sandbox `oci-container`.\n- Evidence digests include target snapshot sha256 `2836c11c…7068` and result sha256 `c280d10e…4c5a5`.\n\nFactual note on scope: the suite contains one test (`429 honors Retry-After`), so this run confirms that case only — it is not broad coverage of the README contract. No files were changed by this inspection.",
+    "contextCompactionEvents": [],
+    "invocationCount": 2
+  },
+  "freshNodeProcessAfterCompaction": true,
+  "originalCampaignUnchanged": true,
+  "scope": "Manual compaction of a copied real coding transcript and fresh read-only verification after process restart; not automatic in-Run compaction or broad quality qualification",
+  "promotionReady": false
+}

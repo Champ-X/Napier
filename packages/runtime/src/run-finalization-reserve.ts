@@ -1,5 +1,6 @@
 import type { UserMessage } from "@earendil-works/pi-ai";
 import type { RunEvent, RunLimits, RunRecord } from "@napier/contracts";
+import type { ContextPolicy } from "@napier/contracts/harness-experiments";
 
 import { controlMessageEventKey, toJsonValue } from "./agent-runtime-utils.js";
 import type { EventSink } from "./event-sink.js";
@@ -29,6 +30,11 @@ export class RunFinalizationReserveController {
       budget: RunBudgetTracker;
     },
     private readonly preRecordedMessages: Map<string, number>,
+    private readonly options: {
+      requestAware?: boolean;
+      requestContext?: boolean;
+      drainSteering?: () => Promise<UserMessage[]>;
+    } = {},
   ) {}
 
   get active(): boolean {
@@ -52,31 +58,44 @@ export class RunFinalizationReserveController {
 
   async enterIfNeeded(onEvent?: EventSink): Promise<void> {
     const reserve =
-      this.context.budget.finalizationReserveBeforeNextPrimaryTurn();
+      this.context.budget.finalizationReserveBeforeNextPrimaryTurn(
+        Date.now(),
+        this.options.requestAware,
+      );
     if (reserve) await this.enter(reserve, onEvent);
   }
 
   async steer(fallback: () => Promise<UserMessage[]>): Promise<UserMessage[]> {
     if (!this.reserve) return fallback();
-    if (this.finalizerStarted) return [];
+    const queued = (await this.options.drainSteering?.()) ?? [];
+    if (this.finalizerStarted) return queued;
+    if (this.options.requestContext) {
+      // v2 carries fresh accounting in the bound request-local context. A
+      // synthetic user reminder would alter task classification and history.
+      this.finalizerStarted = true;
+      return queued;
+    }
+    const text = this.reserve.requestForecast
+      ? [FINALIZER_MESSAGE, requestAwareGuidance(this.reserve)].join("\n")
+      : FINALIZER_MESSAGE;
     const message: UserMessage = {
       role: "user",
-      content: FINALIZER_MESSAGE,
+      content: text,
       timestamp: Date.now(),
     };
-    const key = controlMessageEventKey(message.timestamp, FINALIZER_MESSAGE);
+    const key = controlMessageEventKey(message.timestamp, text);
     this.preRecordedMessages.set(
       key,
       (this.preRecordedMessages.get(key) ?? 0) + 1,
     );
     this.finalizerStarted = true;
-    return [message];
+    return [...queued, message];
   }
 
   followUp(
     fallback: (mode: "follow_up") => Promise<UserMessage[]>,
   ): Promise<UserMessage[]> {
-    return this.reserve ? Promise.resolve([]) : fallback("follow_up");
+    return fallback("follow_up");
   }
 
   assertDelivered(text: string): void {
@@ -91,10 +110,21 @@ export function finLife(
   budget: RunBudgetTracker,
   run: Pick<RunRecord, "id" | "threadId">,
   preRecordedMessages: Map<string, number>,
+  policy?: ContextPolicy,
+  drainControl?: (mode: "steering" | "follow_up") => Promise<UserMessage[]>,
 ): RunFinalizationReserveController {
   return new RunFinalizationReserveController(
     { store: host.store, run, budget },
     preRecordedMessages,
+    {
+      requestAware:
+        policy?.finalization === "request-aware-v1" ||
+        policy?.finalization === "request-aware-v2",
+      requestContext: policy?.finalization === "request-aware-v2",
+      ...(drainControl
+        ? { drainSteering: () => drainControl("steering") }
+        : {}),
+    },
   );
 }
 
@@ -139,9 +169,20 @@ function reserveEvent(
       reservedTurns: reserve.reservedTurns,
       reservedTokens: reserve.reservedTokens,
       reservedTimeoutMs: reserve.reservedTimeoutMs,
+      ...(reserve.requestForecast
+        ? { requestForecast: reserve.requestForecast }
+        : {}),
       message: reserve.message,
     }),
   };
+}
+
+function requestAwareGuidance(reserve: RunFinalizationReserve): string {
+  return [
+    `Recent uncached model-call estimate: ${reserve.requestForecast!.uncachedCallTokens} tokens, based on ${reserve.requestForecast!.sampleCount} primary calls. Cache reuse is uncertain; this is an estimate, not extra budget.`,
+    "Preserve the user's latest requirements and mandatory verification. Avoid redundant verification or cosmetic plan bookkeeping once evidence already establishes the requested result; remaining plan metadata does not itself require more workspace changes.",
+    "Finish essential scoped actions and report only what completed evidence supports. If work remains, state it explicitly; a budget notice never establishes task success.",
+  ].join("\n");
 }
 
 async function emit(

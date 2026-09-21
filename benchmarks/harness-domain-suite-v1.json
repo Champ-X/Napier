@@ -1,0 +1,39 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_domain_repairs_v1",
+  "cases": [
+    {
+      "path": "harness-optimization/http-retry-policy-v1",
+      "coverage": ["http-retry-scheduling", "validation", "ownership"]
+    },
+    {
+      "path": "harness-optimization/rollout-dependency-plan-v1",
+      "coverage": ["dependency-rollout-planning", "validation", "ownership"]
+    },
+    {
+      "path": "harness-optimization/access-rule-evaluation-v1",
+      "coverage": ["access-rule-evaluation", "validation", "ownership"]
+    },
+    {
+      "path": "harness-optimization/booking-calendar-v1",
+      "coverage": ["booking-interval-scheduling", "validation", "ownership"]
+    },
+    {
+      "path": "harness-optimization/safe-csv-export-v1",
+      "coverage": ["safe-csv-export", "validation", "ownership"]
+    },
+    {
+      "path": "harness-optimization/inventory-event-projection-v1",
+      "coverage": ["inventory-event-projection", "validation", "ownership"]
+    },
+    {
+      "path": "harness-optimization/weighted-expense-allocation-v1",
+      "coverage": ["weighted-expense-allocation", "validation", "ownership"]
+    },
+    {
+      "path": "harness-optimization/http-etag-preconditions-v1",
+      "coverage": ["http-entity-preconditions", "validation", "ownership"]
+    }
+  ]
+}

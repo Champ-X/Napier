@@ -1,0 +1,1 @@
+import {matchResource} from './resource.mjs';export function explainAccess(rules,principal,action,resource){const r=rules.find(r=>r.actions.includes(action)&&matchResource(r.resource,resource));return {allowed:r?.effect==='allow',matchedRuleIds:r?[r.id]:[],reason:r?r.effect:'no_match'};}

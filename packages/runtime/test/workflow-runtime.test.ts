@@ -87,7 +87,7 @@ describe("Execution Plan Workflow runtime", () => {
       ],
     } as unknown as Parameters<ExecutionPlanWorkflowRuntime["run"]>[0]);
 
-    expect(result.output).toEqual({
+    expect(result.output, JSON.stringify(result)).toEqual({
       report: "Live model report",
       approved: true,
     });

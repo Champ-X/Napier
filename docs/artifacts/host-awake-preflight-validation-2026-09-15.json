@@ -1,0 +1,30 @@
+{
+  "kind": "napier.host-awake-preflight-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:14:27.226146+00:00",
+  "sourceFiles": {
+    "scripts/harness-host-awake.mjs": "3ccbed519b873c73d9b547f7cb3ff129e931fafe8957fc7054d1396236ac24df",
+    "scripts/harness-host-awake.test.mjs": "b6fdd1a35548da86ce639ba4048fc58921fb49e390419d09ea8699357758afd7",
+    "scripts/run-harness-optimization-campaign.mjs": "0c0a9eb0f57d738412eb610d6a09dc3cca1bc26e4c3a762acba0ed1eeaedbe45"
+  },
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/host-awake-preflight-offline-tests-2026-09-15.json",
+    "sha256": "69b54d1140963bab64c95095ff23e95a0d199502555a664f0fd6c8bae096fd42",
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0
+  },
+  "observedInterruptedRun": "run_84946fb14f7841e59f58",
+  "sleepEvidence": [
+    "2026-09-15 05:59:08 +0800 Sleep               \tEntering Sleep state due to 'Sleep Service Back to Sleep':TCPKeepAlive=active Using AC (Charge:80%) 561 secs  ",
+    "2026-09-15 06:08:29 +0800 DarkWake            \tDarkWake from Deep Idle [CDNPB] : due to NUB.SPMI0Sw3IRQ nub-spmi0.0x02 rtc/Maintenance Using AC (Charge:80%) 45 secs   "
+  ],
+  "finding": "macOS slept for 561 seconds over the roughly 560-second model attempt; no model content arrived. This environmental interruption cannot qualify task performance. Run lease expiration is consistent with caller cancellation after wake but is not separately attested in the old report.",
+  "policy": "Before any provider admission, refuse macOS Sleep, DarkWake or unknown power state. Full-wake runs acquire a process-scoped caffeinate assertion; no system power preference is changed.",
+  "modelRequests": 0,
+  "limitations": [
+    "A before-Run gate cannot prevent explicit user lid sleep after admission.",
+    "Non-macOS platforms are explicitly marked not_applicable, not verified.",
+    "Old interrupted runs and all financial reservations remain unchanged."
+  ]
+}

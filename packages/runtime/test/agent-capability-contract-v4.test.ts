@@ -39,7 +39,7 @@ describe("default Agent Capability Contract v5", () => {
             DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSubagents,
           runLimits: {
             maxTurns: 64,
-            maxTotalTokens: 1_000_000,
+            maxTotalTokens: 0,
             maxCostUsd: 25,
             timeoutMs: 1_800_000,
           },

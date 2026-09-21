@@ -1,0 +1,50 @@
+{
+  "kind": "napier.source-bound-memory-current-pair-audit",
+  "schemaVersion": 1,
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory-streaming-two-pairs-v1/plan.json",
+  "planSha256": "101230fcd516f3b007f39353b479e98ffa657079256a5fce1558f6332f1e5b89",
+  "observations": [
+    {
+      "index": 0,
+      "memoryAuditPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory-audit-0.json",
+      "memoryAuditSha256": "8512984428dcb171fdbe2a4d82b0fa5369e3011737e26aa828febd177681641f",
+      "runAuditPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/audit-0.json",
+      "runAuditSha256": "2e5ff6a76525c409d81295d2ec191836d82273220adc214b45e76b098c04d3d1",
+      "arm": "candidate",
+      "runId": "run_2f96ec68c99c4acc8bbc",
+      "taskSuccess": true,
+      "primaryInputs": 6,
+      "currentInEveryInput": true,
+      "staleInAnyInput": false,
+      "irrelevantCounts": [
+        9
+      ],
+      "admissions": 7,
+      "settledFen": 13,
+      "durationMs": 96490
+    },
+    {
+      "index": 1,
+      "memoryAuditPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory-audit-1.json",
+      "memoryAuditSha256": "89ad4ed6616f9baf9d91aefc27ea9a9d0dc9fe8bfa6260b4c34abe531688f1b3",
+      "runAuditPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/audit-1.json",
+      "runAuditSha256": "e4b685290a348061f80dccdb324fa2c785e7b4e08e0bb920ef7797dbe5905b86",
+      "arm": "baseline",
+      "runId": "run_569d84397d24401f893d",
+      "taskSuccess": true,
+      "primaryInputs": 13,
+      "currentInEveryInput": false,
+      "staleInAnyInput": true,
+      "irrelevantCounts": [
+        9
+      ],
+      "admissions": 14,
+      "settledFen": 30,
+      "durationMs": 203005
+    }
+  ],
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Both original shipping Runs and external graders pass. Candidate current-source inclusion and stale-source rejection are observed in actual inputs; baseline still receives stale memory. Both include nine irrelevant facts. This does not establish causal use of memory or general semantic relevance. NDJSON pair is still in progress."
+}

@@ -1,0 +1,52 @@
+{
+  "kind": "napier.missing-usage-recovery-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:47:25.136078+00:00",
+  "runId": "run_76af8c7911754698b595",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+  "reportSha256": "894b91b7d0255be49dc76887dd3ff8efc44fe4ee9b8f0084695d393d2f58cc87",
+  "ledgerPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/incremental_ndjson_v1-baseline-trial-1/trial-1/data/ledger.sqlite",
+  "ledgerEventDigest": "6a20a389e2a5c27a958222b85da595f6b73ded7ec5e4fa9b7e289d7c92823589",
+  "localAdmissions": 12,
+  "providerFinancialReservations": 11,
+  "positiveUsageResponses": 10,
+  "settledRequests": 10,
+  "settledFen": 35,
+  "missingRequest": {
+    "id": 109,
+    "charged_fen": 600,
+    "status": "reserved",
+    "prompt_tokens": null,
+    "completion_tokens": null,
+    "cache_hit_tokens": null,
+    "cache_miss_tokens": null,
+    "accounting_mode": null
+  },
+  "localErrorResponse": {
+    "seq": 597,
+    "stopReason": "error",
+    "usage": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheReadTokens": 0,
+      "cacheWriteTokens": 0,
+      "costUsd": 0
+    }
+  },
+  "thinkingGuards": [
+    {
+      "seq": 586,
+      "reason": "overplanning_headings"
+    }
+  ],
+  "runStatus": "failed",
+  "graderExitCode": 0,
+  "recoveryFromInspectedArtifactsPossible": false,
+  "reservationsReleased": false,
+  "reportRewritten": false,
+  "financialLedgerPath": "/Users/champ/.cache/napier-seven-quality/budget-100cny-user-reconciled-2026-09-15.sqlite",
+  "financialStateSha256": "84d8a6b58ab5b0bd6667b8a3e80a260af7e69d88061dd79033247e51ca823969",
+  "modelRequests": 0,
+  "conclusion": "The inspected original Run report, event ledger and financial table have ten positive terminal usage records for eleven financial requests. The eleventh model.response has zero usage and stopReason=error after the local gate rejected the retry; it is not a receipt for request 109. No deterministic settlement can be derived from these artifacts.",
+  "scope": "Bounded read-only recovery audit. Aggregate user-reported billing is not request-level usage. Preserve original failed/ineligible observation and reservation; do not infer missing tokens or authorize replacement observations."
+}

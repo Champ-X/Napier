@@ -1,0 +1,119 @@
+{
+  "kind": "napier.immutable-baseline-reuse-live-audit",
+  "schemaVersion": 1,
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "reuseHelperSha256": "05abfeedbf98ec0dbb0d512d034296ca58851bad55a4c20477c490c11a96ddb0",
+  "launcherSha256": "37721a688d6586c5cfa4598b5f5c5e06971580fca516fa62c605c38681f92025",
+  "sourceFilesCompared": 1264,
+  "sourceUnchanged": true,
+  "observations": [
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "candidateRunId": "run_9237f499aa8844fda46f",
+      "candidateNewAdmissions": 7,
+      "candidateNewSettledFen": 13,
+      "reusedBaselineRunId": "run_569d84397d24401f893d",
+      "reusedBaselineReportPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "reusedBaselineReportSha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06",
+      "originalBaselineAdmissions": 14,
+      "baselineProcessSpawned": false,
+      "baselineNewAdmissions": 0,
+      "baselineNewReservations": 0,
+      "originalBaselineUnchanged": true,
+      "nativeBaselineOutputAbsent": true
+    },
+    {
+      "caseId": "config_layers_v1",
+      "candidateRunId": "run_8f043af8ef7047329815",
+      "candidateNewAdmissions": 8,
+      "candidateNewSettledFen": 40,
+      "reusedBaselineRunId": "run_5cee4ebe9a9948b0a892",
+      "reusedBaselineReportPath": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/config_layers_v1-baseline-trial-1/trial-1/result.json",
+      "reusedBaselineReportSha256": "60e2753fc27c8e8dce9db6a8624a4cf7c2cd8af204e9833d929a85a67c67770f",
+      "originalBaselineAdmissions": 25,
+      "baselineProcessSpawned": false,
+      "baselineNewAdmissions": 0,
+      "baselineNewReservations": 0,
+      "originalBaselineUnchanged": true,
+      "nativeBaselineOutputAbsent": true
+    }
+  ],
+  "inheritedBlockersUnchanged": true,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 6,
+    "cases": 6,
+    "regressions": [],
+    "evidenceBlockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 6",
+      "coding_pricing_options_migration_v1: need 3 paired trials; observed 1",
+      "coding_loyalty_discount_debug_v1: need 3 paired trials; observed 1",
+      "ttl_lru_cache_v1: need 3 paired trials; observed 1",
+      "transaction_savepoints_v1: need 3 paired trials; observed 1",
+      "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+      "config_layers_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "e8064c1ebc5b46c49df7fba2c8d03cb02f3bc8744f595a85b44c608d8b0992fa"
+  },
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 3905,
+    "remainingFen": 6095,
+    "requests": 222,
+    "reservedRequests": 2,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "newFinancialRequests": 15,
+  "newSettledFen": 53,
+  "newReservedFen": 0,
+  "reusedBaselineObservations": 2,
+  "reusedOriginalBaselineAdmissions": 39,
+  "newBaselineAdmissions": 0,
+  "statusCounts": {
+    "currentCohortTerminalRuns": 12,
+    "reusedOriginalBaselineObservations": 2,
+    "handledSchedulePositions": 14,
+    "notStarted": 166
+  },
+  "paidChildPidsConfirmedExited": [
+    94786,
+    96608
+  ],
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Two new current-source candidates pass with byte-identical original same-baseline/task/protocol evidence. Exactly fifteen new provider financial records settle; baseline branch creates no processes, admission records, reservations or replacement directories. Original baseline counts are provenance, not new calls or a measured counterfactual saving. No old candidate or failure is relabeled; no concurrent randomized or causal comparison claim."
+}

@@ -9,6 +9,10 @@ import {
 
 export const PROMPT_COMPILER_VERSION = "napier.prompt-compiler.v1";
 export const PROMPT_COMPILER_ASSEMBLY = "ordered_nonempty_layers_v1";
+export const STABLE_PROMPT_COMPILER_ASSEMBLY = "stable_prefix_layers_v1";
+export type PromptCompilerAssembly =
+  | typeof PROMPT_COMPILER_ASSEMBLY
+  | typeof STABLE_PROMPT_COMPILER_ASSEMBLY;
 
 export type CompiledPromptLayerId =
   | "invariant_core"
@@ -32,6 +36,7 @@ export interface PromptCompilerLayerInput {
 }
 
 export interface PromptCompilerInput {
+  assembly?: PromptCompilerAssembly;
   purpose: ModelInvocationPurpose;
   layers: readonly PromptCompilerLayerInput[];
   adapter: ModelAdapterReceiptV2;
@@ -63,7 +68,7 @@ export interface CompiledPromptLayerArtifact {
 
 export interface CompiledPromptArtifact {
   compilerVersion: typeof PROMPT_COMPILER_VERSION;
-  assembly: typeof PROMPT_COMPILER_ASSEMBLY;
+  assembly: PromptCompilerAssembly;
   purpose: ModelInvocationPurpose;
   systemPrompt: string;
   systemPromptSha256: string;
@@ -101,13 +106,11 @@ export function compilePrompt(
   } else {
     assertAuxiliaryInvariantLayer(layers[0]!);
   }
-  const systemPrompt = layers
-    .map((layer) => layer.content)
-    .filter(Boolean)
-    .join("\n\n");
+  const assembly = input.assembly ?? PROMPT_COMPILER_ASSEMBLY;
+  const systemPrompt = assembleLayers(layers, assembly);
   return validateCompiledPromptArtifact({
     compilerVersion: PROMPT_COMPILER_VERSION,
-    assembly: PROMPT_COMPILER_ASSEMBLY,
+    assembly,
     purpose: input.purpose,
     systemPrompt,
     systemPromptSha256: sha256(systemPrompt),
@@ -120,15 +123,11 @@ export function compilePrompt(
 export function validateCompiledPromptArtifact(
   input: CompiledPromptArtifact,
 ): CompiledPromptArtifact {
-  const reconstructed = input.layers
-    .map((layer) => layer.content)
-    .filter(Boolean)
-    .join("\n\n");
+  const reconstructed = assembleLayers(input.layers, input.assembly);
   const adapterLayer = input.layers[4];
   const expectedAdapterLayer = compileLayer(modelAdapterLayer(input.adapter));
   if (
     input.compilerVersion !== PROMPT_COMPILER_VERSION ||
-    input.assembly !== PROMPT_COMPILER_ASSEMBLY ||
     input.layers.length !== LAYER_IDS.length ||
     input.layers.some((layer, index) => layer.id !== LAYER_IDS[index]) ||
     reconstructed !== input.systemPrompt ||
@@ -149,6 +148,28 @@ export function validateCompiledPromptArtifact(
   if (input.purpose === "agent_turn") assertInvariantCore(input.layers[0]!);
   else assertAuxiliaryInvariantLayer(input.layers[0]!);
   return Object.freeze(input);
+}
+
+function assembleLayers(
+  layers: CompiledPromptLayerArtifact[],
+  assembly: PromptCompilerAssembly,
+): string {
+  if (
+    assembly !== PROMPT_COMPILER_ASSEMBLY &&
+    assembly !== STABLE_PROMPT_COMPILER_ASSEMBLY
+  )
+    throw new Error("Unknown Prompt Compiler assembly");
+  // Metadata keeps its historical canonical order. The named assembly binds
+  // the actual rendering order; all current capabilities and dynamic sources
+  // remain present, and exact invocation capture stores the rendered bytes.
+  const ordered =
+    assembly === STABLE_PROMPT_COMPILER_ASSEMBLY
+      ? [layers[0], layers[2], layers[4], layers[1], layers[3]]
+      : layers;
+  return ordered
+    .map((layer) => layer?.content)
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function compileLayer(

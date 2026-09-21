@@ -1,0 +1,349 @@
+{
+  "kind": "napier.branch-history-paid-component-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T09:21:09.385Z",
+  "scope": "One real Agent task after synthetic branch history. Not process recovery, prior model task success, paired comparison or whole-composition qualification.",
+  "runtime": "/tmp/napier-harness-history-linear-v1",
+  "driver": "/tmp/napier-cny-branch-driver-v1",
+  "planSha256": "2c47d3912da36d18dad8927570eed380d2c872c122b2aa32b19020326c82a001",
+  "report": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-branch-shipping-v1/candidate/trial-1/result.json",
+    "sha256": "44560478b07acb53c5a7a244e865b01a076870300ad03ce52f043586db382c7a",
+    "runId": "run_3fb2770caccf400d8d3e",
+    "status": "completed",
+    "taskSuccess": true,
+    "qualifyingEvidence": false,
+    "changed": [
+      "src/shipping.js"
+    ],
+    "allowedChanges": true,
+    "requiredTools": true,
+    "graderExitCode": 0,
+    "graderOutput": "Branch amendment boundaries and integer validation passed (36 checks).\n",
+    "toolCalls": 19,
+    "toolFailures": 2,
+    "runtimeArtifactStable": true,
+    "sourceStable": true,
+    "sourceIdentity": {
+      "packages/runtime/src": "ece8d9f23422c70aed944fb6e778397f678d2fac706fb18b7184ba07e10bf36f",
+      "packages/contracts/src": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+      "packages/contracts/dist": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+      "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+      "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+      "nodeVersion": "v24.19.0"
+    },
+    "runtimeArtifactSha256": "cdad69f2da7d7b1c4f4df1fb9df2891d8352a8539c1da86c2044263eea2179e5",
+    "servingIdentityMatched": true,
+    "runtimeDependencyEvidence": {
+      "kind": "napier.runtime-dependency-evidence",
+      "schemaVersion": 1,
+      "runId": "run_3fb2770caccf400d8d3e",
+      "beforeSha256": "28301e54f5453679b2d0d23ed19a5091ded451865365e4b36f8934680d3dc241",
+      "afterSha256": "28301e54f5453679b2d0d23ed19a5091ded451865365e4b36f8934680d3dc241",
+      "packageCount": 129,
+      "fileCount": 24864,
+      "stable": true,
+      "eligible": true,
+      "contentSha256": "424fb3ca852a43f25dcdb2f628a4ba264356649f2dd573e8c87f9ab685afaf38"
+    },
+    "runtimeContextEvidence": {
+      "valid": true,
+      "deliveries": 16,
+      "auditedCapsules": 16
+    },
+    "requestedModel": {
+      "provider": "deepseek",
+      "id": "deepseek-v4-flash"
+    },
+    "profileSha256": "c42365b5b8fc90d6344ad167e0766c509cfdf4d1a37502eb1e767a562e1635ef",
+    "componentProbe": {
+      "fixtureSha256": "78edd79bcbe0cfaac76be00dc0402bc2fb5d1ef2d796202bcbe3deb5a47e0021",
+      "kind": "napier.branch-history-component",
+      "schemaVersion": 1,
+      "fixtureSetup": "Synthetic user/control history through LocalStore and createThreadBranch; no prior model success",
+      "sourceThreadId": "thread_aa9ba0c850714322b009",
+      "sourceRunIds": [
+        "run_fe508a9384e4465c92b3",
+        "run_439bc40e51dc4a51884a"
+      ],
+      "sourceSeq": 4,
+      "branchRunId": "run_098419ae112f4313913b",
+      "branchEventId": "event_2e411b9c349846ac8712",
+      "copiedAmendmentEventId": "event_48a5bc2a290d4cfea722",
+      "copiedUserEventIds": [
+        "event_19f55ae4eef54e329500",
+        "event_48a5bc2a290d4cfea722"
+      ],
+      "sourceUserEventIds": [
+        "event_0cdf3bb5430748b280f5",
+        "event_60b2dfaee4844330bdec",
+        "event_f0ee2aa852d94c03a6df"
+      ],
+      "sourceEventsSha256": "0ef008b490041da5a07acaece211b66059e1fb1d76fa2b6daeb7b85d258942d2",
+      "branchEventsSha256": "db13139166d00bdf2434585a42baa155ea33c5930cd17c6c31d5c5e90e63f3ac",
+      "sourceUnchanged": true,
+      "branchUnchanged": true,
+      "inheritedQueries": true,
+      "queryReceipts": 16,
+      "passed": true
+    }
+  },
+  "invocationAudit": {
+    "kind": "napier.branch-history-invocation-audit",
+    "schemaVersion": 1,
+    "runId": "run_3fb2770caccf400d8d3e",
+    "historySha256": "78edd79bcbe0cfaac76be00dc0402bc2fb5d1ef2d796202bcbe3deb5a47e0021",
+    "observations": [
+      {
+        "eventId": "event_b9e89c00dc9a44b88576",
+        "capsuleSha256": "a2e1ecc3c1236ef141356772a8279d447f5878effc94daf17e58649c0e2a27d2",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_f7e3dcd7394347eebd6a",
+        "capsuleSha256": "29716f1e8e44b3255d2b66595b84452b3ba7a469f47fbe60a8de7a289e49d9b2",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_cddfcc4846a54aadae32",
+        "capsuleSha256": "2b7542fe990ed29e5952d5548fef26566fb54af8b3d0064e810b0e24dfb867a2",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_5a0bf5149fb84106964e",
+        "capsuleSha256": "4dcf9a1d17e6219b98e1e274f0ee52b1c3d717ec212c497dc292e76a872b6320",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_83d0b3ebe4e54bbaa375",
+        "capsuleSha256": "0e83714256eb6291ba9278f801c0b58aba937b0d859dd4631ff689e671de6dbf",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_8ae7b4453f504963b379",
+        "capsuleSha256": "ab058c16e86311576960886ce5025fc486a9f12127f954a49779266853df2989",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_7c3b1d5032f74e058345",
+        "capsuleSha256": "d61b0d992f77bd90b64c19259336718167ec538d0b909ffb4a0ea3c9e7182b56",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_b680137f4a3140aeab13",
+        "capsuleSha256": "b6886bce37aa7df6a9a1c0b406c49cf28757f48a017fe9125bc1a620cfd17960",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_06bafc2553764292b0bc",
+        "capsuleSha256": "eace994cb17c271fe34cb6e7337216620cbec76eff5b62490c4359ccd212d1d4",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_811c7cc5dc684ee3ac95",
+        "capsuleSha256": "d0a2ecbfbaae57b61fafbc85853cc55cb99d3f67874a087ea2407c40f7030eef",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_cbd60a15e26f4348a6a9",
+        "capsuleSha256": "3555753d279f716bbdcdf5a149dd9cccb4fa26f7615afd1d4c8ecde7c56f1b4b",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_90c4f547a57840739fec",
+        "capsuleSha256": "7aaadbd1e3729e8f1184d404497909b2fc13f7b8d4b7389a73cb1497c1227b13",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_634b94d5923444ef8cdc",
+        "capsuleSha256": "041fa8c2e75ac94db5d5cf5f6b8f44c89ca1a666899ff5be282818ac02f0d23c",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_044c4987202c4bce8a45",
+        "capsuleSha256": "16f1d3d05b7cc9f043063fff9fe92157de12c103095bb376a407eb05210df248",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_7342988222ca461eb341",
+        "capsuleSha256": "29319fd385df94fffa5a20ae985c0396e181f96397abaf6db5dcf2f7ce5ba701",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      },
+      {
+        "eventId": "event_4adbaf6ccddc4b2aa53e",
+        "capsuleSha256": "0197f5d1f86fa89b8e94e5c6e3a256152e796433c78ee4d69a1c627a0fc21aeb",
+        "containsInheritedAmendment": true,
+        "containsForeignLaterAmendment": false
+      }
+    ],
+    "passed": true,
+    "limitation": "Checks exact fixture text in hash-validated Agent request capsules. Does not claim causality, interruption recovery, or independent prior model work."
+  },
+  "preEditAudit": {
+    "kind": "napier.cny-probe-invocation-audit",
+    "runId": "run_3fb2770caccf400d8d3e",
+    "capsulesAudited": 17,
+    "firstInvocationHasPreEditGuidance": false,
+    "firstCapsuleSha256": "a2e1ecc3c1236ef141356772a8279d447f5878effc94daf17e58649c0e2a27d2",
+    "preEditPolicyBlocks": 0,
+    "verificationCalls": [],
+    "allVerificationCallsCaptured": true
+  },
+  "offline": {
+    "distinctTestsPassed": 31,
+    "tests": [
+      "scripts/harness-branch-history-fixture.test.mjs (7)",
+      "scripts/harness-campaign-evidence.test.mjs (10)",
+      "scripts/harness-spending-budget.test.mjs (5)",
+      "scripts/harness-api-request-budget.test.mjs (9)"
+    ],
+    "oracle": "One correct reference accepted; original, old threshold, foreign later threshold, exclusive boundary and noninteger acceptance mutants rejected.",
+    "sourceComparison": {
+      "scope": "Synthetic history and scripted model/readiness; no real task-quality claim",
+      "result": [
+        {
+          "snapshot": "thread-memory-v1",
+          "status": "failed",
+          "scriptedAgentCalls": 0,
+          "modelResponses": 1,
+          "knownBranchDeliveryRejection": false,
+          "errorSha256": "17b16446521d10b5125f81ba93ac50171bcd185c566aa64628c39e5bbf771515",
+          "paidApiCalls": 0
+        },
+        {
+          "snapshot": "history-linear-v1",
+          "status": "completed",
+          "scriptedAgentCalls": 1,
+          "modelResponses": 2,
+          "knownBranchDeliveryRejection": false,
+          "errorSha256": null,
+          "paidApiCalls": 0
+        }
+      ]
+    },
+    "sourceComparisonLimitation": "The pre-fix snapshot failed before its scripted Agent response with a generic provider error. This comparison alone does not diagnose the internal exception. Neither source used a real model.",
+    "architecture": "Seven previously recorded violations, no new violations. No full Runtime suite repeated; Runtime/Contracts code unchanged this turn."
+  },
+  "api": {
+    "admissions": 17,
+    "maximumRequests": 20,
+    "minimumConfiguredIntervalMs": 30000,
+    "minimumObservedIntervalMs": 30000,
+    "gapFromPreviousCampaignMs": 4771829,
+    "concurrentCampaigns": 1
+  },
+  "spending": {
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 5000,
+      "priorSpendFen": 110,
+      "committedFen": 555,
+      "remainingFen": 4445,
+      "requests": 84,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 5000,
+      "priorSpendFen": 110,
+      "committedFen": 619,
+      "remainingFen": 4381,
+      "requests": 101,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14"
+      }
+    },
+    "current": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 5000,
+      "priorSpendFen": 110,
+      "committedFen": 619,
+      "remainingFen": 4381,
+      "requests": 101,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14"
+      }
+    },
+    "componentChargeFen": 64,
+    "scope": "Conservative peak CNY accounting, all input uncached and per-response rounding; not a provider invoice."
+  },
+  "qualification": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 0,
+    "cases": 0,
+    "regressions": [],
+    "blockers": [
+      "branch_shipping_history_component_v1:0: missing arm",
+      "Need 30 cases; observed 0"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "a110abdbaf08f08366b94d367567c3324d51f77f411f60f3746b6448689637a8"
+  },
+  "promotionReady": false,
+  "paidFollowupScheduled": false
+}

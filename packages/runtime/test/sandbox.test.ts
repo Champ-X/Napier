@@ -57,7 +57,7 @@ describe("OS sandbox adapters", () => {
     expect(restricted).toContain('(literal "/opt/napier/bin/mcp-server")');
     expect(restricted).toContain('(allow file-read-data (literal "/"))');
     expect(restricted).toContain(
-      '(allow file-read-metadata\n  (literal "/opt")',
+      '(allow file-read-metadata\n  (literal "/")\n  (literal "/opt")',
     );
     expect(restricted).toContain('  (literal "/workspace")');
     expect(restricted).not.toContain("network-outbound");

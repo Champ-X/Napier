@@ -54,7 +54,6 @@ import {
   type AgentNetworkCapabilities,
 } from "./agent-capability-runtime.js";
 import { compileAuxiliaryPrompt } from "./agent-prompt-layers.js";
-import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
 import {
   controlMessageEventKey,
   createRunProgressMessageEvent,
@@ -74,6 +73,7 @@ import { createAgentRunModelRoute } from "./agent-run-model-route.js";
 import { executeAgentRunCompletionLifecycle } from "./agent-run-completion-lifecycle.js";
 import {
   finishSuccessfulAgentRun,
+  recordAgentRunStarted,
   recordAgentRunRecoveryStarted,
 } from "./agent-run-lifecycle-events.js";
 import {
@@ -143,7 +143,8 @@ import {
   buildMemoryRunConversation,
   buildMemoryExtractorMessages,
   createMemorySourceProvenance,
-  formatMemoryContext,
+  prepareAgentMemoryContext,
+  captureMemoryFileDependencies,
   memoryRunMessageIds,
   memoryReplacementTargetIds,
   parseMemoryProposalResponse,
@@ -163,6 +164,9 @@ import {
   createAgentToolConcurrencyGate,
   createLifecycleAgentStepStream,
   createRuntimeCompiledPromptBuilder,
+  applyHarnessToolPolicies,
+  bindRunHarnessProfile,
+  recordRunHarnessPolicy,
   wrapAgentToolsWithLifecycle,
 } from "./agent-runtime-step-lifecycle.js";
 import { AgentTurnPipelineHost } from "./agent-turn-pipeline-host.js";
@@ -359,6 +363,7 @@ export class AgentRuntime {
     );
   }
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
+    options = bindRunHarnessProfile(options);
     const requestedSource = (
       options as unknown as { source?: RunInvocationSource }
     ).source;
@@ -519,15 +524,13 @@ export class AgentRuntime {
     let unregisterSubagentHub: (() => void) | undefined;
     const nextModelContextEnvelopeTurnIndex = (): number => modelContextEnvelopeTurnIndex++;
     try {
+      await recordRunHarnessPolicy(run, options.harnessExperimentProfile, (event) => this.record(event, options.onEvent));
       await options.onRunCreated?.(run);
-      await this.record(
-        {
-          threadId: thread.id,
-          runId: run.id,
-          type: "run.started",
-          category: "lifecycle",
-          visibility: "debug",
-          payload: createAgentRunStartedPayload({
+      await recordAgentRunStarted({
+          store: this.store, run, text: prompt,
+          captureInitialState: options.captureInitialState,
+          signal: abortController.signal, onEvent: options.onEvent,
+          started: {
             agent: agentProfile,
             model: modelRef,
             source: invocationSource,
@@ -538,10 +541,8 @@ export class AgentRuntime {
             parentRunId: options.parentRunId,
             sourceContinuityRunId: options.sourceContinuityRunId,
             recovery: options.recovery,
-          }),
-        },
-        options.onEvent,
-      );
+          },
+      });
       await Promise.all(
         createEnvironmentCapabilityNegotiationEvents({
           executionMode: environmentExecution.executionMode,
@@ -1155,38 +1156,12 @@ export class AgentRuntime {
     const history = await this.buildModelHistory(
       run, model, signal, budget, nextModelContextEnvelopeTurnIndex, onEvent,
     ); budget.assertCanStartPrimaryTurn();
-    const expiredMemories = restrictedReadOnlyExecution
-      ? []
-      : await this.store.expireDueMemories({
-          agentId: profile.id,
-        });
-    for (const memory of expiredMemories) {
-      await this.record(
-        {
-          threadId: run.threadId,
-          runId: run.id,
-          type: "memory.stale",
-          category: "memory",
-          visibility: "user",
-          payload: {
-            memoryId: memory.id,
-            scope: memory.scope,
-            ...(memory.agentId ? { agentId: memory.agentId } : {}),
-            reviewDueAt: memory.reviewDueAt ?? "",
-            reason: "review_due",
-            useCount: memory.useCount,
-          },
-        },
-        onEvent,
-      );
-    }
-    const memoryContext = formatMemoryContext(
-      this.store.listMemories({ agentId: profile.id }),
-      profile.id,
-    );
-    if (!restrictedReadOnlyExecution) {
-      await this.store.recordMemoryUsage(memoryContext.factIds, run.id);
-    }
+    const memoryContext = await prepareAgentMemoryContext({
+      store: this.store, run, agentId: profile.id, query: prompt,
+      restrictedReadOnly: restrictedReadOnlyExecution,
+      policy: harnessExperimentProfile?.policies?.context.memory,
+      record: (event) => this.record(event, onEvent),
+    });
     const skillCatalogOverlay = skillCatalogInjected
       ? ""
       : formatSkillCatalog(catalogSkills);
@@ -1199,24 +1174,6 @@ export class AgentRuntime {
     );
     const importedLedgerBoundary = formatImportedLedgerBoundary(
       threadRecord.importProvenance,
-    );
-    await this.record(
-      {
-        threadId: run.threadId,
-        runId: run.id,
-        type: "context.memory",
-        category: "memory",
-        visibility: "debug",
-        payload: {
-          factIds: memoryContext.factIds,
-          count: memoryContext.factIds.length,
-          truncated: memoryContext.truncated,
-          contentSha256: memoryContext.text
-            ? sha256Text(memoryContext.text)
-            : "",
-        },
-      },
-      onEvent,
     );
     const codeBridge = createGovernedCodeBridgeBinding();
     let tools = this.capabilities.createTools({
@@ -1232,6 +1189,9 @@ export class AgentRuntime {
         !environmentDegradedExecution,
       codeBridge: codeBridge.dispatcher,
     }).map(bindBuiltInToolCompatibilityPolicy);
+    tools = applyHarnessToolPolicies(tools, harnessExperimentProfile, {
+      workspaceRoot: this.store.workspaceRoot, sandbox: this.verificationSandbox,
+    });
     let pendingOperatorDecisionId: string | undefined;
     if (
       !restrictedReadOnlyExecution &&
@@ -1426,7 +1386,7 @@ export class AgentRuntime {
       activeToolNames: () => activeModelToolNames,
       runtimeAvailableToolNames: () => runtimeAvailableModelToolNames,
       toolLoopGuardPolicy,
-      ...(onEvent ? { onEvent } : {}),
+      verificationOrder: harnessExperimentProfile?.policies?.context.verificationOrder,
     });
     const afterToolCall = createAgentToolResultFinalizer(toolResultLifecycle);
     codeBridge.attach({
@@ -1561,7 +1521,7 @@ export class AgentRuntime {
       onEvent,
     );
     let finalText = "";
-    const finalization = finLife(this, budget, run, preRecordedControlMessages);
+    const finalization = finLife(this, budget, run, preRecordedControlMessages, harnessExperimentProfile?.policies?.context, drainControlMessage);
     const deltaBatcher = new ModelDeltaBatcher(
       run.threadId,
       run.id,
@@ -2996,7 +2956,7 @@ export class AgentRuntime {
             ...(effectiveAgentId ? { agentId: effectiveAgentId } : {}),
             threadId,
           },
-          source,
+          { ...source, fileDependencies: await captureMemoryFileDependencies(memoryProposal.content, this.store.workspaceRoot) },
         );
         if (knownIds.has(fact.id)) continue;
         knownIds.add(fact.id);

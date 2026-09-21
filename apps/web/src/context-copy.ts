@@ -217,7 +217,7 @@ export const contextCopyEn = {
   },
   runBudget: "Run budget",
   runMaxTurns: "Model turns",
-  runMaxTokens: "Total tokens",
+  runMaxTokens: "Total tokens (0 = unlimited)",
   runMaxCost: "Max cost (USD)",
   runTimeout: "Wall time (sec)",
   delegationBudget: "Delegation budget",

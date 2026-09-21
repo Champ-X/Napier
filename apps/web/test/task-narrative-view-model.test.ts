@@ -72,20 +72,24 @@ describe("Task narrative", () => {
     );
   });
 
-  it("projects preserved partial work with an artifact-first continuation", () => {
+  it.each([
+    "Run budget exhausted.",
+    "Run made no measurable progress after one reroute: turns.",
+  ])("preserves the actual partial-work stop reason: %s", (error) => {
     const detail = fixture();
     detail.runs.push({
       ...run("completed"),
       status: "failed",
       outcome: "partial",
-      error: "Run budget exhausted.",
+      error,
     });
 
     expect(taskNarrative(detail)).toEqual(
       expect.objectContaining({
         phase: "waiting",
         phaseLabel: "Partial",
-        currentAction: "Partial result preserved at the budget boundary",
+        currentAction: "Partial result preserved after the run stopped",
+        blocker: error,
         nextStep: "Continue from preserved artifacts and open work.",
       }),
     );

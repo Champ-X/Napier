@@ -1,0 +1,107 @@
+{
+  "kind": "napier.bounded-thinking-live-candidate",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T07:35:53.577Z",
+  "runId": "run_d0d7d0c37f5a4f59b195",
+  "source": "/tmp/napier-harness-bounded-thinking-v1",
+  "sourceFreezeSha256": "f1738687b1d40df52f6ff9ce4388a4fad638ce36ad4e8c4720c7560dad3850cc",
+  "profileFileSha256": "68edc7d8664ba3b6d13f4db172d49a87ae88c4400662e774c3b683139a769db8",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "0f4e86dbc6205834612b8bfb763b4151bf1c10cc94a9d9506eae5857ade20455",
+  "auditPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/audit-5.json",
+  "auditSha256": "cada0542de6301d75dc55a4d3ea0b80fe953e9e5c437682bd9bd428effd65a48",
+  "taskSuccess": true,
+  "status": "completed",
+  "graderExitCode": 0,
+  "durationMs": 268820,
+  "changed": [
+    "src/decoder.py",
+    "src/records.py"
+  ],
+  "toolFailures": 1,
+  "admissions": 13,
+  "settledFen": 56,
+  "unreceiptedReservedFen": 0,
+  "minimumIntervalMs": 15000,
+  "actualInvocationBudgets": [
+    {
+      "turnIndex": 0,
+      "capsuleSha256": "777960e84f6c982774ac5f1ca65d1d9e8d7c94eb61fcc1b4d58061e7f94cf31f",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 1,
+      "capsuleSha256": "3a835e9b4fab0dedf1495edf463b40a40da0490430c5ddba9f02890a793b56a3",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 2,
+      "capsuleSha256": "cd3d16200c4edf40391b17ec20f0d700fc483619065796b0875128a2ac647816",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 3,
+      "capsuleSha256": "a79501573d5da4d0b4cf17a04f18b2a39d99fc157403473bac9c7aea88b810f7",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 4,
+      "capsuleSha256": "1e52c780b655c9b4416349d19e31df32ee398d1d2b6a07ddfb27b704770fb99c",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 5,
+      "capsuleSha256": "0427c3a561572018963b847c2a2d93e12f28614015d030deeea948b329d42098",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 6,
+      "capsuleSha256": "2b8d4576db4c5120a9d808280970bf44da1cf9d4113c59f6d18a68fc9c9fbfbc",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 7,
+      "capsuleSha256": "2d545698871099b79188b351cb3e23e0e9ff4f5b59cb9d6b671ce7e65e2fc23e",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 8,
+      "capsuleSha256": "ecd88e49bbc840a32f817283c05db48279a3e7f414e029c8020bf1e002df77af",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 9,
+      "capsuleSha256": "2c9c717df9d46dac7af5c46e2ccffdf40ff78f8abcc160c1931ed8ddecba91d8",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 10,
+      "capsuleSha256": "92bba8c27f6fb610ee6545e01dcea792a6e6da60c8e564c693b0370e7dc1a807",
+      "reasoning": "high",
+      "maxTokens": 8192
+    },
+    {
+      "turnIndex": 11,
+      "capsuleSha256": "270715888503c902b663fcd97ef7a5f2ff5680d612f59c79f2346a2749fdddf2",
+      "reasoning": "high",
+      "maxTokens": 8192
+    }
+  ],
+  "maxProviderCompletionTokens": 8192,
+  "truncatedToolArgumentsRefusedBeforeExecution": true,
+  "modelRecoveredWithoutBudgetRelaxation": true,
+  "firstVerificationReached": true,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "One real NDJSON candidate with independent OCI grader, file scope, usage and invocation binding verified. A request hit the 8192 output ceiling; existing guard refused its truncated run_command arguments and the model reissued a complete tool call, then finished. This proves the exercised path, not overall 90-pair acceptance or a latency guarantee. Baseline still running at receipt creation."
+}

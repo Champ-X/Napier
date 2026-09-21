@@ -1,0 +1,60 @@
+{
+  "kind": "napier.host-awake-bounded-continuation-plan",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T01:24:58.429Z",
+  "source": "/tmp/napier-harness-request-budget-context-v1",
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v8",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/search-config-two-pair-batch-v1/plan.json",
+  "planSha256": "490f3f3a08a9e9109b14e3a768b38f62215e330eacf192f5c6bcbd5a14929d15",
+  "retainedReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/resumable_byte_upload_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "2d9a045787899031d031b87e73afa9a3de7e8d4a3ef6b3f7961d8ed5948158ff"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-host-awake-core-v12/resumable_byte_upload_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "29c43eb39e44649a25687bf5f38cd1654207ac7e65eff1843808357db7798850"
+    }
+  ],
+  "dispatchIndices": [
+    49,
+    48,
+    50,
+    51
+  ],
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 7106,
+    "remainingFen": 2894,
+    "requests": 671,
+    "reservedRequests": 5,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "Two original unstarted tasks add ranked document search and layered configuration contracts: tokenization and tie ordering, merge precedence and immutable caller inputs. Actual model-produced repairs and mandatory verification need observation under the unchanged frozen v3 source and v8 driver. Retain the completed upload pair, original grader bytes and all limits; do not repeat completed observations.",
+  "scope": "At most two serial candidate-first pairs; original tasks, graders, source, profile, request cap and complete 30-case/3-trial schedule unchanged. Stop on candidate failure, budget/evidence blockers or regression. No later batch queued.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

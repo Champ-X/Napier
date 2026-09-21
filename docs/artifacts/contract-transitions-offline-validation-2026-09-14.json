@@ -1,0 +1,43 @@
+{
+  "kind": "napier.contract-transitions-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T15:06:12.116Z",
+  "candidate": "/tmp/napier-harness-contract-transitions-v2",
+  "profile": "napier.current-integrated.v2",
+  "bindings": {
+    "packages/contracts/src/harness-experiments.ts": "4da308107dd2d8e7d1935d40d7b5562b5e4b8d077b95f43cafc68567d6e8731d",
+    "packages/runtime/src/contract-verification-protocol.ts": "4f0eb0eba17402efe1f484fede73a21a18714fd9fd7973d218c83adf69a46cc9",
+    "packages/runtime/src/agent-prompt-layers.ts": "800efb0b43df9eb06818236d4eb972209ed4786b0041f99ab0f253f2bc0f9e0e",
+    "packages/runtime/src/harness-policy-profile.ts": "0a3555a4efe4038d3b2d681db5fbb8b558de716805752aea90c369a65a8aa5df",
+    "benchmarks/harness-profiles/current-integrated.v2.json": "a908fdeb34e658303f26ee524ff00426a19ba5a3aa235223a7a360ba4fd26ff9"
+  },
+  "tests": {
+    "reportPath": "/tmp/napier-contract-transitions-tests-v1.json",
+    "reportSha256": "8762e1ac5b5e97cc30a4d463c61f6f9f721dd35b7080974c71abf1f4386505f2",
+    "passed": 17,
+    "failed": 0,
+    "files": [
+      "/Users/champ/orca/Napier/packages/runtime/test/contract-verification-protocol.test.ts",
+      "/Users/champ/orca/Napier/packages/runtime/test/harness-composition-integration.test.ts",
+      "/Users/champ/orca/Napier/packages/runtime/test/harness-policy-recovery.test.ts",
+      "/Users/champ/orca/Napier/packages/runtime/test/pre-edit-verification-integration.test.ts"
+    ]
+  },
+  "architecture": {
+    "reportPath": "/tmp/napier-contract-transitions-architecture-v1.log",
+    "reportSha256": "793b6cb6c53956baff6f6fb6adbd4187a8bbc88fde73e50eb81a1b066bd2dbce",
+    "status": "six_known_violations_no_limit_changes"
+  },
+  "plan": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-contract-transitions-core-v7/plan.json",
+    "sha256": "b5829a78e9277a24170e76f878cd0708b9aaa215e5c4e7a9228b19758959af62",
+    "dispatchIndices": [
+      0,
+      1
+    ],
+    "maxRequestsPerRun": 20,
+    "minIntervalMs": 15000
+  },
+  "modelRequestsForOfflineValidation": 0,
+  "scope": "Focused validation and immutable source binding for a new explicit strategy; previous full Runtime audit predates this change. Actual corrective pair remains in progress. No overall quality qualification or default promotion."
+}

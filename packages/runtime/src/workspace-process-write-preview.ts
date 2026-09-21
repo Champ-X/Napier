@@ -15,6 +15,7 @@ import {
 } from "./command-execution.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
+import { processToolchainOptions } from "./toolchain-process-options.js";
 import type { WorkspacePathSnapshot } from "./workspace-snapshot.js";
 import { createWorkspaceProcessWriteSnapshot } from "./workspace-process-write-snapshot.js";
 import {
@@ -39,6 +40,7 @@ export interface PreviewWorkspaceProcessWriteRequest {
   threadId: string;
   runId: string;
   command: CommandExecutionRequest;
+  toolchainEnvironment?: "workspace";
   writePaths: string[];
   failureRecovery?: WorkspaceProcessFailureRecovery;
   interactive?: boolean;
@@ -104,7 +106,7 @@ export class WorkspaceProcessWritePreviewManager {
     }
     validateWorkspaceProcessTerminalSize(request.terminal);
     const prepared = await prepareCommandExecution(
-      this.options,
+      await processToolchainOptions(this.options, request),
       request.command,
     );
     const scopes = await resolveWorkspaceWriteScopes(

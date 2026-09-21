@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {resolveConfig} from './src/config.mjs'; import {mergeConfig} from './src/merge.mjs';
+const base={server:{host:'local',port:80},debug:true,tags:['base'],nested:{keep:1,remove:2}};
+const files=[{server:{port:81},nested:{remove:null,zero:0,empty:''},tags:[{name:'file'}]}];
+const saved=JSON.stringify({base,files});
+const out=resolveConfig(base,files,{APP_PORT:'0',APP_DEBUG:'false',APP_TAGS:' a, ,b '},{server:{host:''}});
+assert.deepEqual(out,{server:{host:'',port:0},debug:false,tags:['a','b'],nested:{keep:1,zero:0,empty:''}});
+assert.equal(JSON.stringify({base,files}),saved);
+assert.deepEqual(resolveConfig({tags:[1],server:{port:1}},[],{APP_TAGS:''}),{tags:[],server:{port:1}});
+const copy=mergeConfig({a:[{x:1}],b:{c:2}},{});copy.a[0].x=7;
+const source={a:[{x:1}],b:{c:2}}, clone=mergeConfig({},source);clone.a[0].x=8;clone.b.c=9;assert.deepEqual(source,{a:[{x:1}],b:{c:2}});
+assert.deepEqual(mergeConfig({a:1,b:2},{a:undefined,b:null}),{a:1});
+for(const env of [{APP_PORT:'-1'},{APP_PORT:'65536'},{APP_PORT:'1.2'},{APP_PORT:''},{APP_DEBUG:'yes'}])assert.throws(()=>resolveConfig({},[],env),TypeError);
+for(const bad of [JSON.parse('{"__proto__":{"polluted":1}}'),{a:[JSON.parse('{"constructor":1}')]},{prototype:1},[],{x:Infinity},{x:()=>1}])assert.throws(()=>mergeConfig({},bad),TypeError);
+const cycle={};cycle.self=cycle;assert.throws(()=>mergeConfig({},cycle),TypeError);
+assert.equal({}.polluted,undefined);
+console.log('Independent merge, ownership, validation and environment checks passed');

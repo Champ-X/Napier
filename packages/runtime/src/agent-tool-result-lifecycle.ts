@@ -221,6 +221,21 @@ export class AgentToolResultLifecycle {
     return result;
   }
 
+  async recordUnfinalizedDisplay(input: {
+    toolCallId: string;
+    toolName: string;
+    result: AgentToolResult<unknown>;
+    isError: boolean;
+  }): Promise<void> {
+    // SDK validation/truncation failures bypass both tool lifecycle hooks.
+    // Retain their local diagnostic without inventing an admitted execution.
+    if (this.finalizations.has(input.toolCallId)) return;
+    const owner = agentToolDisplayOwner(this.options.run, input);
+    await this.options.displays
+      .recordOutput(owner, agentToolResultText(input.result), input.isError)
+      .catch(() => undefined);
+  }
+
   async replayCapturedResult(
     toolCallId: string,
     toolName: string,

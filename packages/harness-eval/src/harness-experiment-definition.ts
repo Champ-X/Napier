@@ -10,11 +10,10 @@ import type {
   ModelRouteLock,
 } from "@napier/contracts/harness-experiments";
 
-import { canonicalJson, sha256 } from "@napier/runtime/harness-eval-support";
+import { canonicalJson, sha256, validateModelHarnessExperimentProfile } from "@napier/runtime/harness-eval-support";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const ID = /^[a-z][a-z0-9_.-]{2,79}$/u;
-const PROFILE = /^[A-Za-z0-9][A-Za-z0-9_.:@/-]{0,127}$/u;
 const METRICS = new Set<HarnessExperimentMetric>([
   "task_success",
   "input_tokens",
@@ -389,19 +388,8 @@ function validateDecisionRule(rule: ExperimentDecisionRule): void {
 }
 
 function validProfile(profile: unknown): profile is HarnessExperimentProfile {
-  if (!record(profile)) return false;
-  const { contentSha256, ...content } = profile;
-  return (
-    Object.keys(profile).length === 5 &&
-    profile["kind"] === "napier.model-harness-experiment-profile" &&
-    profile["schemaVersion"] === 1 &&
-    typeof profile["id"] === "string" &&
-    PROFILE.test(profile["id"]) &&
-    Number.isSafeInteger(profile["maxActiveTools"]) &&
-    Number(profile["maxActiveTools"]) > 0 &&
-    typeof contentSha256 === "string" &&
-    sha256(canonicalJson(content)) === contentSha256
-  );
+  try { validateModelHarnessExperimentProfile(profile); return true; }
+  catch { return false; }
 }
 
 function expectedPairs(

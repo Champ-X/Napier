@@ -1,0 +1,88 @@
+{
+  "kind": "napier.binary-grade-reassessment",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:23:59.709Z",
+  "out": "/Users/champ/.cache/napier-seven-quality/binary-grade-reassessment-v1",
+  "results": [
+    {
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_fb687186f79248e09b11",
+      "originalTaskSuccess": false,
+      "originalGraderExitCode": 1,
+      "newGraderExitCode": 1,
+      "reportSha256": "54f846eb5b658f195b38795dc9a22a7dedf4c781bead96aca14bb5e32d8faa85",
+      "outputReceiptSha256": "c8c9e1959f57cbe564dd929062b990262d7f7ea0dc1255c53e0d45265a271eaa",
+      "graderSha256": "537b3bb1bae6f5dafecf89481e992590808538c1e4e2ae44804ab7b74e220509",
+      "logSha256": "ff8daace7ae996fa23a550c030c8730b04bd61c54a6f82577b24290dedd00755",
+      "originalOutputUnchanged": true
+    },
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_0e15a6b4578c4d5ba7aa",
+      "originalTaskSuccess": false,
+      "originalGraderExitCode": 1,
+      "newGraderExitCode": 1,
+      "reportSha256": "996f6339995b1003eefb7ca0ad44e246b3364548c6e4d7bf797e6a56bb233b37",
+      "outputReceiptSha256": "7e7f1301c573361493496a58cc442abf9de418970d7ad3eeb04ddf283eb5eb57",
+      "graderSha256": "537b3bb1bae6f5dafecf89481e992590808538c1e4e2ae44804ab7b74e220509",
+      "logSha256": "854f4ad02324519aa5b7136a084ecfdf649a5b7eeddf1af8173a7af505b31ca1",
+      "originalOutputUnchanged": true
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_64ea037b46ec45aeafad",
+      "originalTaskSuccess": false,
+      "originalGraderExitCode": 1,
+      "newGraderExitCode": 1,
+      "reportSha256": "adef87dde90f1d98b49db2664b253edde29ca5dd68b4f1dd85b80a45d054db55",
+      "outputReceiptSha256": "b426f51248db3a5c2b9dff8bab594504758082640447d169212bca66d1c9ff82",
+      "graderSha256": "537b3bb1bae6f5dafecf89481e992590808538c1e4e2ae44804ab7b74e220509",
+      "logSha256": "ba6f7e39256cad71f0fb8a79dcc2523c96c6aa474c9d20407b1ea778c24ae9cc",
+      "originalOutputUnchanged": true
+    },
+    {
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_e67bd1a52a3e43beb13d",
+      "originalTaskSuccess": true,
+      "originalGraderExitCode": 0,
+      "newGraderExitCode": 0,
+      "reportSha256": "3911dcc8b11217ec1290feaf1f1bff866c4f0fd3ac53be75b269d74d897b601f",
+      "outputReceiptSha256": "0a56cd4e8f7deb81a46fc3b26ddf72897d070f8c726b4bef761141553ac80690",
+      "graderSha256": "537b3bb1bae6f5dafecf89481e992590808538c1e4e2ae44804ab7b74e220509",
+      "logSha256": "a1687f185efdc16c8c7673a82049fd8761ed2f6162d74000e02742d3d31195ef",
+      "originalOutputUnchanged": true
+    },
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_c80f6ec10682419f878d",
+      "originalTaskSuccess": false,
+      "originalGraderExitCode": 1,
+      "newGraderExitCode": 1,
+      "reportSha256": "eb372687de46232394bca6986dc9630a2ef691c25a90b3566f0bf791bbad699d",
+      "outputReceiptSha256": "c1afe6a9fa93719381ce5e7ef511da18952970d224301cd275fe0d591a9fe21f",
+      "graderSha256": "537b3bb1bae6f5dafecf89481e992590808538c1e4e2ae44804ab7b74e220509",
+      "logSha256": "53413fda71c6fe321f8c814383e018774fd9dea38c76c776deeca1893a296ebd",
+      "originalOutputUnchanged": true
+    },
+    {
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_0dbf0b077045456a8e61",
+      "originalTaskSuccess": true,
+      "originalGraderExitCode": 0,
+      "newGraderExitCode": 0,
+      "reportSha256": "2a491a113241777dac6701f6f1baa84638b429750360f0d4f6ae6c4a8973f60b",
+      "outputReceiptSha256": "e3ed42bb60e37a2de4ff06ab6220f240547f854321bc73d70e7b66c90f53f18f",
+      "graderSha256": "537b3bb1bae6f5dafecf89481e992590808538c1e4e2ae44804ab7b74e220509",
+      "logSha256": "a1687f185efdc16c8c7673a82049fd8761ed2f6162d74000e02742d3d31195ef",
+      "originalOutputUnchanged": true
+    }
+  ],
+  "scope": "Independent corrected-grader reassessment of six hash-bound unchanged original outputs. Original reports and scores retained. Not fresh executions, not replacement trials, and not qualification of the corrected corpus.",
+  "promotionReady": false
+}

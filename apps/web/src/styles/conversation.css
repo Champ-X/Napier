@@ -810,6 +810,11 @@
     var(--shadow-raised);
 }
 
+/* The open options must sit above floating controls in the conversation feed. */
+.composer:has(.composer-options[open]) {
+  z-index: 6;
+}
+
 .composer-input-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

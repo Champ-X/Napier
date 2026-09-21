@@ -1,0 +1,35 @@
+{
+  "kind": "napier.spending-serialization-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T19:22:24.463751+00:00",
+  "sourceFiles": {
+    "scripts/harness-spending-transport.mjs": "b2da31319d30f11c261034e2f0bea61e81180187719d6e1837c76465da0c857a",
+    "scripts/harness-spending-budget.test.mjs": "273ecdef8c756d05696c3187b505819c863988953bc0069e82dc10de28020de8"
+  },
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/spending-serialization-offline-tests-2026-09-15.json",
+    "sha256": "8baf98e6064831c353b0fbda97ca923a1990fb0cc56d718d4bdcb421d40c572a",
+    "passed": 45,
+    "failed": 0,
+    "skipped": 0
+  },
+  "changes": [
+    "Reject a new DeepSeek provider request while a request from this transport lacks settled terminal usage.",
+    "Reopen admission only after complete terminal provider usage actually settles; preserve raw SSE bytes and historical reservations.",
+    "Keep original per-Run request caps, cadence and cumulative financial ceiling."
+  ],
+  "verification": [
+    "Concurrent header wait and stream retries cause no additional provider calls or spending reservations.",
+    "Late valid usage releases only the current request admission gate.",
+    "Cancelled, malformed, missing-usage and failed transports retain conservative reservations.",
+    "Existing request admission, cache pricing and paired scheduler checks pass."
+  ],
+  "modelRequests": 0,
+  "limitations": [
+    "The new transport source is not the driver v6 used in the interrupted real observation. It requires a new driver freeze before future paid runs.",
+    "This prevents overlapping unreceipted retries; it does not establish the cause of semantic stalls or guarantee cancellation delivers provider usage.",
+    "The provider invoice has not been verified."
+  ],
+  "collectionComplete": false,
+  "promotionReady": false
+}

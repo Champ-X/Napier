@@ -1,0 +1,224 @@
+{
+  "kind": "napier.container-visibility-composition-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T03:08:00.795808+00:00",
+  "paidApiCalls": 0,
+  "qualificationReady": false,
+  "promotionReady": false,
+  "image": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+  "snapshot": "/tmp/napier-harness-container-visibility-v1",
+  "sourceBindings": [
+    {
+      "path": "packages/runtime/src/verification-container-entry.ts",
+      "sha256": "9f925a4aae113899e20217d9a2cfda0e666645e2093b69748d93e97c49ebcf5b",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/src/verification-container-entry.ts"
+    },
+    {
+      "path": "packages/runtime/src/verification.ts",
+      "sha256": "50636e442a1692e720996420a1726b9bf50ff3b5b57ca479742dde44fefff9de",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/src/verification.ts"
+    },
+    {
+      "path": "packages/runtime/src/verification-selected-tests.ts",
+      "sha256": "29d8331adff66677e4d9f0c064cacb9186e42900a26902ed7651ce6ebb35d751",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/src/verification-selected-tests.ts"
+    },
+    {
+      "path": "packages/runtime/test/harness-composition-integration.test.ts",
+      "sha256": "a50f52d75476b1836b9a9d906529abf3eb089368d9a209e6481191dc50234e30",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/test/harness-composition-integration.test.ts"
+    },
+    {
+      "path": "packages/runtime/test/verification-container-entry.test.ts",
+      "sha256": "98f095cc3feaa851c55a9de221e6740c6083b504724ed3cf269918098e315534",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/test/verification-container-entry.test.ts"
+    },
+    {
+      "path": "packages/runtime/test/verification.test.ts",
+      "sha256": "a9673165af3561a4f8996323200571d5a499ca62a00e1e1c23fbb9019a8bca37",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/test/verification.test.ts"
+    },
+    {
+      "path": "packages/runtime/dist/verification-container-entry.js",
+      "sha256": "13a641ec95d0ee052c1fc5032fa073a766c2ad6df465d7683750128f791372c8",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification-container-entry.js"
+    },
+    {
+      "path": "packages/runtime/dist/verification-container-entry.d.ts",
+      "sha256": "db0e8d9671e0473a83186aedccec44d35abd58cdb4db7afb535056eb1e8d1258",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification-container-entry.d.ts"
+    },
+    {
+      "path": "packages/runtime/dist/verification-container-entry.d.ts.map",
+      "sha256": "967c5ff9c3638b4c0912335b75d4a420cbe384f19665f7c3e0a64695278ee2b9",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification-container-entry.d.ts.map"
+    },
+    {
+      "path": "packages/runtime/dist/verification.js",
+      "sha256": "ae9541f0a5863be24db206bfd48949852d9cfe8b35685b68a7ed46a7bbfbb412",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification.js"
+    },
+    {
+      "path": "packages/runtime/dist/verification.d.ts",
+      "sha256": "761a7641411ef2b2d7dee5a27c0d2563d0f9fdb132e8168a5780cdc5f81314ed",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification.d.ts"
+    },
+    {
+      "path": "packages/runtime/dist/verification.d.ts.map",
+      "sha256": "1774fffd8221da461657cf223a605338747a99e4b35e6bf098845030897f0649",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification.d.ts.map"
+    },
+    {
+      "path": "packages/runtime/dist/verification-selected-tests.js",
+      "sha256": "ef6953408c9da3be7e0bff45a3cc2911fe1c075a65b704faa9529a48ef787a45",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification-selected-tests.js"
+    },
+    {
+      "path": "packages/runtime/dist/verification-selected-tests.d.ts",
+      "sha256": "e579cca19576469a6ba4a25eac3ff967af45121f83d463ba17c0deff645a7315",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification-selected-tests.d.ts"
+    },
+    {
+      "path": "packages/runtime/dist/verification-selected-tests.d.ts.map",
+      "sha256": "c1298f713127268662e7767acbdbf42d0a51300e99e8b89dd96d22a9b14afa51",
+      "archive": "/tmp/napier-harness-container-visibility-v1/packages/runtime/dist/verification-selected-tests.d.ts.map"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "/tmp/napier-composition-integration-v1.log",
+      "sha256": "2a747fa16e4fdde0da59a27e0cc74861f20be33f4ca3c2c6c8a183c32e06dda6"
+    },
+    {
+      "path": "/tmp/napier-composition-integration-v2.log",
+      "sha256": "0105f363597e6ef0b6ac04554a26841dfe0be1fc6f1393ad9ab6b8743b295939"
+    },
+    {
+      "path": "/tmp/napier-composition-oci-v1.log",
+      "sha256": "d2ae55801624ab366c84d08acb520ad093ef6d1d04ca2073f1a8b383c05a905e"
+    },
+    {
+      "path": "/tmp/napier-composition-oci-v2.log",
+      "sha256": "b776ee3dba1c1bf0c3f2afd9cb06a160e98db623d74ea07211dd2f1e1602d3a2"
+    },
+    {
+      "path": "/tmp/napier-composition-oci-v3.log",
+      "sha256": "b1e809fbb18244d563256fa69d8c9a19865cfeca7347c79fa067e7cc6e47b169"
+    },
+    {
+      "path": "/tmp/napier-composition-oci-v4.log",
+      "sha256": "abe22fb72817746a0c1638a69650131e4707f9f4da81e5cbf93f7ee750c5608e"
+    },
+    {
+      "path": "/tmp/napier-composition-oci-v5.log",
+      "sha256": "7cac98165786393c890e126bfada404f71045a8115ac92156d25e59366a22bb3"
+    },
+    {
+      "path": "/tmp/napier-composition-oci-v5.json",
+      "sha256": "9f7ee36597a0b00408586705b1a85bdaeb922e6740ea39190ac0f9b3933fc736"
+    },
+    {
+      "path": "/tmp/napier-composition-oci-v5.resources.json",
+      "sha256": "4ee62ef9234ca43a94cef725cc8914b6a2575f74701971e33233b859b838dbcf"
+    },
+    {
+      "path": "/tmp/napier-composition-oci-v5.py",
+      "sha256": "22fdb221d652c4643a0528b6c669dda975632b91969d79dfb28ac3391c7756a2"
+    },
+    {
+      "path": "/tmp/napier-node-oci-visibility-v1.mjs",
+      "sha256": "dcabb7426c8fe791cb0e44cd4f0c2d13eaa8dc2eef044a87b22f6990a419ecca"
+    },
+    {
+      "path": "/tmp/napier-node-oci-visibility-v1.json",
+      "sha256": "08fba9d4669c03c694daa927aac1b5340df6b88445c7df350df55a9ecbf8ca01"
+    },
+    {
+      "path": "/tmp/napier-node-oci-visibility-v2.mjs",
+      "sha256": "0a76716097b8336b3025c97ab1cafa98255a1d3272322b6c30e7a8a5efdc6b24"
+    },
+    {
+      "path": "/tmp/napier-node-oci-visibility-v2.json",
+      "sha256": "ad78cc625f292fbbf0bdb73a7cf70eab85945f4e40b256acfdb59db3365bf360"
+    },
+    {
+      "path": "/tmp/napier-container-verification-focused-v1.log",
+      "sha256": "ff43257b8a4f02d56966d9da1fd9d448957568265a2b612a223b2bf8c5549257"
+    },
+    {
+      "path": "/tmp/napier-container-verification-focused-v2.log",
+      "sha256": "692eac99bd720496f8610bc2b67ab8c282e2feb6bcfab798b4005f99a74631b0"
+    },
+    {
+      "path": "/tmp/napier-container-verification-focused-v2.json",
+      "sha256": "771c760358c2a9256e95b304b1ad5ca74066f01c4ecf104021271b0369b42013"
+    },
+    {
+      "path": "/tmp/napier-container-verification-build-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-container-verification-architecture-v2.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-container-verifier-coverage-v1.mjs",
+      "sha256": "08885a0ebd7e2d957fa8aec7806bdb0b1a1126908ac1a37ba4b973f13964b299"
+    },
+    {
+      "path": "/tmp/napier-container-verifier-coverage-v1.json",
+      "sha256": "228f97bdffc5b31f6dffbe92dbfb3eaf7c1d9509c3648806b01fbf3340393fd9"
+    },
+    {
+      "path": "/tmp/napier-container-visibility-repo-v1.mjs",
+      "sha256": "981fe3313d676c37828fa73cb611b73ce902b38af0378d6fbbb4f4b293d22fc8"
+    },
+    {
+      "path": "/tmp/napier-container-visibility-repo-v1.json",
+      "sha256": "3ea4be66007e5b6187fb5dc9f845ad385ed7c6aa92b170da37b6c1471191b8ac"
+    },
+    {
+      "path": "/tmp/napier-freeze-container-visibility-v1.py",
+      "sha256": "fccd5fa0451c16ec54b483ae18479a38d6a6891f082c6106f70006a61c899914"
+    },
+    {
+      "path": "/tmp/napier-container-visibility-preflight-v1.mjs",
+      "sha256": "5d6dfdd1f2c649568363488395e10b703c9a7bf921617381b9ce8efe9cb62e59"
+    },
+    {
+      "path": "/tmp/napier-container-visibility-preflight-v1.log",
+      "sha256": "b3d398020d36e867fee083a3ad10fd871d9fbe508baa177e046f233770ae6754"
+    },
+    {
+      "path": "/tmp/napier-harness-container-visibility-v1/freeze-receipt.json",
+      "sha256": "b586bb8363238fc61ab80f5c49bc7665190598610ae95fd0a3aa3b0fc2e1f4e3"
+    },
+    {
+      "path": "/tmp/napier-harness-container-visibility-v1/candidate-profile.json",
+      "sha256": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4"
+    },
+    {
+      "path": "/tmp/napier-harness-container-visibility-v1/runtime-dependencies.preflight.json",
+      "sha256": "78ed3fae78b87784f94056d085de2e1d4e68eb1e3acd8ecc8f79a72627797621"
+    }
+  ],
+  "validation": {
+    "localPassed": 32,
+    "localFailed": 0,
+    "localFiles": 7,
+    "ociCompositionPassed": 2,
+    "ociCompositionFailed": 0,
+    "actualTypecheckFormatAndErrorProbes": 3,
+    "repositoryReadOnlyVisibilityMs": 217,
+    "runtimeCompilation": "passed",
+    "architectureKnownViolations": 7,
+    "resourceBaselineRestored": true
+  },
+  "limits": [
+    "Scripted local model responses establish integration and evidence coherence, not stochastic task quality.",
+    "Visibility refresh skips symlinks, .git, .napier and node_modules; it is not dependency synchronization or a filesystem lock.",
+    "The current complete profile still needs independent real-model quality qualification.",
+    "Snapshot contains Runtime/Contracts source/build/tests and MJS drivers; other dependencies and external services are not fully frozen."
+  ],
+  "contentSha256": "a0d08550f2c846f4a5e7878d32d3c71aab22d71cc80434992e8d3a0c6224f7f1"
+}

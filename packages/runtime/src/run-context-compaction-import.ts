@@ -1,5 +1,6 @@
 import type { RunEvent } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { RUNTIME_CONTEXT_EVENT } from "./runtime-context-receipt.js";
 import {
   contextEvidenceRecord,
   RUN_CONTEXT_COMPACTED_EVENT,
@@ -21,11 +22,16 @@ export function rebindImportedRunContextCompaction(events: RunEvent[]): void {
       payload["checkpointSha256"] = mapped(payload["checkpointSha256"]);
     } else if (
       event.type === "context.projected" &&
-      payload["runCompactionReceiptSha256"] !== undefined
+      (payload["runCompactionReceiptSha256"] !== undefined ||
+        payload["runtimeContextReceiptSha256"] !== undefined)
     ) {
-      payload["runCompactionReceiptSha256"] = mapped(
-        payload["runCompactionReceiptSha256"],
-      );
+      for (const key of [
+        "runCompactionReceiptSha256",
+        "runtimeContextReceiptSha256",
+      ])
+        if (payload[key] !== undefined) payload[key] = mapped(payload[key]);
+    } else if (event.type === RUNTIME_CONTEXT_EVENT) {
+      payload["runId"] = event.runId;
     } else if (event.type !== RUN_CONTEXT_COMPACTION_FAILED_EVENT) continue;
     const { contentSha256: previousHash, ...content } = payload;
     const contentSha256 = sha256(canonicalJson(content));

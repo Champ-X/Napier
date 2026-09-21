@@ -1,0 +1,197 @@
+{
+  "kind": "napier.task-memory-query-provenance-comparison",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T08:26:25.294Z",
+  "parentSnapshot": "/tmp/napier-harness-visible-order-v1",
+  "currentSource": "/Users/champ/orca/Napier",
+  "scope": "Deterministic invocation preparation with actual compiled Runtime memory retrieval and synthetic approved facts; no model provider, paid request, compaction execution or service restart.",
+  "results": [
+    {
+      "scenario": "initial",
+      "arms": {
+        "parent": {
+          "requiredFactIncluded": true,
+          "renderedCharacters": 5634,
+          "renderedFactCount": 9,
+          "truncated": true,
+          "queryEvidence": null,
+          "textSha256": "bf93f4c6449ec1dd160e03a0fd7fc305d9e1b61986f0dd8ff98d72b7412a234d"
+        },
+        "current": {
+          "requiredFactIncluded": true,
+          "renderedCharacters": 5634,
+          "renderedFactCount": 9,
+          "truncated": true,
+          "queryEvidence": {
+            "kind": "task-requirement-events-v1",
+            "sourceEventIds": ["event_query_0"],
+            "sourceRunIds": ["run_query_comparison"],
+            "instructionRevision": 1,
+            "textSha256": "3df31d0ed917669d5fdb38e86966d33338609ca65591c7cf670e69f70cccfd41",
+            "truncated": false
+          },
+          "textSha256": "bf93f4c6449ec1dd160e03a0fd7fc305d9e1b61986f0dd8ff98d72b7412a234d"
+        }
+      }
+    },
+    {
+      "scenario": "repeated_hints",
+      "arms": {
+        "parent": {
+          "requiredFactIncluded": false,
+          "renderedCharacters": 5919,
+          "renderedFactCount": 9,
+          "truncated": true,
+          "queryEvidence": null,
+          "textSha256": "5e1dc4527c0753b6a978be90b2ee2002cf9f923ed22cc50938121df5b37fa7c4"
+        },
+        "current": {
+          "requiredFactIncluded": true,
+          "renderedCharacters": 5634,
+          "renderedFactCount": 9,
+          "truncated": true,
+          "queryEvidence": {
+            "kind": "task-requirement-events-v1",
+            "sourceEventIds": ["event_query_0"],
+            "sourceRunIds": ["run_query_comparison"],
+            "instructionRevision": 1,
+            "textSha256": "3df31d0ed917669d5fdb38e86966d33338609ca65591c7cf670e69f70cccfd41",
+            "truncated": true
+          },
+          "textSha256": "bf93f4c6449ec1dd160e03a0fd7fc305d9e1b61986f0dd8ff98d72b7412a234d"
+        }
+      }
+    },
+    {
+      "scenario": "compacted",
+      "arms": {
+        "parent": {
+          "requiredFactIncluded": false,
+          "renderedCharacters": 5919,
+          "renderedFactCount": 9,
+          "truncated": true,
+          "queryEvidence": null,
+          "textSha256": "5e1dc4527c0753b6a978be90b2ee2002cf9f923ed22cc50938121df5b37fa7c4"
+        },
+        "current": {
+          "requiredFactIncluded": true,
+          "renderedCharacters": 5634,
+          "renderedFactCount": 9,
+          "truncated": true,
+          "queryEvidence": {
+            "kind": "task-requirement-events-v1",
+            "sourceEventIds": ["event_query_0"],
+            "sourceRunIds": ["run_query_comparison"],
+            "instructionRevision": 1,
+            "textSha256": "3df31d0ed917669d5fdb38e86966d33338609ca65591c7cf670e69f70cccfd41",
+            "truncated": true
+          },
+          "textSha256": "bf93f4c6449ec1dd160e03a0fd7fc305d9e1b61986f0dd8ff98d72b7412a234d"
+        }
+      }
+    }
+  ],
+  "limits": [
+    "Same 6000-character memory limit; no fact content, permission or ranking algorithm changed.",
+    "This proves source-based retrieval under the exercised transcript truncation conditions, not stochastic task quality or a full compaction lifecycle.",
+    "The existing bounded requirement projection and 64 query-term limit remain; arbitrary long-task recall is not established."
+  ],
+  "files": [
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/task-memory-query.ts",
+      "sha256": "bccc75eb5becfae247227dece2654671eb5f970ebbf56abd50d4f77f99b58695"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/agent-memory-context.ts",
+      "sha256": "358e9905c00778230f194079e2ac0e6063550a0b9f752a8d84d82c7968af3054"
+    },
+    {
+      "path": "/tmp/napier-harness-visible-order-v1/packages/runtime/src/agent-memory-context.ts",
+      "sha256": "aa94acb5c9e6d764690e9d2dd0a292762b81d9d85628c8c470e802ee17aa8f94"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/agent-invocation-context.ts",
+      "sha256": "4636fbe9c9537ad80a7b1c5f92623c0774cf94ce3aba84eb54b2f2c6dce47a1e"
+    },
+    {
+      "path": "/tmp/napier-harness-visible-order-v1/packages/runtime/src/agent-invocation-context.ts",
+      "sha256": "c5c34312c0054bc8605b48061eeccaa113de4cf48b2e4c89da1d5192bab22040"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/task-memory-query-provenance.test.ts",
+      "sha256": "38c2efdf959b5fd756b4495c6553ca25025af4f775bf502d3a799190e60b7d09"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/harness-composition-integration.test.ts",
+      "sha256": "61eaa0c9af5eb54d49f2224b005f509a3e59732e1cae486cf6da40092ab7c235"
+    },
+    {
+      "path": "/tmp/napier-memory-query-before-v1.log",
+      "sha256": "8e7aa6e037a31ea70f7e02ccb682886f5a506930cf1d31184082a103f0fcfd35"
+    },
+    {
+      "path": "/tmp/napier-memory-query-before-v2.log",
+      "sha256": "475a0d9117c2f92a4be26544013d75a5f4a0ea0b1867879b5dc631e732d70071"
+    },
+    {
+      "path": "/tmp/napier-memory-query-after-v1.log",
+      "sha256": "9a6e37a6d2e18511ab36efd95cae7bcb0f51b03aad41fed328ac76b4f06ae10a"
+    },
+    {
+      "path": "/tmp/napier-memory-query-fixed-tests-v2.log",
+      "sha256": "05598f460e60b3a613e5fdabfcde9b231e72c229bd2b8c8d115bca1d6bbc0602"
+    },
+    {
+      "path": "/tmp/napier-memory-query-integration-v1.log",
+      "sha256": "47c4c536083183aa3f88a779c31c310b2e8cc7b611553f6f2fc1c4896cbd7643"
+    },
+    {
+      "path": "/tmp/napier-memory-query-integration-v2.log",
+      "sha256": "9164824f2275c75653ed81a141df5bdd5361bbea74bbd249ceb34b3cfd16ed9a"
+    },
+    {
+      "path": "/tmp/napier-memory-query-build-v1.log",
+      "sha256": "a06ccb2d505e595b2c368c19451aa0c1b2a712be12ac38fc0a499d86c2d8eb90"
+    },
+    {
+      "path": "/tmp/napier-memory-query-architecture-v1.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-memory-query-comparison-v1.mjs",
+      "sha256": "996c1f50a7e3e7c133ded3447bc0b1617abb29ef24937bd9259691f9414d990f"
+    }
+  ],
+  "runtimeSourceChangesFromParent": [
+    "agent-invocation-context.ts",
+    "agent-memory-context.ts",
+    "task-memory-query.ts"
+  ],
+  "runtimeSourceInventorySha256": "8ca35fa8cd1e73ec712a1355d385f58f6754ea56bfa611ec2f58c1fe7e3d386c",
+  "validation": {
+    "memoryChecksPassed": 45,
+    "requirementRevisionChecksPassed": 5,
+    "agentRuntimeNodePythonChecksPassed": 2,
+    "uniqueTargetedChecksPassed": 52,
+    "runtimeCompilePassed": true,
+    "existingArchitectureViolations": 7,
+    "newArchitectureViolations": 0,
+    "fullSuiteRepeated": false,
+    "testScope": "The original 39 related memory checks passed before the fixture-only correction; six new checks passed after correction. Five existing requirement tests and two complete AgentRuntime tests passed. The latter two were rerun only after adding actual query-source receipt assertions."
+  },
+  "budget": {
+    "requestsThisWork": 0,
+    "sharedRequests": 84,
+    "committedFen": 555,
+    "remainingFen": 4445,
+    "reservedRequests": 0,
+    "denied": 0
+  },
+  "qualityQualification": {
+    "freshModelComparisonsForThisSource": 0,
+    "promotionReady": false,
+    "requiredCases": 30,
+    "requiredPairedTrials": 3,
+    "decision": "Keep the overall goal active. Existing paid parent results are not pooled into this later source."
+  }
+}

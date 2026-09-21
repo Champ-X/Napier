@@ -1,0 +1,563 @@
+{
+  "kind": "napier.harness-core-corpus-preflight",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T19:09:34.891330+00:00",
+  "suitePath": "benchmarks/harness-core-quality-suite-v1.json",
+  "suiteSha256": "b7f4f0cd18bb31259b637a0df9b98b5eae8200b332b087d72cd9d1215676f8cc",
+  "uniqueCases": 30,
+  "newDistinctCases": 14,
+  "shippingFamilyRepresentatives": 1,
+  "deterministicTests": {
+    "passed": 33,
+    "failed": 0,
+    "logPath": "/tmp/napier-core-corpus-selftest-v2.log",
+    "logSha256": "9e31f53615f28dc8b4950e88890ca8893ec67e04453430940e879e4671089b3e"
+  },
+  "checks": [
+    "Initial implementations are syntactically valid and rejected by behavioral graders",
+    "Complete reference implementations pass independent graders",
+    "New domain references also pass existing public tests",
+    "Suite snapshot preserves all inputs and rejects exact duplicates",
+    "Current runtime and contracts source/dist match frozen input-capture-v2"
+  ],
+  "cases": [
+    {
+      "id": "http_retry_policy_v1",
+      "path": "benchmarks/harness-optimization/http-retry-policy-v1",
+      "coverage": [
+        "http-retry-policy"
+      ],
+      "files": {
+        "expected/src/retry-after.mjs": "6c04e45115b92b57fb0015618a30f399888c6f77c9121f223cfea7877d87d6d8",
+        "expected/src/retry.mjs": "5484de62bf588f38a473d90b7202f1d99220d641cefc8ddc9d07c6917a395cc9",
+        "fixture/README.md": "7df580dd76bac99f749ba647023e1a1c48bbc2bb88bb4b075669a8a7364332d4",
+        "fixture/src/retry-after.mjs": "f2ba1be57f3f1bd85d5b2f2048b39526e2e3951d9a9104db969a4b6a7b9eb897",
+        "fixture/src/retry.mjs": "3852de347487def79331b37213072a5ee62118bc46eb55bd601352b6dddf9318",
+        "fixture/test/public.test.mjs": "2836c11ca241795b3ebfeff7b5be25869e26be8805cb3b0983b6d99389657058",
+        "manifest.json": "ed431ab7b1a6fa6ffdc2ef6dbcbb450d28d2b54dcf0205f90e146addf726b74b",
+        "outcome.mjs": "047cd448c4702df1d703b28943f974dd0899e1c6c134cf4edcafc13fe6d9378d",
+        "prompt.md": "9040418c8490b240cee9adfe234f7def5573ad710f33edcace7cfd67df30bd1b"
+      }
+    },
+    {
+      "id": "rollout_dependency_plan_v1",
+      "path": "benchmarks/harness-optimization/rollout-dependency-plan-v1",
+      "coverage": [
+        "rollout-dependency-plan"
+      ],
+      "files": {
+        "expected/src/graph.mjs": "99bde8f369cc782a28e6964b73b62897d0346b225cf43da0afcc387678aec541",
+        "expected/src/rollout.mjs": "33d49911e7a4028ec081ce0cc52269306301fef493ac72dfe94affd101d4d2fb",
+        "fixture/README.md": "e3edc30cbea82b622eed43cda40baf6bd9366648830c9b365af5ddc0e684c28c",
+        "fixture/src/graph.mjs": "3461fc3e5f374cc21878216cd39f98da26fc472fe65ab211a7098ad01e881e0c",
+        "fixture/src/rollout.mjs": "caaa68be5606a8cb2b1d5d7b6fc6e89a574a894e154bac3953c913a485067b80",
+        "fixture/test/public.test.mjs": "14e017ccf8311d546677684bbd8d6d705ccdf489c616b3e974b36e6f84d60554",
+        "manifest.json": "65f0adffb189275d1022c3d5a812c30e492c7706d8196300435c5e07268ac1ac",
+        "outcome.mjs": "38ca9281cd762b949726a3e9a610c10cb90d8af8e3645ae249ae286c54ee468d",
+        "prompt.md": "b76623852b9cfe3f509c52a3e792f2dca945861e3613e37519aa0f58614667e8"
+      }
+    },
+    {
+      "id": "access_rule_evaluation_v1",
+      "path": "benchmarks/harness-optimization/access-rule-evaluation-v1",
+      "coverage": [
+        "access-rule-evaluation"
+      ],
+      "files": {
+        "expected/src/access.mjs": "9cd282e2c31314b9089b7ec818a7e387be2b8fe8b693ed1c75d6339f8a3eae64",
+        "expected/src/resource.mjs": "d112a54728bf0e1f4816a554eef3718878e1bdedada44f92cb645f188cac262d",
+        "fixture/README.md": "b8fc1843f40af0658459a87d8b548e2edad0a5ddd5015288ab2245c55f91f1ba",
+        "fixture/src/access.mjs": "8fb90e747c4edc55a1a6a092bccb2c8d1f50bc2f86dac5491c73306749fdfefb",
+        "fixture/src/resource.mjs": "23ecdbb26468c1b6b1eb55a76aa985816345b8fbd61c4fe6000e2e7d7ae037f3",
+        "fixture/test/public.test.mjs": "bd1e7f993b9fc74d9c2f6de5eb53a66e448fcfc6e1044f21011525769f8f235f",
+        "manifest.json": "4c303fb7c234962326f9791f43b94ca22004db968ba3886b9871c6e9e664cabb",
+        "outcome.mjs": "9b83c8b6c450e7f85c0690060cf0dfe20a8c79734489c2887e32b9f77e4efb30",
+        "prompt.md": "628682aec0517d2c5a3b57e66e976115e4a407dde2309376eb882d94d3edf177"
+      }
+    },
+    {
+      "id": "booking_calendar_v1",
+      "path": "benchmarks/harness-optimization/booking-calendar-v1",
+      "coverage": [
+        "booking-calendar"
+      ],
+      "files": {
+        "expected/src/intervals.py": "98f427cef5cbad5768fea9f448052ccf22fac2480d4178519074d5d29a054354",
+        "expected/src/scheduling.py": "030132c5cf12354fb63bed66cd2f0d93cb62925688e463078b4f2af64373c6b6",
+        "fixture/README.md": "c82d550969923349cd0af6996294d1e7f01910872ed353ef38276f3b3a87199c",
+        "fixture/src/intervals.py": "927385e4ae7f1bd617212da90045cef4e4a03ee6c4e007c133accc2c09f7c624",
+        "fixture/src/scheduling.py": "3dbae95db33e2ca2d76c9a8f818d8ed2f72792b921f9738ea7e909f6b00c244d",
+        "fixture/tests/test_public.py": "1ef7335898b54a5df8de6dd4f816bcc00c5629b7b7a813e4e0e917d67af79037",
+        "manifest.json": "bfbc9c7dda4428aabb08e4d86d625e9ab889f13a2a5b930187f534ef75ca40aa",
+        "outcome.mjs": "f62db32dfbeb32e9363177cbd6f6766bd43b7c65a4b7088068ae0ef942e1883a",
+        "prompt.md": "76c52c0c9a9dfc1dd7ba93e60cfd33263f9d048341770f4578cffab43021a75d"
+      }
+    },
+    {
+      "id": "safe_csv_export_v1",
+      "path": "benchmarks/harness-optimization/safe-csv-export-v1",
+      "coverage": [
+        "safe-csv-export"
+      ],
+      "files": {
+        "expected/src/cells.py": "04fd1a088897b55726fa0c8d8338d72d2d8ea2f29d4506785d84d0b93a9ed3d7",
+        "expected/src/exporter.py": "9af74e864b0999ce99a1a34cab5e062878acd1642ff6d653f35b73ba74d9db72",
+        "fixture/README.md": "29bc2b1976283d9623d3b22381a53e05ba05da568a943717a9f746552e3b5537",
+        "fixture/src/cells.py": "047508a0e521223fea2a89388980764eec271dda3e2a62f09d125de0227c025b",
+        "fixture/src/exporter.py": "d7154557fdc54f35b655e1a43e66f1cc5da29d866d4b527f9cea9e40d110ef89",
+        "fixture/tests/test_public.py": "081f9cca39c75b259c9406f2b4748ccb73a416edf2b364a1daff6cc1f4d9b8b6",
+        "manifest.json": "b6fcc634f8112499c3c51fcbeb37c81305a5e7afc24b78efe45ebd7e52dd7a78",
+        "outcome.mjs": "427dd6f608061ac4e4ee552a9f6aa648bc0a6aed0e1f6e1d52ece5f865d219e1",
+        "prompt.md": "476a4af57ea5843ee499a1a562de19de84c25b7fedc962eca7e3b19e9a052004"
+      }
+    },
+    {
+      "id": "inventory_event_projection_v1",
+      "path": "benchmarks/harness-optimization/inventory-event-projection-v1",
+      "coverage": [
+        "inventory-event-projection"
+      ],
+      "files": {
+        "expected/src/events.py": "a894fb2d02821c39e5ab61abef3d5880187b461eac9f01086d0704a222beecae",
+        "expected/src/inventory.py": "0e323841cb3dfb155023cd22b94fce5132d41f3929b6c1f50303f3a6326516bd",
+        "fixture/README.md": "8c668f561bc4a9d120674ce4132d88b3a3738672d3a43bdb23686387c85fe28c",
+        "fixture/src/events.py": "0449f15d4fdf68ca01824734fa3dbdc447ac4b876e721874a55b2961b9f85610",
+        "fixture/src/inventory.py": "6b2f34c145b569b18f4498cd573f3de31d37e200b329bb2f30de4b0cafd56306",
+        "fixture/tests/test_public.py": "cf2e110a55f9593b4c0b54b0a8d9a2e680576d044c7ecdcadbfd19d048f995dc",
+        "manifest.json": "d91b708e8822130481cdd5a0d601e5105a80b6975a6d99af5fbb7ec119a870aa",
+        "outcome.mjs": "6d02db5b24cd284974e6b46b3d73b7df47e995a716cec0ef2624dc14f1ac0e7f",
+        "prompt.md": "4588ad5fb0ca7bc7c68ed07018166d9543aef18a7defca3e685b7218b3591c68"
+      }
+    },
+    {
+      "id": "weighted_expense_allocation_v1",
+      "path": "benchmarks/harness-optimization/weighted-expense-allocation-v1",
+      "coverage": [
+        "weighted-expense-allocation"
+      ],
+      "files": {
+        "expected/src/allocation.py": "27d5c05e6b14a6d382ace63b81779963d8475cb333cd94e38712bbb5c153d85e",
+        "expected/src/money.py": "a2ab261a3834117412d31d83f01fe5cc5f3e6098b96afff18b847988656ec88e",
+        "fixture/README.md": "1a285739602098b9b675424765011d64aaf18e3a8d585542eb10353620a72866",
+        "fixture/src/allocation.py": "6dfccaa4858a2c8911693b0dcff7f0aae6013c445d1efad2b2181fd1c13608f4",
+        "fixture/src/money.py": "85d7188c5483bc336d4e29f9212db290fdf6d7846979492ec8ac19d56d74d42d",
+        "fixture/tests/test_public.py": "2096c3f26f9cd6109884492c8829392f057d2738b349cbfc5502d61ff48c51d5",
+        "manifest.json": "5346c9e02a832a393e4fc8b0578c085dba7fb5f14c15d7a2b700f35c1ae57463",
+        "outcome.mjs": "3ad122326529c53f34e7cc480b9683c17ebb7a5e6a55ba6aee263c3021706467",
+        "prompt.md": "dc9bc7928a13ca666fbc438233cfc356cca917707f37de9b1ef724e1464b5c29"
+      }
+    },
+    {
+      "id": "http_etag_preconditions_v1",
+      "path": "benchmarks/harness-optimization/http-etag-preconditions-v1",
+      "coverage": [
+        "http-etag-preconditions"
+      ],
+      "files": {
+        "expected/src/etag.mjs": "c3a812154a8f8d3a81b296b71e9861e67c22a22164da6aa037ea3237be64ab36",
+        "expected/src/preconditions.mjs": "b8dc94d1ebbb6364cf713d9230524ea82f4179fcea024ef48fc01e3f1b974d55",
+        "fixture/README.md": "2ba6d08ea5e56d546bb236af34a76ea50dc2c98b5f03523eb7f6feddb4df5e24",
+        "fixture/src/etag.mjs": "0e53849ceba168651de0a69bb157ba266540181dc5cfac5dc347ed1389dbdbbb",
+        "fixture/src/preconditions.mjs": "7c9fb063630b29cbe2f673eeccb3145688710bb66eb1eed6640e343e778a6aed",
+        "fixture/test/public.test.mjs": "7acd9bd5a312f4c3eab56eaf543516a4b08ea77254a786ca789d81fe72b32fd5",
+        "manifest.json": "919d963afe608f9d19034f02a48a34a77ce52c2054c7733fd9c49b7cbb5bcd97",
+        "outcome.mjs": "1f8d9122c26534b7c8707ca77ec12ff7b7446c7cd31b470ff9c7e7e02a8f1529",
+        "prompt.md": "efdd292825bffa5c62582c70062448e7608da97d4ec56473518b6a7560ec04c0"
+      }
+    },
+    {
+      "id": "incremental_ndjson_v1",
+      "path": "benchmarks/harness-optimization/incremental-ndjson-v1",
+      "coverage": [
+        "incremental-ndjson"
+      ],
+      "files": {
+        "expected/src/decoder.py": "575ca7b09162cafdb9936749d204b771beaae4bafd3be3c7191ad851f0ba7bcd",
+        "expected/src/records.py": "e1d7653c1aa67d6244cc654c77511ec255b3d14bbdbffc3ce761afdfe05e48fc",
+        "fixture/README.md": "8ffa436cd311e35570c11889abfd29134c0dce4fc9b46461e2407ca41c601d76",
+        "fixture/src/decoder.py": "50b8a4431fe97c81749e599d8db6ef5495299e2b95ea2c5ec8c6e2457f57ac72",
+        "fixture/src/records.py": "15516409f76f124204596b7f4ddf03d828272aa46439796e6ac9ceed28d61f21",
+        "fixture/tests/test_public.py": "8d8f753f89a048f42ee579e838dbb5215052b5af02ab641ce24172360315b66d",
+        "manifest.json": "2227d5de0583a36908112511477398bb29b04ad25b0f694d161b3b3f36aa1695",
+        "outcome.mjs": "e7e7d774887051409a9b196be54c164ace4f3416f49051d0996d00675bb3b644",
+        "prompt.md": "f667ec053768557eeb017cd922a8e8314f48900e9249ddbf16bbb1e7e0a80893"
+      }
+    },
+    {
+      "id": "bounded_async_queue_v1",
+      "path": "benchmarks/harness-optimization/bounded-async-queue-v1",
+      "coverage": [
+        "bounded-async-queue"
+      ],
+      "files": {
+        "expected/src/job-result.mjs": "e7b146fc46de7b1611145e8f89a1147fc542cc6885f965941a2d713ab6c01bcb",
+        "expected/src/queue.mjs": "d073637f08a42e0acedd7eef8238fadeecac1839c3c953a138c686256dc9e9e4",
+        "fixture/README.md": "2b674c3609f68bc276b2f716321cf4a9e180bbb6739afb3650c6419affa23d24",
+        "fixture/src/job-result.mjs": "53b1e5ccc1dcc2046b5dfdac223f2c1bef03543189c6b7f89e8ddaa6594f1441",
+        "fixture/src/queue.mjs": "22021953186778f427d6154a29ca75c02fd70785ab84c8f83fe672fde1fc916e",
+        "fixture/test/public.test.mjs": "a0aa88e092a6cea7b96c11ea369d7092decbb51c9202e0297d5cdee8749f28cd",
+        "manifest.json": "1b5434e2b7afd6c712a54acbcf2edbb00e413364d63ff8fc7df431e0e975a05b",
+        "outcome.mjs": "2d566b51cd01b229adf87ea336ac18b962349beb39bd7b54f8116dd15673c231",
+        "prompt.md": "2e335728784b8d86367c1b842877ede68909c5adc33147080925ad2895a2141b"
+      }
+    },
+    {
+      "id": "semantic_version_order_v1",
+      "path": "benchmarks/harness-optimization/semantic-version-order-v1",
+      "coverage": [
+        "semantic-version-order"
+      ],
+      "files": {
+        "expected/src/order.mjs": "2bdf2bfb61914d8159b4107bb9da4f5b002b2c828899bc0d88e654fbc9ae8347",
+        "expected/src/version.mjs": "964e6379042b2b138ed39dbe5469e0b10cf118fbec836688b44660bb3641d325",
+        "fixture/README.md": "e5a8103a7d55d6aa185cee2720f807666efd5956e5c16df8bd6d818751d301b0",
+        "fixture/src/order.mjs": "d5e7abdbff9776ec05cdebf3a08a865d5d3cd8acd7caa53ad1cc9fff8321fa24",
+        "fixture/src/version.mjs": "f5b388dfe2552662b476fcca2b85e2c4ea017cf81cb299f230c6502da624707c",
+        "fixture/test/public.test.mjs": "4f16a4c7191f7476cf542f4f5b6384e39a69f8753962b511d17d11b2ce8b435b",
+        "manifest.json": "723a5a7e0abc34b0b57088cd38ec086b3bb29cdb58aa989f047807d795603d3e",
+        "outcome.mjs": "6edd5b3ae3acc3102f3b097d49881a80013257638504803f6e9c74d9bc524b87",
+        "prompt.md": "e9e70c9569682cbfa3db914584a9e4c35d0a32e0121fd907cfd4a9f22f1f1a4a"
+      }
+    },
+    {
+      "id": "ttl_lru_cache_v1",
+      "path": "benchmarks/harness-optimization/ttl-lru-cache-v1",
+      "coverage": [
+        "ttl-lru-cache"
+      ],
+      "files": {
+        "expected/src/cache.mjs": "4a2b887acf1a3d9b4b0a086947e1b8ca2e6ddc8f5e497880b4eee5b74b5b8769",
+        "expected/src/clock.mjs": "823a06b5cbfa042eb671e5f78eed8dd66750c36868fd9dcccf205d6ad60d6971",
+        "fixture/README.md": "bba1263cbc1e03c0e6f6e794c62a3b7a886f761215a24fe08cd8959aa8dae909",
+        "fixture/src/cache.mjs": "2e7447b8723c887408f6ed89d4c656d338fabac0cd9bac47c9e86f6ce5cf0315",
+        "fixture/src/clock.mjs": "c80c2a337c32401395b1e4951d62e6777ad4608203f0550e091e4aaaf96d6ba9",
+        "fixture/test/public.test.mjs": "c2f5143065ca6e2ef20d6ea37b1a2eead6d0a78716dbb0578ee884fd5dc65aba",
+        "manifest.json": "8a3ca13dd0aed29d5e76905256d5c6142c32500f3bfff87a238b466e96d683c5",
+        "outcome.mjs": "bb97b7322419c0b2b4d327a03c35ea18914951740c8eab75b634353142b7ab4a",
+        "prompt.md": "b82ac01b126cf494d682179b776c711bb13de671380be484200fedf33c0f200b"
+      }
+    },
+    {
+      "id": "http_byte_ranges_v1",
+      "path": "benchmarks/harness-optimization/http-byte-ranges-v1",
+      "coverage": [
+        "http-byte-ranges"
+      ],
+      "files": {
+        "expected/src/ranges.mjs": "eecd954c2b23adb202fc0c0d5956266a2c6561a62084b19ba9604865c7640491",
+        "expected/src/response.mjs": "c5fb5a6db177a501ac4e293f38d05e61ab70af15b02641a51eadb4f42b3eb92e",
+        "fixture/README.md": "3821bc0ad9695f56c9f565207a064436233ad67c437f264dee3853bdf823d441",
+        "fixture/src/ranges.mjs": "80bb1a3976d6223d22d331708bd5275c4e95e70bed7617674ee53e217a22dc12",
+        "fixture/src/response.mjs": "328cafa53a8602565fc6e30549dbd8d5bd56d6e762e4c506fd4fda5eb0bf2a25",
+        "fixture/test/public.test.mjs": "c66cea01e4e6a7a8bc49e40968208266116d4bd143677ef103d9afce8e69e444",
+        "manifest.json": "edf429009c337a6a32b682cbba2f5e9d1755ff87c31d5afc26c504c393600d71",
+        "outcome.mjs": "c449f7b46f044cb8f93e649de99d30192ee677d846198085f6799696d6cfb3eb",
+        "prompt.md": "317473b56778408ec39b73139bc3894bdb5622549f315daed904ee49cb787b7d"
+      }
+    },
+    {
+      "id": "sql_named_binding_v1",
+      "path": "benchmarks/harness-optimization/sql-named-binding-v1",
+      "coverage": [
+        "sql-named-binding"
+      ],
+      "files": {
+        "expected/binder.py": "04c43ffe495566e3227b3aeceb80d53617f4fde1a302c0e9612c9e12423d6691",
+        "expected/lexer.py": "2b11f3e19eee1b64bba15bc2fd56321601bc8ba59b1d0f6a1111969371352aed",
+        "fixture/README.md": "0e792f74fde1ad3bd2eb212ece0754118e510948028ba5c2f1f9ecb1503b6913",
+        "fixture/binder.py": "a7e16d17502b2baf65bb20312e7d5cfddce23cb0c9c68a0a4af7156b2d111e16",
+        "fixture/lexer.py": "370626bc4cdeb5cf3793617428557c3eec38b140373d66da4eb00ccc088d9a32",
+        "fixture/tests/test_public.py": "a3e2930e867a231558f5643346ff9f4159244d9c01895111bfb69e0b88dba2b2",
+        "manifest.json": "c5ad2b60e528f4440772c5e84829584e2cf3af83a7e537f116146a4280bc16d7",
+        "outcome.mjs": "3cbd803862f9b13f08891c767f583d59dd302c1149341b9e461e104460411d56",
+        "prompt.md": "f1ffa4a4a5c1cd34e4de563331b8b3aec4c121222ab57562bf4fb9d5c60419de"
+      }
+    },
+    {
+      "id": "transaction_savepoints_v1",
+      "path": "benchmarks/harness-optimization/transaction-savepoints-v1",
+      "coverage": [
+        "transaction-savepoints"
+      ],
+      "files": {
+        "expected/src/store.mjs": "e82de8fa5d8fb07467b86b55f966979bbf3bc14a14d59a501a28186f6c823018",
+        "expected/src/value.mjs": "2a8d285cbecc1d33d3179dbf6e8bff5d197878248c2e750ce382f07327ba5af4",
+        "fixture/README.md": "3d491d12eeac8eead1925eaba65983edacd059bf9117bc3b085665ff4ea49c04",
+        "fixture/src/store.mjs": "fa9092cd3b504e42f818ad616b95ba0ce63874ae47a580fc0368b4a2d9af88b2",
+        "fixture/src/value.mjs": "0b69c0ec1a316cfa14c60ca5cde3079ac1cf62f5f651bb3443b0a1578d6b3e8d",
+        "fixture/test/public.test.mjs": "7a5ee2416c74258129f73c62236c6506256eedfa43d82445b330dafbbf66ea8d",
+        "manifest.json": "a359c1f22d1c5d19177b3980ae4cd6029690a4618de34dd003425e496c0dfc7a",
+        "outcome.mjs": "294841324d4d5a247c94986001c5f313d023963ab2f64a7218c9ea6bd76736bd",
+        "prompt.md": "cc415ebc26dd284a8fef3eb09371abd409a04ef8f081b47619d93bddd46a3790"
+      }
+    },
+    {
+      "id": "atomic_json_patch_v1",
+      "path": "benchmarks/harness-optimization/atomic-json-patch-v1",
+      "coverage": [
+        "atomic-json-patch"
+      ],
+      "files": {
+        "expected/src/patch.mjs": "6a0b3ac9659199507cc8bc8a766fad64e3a4834f61d25de3dc8266f7cab0ff21",
+        "expected/src/pointer.mjs": "82a66de47ce8d9dab231c2d27cb76a6b7df7ca5ea53954ccf535c5832bd5a335",
+        "fixture/README.md": "7e24fc2d90e8ec00ae097b9a192907b83dd578cdf1e7d4757252f3b749cf5a08",
+        "fixture/src/patch.mjs": "7a64ddecb7d241ebacc29df509521f2e518ed8c0491672d7eedcb7bc13368eae",
+        "fixture/src/pointer.mjs": "a624c8b8597e34aecdc07e7ddeea49e0afa8ececdcbb38df9eb4e1029e42e6fe",
+        "fixture/test/public.test.mjs": "df35180da7e25d10dbdffa8ed924279517ff3af44ca20a9bb6dc19e2cddbb172",
+        "manifest.json": "621d0200a52343a6f97ae4c95b03ecbcd2178cb6e609961d19bc1c8f33c23682",
+        "outcome.mjs": "acc96fb525ac6e6e969939555c4ba42a05500bad1e28863305fde3ff00c5e0e2",
+        "prompt.md": "0a30ef6dddaf68ba8be17d70630ccdae5e172acefa405f7d8119c6d1cddec3dc"
+      }
+    },
+    {
+      "id": "weighted_route_planning_v1",
+      "path": "benchmarks/harness-optimization/weighted-route-planning-v1",
+      "coverage": [
+        "weighted-route-planning"
+      ],
+      "files": {
+        "expected/src/graph.mjs": "5d2d9ca6556d3083d45edf62a931c6ee81ef256423b184f68065f590e573c39a",
+        "expected/src/route.mjs": "e1daf010690864f92934d226183039ae2dee8e63a59cc94bc9406fc59fbbc390",
+        "fixture/README.md": "fc5e1926587b907f08b774e74a316da55443ca5c8b499261dfe7498ce0f0d32e",
+        "fixture/src/graph.mjs": "c11269fe20b921b6c09df3945985350bc9b711bc1e600232ef2f91657559b440",
+        "fixture/src/route.mjs": "d2baddb85381f86e400a6ab3f2bfa8a890f0f9c4c87509f1f6bb839fd41af4b3",
+        "fixture/test/public.test.mjs": "239e6b341f3ed94339e3f2970931bd5c3ace62dc1619b009acc4d175ea333efc",
+        "manifest.json": "0bd1c6d01c9918a1c4323ae440b9ed1d68281a6104e66c8cf99304233a484dc6",
+        "outcome.mjs": "8fbfec8a56049035521503c3674a0b0cd3ddd1f51bbd2c1293e27a48d90d4ceb",
+        "prompt.md": "bc21a699f8e3e297f7177b101c831b73840f034f4f8afec1ddbd230bf8d4fa6a"
+      }
+    },
+    {
+      "id": "resumable_byte_upload_v1",
+      "path": "benchmarks/harness-optimization/resumable-byte-upload-v1",
+      "coverage": [
+        "resumable-byte-upload"
+      ],
+      "files": {
+        "expected/src/chunk.mjs": "f5a03e373a1bf9af9fb1ac0c1a526a649c221bd0aa82881232f1994a78c0918d",
+        "expected/src/upload.mjs": "82635bc12e9df67121da283f8231c1c6066f690be4d9e70aeecdf1eafa25c585",
+        "fixture/README.md": "84254c6291a12c1c845e0693c9e9db72de473cbae9f5ede8ad7f7ace9df14821",
+        "fixture/src/chunk.mjs": "d7a5ca7d7c6559cb4a82278527489bf1ffc5ab60e7edbbc4f21343dc11783578",
+        "fixture/src/upload.mjs": "a3749c5d69fd80e7643c38711619e7088883380c6cd9bb58423f9ee14c33c1ce",
+        "fixture/test/public.test.mjs": "82f890f9a18af75532ac75a7f133e965a61c8b020aabcb1b5617037cce37c3e9",
+        "manifest.json": "14df81e4c13a251d3db2a434d994a66b43a3c0dc0db47531090b0ccc5b3d03f2",
+        "outcome.mjs": "558dda8fd66cf7b3318141388b12c4458a92efbba182a6708d2feff076b3a80d",
+        "prompt.md": "e4e5c1c93aede05ad59b3630a01b08935decd738091c5a2a59e03801360500b0"
+      }
+    },
+    {
+      "id": "binary_frame_decoder_v1",
+      "path": "benchmarks/harness-optimization/binary-frame-decoder-v1",
+      "coverage": [
+        "binary-frame-decoder"
+      ],
+      "files": {
+        "expected/src/checksum.mjs": "0e446164c940971a4c1d8e6668f99cee776227f1b471363f5b12db3e130e1928",
+        "expected/src/decoder.mjs": "3cb3837df2ec3c978bcfb2fde07691b4f200d992508fa7d0b08afe6a7064c0ff",
+        "fixture/README.md": "ebf8339da0d10a03e52970ba74ed6e66aea0bf496b02857ee7284e7f6cbaaef1",
+        "fixture/src/checksum.mjs": "634a041214d40b4434d3584364a30836ca210e3acb9b5f77a74691e4276346ba",
+        "fixture/src/decoder.mjs": "325a98042109e572680b0905a755bbe693f13b2e391f7b8aa113c86840dbf3ac",
+        "fixture/test/public.test.mjs": "b7acb66a2fad8493eba6018e75429e0c108e9f30c0544df031421d0ed19bc587",
+        "manifest.json": "80dec8b1f93a0127a5af42fad21ccccf25256a7df800f643b5ea5151422d4056",
+        "outcome.mjs": "8457c2747f2d47fcc3d998a2fef76e76ced480799dc419aa3a39401cea53e014",
+        "prompt.md": "fef07c1cd5a1a861893dec11af4d0de0b111c72fed89e2b9a3d8b7eef332ff73"
+      }
+    },
+    {
+      "id": "path_glob_selection_v1",
+      "path": "benchmarks/harness-optimization/path-glob-selection-v1",
+      "coverage": [
+        "path-glob-selection"
+      ],
+      "files": {
+        "expected/src/glob.mjs": "12e255cd8024abc79dfa86a39e5fe72bffa876ee9bede01bfe0bd3438000df02",
+        "expected/src/select.mjs": "b16e37d4642f96971fd16cd2cfacc1f084fff3f72bc9c892a2f712c3e26a64c1",
+        "fixture/README.md": "6b02ec7f3ca1afeb7a1090b8f4ed957a7bca0b7feaaf9e67ca5064d6bfae5eaa",
+        "fixture/src/glob.mjs": "42b5c9ff4171632adb258540007aa5c128aad6136b87558440469ca725a6fa28",
+        "fixture/src/select.mjs": "8814b7ba618ddadbfc275141d67b5ce0cdeb67d3de6e2c93f0fea4e3cb63d362",
+        "fixture/test/public.test.mjs": "4343b6a446ed2c00440f033f6479af31d1b966df676589fe3748fe4b5f807634",
+        "manifest.json": "e41185d76b4302cd3edee78f4c3a912bc50acaf15021855f6ce09115b87a84cc",
+        "outcome.mjs": "8a9d0ba6cf0955d2051fb4a0ead87d2ad8fce27890a3fdffcf06da959a80a0ec",
+        "prompt.md": "db29daec5d206404b6bd837743ca54e2fa45c92737fa15d9f0a8ac8d09f2b15a"
+      }
+    },
+    {
+      "id": "streaming_csv_decoder_v1",
+      "path": "benchmarks/harness-optimization/streaming-csv-decoder-v1",
+      "coverage": [
+        "streaming-csv-decoder"
+      ],
+      "files": {
+        "expected/src/decoder.mjs": "1c29024b50c505e83f4586ec0765adf5f1f45dd4114ff10d74b74430698157b8",
+        "expected/src/parse.mjs": "abe0419a0f3b75f88f7c44c222dfd832aa9339a20cb6d76e40843d73ad14a12a",
+        "fixture/README.md": "ab5a4af4ced455741102d0238587efeaa9599f939739048060ba182c76be8c1c",
+        "fixture/src/decoder.mjs": "78a672d8b862a3d05b28bad381d9faea12e02f20e748e35c6b6b347551192302",
+        "fixture/src/parse.mjs": "950679171069d8fb131999a557fe8adcd013fbbcecef4ddecccc4889403043a6",
+        "fixture/test/public.test.mjs": "a22d1a007ad68515e593d06e3830a26284e5173bc2a073187564554e37ed25e6",
+        "manifest.json": "b1ca29aa6a74e99235131f4456e85299adbac2421b5e3fc8de300f0c3eb3405f",
+        "outcome.mjs": "4a6f79eaf6bd9b02f68f89ac65b857e398272276fab542644ed59178b5e2c0e6",
+        "prompt.md": "b325c7f471aaa04b0c20dfca615018d3b03858ec56de9155a40d584fa02a61f3"
+      }
+    },
+    {
+      "id": "business_calendar_v1",
+      "path": "benchmarks/harness-optimization/business-calendar-v1",
+      "coverage": [
+        "business-calendar"
+      ],
+      "files": {
+        "expected/src/calendar.mjs": "e175b252c293b0dc784b703777fab8d84e1000489c336aa906a74d24eca2a96e",
+        "expected/src/date.mjs": "5ee8a26d7690b8d439cee23aa0e4279528e89dda4421ec53bb06eaaf4b89747a",
+        "fixture/README.md": "8ad615e7e50c0cac1c09a9b2da9ba5ca926b5b660355562f737d12b38feea01a",
+        "fixture/src/calendar.mjs": "118b8689d5a75ccf5e047183942003c21819d46fe8e6bc5bc68c622017254581",
+        "fixture/src/date.mjs": "0693095391d1b0c36606079bfd20dd3a8891c20374210a41c25706bc2f6e5903",
+        "fixture/test/public.test.mjs": "02ec6de396683d611b24ad8e9885ca3e669036cd842ba7c8e1d958e5ae1770d6",
+        "manifest.json": "124c913a9c57355c857399405bfeeeddf40797deb7ce3b5ec35f7c4a367f70cc",
+        "outcome.mjs": "847b684ce0345aa5b35b7bffadccac8abda7377fd50242277608ddc7fec3cb79",
+        "prompt.md": "f01f0fe5b2b3fd1a7eefcc4dcaa77874b15d40f9fc570c72a05b0be06839f303"
+      }
+    },
+    {
+      "id": "source_map_vlq_v1",
+      "path": "benchmarks/harness-optimization/source-map-vlq-v1",
+      "coverage": [
+        "source-map-vlq"
+      ],
+      "files": {
+        "expected/src/mappings.mjs": "7ed548a2392e42cf7dd6a9e1bec378a798c78cfc8307ccfa3fd05e058d9f378f",
+        "expected/src/vlq.mjs": "8f706d6dcc9411744c6c7bb6032b33c7a0a000c6390fe5a5d787f81bf9bd5c4d",
+        "fixture/README.md": "f25c31ee991e12ca93fcfef14c8d9c5b714966e8a49ca0b37f3917f56cbb9397",
+        "fixture/src/mappings.mjs": "0b082e8eb3bc2e89d0ca8558eef44e5aa8de38c5ac35bdce74b9cd071f587af7",
+        "fixture/src/vlq.mjs": "c90c9a16ed6d5cae4f112d1edbca27257341d3ef34a26ccce959e3ffc169661a",
+        "fixture/test/public.test.mjs": "bbe0f664d39b4afe8a5be283f4bf6f2292c96abf43e8bf71cbf5661cefe84b56",
+        "manifest.json": "8a61d31573a2985c20e2e382683987a369e0c92a9b0fd4fa6bc2e48ec525b86b",
+        "outcome.mjs": "d3182ad2bed686dc14554dc8d4325e9da805bae313e8cd629df71035f46b3089",
+        "prompt.md": "82e859f6d4258417e621a740a27af1934ff770a03f74f4d43619f756838769b5"
+      }
+    },
+    {
+      "id": "bm25_document_search_v1",
+      "path": "benchmarks/harness-optimization/bm25-document-search-v1",
+      "coverage": [
+        "bm25-document-search"
+      ],
+      "files": {
+        "expected/src/search.mjs": "040fbcaf7ceaad96ece1435d232ea939a919c0658d86795bf4788e45e0117059",
+        "expected/src/tokenize.mjs": "2234a88ae026831c3d5cc116e6d15427cb7f488f289690e2fc04fa81793cf470",
+        "fixture/README.md": "c8b278b8c1c531821913ed3ee896642fb067f572b893ea1ea07c4cfb4e678a25",
+        "fixture/src/search.mjs": "cc7334d86d3a6f7b131fc2a21535f6c23abc12e7d7f66fcb61200803ed38483f",
+        "fixture/src/tokenize.mjs": "ba27e6b53390d30ed83383a803ce3cf66631f7ebf7876484e6748f0a5a2c02f7",
+        "fixture/test/public.test.mjs": "c057148b96deae846316d87d3ce5b28e3916e294b38dbbfd49fceb7268cc8ffd",
+        "manifest.json": "06394cc8a576d1051763f155756ccd86f6e6f8507f7071e7b98e7fd1f435ad60",
+        "outcome.mjs": "a894b7742ba7e1b94fdbc34cc482f0eacbd8a6a0f1a1775a64cdeb9125b88441",
+        "prompt.md": "4a7a5584e532f6e9b0ea8fb9ac978e10f3d9aaba770da9fecc4565173f4df94b"
+      }
+    },
+    {
+      "id": "config_layers_v1",
+      "path": "benchmarks/harness-optimization/config-layers-v1",
+      "coverage": [
+        "config-layers"
+      ],
+      "files": {
+        "expected/src/config.mjs": "f971c28c24c11f1bf84c9f2eebb7ae7426e4f9fac5c59010a3417c5134cb61c3",
+        "expected/src/merge.mjs": "86324340433d2349c91dcffedeba6fd3c125bfba3b2ead530d7cf66181457780",
+        "fixture/README.md": "074b2d0cab7c50b885c1d9bd5f4cdf269ab5af1113b95c0e38a9df2c74786b54",
+        "fixture/src/config.mjs": "0240cccb582a6a206454d656dfbf61a34f149fdc1bf001ce9090a6440e9915f6",
+        "fixture/src/merge.mjs": "42b23355203555ae92d40da51cbd0b514520f4b9298993ebc78197908d72f208",
+        "fixture/test/config.test.mjs": "bff1419e8a836fe0c564a06c440fe43b18bde6558d87ccd739062e47bc9e022e",
+        "manifest.json": "8c315cb14908e474ccf9ca618f5cc878f0f89306ad9399e49b302574d78c041c",
+        "outcome.mjs": "c397a79b5d922ed14fa6b9c03f89bb2cd626ad6a65dde639bea39fbf27d5d22e",
+        "prompt.md": "f42e624cd5840155929e08cf33abd9fcb74c3ecd6fc078a9048b8bd779ef83a3"
+      }
+    },
+    {
+      "id": "cursor_pagination_v1",
+      "path": "benchmarks/harness-optimization/cursor-pagination-v1",
+      "coverage": [
+        "cursor-pagination"
+      ],
+      "files": {
+        "expected/src/cursor.mjs": "c9d0933f5ad7efa97b4b2d2b842c410b87c8016a47850ea2d86c7a887779bd09",
+        "expected/src/paginate.mjs": "bb624abb0d2ab557e2b3522e727202a331a6422748b2c246d326cacdebbbf61e",
+        "fixture/README.md": "5717cb002ad35cbb9c386a4d81c0384639ff40579d705f1f5a42f73705c9b433",
+        "fixture/src/cursor.mjs": "0ad2e45affecc5eadf50658e1031be112d7b214c2988cf21d5194ca7fc443858",
+        "fixture/src/paginate.mjs": "393b859f044732be8c2800bf0ed62247128e0ce8c7166ffdfb8c106e1620b8c3",
+        "fixture/test/paginate.test.mjs": "d5a9cc8b2b94fdff6642c639267e4b166cb78d27f9666a013282fe9cf10d9ab8",
+        "manifest.json": "b0b4a09466f8b559d473bf0c1037623f7f398b00497e91685ebd147c021a1788",
+        "outcome.mjs": "24499ed65d8804fcf3686fe19118f247983f25bacc9722fdcc3a85c2fd9c60a5",
+        "prompt.md": "754fd21df5da05aa954cf3f7683609e63e06387e446bad58eed2c3f542ee604f"
+      }
+    },
+    {
+      "id": "ledger_reconciliation_v1",
+      "path": "benchmarks/harness-optimization/ledger-reconciliation-v1",
+      "coverage": [
+        "ledger-reconciliation"
+      ],
+      "files": {
+        "expected/src/events.py": "7f2a0a51d370fb99090e6acb1351d5a1682631fb20dee6a0d4e7e7ba847a864f",
+        "expected/src/report.py": "4673ba7e2777c22190e75adb316e16ec9b4693b8bb64624e2bded3fae635ced2",
+        "fixture/README.md": "7d4e751ccb9469f025eba6a2c5d262e33b72afb808e744126afe9f2aad39b8cc",
+        "fixture/data/events.csv": "376fe0f68b9d2f2919afcf1d476a1089b4dbfb8595410c609df415bbc9576a4e",
+        "fixture/src/events.py": "636dc4d75fce67431c8b527d3d125a7aefb6ac86487b4218d747cd228cfd2d40",
+        "fixture/src/main.py": "4784f530a724f6b716c4b2da038d861964e9a1d13c74b9096ec42edb2cf96345",
+        "fixture/src/report.py": "fcc9a6273b70ed05ccf9ec7c1b6e64e437e779828dd0341f14e25b94016c5654",
+        "fixture/tests/test_report.py": "f306e41c29b9fbc04d41ef00170b9819bc2eeea0bcdad08e7ac8320effcd8972",
+        "manifest.json": "0f4fb4551e6c947b911af95442acb7582021853f5a775df60b075cfecb56f5f6",
+        "outcome.mjs": "24fb613cb66abfe0e1ca3e58c453f4b658f2b5c873784fc00b58c64ac0596bb1",
+        "prompt.md": "dbcf3ac735a0a024712438b20bbd9f83ead157d562ee54f1193f2481d6ef221e"
+      }
+    },
+    {
+      "id": "memory_shipping_current_source_v1",
+      "path": "benchmarks/harness-optimization/memory-shipping-v1",
+      "coverage": [
+        "memory-shipping"
+      ],
+      "files": {
+        "fixture/README.md": "e1c74d854f64d3ae4033e430b10fb460c10be8828759600b4e6fb49c4229cd33",
+        "fixture/src/shipping.js": "d16cad5d17a29b2fa1694f5e3027aeda1acc4134450d89ebe1605ae674a5b266",
+        "manifest.json": "18109f90d0e5cbb0ac591f130bc33038f83fa50c8038a7f31d4eda3ef32240d4",
+        "memory.json": "f6aa0964dd043ed71bd886de2dd211d3eca5cc19309d7d32da3c9a18c75b465e",
+        "outcome.mjs": "d385f617e9c21c77751b4de2c7f1e60e4f3ddb5bab2751c8ede28cf9031c3cd5",
+        "prompt.md": "789ea07f96230155ab33e7cbd6a140eba6d0744983a5879514831ee0b7e2ff66"
+      }
+    },
+    {
+      "id": "coding_loyalty_discount_debug_v1",
+      "path": "benchmarks/coding/loyalty-discount-debug-v1",
+      "coverage": [
+        "loyalty-discount-debug"
+      ],
+      "files": {
+        "expected/src/loyalty.js": "888995f071913d3d76dd10a3743cbeed71d092f1eeb1313a2939ec2f46a2ab46",
+        "fixture/package.json": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a",
+        "fixture/src/loyalty.js": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa",
+        "manifest.json": "f1b7d50ef6546cc5939773a52d7f82d4e9a5f24d3d3aa83ed733c033f1edb521",
+        "prompt.md": "5e00646ed6adc03e87be63b4f3bc514766a1288a8edc785d5442e3bd5a2724a6",
+        "tests/outcome.mjs": "edcdec80c199a387cd76a8f42644be005185bb994babe803e27d14ad82aebb83"
+      }
+    },
+    {
+      "id": "coding_pricing_options_migration_v1",
+      "path": "benchmarks/coding/pricing-options-migration-v1",
+      "coverage": [
+        "pricing-options-migration"
+      ],
+      "files": {
+        "expected/src/pricing.js": "bc49fcc5e00989980e755612410e85f0872e18dd4d7807e3e3d4e8186928c2a1",
+        "fixture/jsconfig.json": "6bb20d583c86b5f33f9dc00d6fa7779d7486b2c5784cc0e4875b6b9ad40f3028",
+        "fixture/package.json": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a",
+        "fixture/src/checkout.js": "58968a89306ba4411e7189a9ddb3dd6a68dca1f4045168917918ae82c20137a7",
+        "fixture/src/pricing.js": "043ccba543ff00864f7c434bd84052376fc01eb4e6fdadc1ea4f70416e7ac54a",
+        "fixture/src/quote.js": "6675ffc46fac14653e7549087c446eb5d7d4fbc2d3e2ffe85bbcddd22dc6a44c",
+        "manifest.json": "58ab4c37a66d3c6f1506e22d13fd0d7ab7e92028853fc2cc8dc3922f0400113d",
+        "prompt.md": "cea375de140d56ce38ad34d2fc5e86d4056e017433651b1a90f14c343f8bdf91",
+        "tests/outcome.mjs": "f780ebd713172ac1a0e783743f8c12960ce71b1b7e5b29e27ab1a9f1046547a6"
+      }
+    }
+  ],
+  "scope": "Corpus and grader preflight only; no real model quality result",
+  "promotionReady": false
+}

@@ -1,0 +1,39 @@
+{
+  "kind": "napier.baseline-capability-claim-replay",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:00:39.296Z",
+  "runId": "run_8a063f6f6c274ab5935c",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-resource-intent-core-v13/bm25_document_search_v1-baseline-trial-1/trial-1/result.json",
+  "reportSha256": "028389bab39a6124389f805562e1ed7bd2e208ec129d44bff34533f6fbc14c5a",
+  "baselineSourceSha256": "afe5eb3adaa64f5988aa81e4847f3ae5342438ae19be279d27d2e72f5318ec83",
+  "candidateSourceSha256": "83efbc7608e0ce83876c8c04b341d7e148bce306d479b8d0b7f9545e3dc15fef",
+  "observations": [
+    {
+      "seq": 819,
+      "responseTextSha256": "624dbeccb9a640409ad864302f48cce302c7c810c812dffb13d5ebe14c3c5339",
+      "quotedDiagnosticLine": "- The write-linked Vitest harness reports \"No test suite found\" because `test/public.test.mjs` uses `node:test`; the two cases do execute and pass under both Vitest and `node:test`. The authoritative run is `node --test`.",
+      "baselineClaimedTools": [
+        "apply_patch",
+        "workspace_file_apply"
+      ],
+      "candidateClaimedTools": []
+    },
+    {
+      "seq": 911,
+      "responseTextSha256": "919d2a21362622f9ff2ed561ac85a8bec8110d0912c847996f4741c9c0f1f66a",
+      "quotedDiagnosticLine": "- The write-linked Vitest harness reports \"No test suite found\" for this repo because `test/public.test.mjs` uses `node:test`; the two named cases execute and pass under both runners, and `node --test` is the authoritative run.",
+      "baselineClaimedTools": [
+        "apply_patch",
+        "workspace_file_apply",
+        "workspace_process",
+        "git_inspect"
+      ],
+      "candidateClaimedTools": []
+    }
+  ],
+  "independentCodeGraderPassed": true,
+  "originalRunStatusPreserved": "failed",
+  "conclusion": "Old guard treats quoted No test suite found near write-linked/repo as tool unavailability. Both full original responses and isolated diagnostic lines reproduce the classification. Current frozen guard returns no unavailable capability claims for both original responses.",
+  "modelRequests": 0,
+  "scope": "Deterministic replay of captured baseline output only. Does not create a new live baseline success, alter paired reports, establish generic guard correctness or attribute candidate search success to task classification."
+}

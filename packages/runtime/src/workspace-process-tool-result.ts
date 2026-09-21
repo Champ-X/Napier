@@ -47,6 +47,7 @@ export interface WorkspaceProcessToolDetails {
   workspaceDeltaStatus?: WorkspaceProcessDeltaStatus;
   workspaceChangedFileCount?: number;
   chunkCount: number;
+  outputContentSha256?: string;
   stdinOpen?: boolean;
   stdinWriteCount?: number;
   stdinBytes?: number;
@@ -107,6 +108,7 @@ export function workspaceProcessToolResult(
       ? { workspaceChangedFileCount: session.workspaceChangedFileCount }
       : {}),
     chunkCount: chunks.length,
+    outputContentSha256: processOutputContentSha256(chunks),
     ...(session.stdinOpen !== undefined
       ? { stdinOpen: session.stdinOpen }
       : {}),
@@ -220,6 +222,20 @@ export function workspaceProcessToolResult(
     content: [{ type: "text" as const, text: lines.join("\n") }],
     details,
   };
+}
+
+/** Bind observed stream content independently of cursor, chunk boundaries and
+ * volatile session metadata. Re-reading the same output is the same evidence. */
+function processOutputContentSha256(
+  chunks: WorkspaceProcessOutputChunk[],
+): string {
+  const segments: Array<{ stream: string; text: string }> = [];
+  for (const chunk of chunks) {
+    const last = segments.at(-1);
+    if (last?.stream === chunk.stream) last.text += chunk.text;
+    else segments.push({ stream: chunk.stream, text: chunk.text });
+  }
+  return sha256(canonicalJson(segments));
 }
 
 export function workspaceProcessWritePreviewToolResult(

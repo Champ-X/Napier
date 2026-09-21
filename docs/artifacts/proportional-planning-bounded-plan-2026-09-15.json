@@ -1,0 +1,45 @@
+{
+  "kind": "napier.proportional-planning-bounded-plan",
+  "createdAt": "2026-09-15T02:49:25.642Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-proportional-planning-core-v15/plan.json",
+  "planSha256": "1e2ea806585f30ba866a17dae5dfc124f2e6a24e21e017fd4f06401ceb027059",
+  "source": "/tmp/napier-harness-proportional-planning-v1",
+  "sourceFreezeSha256": "82d51ccaf77be2471c062ac5cef62be13b482317e0b47c9364c5211fbe4da78e",
+  "profileFileSha256": "f5406ee1a169f1060ee7c1648c0332eb0b340dfcc9389ff64be0d3767fa2bb75",
+  "boundFiles": 5653,
+  "dispatchIndices": [
+    33,
+    32
+  ],
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 9041,
+    "remainingFen": 959,
+    "requests": 715,
+    "reservedRequests": 8,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "The preceding complete cancelled reasoning shows repeated implementation drafting and plan-transition scheduling before the required baseline test. New opt-in proportional-v1 guidance resolves conflicting start/complete instructions and prioritizes the next authorized evidence-gathering action. One original candidate-first pair is required to observe actual model action latency and repair outcome; scripted tests cannot establish this effect. Stop on candidate/evidence failure or insufficient funds. No subsequent batch queued.",
+  "scope": "Same original JSON Patch task, grader, 64 admissions/Run, >=15-second serial admissions, tokens and 15-minute deadline. Only planning guidance changes via explicit v4 profile; trace and multiline input fixes retained. Previous successes/failures remain in original cohorts. Full 30-case/3-trial qualification unchanged, no default promotion.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

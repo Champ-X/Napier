@@ -1,0 +1,200 @@
+{
+  "kind": "napier.durable-pre-edit-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T00:31:01.798476+00:00",
+  "runtimeSnapshot": "/tmp/napier-harness-durable-pre-edit-v1",
+  "parentSnapshot": "/tmp/napier-harness-contract-first-v1",
+  "runtimeBindings": [
+    {
+      "package": "runtime",
+      "part": "src",
+      "fileCount": 1171,
+      "inventorySha256": "194c8543334720ca4a0e132d3c9f97974e42eb9b261ee6b5389575e94bdd820d",
+      "matchesFrozenSnapshot": true,
+      "parentDifferences": [
+        "agent-runtime.ts",
+        "agent-tool-preflight.ts",
+        "harness-policy-profile.ts",
+        "pre-edit-verification.ts",
+        "verification-ledger.ts"
+      ]
+    },
+    {
+      "package": "runtime",
+      "part": "dist",
+      "fileCount": 3525,
+      "inventorySha256": "5c6ddbd0ae628dd37856e8399c61878e5a89eb75e3e3bd640b36a12088a55243",
+      "matchesFrozenSnapshot": true,
+      "parentDifferences": [
+        ".tsbuildinfo",
+        "agent-runtime.js",
+        "agent-tool-preflight.d.ts",
+        "agent-tool-preflight.d.ts.map",
+        "agent-tool-preflight.js",
+        "harness-policy-profile.js",
+        "pre-edit-verification.d.ts",
+        "pre-edit-verification.d.ts.map",
+        "pre-edit-verification.js",
+        "verification-ledger.d.ts.map",
+        "verification-ledger.js"
+      ]
+    },
+    {
+      "package": "contracts",
+      "part": "src",
+      "fileCount": 79,
+      "inventorySha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+      "matchesFrozenSnapshot": true,
+      "parentDifferences": [
+        "harness-experiments.ts"
+      ]
+    },
+    {
+      "package": "contracts",
+      "part": "dist",
+      "fileCount": 238,
+      "inventorySha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+      "matchesFrozenSnapshot": true,
+      "parentDifferences": [
+        ".tsbuildinfo",
+        "harness-experiments.d.ts",
+        "harness-experiments.d.ts.map"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "packages/contracts/src/harness-experiments.ts",
+      "sha256": "4382514d2e2f9ff440263dcc39f4a9882ebd0b0a876ef5bdc2faefaf98ce45fb"
+    },
+    {
+      "path": "packages/runtime/src/harness-policy-profile.ts",
+      "sha256": "2e7bf0c18c0a9cf6fb635f922ad832550b8953a17302280db64f8112d03724ae"
+    },
+    {
+      "path": "packages/runtime/src/verification-ledger.ts",
+      "sha256": "96f5bb2c8ae035a7badd14f5df75b2898ba3a8174ffc94f581518fa955daf030"
+    },
+    {
+      "path": "packages/runtime/src/pre-edit-verification.ts",
+      "sha256": "1e597fee0dcfd69bc74953d2d2aeb76f618271a6556a79b6a64261a13c43f083"
+    },
+    {
+      "path": "packages/runtime/src/agent-tool-preflight.ts",
+      "sha256": "01ffde960b03a6a8cbd99aa01d6d41c2e46e3a534254750c4bb7298a00b8720f"
+    },
+    {
+      "path": "packages/runtime/src/agent-runtime.ts",
+      "sha256": "356db23d73447a3f764e631bb84e2f18d7052a53469e578b1c945942801328d4"
+    },
+    {
+      "path": "packages/runtime/test/pre-edit-verification.test.ts",
+      "sha256": "7fa0a550e786fb134967bfc696f08dbb9cc895026b3173aa211455a80c64ff31"
+    },
+    {
+      "path": "packages/runtime/test/pre-edit-verification-integration.test.ts",
+      "sha256": "bb232eb928321967d00bd366a0dd0ccf8cc5b06425d523aaac8e58bab5085e93"
+    },
+    {
+      "path": "packages/runtime/test/contract-verification-protocol.test.ts",
+      "sha256": "5232e8707bb26b830a69e5fb1b63a59aac2c60010cf01ab7bda46648dbb947fc"
+    },
+    {
+      "path": "packages/runtime/test/harness-policy-recovery.test.ts",
+      "sha256": "09373f2b847e7d69f4d113246900289f3f98b2458a768bd036a6e30274f4fdd7"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-durable-pre-edit-before-v2.log",
+      "sha256": "61612dea5d6d3c75d43cf95c22de23518ef63adbde1b185750ee0f6332f24ed1"
+    },
+    {
+      "path": "/tmp/napier-durable-pre-edit-targeted-v4.log",
+      "sha256": "9f7fc2e3f5795bb318101b8e78931156021c0499fffc7538163bd349f2b46958"
+    },
+    {
+      "path": "/tmp/napier-durable-pre-edit-contracts-build-v1.log",
+      "sha256": "dfd8a218e494ab69660c207c3d01863c71083328d656cb843c81e63ccba92ec6"
+    },
+    {
+      "path": "/tmp/napier-durable-pre-edit-runtime-build-v2.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-durable-pre-edit-architecture-v2.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-durable-pre-edit-format-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-durable-pre-edit-runtime-full-v1.log",
+      "sha256": "251bcdd66844ec8d2fb8a0ef678e51629fc489fd71456d3fe46996b1b2e89315"
+    },
+    {
+      "path": "/tmp/napier-harness-durable-pre-edit-v1/freeze-receipt.json",
+      "sha256": "a54598ccfa810b7ea9696c6d675c416fecc7001cd63e3fdc37b684cc4a6f3a6a"
+    }
+  ],
+  "targeted": {
+    "passed": 23,
+    "files": 7
+  },
+  "fullRuntime": {
+    "passed": 2654,
+    "failed": 2,
+    "skipped": 59,
+    "files": 527,
+    "durationSeconds": 299.93,
+    "exitCode": 1,
+    "failures": [
+      "agent-capability-contract-v2.test.ts: V1-V4 history and current V5 full-capability vectors",
+      "agent-capability-contract.test.ts: production Skill-loader readiness"
+    ],
+    "comparison": "Both failures were recorded in parent contract-first-v1 full Runtime validation; the current suite is not green."
+  },
+  "buildsPassed": [
+    "contracts",
+    "runtime:build:compile"
+  ],
+  "architectureViolations": 7,
+  "architectureComparison": "Same seven violations as the previously recorded audit; not an architecture pass.",
+  "limitsRaisedForThisChange": false,
+  "formatPassed": true,
+  "diffCheckPassed": true,
+  "integration": {
+    "model": "scripted faux provider, no paid API",
+    "execution": "actual local filesystem and Node test processes through AgentRuntime and HostDirectSandboxAdapter",
+    "modes": [
+      "test",
+      "failed_attempt",
+      "denied",
+      "unavailable",
+      "disabled"
+    ],
+    "durability": "Store close/reopen and assessment from persisted pre-patch receipts; no tools replayed",
+    "limits": [
+      "No OS isolation claim",
+      "No real-model quality qualification",
+      "Only first apply_patch ordering; no other mutation coverage",
+      "Denied attempt does not establish execution or passing tests",
+      "No test oracle, workspace freshness or contract coverage claim"
+    ]
+  },
+  "apiTesting": {
+    "newPaidCalls": 0,
+    "newPaidCampaignsPaused": true,
+    "resumptionRequirement": "Explicit small API call-count and cost ceiling; count retries and multiple requests within each Run."
+  },
+  "qualityGate": {
+    "distinctCasesRequired": 30,
+    "pairedTrialsPerCaseRequired": 3,
+    "qualified": false,
+    "preserveFailedTrials": true,
+    "priorEighteenRealRunsQualifyThisImplementation": false
+  },
+  "promotionReady": false,
+  "defaultPoliciesChanged": false
+}

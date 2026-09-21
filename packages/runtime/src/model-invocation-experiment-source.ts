@@ -23,6 +23,7 @@ import {
   validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
 import type { LocalStore } from "./store.js";
+import { assertRuntimeContextInvocation } from "./runtime-context-evidence.js";
 
 export interface ModelInvocationExperimentSource {
   preview: ModelInvocationExperimentPreview;
@@ -113,6 +114,7 @@ export async function projectModelInvocationExperimentSource(
       "Model invocation experiment local capsule does not match the Ledger",
     );
   }
+  assertRuntimeContextInvocation(events, capsule);
   const sourceObservation = observeSourceModelInvocation({
     sourceThreadId,
     sourceRunId: sourceRun.id,

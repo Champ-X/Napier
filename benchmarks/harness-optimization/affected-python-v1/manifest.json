@@ -1,0 +1,22 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "affected_python_shipping_v1",
+  "title": "Exercise admitted affected-test verification",
+  "promptPath": "prompt.md",
+  "fixturePath": "fixture",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": [
+    "shipping.py"
+  ],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "verify_workspace",
+    "run_command"
+  ],
+  "requiredCompletedTools": [
+    "apply_patch",
+    "run_command"
+  ]
+}

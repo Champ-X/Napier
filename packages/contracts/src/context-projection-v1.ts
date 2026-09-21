@@ -52,5 +52,7 @@ export interface ContextProjectionReceiptV1 {
   tokenPressureReceiptSha256: string;
   /** Optional additive binding for a durable within-Run working-set projection. */
   runCompactionReceiptSha256?: string;
+  /** Request-local runtime data, separately bound from durable user messages. */
+  runtimeContextReceiptSha256?: string;
   contentSha256: string;
 }

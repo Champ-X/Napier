@@ -1,0 +1,21 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "requested_report_scope_v1",
+  "title": "Preserve explicitly requested report generation",
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": [
+    "REPORT.md"
+  ],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command"
+  ],
+  "requiredCompletedTools": [
+    "read_file",
+    "apply_patch"
+  ]
+}

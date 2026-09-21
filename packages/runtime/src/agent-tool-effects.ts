@@ -292,6 +292,7 @@ function browserEffect(args: unknown): ToolEffect {
 
 function nodeDebuggerEffect(args: unknown): ToolEffect {
   return record(args) &&
+    (args["runtime"] === undefined || args["runtime"] === "node") &&
     (args["action"] === "stack_trace" ||
       args["action"] === "scopes" ||
       args["action"] === "variables" ||

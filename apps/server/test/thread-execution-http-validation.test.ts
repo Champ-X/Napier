@@ -6,6 +6,33 @@ import {
 } from "../src/thread-execution-http-validation.js";
 
 describe("Thread execution HTTP validation", () => {
+  it("accepts only named versioned Harness strategies and refuses request-supplied compositions", () => {
+    for (const harnessPolicyPreset of [
+      "coding-node.v1",
+      "coding-python.v1",
+      "research.v1",
+    ]) {
+      expect(parsePromptRequest({ text: "Task", harnessPolicyPreset })).toEqual(
+        { text: "Task", harnessPolicyPreset },
+      );
+    }
+    for (const harnessPolicyPreset of [
+      "coding-node.v2",
+      "full_access",
+      1,
+      { id: "coding-node.v1" },
+      null,
+    ])
+      expect(
+        parsePromptRequest({ text: "Task", harnessPolicyPreset }),
+      ).toBeUndefined();
+    expect(
+      parsePromptRequest({
+        text: "Task",
+        harnessExperimentProfile: { maxActiveTools: 100 },
+      }),
+    ).toBeUndefined();
+  });
   it("accepts only exact optional Resume fields", () => {
     expect(parseResumeRunRequest(undefined)).toEqual({});
     expect(

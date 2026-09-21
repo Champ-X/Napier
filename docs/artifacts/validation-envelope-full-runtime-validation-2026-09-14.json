@@ -1,0 +1,121 @@
+{
+  "kind": "napier.validation-envelope-full-runtime-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T12:05:13.551908+00:00",
+  "source": {
+    "source": "/tmp/napier-harness-validation-envelope-v1",
+    "audit": "/tmp/napier-runtime-audit-validation-envelope-v1",
+    "bindings": {
+      "packages/runtime/src": {
+        "files": 1178,
+        "sha256": "46a9f02544494b6e4ed7bb999f7467f9624b5fad3ad3ff3ebdb8df775aae62a2"
+      },
+      "packages/runtime/dist": {
+        "files": 3546,
+        "sha256": "94831690638dec9bc578fa0211af35639561919c38af86787ef9698652f89390"
+      },
+      "packages/runtime/test": {
+        "files": 570,
+        "sha256": "240b1ce8b1756ac27adbbcf9a761612e0e5bf6e38ea51a7ddac5e308f37d5ba0"
+      },
+      "packages/contracts/src": {
+        "files": 79,
+        "sha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced"
+      },
+      "packages/contracts/dist": {
+        "files": 238,
+        "sha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d"
+      }
+    },
+    "testConfigSha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c",
+    "supportFilesReceiptSha256": "1a81df57799bb89129bc7df4b4507870c7bc5cfc0ec509d25a606e6df0b9ff41",
+    "scope": "Full Runtime suite on validation-envelope-v1; source/dist/tests match the frozen candidate, prior support files verified, dependencies linked, no live opt-ins or model keys. Concurrent serial paid campaign uses a separate process and workspace."
+  },
+  "frozenAndWorkspaceSourceDistTestsMatchAfterRun": true,
+  "supportFilesUnchanged": true,
+  "current": {
+    "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/runtime-audit-tests-v1.json",
+    "reportSha256": "fb9df4b237065ebc637244c1c9136e1e42af9112c8663cfa2275b93eb04f3b7f",
+    "passed": 2739,
+    "failed": 0,
+    "skipped": 60,
+    "files": 540,
+    "wallSeconds": 310.248,
+    "success": true
+  },
+  "previous": {
+    "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/runtime-audit-tests-v4.json",
+    "reportSha256": "0ea00df41adb1209e49915c4960820de3299789ac916ac01251127913d916f5d",
+    "passed": 2711,
+    "failed": 2,
+    "skipped": 60
+  },
+  "comparison": {
+    "commonStatusChanges": [
+      {
+        "test": "packages/runtime/test/agent-capability-contract-v2.test.ts::default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+        "before": ["failed"],
+        "after": ["passed"]
+      },
+      {
+        "test": "packages/runtime/test/agent-capability-contract.test.ts::default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+        "before": ["failed"],
+        "after": ["passed"]
+      }
+    ],
+    "newTests": [
+      "packages/runtime/test/task-failure-compaction-recovery.test.ts::retains distinct read failures through actual overflow compaction and store-reopened manual recovery",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::clears only the matching-input pending failure, while preserving both rejected attempts",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::delivers distinct failure and matching-retry observations in the compacted model context",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::does not borrow an invocation binding from another Run with the same call ID",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::does not infer a matching retry from conflicting invocation bindings",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::does not infer a matching retry from duplicate invocation bindings",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::does not infer a matching retry from late invocation bindings",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::does not infer a matching retry from malformed invocation bindings",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::does not infer a matching retry from missing invocation bindings",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::does not let earlier success settle a later failure or unbound blocked call",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::keeps both rejected invocations and does not clear them after unrelated tool completion",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::observes a bound retry across same-thread recovery without claiming task completion",
+      "packages/runtime/test/task-tool-failure-projection.test.ts::retains unbound legacy failures after compaction and marks omitted failure history",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::preserves ordinary failure classification for HTTP 401: Validation failed for tool \"run_command\":\n  - args.1: must match the argument schema\n\nReceived arguments:\n{\"runtime\":\"node\",\"args\":[\"-e\",\"value\"]}",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::preserves ordinary failure classification for HTTP 429: request validation failed",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::preserves ordinary failure classification for request timed out during schema validation",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::preserves ordinary failure classification for session closed during validation",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::recognizes the installed SDK's real schema-validation error",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::retains the bounded original diagnostic hash including echoed arguments",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::schema rejection stays invocation-scoped when echoed code contains assert.equal(status, 429)",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::schema rejection stays invocation-scoped when echoed code contains console.log(\"cancelled\")",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::schema rejection stays invocation-scoped when echoed code contains console.log(\"missing credentials\")",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::schema rejection stays invocation-scoped when echoed code contains console.log(\"permission denied\")",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::schema rejection stays invocation-scoped when echoed code contains console.log(\"session closed\")",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::schema rejection stays invocation-scoped when echoed code contains console.log(\"unsupported\")",
+      "packages/runtime/test/tool-failure-validation-envelope.test.ts::schema rejection stays invocation-scoped when echoed code contains const timeout = 1000"
+    ],
+    "removedTests": []
+  },
+  "bindings": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/runtime-audit-source-v1.json",
+      "sha256": "47876a10ba30d8c08e6ba6323fc5e6c9d6474d3e7e09d17dd584a7bc688d2059"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/runtime-audit-support-files.json",
+      "sha256": "1a81df57799bb89129bc7df4b4507870c7bc5cfc0ec509d25a606e6df0b9ff41"
+    },
+    {
+      "path": "/tmp/napier-validation-envelope-runtime-audit-launch-v1.mjs",
+      "sha256": "88d317546e8108017052be9e64b4e865a816669294f8870378acae5285e7839d"
+    }
+  ],
+  "originalWorkflowFailureRetained": true,
+  "workflowRootCauseEstablished": false,
+  "paidApiCallsForFullSuite": 0,
+  "limitations": [
+    "Live tests remain skipped; this is full offline Runtime evidence, not full system or real-model quality qualification.",
+    "External dependencies remain linked; paid model comparison ran concurrently in a separate process/workspace. Wall time is not a controlled performance comparison.",
+    "The earlier intermittent Workflow failure did not recur, but its original report and unexplained cause remain.",
+    "The 30-case/three-paired-trial quality gate remains incomplete and no default strategy is promoted."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

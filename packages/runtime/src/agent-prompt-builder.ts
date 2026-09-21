@@ -12,9 +12,10 @@ import {
 import { formatDelegationLedgerProjection } from "./delegation-ledger.js";
 import type { ModelAdapterReceiptV2 } from "./model-adapters.js";
 import {
-  compilePrompt,
+  STABLE_PROMPT_COMPILER_ASSEMBLY,
   type CompiledPromptArtifact,
 } from "./prompt-compiler.js";
+import { compileRuntimeContextPrompt } from "./runtime-context-delivery.js";
 import {
   formatToolLoopGuardContext,
   type ActiveToolLoopGuard,
@@ -41,23 +42,29 @@ export function createAgentPromptBuilder(
     activeTools?: readonly string[],
     messages?: readonly Message[],
   ): CompiledPromptArtifact =>
-    compilePrompt({
-      purpose: "agent_turn",
-      adapter,
-      layers: createAgentPromptCompilerLayers({
-        ...sources,
-        ...(effectiveCapabilitiesForTools && activeTools
-          ? {
-              effectiveCapabilities: effectiveCapabilitiesForTools(
-                activeTools,
-                adapter,
-                messages,
-              ),
-            }
+    compileRuntimeContextPrompt(
+      {
+        purpose: "agent_turn",
+        ...(sources.promptPolicy === "stable-v1"
+          ? { assembly: STABLE_PROMPT_COMPILER_ASSEMBLY }
           : {}),
-        delegation: formatDelegationLedgerProjection(delegation),
-        milestones: formatAgentMilestoneContextProjection(milestones),
-        toolLoopGuard: formatToolLoopGuardContext(toolLoopGuard),
-      }),
-    });
+        adapter,
+        layers: createAgentPromptCompilerLayers({
+          ...sources,
+          ...(effectiveCapabilitiesForTools && activeTools
+            ? {
+                effectiveCapabilities: effectiveCapabilitiesForTools(
+                  activeTools,
+                  adapter,
+                  messages,
+                ),
+              }
+            : {}),
+          delegation: formatDelegationLedgerProjection(delegation),
+          milestones: formatAgentMilestoneContextProjection(milestones),
+          toolLoopGuard: formatToolLoopGuardContext(toolLoopGuard),
+        }),
+      },
+      sources.contextDelivery,
+    );
 }

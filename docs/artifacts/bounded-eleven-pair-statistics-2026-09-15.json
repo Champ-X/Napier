@@ -1,0 +1,643 @@
+{
+  "kind": "napier.frozen-recovered-statistics-checkpoint",
+  "createdAt": "2026-09-15T09:34:50.786Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/recovered-full-statistics-v1/plan.json",
+  "planSha256": "8fbe88f0d0ca095aa254316a8315c47d832ff6cc3e179bb664a87e46c8bc1ba0",
+  "lastCheckpoint": "checkpoint-4.json",
+  "boundReports": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "0f4e86dbc6205834612b8bfb763b4151bf1c10cc94a9d9506eae5857ade20455"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/incremental_ndjson_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "c77b837341c2a970f3819bf494faab758a1693d82436febdc4fc344242a5008d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/memory_shipping_current_source_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "d6b2c1c3582e92446551702206f83f27d964fcf21991988d879ab6c7a3e9c72d"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-user-reconciled-core-v16/memory_shipping_current_source_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "83af6b34ba0652e0ef1e4cb664ba29ef01dbcfb0b207e22f51730432dcbc3f06"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/semantic_version_order_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "72fd1db43eb12338c31a0fb28229e4cdce550880770053c5a7b72df6d9b172e6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/semantic_version_order_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "560393a787a7451123bba60efb04f23b8fd59d3ed6161e32ee0939455300cca9"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/rollout_dependency_plan_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "6ff0aa362c16ac2091e14d470af6d14edbb732920afce8d860d187f63fec932b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/rollout_dependency_plan_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "e9c45835cce9d79d8f918f14273d3f08b84fd21d23ad3640f18d7c7d5849d8f9"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/http_retry_policy_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "c65b0253423eff48e9e3e856159d684d59f4371999d18b370b6213ecbca04b7e"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/http_retry_policy_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "f1f52db4fbfa8d445fad67c05fa4b9f57b098c5114dbb5fc06555e0c63d4e8a6"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/access_rule_evaluation_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "023c8815b0beca992fe16693264be056b600a1c9becec97b95dd8611643a0132"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/access_rule_evaluation_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "068c1f7e1ed26bdbf0d159d66272813f92356e9c5ae0ace50c0c217b4fbca557"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/booking_calendar_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "ba6f95ad1e68fe6693be16b854bceaf7161badb85c371455f856e35e4b1b9d66"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/booking_calendar_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "3dc8c2910e03d78c7276576a1964efe0a962b04c3d0aa8ee3659c9b16830bfc3"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/safe_csv_export_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "be208528050453937d1f817a80d63193e28bde410fdd68d680972b74bd28a9d2"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/safe_csv_export_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "4f932ee5625754050adcd5b48424b86e227fedb1132af58ea33b8ff2a0b41a26"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "6e3a6a2fd77b4b2275186eea54701c8394ae2c47f1cbaee60c4d312da857fd3b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "c2718bb1f726cd1149c278403d590947e1efd3a56799dec4d93c7507d637e1cb"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-candidate-trial-4/trial-4/result.json",
+      "sha256": "fbb8d192d56aaf1e55d8fe994dfbd94eecfaf5cf34ec48e377a5a561be8c89bc"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-baseline-trial-4/trial-4/result.json",
+      "sha256": "3d56985c24d4e9986d5d784a76328c0523da9deff33b1df10af8003f72e91fae"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/weighted_expense_allocation_v1-candidate-trial-1/trial-1/result.json",
+      "sha256": "993d48f6dc03ecd9c0a756d964ab75f18a17ebbe063a7d2a3948cf8608c2c931"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/weighted_expense_allocation_v1-baseline-trial-1/trial-1/result.json",
+      "sha256": "fb14b6931263993984ba11bc4fa40f31653eca20fb4f3d93843157d3706298dd"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/http_etag_preconditions_v2-candidate-trial-1/trial-1/result.json",
+      "sha256": "9aea05aff160d43262c0e49461e292ea80ca2e73d2be679161d6f566d0b7ce40"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/http_etag_preconditions_v2-baseline-trial-1/trial-1/result.json",
+      "sha256": "2914e406ae970c3c90f54d1a6865359b7f64e611aff5cb25b1449dfb9af68393"
+    }
+  ],
+  "summary": {
+    "kind": "napier.harness-paired-descriptive-summary",
+    "schemaVersion": 1,
+    "quality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 11,
+      "cases": 11,
+      "regressions": [],
+      "evidenceBlockers": [
+        "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence"
+      ],
+      "blockers": [
+        "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence",
+        "Need 30 cases; observed 11",
+        "incremental_ndjson_v1: need 3 paired trials; observed 1",
+        "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+        "semantic_version_order_v1: need 3 paired trials; observed 1",
+        "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+        "http_retry_policy_v2: need 3 paired trials; observed 1",
+        "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+        "booking_calendar_v2: need 3 paired trials; observed 1",
+        "safe_csv_export_v1: need 3 paired trials; observed 1",
+        "inventory_event_projection_v1: need 3 paired trials; observed 1",
+        "weighted_expense_allocation_v1: need 3 paired trials; observed 1",
+        "http_etag_preconditions_v2: need 3 paired trials; observed 1"
+      ],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "1976ee8bc1976520855d54bd96258397737dbf840fefb4afad7a12dd1fdf266c"
+    },
+    "rawObservations": 24,
+    "pairs": [
+      {
+        "key": "incremental_ndjson_v1:0",
+        "caseId": "incremental_ndjson_v1",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_c553965d6ff14131a763",
+          "taskSuccess": false,
+          "graderPassed": true,
+          "durationMs": 253387,
+          "admissions": 9,
+          "toolFailures": 0,
+          "originalCostFen": 47,
+          "inputTokens": 9325,
+          "outputTokens": 23762,
+          "cacheReadTokens": 119168
+        },
+        "candidate": {
+          "runId": "run_d0d7d0c37f5a4f59b195",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 268820,
+          "admissions": 13,
+          "toolFailures": 1,
+          "originalCostFen": 56,
+          "inputTokens": 102077,
+          "outputTokens": 35173,
+          "cacheReadTokens": 223104
+        },
+        "regressions": []
+      },
+      {
+        "key": "memory_shipping_current_source_v1:0",
+        "caseId": "memory_shipping_current_source_v1",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_569d84397d24401f893d",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 203005,
+          "admissions": 14,
+          "toolFailures": 1,
+          "originalCostFen": 30,
+          "inputTokens": 69831,
+          "outputTokens": 13011,
+          "cacheReadTokens": 127744
+        },
+        "candidate": {
+          "runId": "run_b975baf1b25e4c63835a",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 111822,
+          "admissions": 8,
+          "toolFailures": 0,
+          "originalCostFen": 15,
+          "inputTokens": 35133,
+          "outputTokens": 3771,
+          "cacheReadTokens": 45440
+        },
+        "regressions": []
+      },
+      {
+        "key": "semantic_version_order_v1:0",
+        "caseId": "semantic_version_order_v1",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_8ab5f0bbf220485eb0fc",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 235928,
+          "admissions": 12,
+          "toolFailures": 0,
+          "originalCostFen": 45,
+          "inputTokens": 63311,
+          "outputTokens": 31717,
+          "cacheReadTokens": 257536
+        },
+        "candidate": {
+          "runId": "run_65e9a552e12d4e6fbfa0",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 297709,
+          "admissions": 16,
+          "toolFailures": 4,
+          "originalCostFen": 78,
+          "inputTokens": 134979,
+          "outputTokens": 50408,
+          "cacheReadTokens": 361344
+        },
+        "regressions": []
+      },
+      {
+        "key": "rollout_dependency_plan_v2:0",
+        "caseId": "rollout_dependency_plan_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_a6be12f8ea8b42678559",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 234302,
+          "admissions": 14,
+          "toolFailures": 1,
+          "originalCostFen": 47,
+          "inputTokens": 95557,
+          "outputTokens": 24289,
+          "cacheReadTokens": 261504
+        },
+        "candidate": {
+          "runId": "run_44a410b844d44bd38500",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 211732,
+          "admissions": 13,
+          "toolFailures": 8,
+          "originalCostFen": 48,
+          "inputTokens": 86329,
+          "outputTokens": 31273,
+          "cacheReadTokens": 224384
+        },
+        "regressions": []
+      },
+      {
+        "key": "http_retry_policy_v2:0",
+        "caseId": "http_retry_policy_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_c8ca77f81302448cad02",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 288247,
+          "admissions": 16,
+          "toolFailures": 1,
+          "originalCostFen": 66,
+          "inputTokens": 128417,
+          "outputTokens": 36571,
+          "cacheReadTokens": 438016
+        },
+        "candidate": {
+          "runId": "run_25d9b1251fec41799900",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 469290,
+          "admissions": 19,
+          "toolFailures": 4,
+          "originalCostFen": 96,
+          "inputTokens": 126314,
+          "outputTokens": 73806,
+          "cacheReadTokens": 316032
+        },
+        "regressions": []
+      },
+      {
+        "key": "access_rule_evaluation_v2:0",
+        "caseId": "access_rule_evaluation_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_9ab9042343c24c19a2a8",
+          "taskSuccess": false,
+          "graderPassed": true,
+          "durationMs": 187410,
+          "admissions": 10,
+          "toolFailures": 0,
+          "originalCostFen": 28,
+          "inputTokens": 9802,
+          "outputTokens": 17253,
+          "cacheReadTokens": 125696
+        },
+        "candidate": {
+          "runId": "run_d4a31c956de64408a75a",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 167077,
+          "admissions": 9,
+          "toolFailures": 1,
+          "originalCostFen": 38,
+          "inputTokens": 53902,
+          "outputTokens": 27458,
+          "cacheReadTokens": 137856
+        },
+        "regressions": []
+      },
+      {
+        "key": "booking_calendar_v2:0",
+        "caseId": "booking_calendar_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_be8da810d6ae427c9e45",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 262168,
+          "admissions": 14,
+          "toolFailures": 1,
+          "originalCostFen": 62,
+          "inputTokens": 125266,
+          "outputTokens": 35115,
+          "cacheReadTokens": 265856
+        },
+        "candidate": {
+          "runId": "run_e672cb094ba74663ae8d",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 214934,
+          "admissions": 11,
+          "toolFailures": 1,
+          "originalCostFen": 45,
+          "inputTokens": 58878,
+          "outputTokens": 33899,
+          "cacheReadTokens": 208512
+        },
+        "regressions": []
+      },
+      {
+        "key": "safe_csv_export_v1:0",
+        "caseId": "safe_csv_export_v1",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_eaa32b9b45b24f6cbb1e",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 412887,
+          "admissions": 23,
+          "toolFailures": 1,
+          "originalCostFen": 65,
+          "inputTokens": 104050,
+          "outputTokens": 37478,
+          "cacheReadTokens": 484864
+        },
+        "candidate": {
+          "runId": "run_229899fbf331462a93a1",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 132913,
+          "admissions": 9,
+          "toolFailures": 0,
+          "originalCostFen": 23,
+          "inputTokens": 44075,
+          "outputTokens": 11372,
+          "cacheReadTokens": 77056
+        },
+        "regressions": []
+      },
+      {
+        "key": "inventory_event_projection_v1:3",
+        "caseId": "inventory_event_projection_v1",
+        "trial": 3,
+        "baseline": {
+          "runId": "run_3e370deecb024214a472",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 296479,
+          "admissions": 17,
+          "toolFailures": 2,
+          "originalCostFen": 44,
+          "inputTokens": 54658,
+          "outputTokens": 27899,
+          "cacheReadTokens": 373632
+        },
+        "candidate": {
+          "runId": "run_5c32c7b2899a4e1181a4",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 168338,
+          "admissions": 9,
+          "toolFailures": 0,
+          "originalCostFen": 35,
+          "inputTokens": 48322,
+          "outputTokens": 25056,
+          "cacheReadTokens": 131072
+        },
+        "regressions": []
+      },
+      {
+        "key": "weighted_expense_allocation_v1:0",
+        "caseId": "weighted_expense_allocation_v1",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_f97cec501e20465480de",
+          "taskSuccess": false,
+          "graderPassed": true,
+          "durationMs": 369728,
+          "admissions": 15,
+          "toolFailures": 4,
+          "originalCostFen": 100,
+          "inputTokens": 178678,
+          "outputTokens": 66190,
+          "cacheReadTokens": 536704
+        },
+        "candidate": {
+          "runId": "run_a7744685cf034c3c9928",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 333070,
+          "admissions": 16,
+          "toolFailures": 2,
+          "originalCostFen": 51,
+          "inputTokens": 57843,
+          "outputTokens": 38421,
+          "cacheReadTokens": 153856
+        },
+        "regressions": []
+      },
+      {
+        "key": "http_etag_preconditions_v2:0",
+        "caseId": "http_etag_preconditions_v2",
+        "trial": 0,
+        "baseline": {
+          "runId": "run_83cd281d2dfa45179940",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 388711,
+          "admissions": 23,
+          "toolFailures": 1,
+          "originalCostFen": 71,
+          "inputTokens": 147000,
+          "outputTokens": 34692,
+          "cacheReadTokens": 651776
+        },
+        "candidate": {
+          "runId": "run_98c57df172af40e1b758",
+          "taskSuccess": true,
+          "graderPassed": true,
+          "durationMs": 341680,
+          "admissions": 16,
+          "toolFailures": 3,
+          "originalCostFen": 71,
+          "inputTokens": 116535,
+          "outputTokens": 47360,
+          "cacheReadTokens": 230656
+        },
+        "regressions": []
+      }
+    ],
+    "excluded": [
+      {
+        "key": "inventory_event_projection_v1:0",
+        "runIds": [
+          "run_a03b91bc514d4a37976b",
+          "run_0aa5c49110e54ca58a60"
+        ],
+        "blockers": [
+          "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence",
+          "Need 1 cases; observed 0"
+        ]
+      }
+    ],
+    "armSummary": {
+      "baseline": {
+        "observations": 11,
+        "completedTasks": 8,
+        "passedGraders": 11,
+        "medianDurationMs": 262168,
+        "totalDurationMs": 3132252,
+        "totalAdmissions": 167,
+        "totalToolFailures": 12,
+        "originalObservationCostFen": 605,
+        "totalInputTokens": 985895,
+        "totalOutputTokens": 347977,
+        "totalCacheReadTokens": 3642496
+      },
+      "candidate": {
+        "observations": 11,
+        "completedTasks": 11,
+        "passedGraders": 11,
+        "medianDurationMs": 214934,
+        "totalDurationMs": 2717385,
+        "totalAdmissions": 139,
+        "totalToolFailures": 24,
+        "originalObservationCostFen": 556,
+        "totalInputTokens": 864387,
+        "totalOutputTokens": 377997,
+        "totalCacheReadTokens": 2109312
+      }
+    },
+    "pairedMedianDurationDifferenceMs": -36658,
+    "pairedMedianAdmissionDifference": -1,
+    "interpretation": "Descriptive observations only; trials share task families and reused baselines are not concurrent randomized controls. Original observation costs include reused evidence and are not newly spent campaign cost. Missing metrics are null, never zero. Quality qualification remains the unchanged 30-case/3-trial gate."
+  },
+  "qualification": {
+    "kind": "napier.recovered-campaign-quality",
+    "schemaVersion": 1,
+    "recoveryProtocolSha256": "f863af1906d82c0d223c67091e4eb9c0e33b639fa8c13baa1f1256494ef45d4b",
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "rawQuality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 11,
+      "cases": 11,
+      "regressions": [],
+      "evidenceBlockers": [
+        "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence"
+      ],
+      "blockers": [
+        "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence",
+        "Need 30 cases; observed 11",
+        "incremental_ndjson_v1: need 3 paired trials; observed 1",
+        "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+        "semantic_version_order_v1: need 3 paired trials; observed 1",
+        "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+        "http_retry_policy_v2: need 3 paired trials; observed 1",
+        "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+        "booking_calendar_v2: need 3 paired trials; observed 1",
+        "safe_csv_export_v1: need 3 paired trials; observed 1",
+        "inventory_event_projection_v1: need 3 paired trials; observed 1",
+        "weighted_expense_allocation_v1: need 3 paired trials; observed 1",
+        "http_etag_preconditions_v2: need 3 paired trials; observed 1"
+      ],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "1976ee8bc1976520855d54bd96258397737dbf840fefb4afad7a12dd1fdf266c"
+    },
+    "qualificationQuality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 11,
+      "cases": 11,
+      "regressions": [],
+      "evidenceBlockers": [],
+      "blockers": [
+        "Need 30 cases; observed 11",
+        "incremental_ndjson_v1: need 3 paired trials; observed 1",
+        "memory_shipping_current_source_v1: need 3 paired trials; observed 1",
+        "semantic_version_order_v1: need 3 paired trials; observed 1",
+        "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+        "http_retry_policy_v2: need 3 paired trials; observed 1",
+        "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+        "booking_calendar_v2: need 3 paired trials; observed 1",
+        "safe_csv_export_v1: need 3 paired trials; observed 1",
+        "inventory_event_projection_v1: need 3 paired trials; observed 1",
+        "weighted_expense_allocation_v1: need 3 paired trials; observed 1",
+        "http_etag_preconditions_v2: need 3 paired trials; observed 1"
+      ],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "f60c049c138044e28f9d6e29de2552060dc601cf264462aa29ca41e8ea664aff"
+    },
+    "unexpectedBlockers": [],
+    "retiredIneligibleObservations": [
+      {
+        "runId": "run_0aa5c49110e54ca58a60",
+        "caseId": "inventory_event_projection_v1",
+        "trial": 0,
+        "arm": "baseline",
+        "status": "failed",
+        "taskSuccess": false,
+        "reportDigest": "87c456774b671fc314febf8c59baf87e3dbebfdcd164133723e86a2b59730ba1"
+      },
+      {
+        "runId": "run_a03b91bc514d4a37976b",
+        "caseId": "inventory_event_projection_v1",
+        "trial": 0,
+        "arm": "candidate",
+        "status": "completed",
+        "taskSuccess": true,
+        "reportDigest": "a18a9c7e619b2ec1b675d2560c4aa32437db339e3149d569620f9987548f4d12"
+      }
+    ],
+    "supplementalTrialRequired": false,
+    "supplementalTrial": 3,
+    "originalCampaignPromotionReady": false,
+    "promotionReady": false,
+    "scope": "A new prospective qualification cohort, not repair or promotion of the original campaign. Preserve the original schedule and append one whole new trial; require three eligible pairs per case. No candidate failure or eligible baseline failure may be retired. No reservation is released."
+  },
+  "lastReportSpending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 6527,
+    "remainingFen": 3473,
+    "requests": 600,
+    "reservedRequests": 4,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "modelRequests": 0,
+  "scope": "Read-only descriptive snapshot of persisted reports. It neither stops the live queue nor claims full acceptance. Last-report spending is a historical cutoff and excludes any newer active request."
+}

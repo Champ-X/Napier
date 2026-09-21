@@ -304,3 +304,22 @@ describe("Agent profile HTTP validation", () => {
     ).toBeUndefined();
   });
 });
+
+it("accepts unlimited cumulative tokens while rejecting invalid finite limits", () => {
+  const runLimits = {
+    maxTurns: 64,
+    maxTotalTokens: 0,
+    maxCostUsd: 25,
+    timeoutMs: 1_800_000,
+  };
+  expect(
+    parseUpdateAgentProfileRequest({ runLimits })?.runLimits?.maxTotalTokens,
+  ).toBe(0);
+  for (const maxTotalTokens of [-1, 1, 999, 1.5]) {
+    expect(
+      parseUpdateAgentProfileRequest({
+        runLimits: { ...runLimits, maxTotalTokens },
+      }),
+    ).toBeUndefined();
+  }
+});

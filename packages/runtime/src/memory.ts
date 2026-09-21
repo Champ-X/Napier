@@ -245,6 +245,7 @@ export function formatMemoryContext(
   agentId: string,
   maxCharacters = 6_000,
   now: Date = new Date(),
+  relevance?: ReadonlyMap<string, number>,
 ): { text: string; factIds: string[]; truncated: boolean } {
   const eligible = facts
     .filter(
@@ -254,6 +255,8 @@ export function formatMemoryContext(
         (fact.scope === "workspace" || fact.agentId === agentId),
     )
     .sort((left, right) => {
+      const difference = (relevance?.get(right.id) ?? 0) - (relevance?.get(left.id) ?? 0);
+      if (difference !== 0) return difference;
       if (left.confidence !== right.confidence) {
         return right.confidence - left.confidence;
       }
@@ -270,6 +273,7 @@ export function formatMemoryContext(
     const closingLength = "\n</memory_context>".length;
     if ([...lines, line].join("\n").length + closingLength > maxCharacters) {
       truncated = true;
+      if (relevance) continue;
       break;
     }
     lines.push(line);

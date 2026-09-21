@@ -110,7 +110,7 @@ describe("Pi built-in model catalog HTTP projection", () => {
     ).toEqual(expect.objectContaining({ configured: true, vision: true }));
     expect(liveReady.recommendedRunModel).toEqual({
       provider: "deepseek",
-      id: "deepseek-v4-flash-vision-exp",
+      id: "deepseek-v4-flash",
     });
     expect(JSON.stringify(liveReady)).not.toContain(
       "PRIVATE_AMBIENT_SERVER_KEY",

@@ -1,0 +1,21 @@
+{
+  "kind": "napier.original-baseline-stop-clarification",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T06:03:07.798Z",
+  "priorResultPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/memory-reused-baseline-pair-v1/result.json",
+  "priorResultSha256": "42b4571b5db23ed98e4003531a3755a209033f153f952794256f4612f6e47899",
+  "priorAuditPath": "/Users/champ/orca/Napier/docs/artifacts/staged-memory-reuse-final-audit-2026-09-15.json",
+  "priorAuditSha256": "23085e0d62baed60550724c71bbf4be77d59be2b4fc4609ce5b2a27beac4e5f2",
+  "candidateRunId": "run_9a1d0aec74c646499a50",
+  "baselineRunId": "run_76af8c7911754698b595",
+  "originalStop": "aggregate_quality_or_evidence_failed",
+  "preservedEvidenceBlockers": [
+    "incremental_ndjson_v1:0: missing, changed or exhausted API request budget evidence"
+  ],
+  "originalObservationEligible": false,
+  "originalReservationsReleased": false,
+  "sourceChanged": false,
+  "qualityGateChanged": false,
+  "reason": "The original NDJSON candidate succeeded but its baseline failed after a thinking guard, with incomplete provider usage. That observation remains ineligible. All later original reports and aggregate blockers are retained. One different unobserved original pair may add independent evidence without clearing the inherited blocker or enabling promotion. Only the current staged-verification candidate needs new real observation of recursive configuration precedence, literal keys, ownership and omitted values. Reuse the immutable same-source same-driver original baseline report and its complete usage evidence; do not issue baseline API calls or reuse the old candidate. Full original task and pair evaluation remain unchanged.",
+  "modelRequests": 0
+}

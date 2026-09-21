@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "steps": [
+    {
+      "id": "first_edit",
+      "action": "observe",
+      "after": { "type": "tool.completed", "tool": "apply_patch" }
+    },
+    {
+      "id": "revision",
+      "action": "steer",
+      "after": {
+        "type": "tool.completed",
+        "tool": "verify_workspace",
+        "status": "passed"
+      },
+      "text": "Requirement update: standard delivery now costs 9, and the free-standard-delivery threshold is 120 instead of 100. Keep the expedited surcharge at 3, the signature, all validation rules and the restriction to changing only src/fees.mjs. This instruction supersedes only those two numeric values in README.md. Recheck the revised source; earlier verification alone cannot establish that the revised implementation passes."
+    },
+    {
+      "id": "delivery",
+      "action": "observe",
+      "after": { "type": "run.control.delivered", "controlStep": "revision" }
+    },
+    {
+      "id": "interruption",
+      "action": "interrupt",
+      "after": { "type": "tool.completed", "tool": "apply_patch" }
+    }
+  ]
+}

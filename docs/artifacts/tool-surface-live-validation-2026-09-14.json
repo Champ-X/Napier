@@ -1,0 +1,234 @@
+{
+  "kind": "napier.tool-surface-live-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T20:53:14.639Z",
+  "snapshot": "/tmp/napier-harness-tool-surface-v2",
+  "root": "/Users/champ/.cache/napier-seven-quality/core-tool-surface-suite-v2",
+  "runs": 2,
+  "invocations": 21,
+  "observed": [
+    {
+      "runId": "run_5271c6b6c91e4944b639",
+      "caseId": "http_retry_policy_v1",
+      "trial": 0,
+      "status": "completed",
+      "taskSuccess": true,
+      "reportSha256": "c92d208b2bba4a4f6e4cd2d84e35019fc1082062ddbaa09839a3aa265235b514",
+      "allBindingsVerified": true,
+      "allProjectionEventsRecomputedExactly": true,
+      "receipts": [
+        {
+          "eventId": "event_d53668a03b374e7c8cdb",
+          "purpose": "agent_turn",
+          "turnIndex": 0,
+          "projectionSha256": "f1547e624a3acb25e227b24695eae9c132d210ae72e38db33094b015ae896f78",
+          "capsuleSha256": "120053dbb0351ed13873d96485ca5f0f6b1eb811dd027305a789d99b9c2b1cc2",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": [
+            "initial"
+          ]
+        },
+        {
+          "eventId": "event_e9e910a2c75646a5aa47",
+          "purpose": "agent_turn",
+          "turnIndex": 1,
+          "projectionSha256": "423ce103eec091264bbb81f39a17c8c03ebdf1040f68ca9cf6602f33b4f7272f",
+          "capsuleSha256": "442be85255b423d2ba2ca1a9c94f68f100f1c9a9cd27a324854765d2876105f8",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_f55919d92802473798eb",
+          "purpose": "agent_turn",
+          "turnIndex": 2,
+          "projectionSha256": "84167b01fc82aa217fcabb1fcdd65a099879196728845783a6b57a371954dd8e",
+          "capsuleSha256": "211a6f03e851d9b26b612f6c3f58cf067a3851a4b076602fd9e30a466f3e9ca0",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_6ca5b47ca7c5461cbc8d",
+          "purpose": "agent_turn",
+          "turnIndex": 3,
+          "projectionSha256": "86bb99d9f180bf1a86df9888ed891ea9ec3357a7c8b1f8ef9eec5ba2985de4d6",
+          "capsuleSha256": "51bba015f5b97d094037e94dbbaf015a6793eefecb4cc5f915e98f950ae9f395",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_8f817f30dde849ce8c23",
+          "purpose": "agent_turn",
+          "turnIndex": 4,
+          "projectionSha256": "6b18f0998edaaa0ddf63c2d38a324e0e6985cc89bd74c353c51c9bc2d0bb57bd",
+          "capsuleSha256": "febb7b2c9241624f4d3398eb76a88abebbfc56b149a8c3c554f52e0e19dcdb02",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_f2fd97c997834b639c6c",
+          "purpose": "agent_turn",
+          "turnIndex": 5,
+          "projectionSha256": "5bd84402cce3eaccde706144d59f983a66fc7984b6b3af0480939ea2944e9a2f",
+          "capsuleSha256": "62c65b46be310b71030fa3f929b10c0ec7be1cb8e37f2cbfd5ee1d64bc2b0777",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_b27c14a52d3c408aa2db",
+          "purpose": "agent_turn",
+          "turnIndex": 6,
+          "projectionSha256": "d5c722abb2f0dcb1ccdbbfff4843aa11b74e40489402bfc9fcb802dd44b0d229",
+          "capsuleSha256": "2c9893166d396773ce96a166c563ed08079918a4a70aa428ab0bdccc6f1b28b3",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_9491eff439e1435290c1",
+          "purpose": "agent_turn",
+          "turnIndex": 7,
+          "projectionSha256": "b762571a526548c4a65e70bf3b4d2fb7bf6189280c00996418f211a6a0c24013",
+          "capsuleSha256": "d047d68708cd47defb6229ed8f86b45c8bc1f31422178d14486adea924919aa8",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_25e9bd90bdb543deaf89",
+          "purpose": "memory_extraction",
+          "turnIndex": 8,
+          "projectionSha256": "ce1cba791394bf15a1a032eaa4a7d5868da0ff73ebf00d31d5dd42e403a7df81",
+          "capsuleSha256": "6733fcc0272a834407992d7b639d6db135365d944f76b71949296488bb5d294c",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": [
+            "initial"
+          ]
+        }
+      ]
+    },
+    {
+      "runId": "run_034d5d8ce4204084986d",
+      "caseId": "rollout_dependency_plan_v1",
+      "trial": 0,
+      "status": "completed",
+      "taskSuccess": true,
+      "reportSha256": "73a1cc72743cf6381221e9f598d0d610aa7031861a2c0b1fff05b75be156d838",
+      "allBindingsVerified": true,
+      "allProjectionEventsRecomputedExactly": true,
+      "receipts": [
+        {
+          "eventId": "event_f86c44af50564454a375",
+          "purpose": "agent_turn",
+          "turnIndex": 0,
+          "projectionSha256": "854270a192faa2b13653113e0dbd1d6d39550504a30e76d4312313fb54a2d47a",
+          "capsuleSha256": "480661ee2f700d6ca60194c3a11d75c26498fdbd034350bc724849a34e13100f",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": [
+            "initial"
+          ]
+        },
+        {
+          "eventId": "event_f1afe09c68a94c6e849d",
+          "purpose": "agent_turn",
+          "turnIndex": 1,
+          "projectionSha256": "952fc4a7c4eb67260a44c0bc01fc03dafec13c1c4ef15c3ae8b1827ce34871d4",
+          "capsuleSha256": "08e6098499c28c218b99a26a7dafdd519e3fe86a890de280d5eaa777c64429c5",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_fa0abe8cf82b49199463",
+          "purpose": "agent_turn",
+          "turnIndex": 2,
+          "projectionSha256": "1c6d0d55a1f77bf7b3ffecdbd9f594af366d45a3ac74908004d41d741ba487dc",
+          "capsuleSha256": "c6a3648a398e2edcc4a3d453e1f3fdb3976c3e99dd15050c3b6c51f5ca00a6cc",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_d581d8f3d2134d149e9b",
+          "purpose": "agent_turn",
+          "turnIndex": 3,
+          "projectionSha256": "1a81e40dbbaa49d9d5c04bd39eb51f202f1ea51f76ee42a941c599375e57b4f8",
+          "capsuleSha256": "ce8716ed4d153fce99c7fad1862685a5ad49b967a4b0cd11c3bd9af223f1f9a8",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_097acd14db2f485c903a",
+          "purpose": "agent_turn",
+          "turnIndex": 4,
+          "projectionSha256": "ce9c78dc08f7266d3762552acb32c2670bd485d883517a88857154fe876178ca",
+          "capsuleSha256": "616d5c29185fa3879122e7f94dabaf18d101879dc5326f10f3ee112569dcf52c",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_30bb2214d220426990c9",
+          "purpose": "agent_turn",
+          "turnIndex": 5,
+          "projectionSha256": "e2a1ec03f7a38474da87a42074ef3274829bf70f6c8b7c56dc7dd49e8b4c98fe",
+          "capsuleSha256": "2925e8127c05937a81e320e76b4f5e00975357615dffb3d78e16c8cc78cb1625",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_bdd32de36586422d981d",
+          "purpose": "agent_turn",
+          "turnIndex": 6,
+          "projectionSha256": "253509d6bf12c34467750de7d3769c64ddff1cbf8552ebf57ddeade198da1aee",
+          "capsuleSha256": "400a9889c279f94f400a6ef9ed2540d876fac022ff52886136eadfb75c606a05",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_6cf4604fb5674dc9b063",
+          "purpose": "agent_turn",
+          "turnIndex": 7,
+          "projectionSha256": "09b1bbf2969ef02037a62c8aed952aebe794e8252e7219c461a9e5e122b10e37",
+          "capsuleSha256": "d07cdee1ac322f9da64a7b9ad63183529b9872e1f9b18c2004ed863098a3287f",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_577e7a9eca0b42e6af16",
+          "purpose": "agent_turn",
+          "turnIndex": 8,
+          "projectionSha256": "c4fce2c258ab2694a01263d620ac57a9e3848b58da7210e0337c63d357a38bbf",
+          "capsuleSha256": "322a65b9fecb173516dfc9a3994473197db7b683c3ff438da2e5a8ba0269cf5a",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_eaab4187bca942da80e5",
+          "purpose": "agent_turn",
+          "turnIndex": 9,
+          "projectionSha256": "2266bb8e93f4a9498f8b8c4c92af7d7736f305ba2aa86713a4f1106636dadd06",
+          "capsuleSha256": "5cfdf48f9f0cb4ae2fbcfefa15dbdea8b41a2faed894d07c7388b6ceacf26ff5",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_acc1cc12ac3a4c388dae",
+          "purpose": "agent_turn",
+          "turnIndex": 10,
+          "projectionSha256": "b62da973ba471174c2084935cf7df8091266432c4ef1918c0f7a16fdf9f7133f",
+          "capsuleSha256": "2cc29137e367fd9c47975ba78e18cfa98f42ec64322b57b2c79f7f83b0ed2395",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": []
+        },
+        {
+          "eventId": "event_0f95daba33634200bb20",
+          "purpose": "memory_extraction",
+          "turnIndex": 11,
+          "projectionSha256": "52f0c327a7d41e5b69123b7d9197e2004c1f1059fa7e8aaadc33e04829121ab9",
+          "capsuleSha256": "b65e3dc49edc6dd0f3264968066c35ca57069992211c1968000a548b583aa499",
+          "toolSurfaceRevision": 1,
+          "toolSurfaceChanges": [
+            "initial"
+          ]
+        }
+      ]
+    }
+  ],
+  "scope": "A fixed interim audit of settled runs from the ongoing original-baseline campaign. Real emitted schema-2 events reproduce exactly from their bound invocation capsules. Does not qualify complete campaign quality, cache hits, or savings.",
+  "promotionReady": false
+}

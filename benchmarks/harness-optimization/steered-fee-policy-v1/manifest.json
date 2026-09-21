@@ -1,0 +1,19 @@
+{
+  "kind": "napier.harness-scenario-case",
+  "schemaVersion": 1,
+  "id": "steered_fee_policy_v1",
+  "title": "Revise a verified fee policy and resume after a settled edit",
+  "maxTurns": 40,
+  "fixturePath": "fixture",
+  "promptPath": "prompt.md",
+  "outcomeTestPath": "outcome.mjs",
+  "scenarioPath": "scenario.json",
+  "allowedChangedPaths": ["src/fees.mjs"],
+  "requiredTools": [
+    "read_file",
+    "apply_patch",
+    "run_command",
+    "verify_workspace"
+  ],
+  "requiredCompletedTools": ["apply_patch", "verify_workspace"]
+}

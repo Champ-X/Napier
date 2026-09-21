@@ -1,0 +1,137 @@
+{
+  "kind": "napier.validation-envelope-http-pair-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T12:37:36.526Z",
+  "source": "/tmp/napier-harness-validation-envelope-v1",
+  "phase": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/phase-2-result.json",
+    "sha256": "65b8b7edfe39355bdf8bf8c5a1ba9edef2b0c3d1a60b06197f48eceb377d7254"
+  },
+  "candidateReport": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/http_retry_policy_v2-candidate-trial-1/trial-1/result.json",
+    "sha256": "cb467cb1fe1efcb22c66191553f988dc3eeb3a0aff46ff75acf6dc405778fe9a"
+  },
+  "candidate": {
+    "runId": "run_cbe63ac7511f44c0abf2",
+    "status": "completed",
+    "taskSuccess": true,
+    "graderExitCode": 0,
+    "toolFailures": 0,
+    "changed": [
+      "src/retry-after.mjs",
+      "src/retry.mjs"
+    ],
+    "verificationStatuses": [
+      "failed",
+      "passed"
+    ]
+  },
+  "retainedBaseline": {
+    "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v5/http_retry_policy_v2-baseline-trial-1/trial-1/result.json",
+    "reportSha256": "f25e6004ac8ca631b886d00f9b3c32e8d86a600107238f5fa7d1d96428e674fa",
+    "runId": "run_95f03220d4ab4555a6fc",
+    "originalOutcome": false,
+    "metadataModified": false,
+    "newIndependentBaselineRun": false
+  },
+  "predecessorComparison": {
+    "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-failure-invocations-http-v1/http_retry_policy_v2-candidate-trial-1/trial-1/result.json",
+    "reportSha256": "e3475ee8eddcf1ef613000e86f5a260ab716721db886182b0bc7e4fce0ac9a7f",
+    "scope": "Diagnostic predecessor observation only; not pooled as another current candidate trial.",
+    "previousTaskSuccess": true,
+    "currentTaskSuccess": true,
+    "possibleRegression": false
+  },
+  "inputAudit": {
+    "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/http-invocation-audit.json",
+    "sha256": "0a85150827fd3a28e8029b3039769b75631a842a03bce86617b0865764136e1f",
+    "results": [
+      {
+        "arm": "candidate",
+        "runId": "run_cbe63ac7511f44c0abf2",
+        "reportFileSha256": "cb467cb1fe1efcb22c66191553f988dc3eeb3a0aff46ff75acf6dc405778fe9a",
+        "capsulesAudited": 13,
+        "firstInvocationHasPreEditGuidance": true,
+        "preEditPolicyBlocks": 0,
+        "verificationCalls": [
+          {
+            "callId": "call_01_3n5HxqaflYCMMWPeSq0u5928",
+            "arguments": {
+              "runtime": "node",
+              "kind": "test",
+              "target": "test/public.test.mjs"
+            },
+            "sourceCapsuleSha256": "f39259ec30e08e78846b1873a233e7263b3e711e17d410f0c69bc089baf778dc"
+          },
+          {
+            "callId": "call_00_ijdgsxfYqultpE8aSZT85591",
+            "arguments": {
+              "runtime": "node",
+              "kind": "test",
+              "target": "test/public.test.mjs"
+            },
+            "sourceCapsuleSha256": "f39259ec30e08e78846b1873a233e7263b3e711e17d410f0c69bc089baf778dc"
+          }
+        ],
+        "allVerificationCallsCaptured": true,
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "observedWorkspaceSha256": "bf66e059939fcff1a7f8f802a98b267128aa3e57ab943d9b131fba5b437c0c98"
+      }
+    ],
+    "modelRequestEvidenceBindingsVerified": true
+  },
+  "admissions": {
+    "count": 14,
+    "minimumIntervalMs": 30001,
+    "maximumPerRun": 20
+  },
+  "newCostFen": 139,
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 5000,
+    "priorSpendFen": 110,
+    "committedFen": 1512,
+    "remainingFen": 3488,
+    "requests": 207,
+    "reservedRequests": 0,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14"
+    }
+  },
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 2,
+    "cases": 2,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 2",
+      "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+      "http_retry_policy_v2: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "984f16e2cf47913a1ba6d489f9d1342ccdd3fdafef937961efaf4b38d6c16f3e"
+  },
+  "unstartedJobs": 176,
+  "defaultPromotion": false
+}

@@ -1,6 +1,7 @@
 import type { AgentCapabilityPresetId } from "./agent-capabilities.js";
 import type { ModelRef } from "./execution-core.js";
 import type { ModelRouteRequest } from "./model-route.js";
+import type { HarnessPolicyPresetId } from "./harness-experiments.js";
 
 export type PromptImageMimeType =
   | "image/jpeg"
@@ -20,6 +21,7 @@ export interface PromptRequest {
   model?: ModelRef;
   modelRoute?: ModelRouteRequest;
   capabilityPreset?: AgentCapabilityPresetId;
+  harnessPolicyPreset?: HarnessPolicyPresetId;
   sourceContinuityRunId?: string;
 }
 

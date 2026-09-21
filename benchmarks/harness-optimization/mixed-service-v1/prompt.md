@@ -1,0 +1,3 @@
+Repair the booking frontend and Python quote API according to README.md. Only change frontend/booking.ts and backend/quote.py; preserve all other files and do not create reports or verification helpers.
+
+Verify frontend TypeScript types and frontend tests separately from Python tests, using the available toolchain. Start the real development service with workspace_process, runtime=node, args=["dev-server.mjs"], service={"containerPort":8090,"healthPath":"/ready"}. This launches both the TypeScript frontend and Python backend in the same OCI container. Poll the process and inspect readiness, then cancel that same process and confirm it stopped. Briefly state what actually passed and any remaining limitations.

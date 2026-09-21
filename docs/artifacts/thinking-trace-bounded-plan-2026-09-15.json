@@ -1,0 +1,44 @@
+{
+  "kind": "napier.thinking-trace-diagnostic-plan",
+  "createdAt": "2026-09-15T02:40:54.557Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-thinking-trace-core-v14/plan.json",
+  "planSha256": "fdd64e6b4159c2ec8274f835143b019370067631f25345a60bf7ae894d0fe2fa",
+  "source": "/tmp/napier-harness-thinking-trace-v1",
+  "sourceFreezeSha256": "61982c8f12e08f92016ea1e3fef8619da068645c64979dab675f3e187acfb5f0",
+  "boundFiles": 5648,
+  "dispatchIndices": [
+    33,
+    32
+  ],
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 8438,
+    "remainingFen": 1562,
+    "requests": 712,
+    "reservedRequests": 7,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "Previous cancelled JSON Patch reasoning was not preserved, so observed counts cannot distinguish repetitive vs productive reasoning. A single candidate-first original pair under the frozen combined multiline-input/trace source is necessary to capture actual failed reasoning or establish this task completion. Local tests cannot reproduce actual model reasoning. Stop on candidate/evidence failure; baseline runs only on candidate success. No later batch queued.",
+  "scope": "Original task/grader, v3 profile, driver v8, 64 admissions/Run, 15-second serial intervals, token budget and 15-minute deadline unchanged. Complete 30-case/3-trial gate retained. Historical results do not qualify this source; traces are local diagnostic evidence, not provider billing receipts.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

@@ -363,7 +363,7 @@ export function assertWebUiE2eReceipt(receipt) {
   );
   assert.deepEqual(receipt?.runtime?.runningArtifactPreview, {
     visible: true,
-    sandbox: "",
+    sandbox: "allow-scripts",
     path: "artifacts/running-preview.html",
   });
   assert.equal(receipt?.runtime?.runningArtifactInspector, true);

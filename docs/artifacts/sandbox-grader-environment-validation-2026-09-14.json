@@ -1,0 +1,377 @@
+{
+  "kind": "napier.sandbox-grader-environment-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T12:37:36.528Z",
+  "code": [
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-sandbox-grader.mjs",
+      "sha256": "60574b3112910e65e56cebdd97a2c006d373b28e8ac9f7614cc71051043ab165"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-grader-evidence.mjs",
+      "sha256": "5598e230f9140e451ec0dab4f2ec86e55d679bb4ae298f9391972631faa4aafe"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-sandbox-grader.test.mjs",
+      "sha256": "ec6d35be6d656424e77613033b759c04f0eebb1d5692ab993722fa98971c6e57"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-campaign-evidence.mjs",
+      "sha256": "4aa1511df60dc2c35a4f012ce5728b3fbae9deda722d49b87f40404550ccc644"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/run-harness-optimization-campaign.mjs",
+      "sha256": "aab63e689728cbeae0837bcfd81bdfe94b12e0f4901b418439178d0e4671123e"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/run-harness-optimization-suite.mjs",
+      "sha256": "aa03427b0321364e5514350034370b2b481ec9c4d9c513a64233ba85de2c56a8"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-paired-suite-cli.test.mjs",
+      "sha256": "4f9ca1969f5560cfedb217ad81ca318bf7bd92a75f2d61b4c133128a3f9a0623"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/scripts/harness-booking-contract-oracle.test.mjs",
+      "sha256": "d3c450c0d5cc325627891002de2916fd6f73891cd8da45e66c34c3758f48722b"
+    }
+  ],
+  "probeReceipt": {
+    "path": "/Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/result.json",
+    "sha256": "76640ae0e2e46649a1b30ae2e1eb7e29adcc11632bcd213a4a85ddb390ec6ed7"
+  },
+  "probe": {
+    "kind": "napier.harness-sandbox-grader-oci-validation",
+    "schemaVersion": 1,
+    "createdAt": "2026-09-14T12:31:57.883Z",
+    "source": "/tmp/napier-harness-validation-envelope-v1",
+    "output": "/Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr",
+    "image": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+    "configuration": {
+      "kind": "napier.harness-grader-configuration",
+      "schemaVersion": 1,
+      "mode": "sandbox",
+      "sandboxId": "oci-container",
+      "runtimes": [
+        {
+          "runtime": "node",
+          "executable": "/usr/local/bin/node",
+          "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+        },
+        {
+          "runtime": "python",
+          "executable": "/usr/bin/python3.13",
+          "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+          "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+        }
+      ],
+      "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+    },
+    "hostPython": "Python 3.9.6",
+    "results": [
+      {
+        "variant": "original",
+        "workspaceRoot": "/Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/original",
+        "host": {
+          "exitCode": 0,
+          "stderr": ""
+        },
+        "sandbox": {
+          "runId": "probe_original",
+          "sandbox": "oci-container",
+          "observedWorkspace": {
+            "kind": "napier.harness-observed-workspace",
+            "schemaVersion": 1,
+            "runId": "probe_original",
+            "files": {
+              "README.md": "c82d550969923349cd0af6996294d1e7f01910872ed353ef38276f3b3a87199c",
+              "src/intervals.py": "98f427cef5cbad5768fea9f448052ccf22fac2480d4178519074d5d29a054354",
+              "src/scheduling.py": "030132c5cf12354fb63bed66cd2f0d93cb62925688e463078b4f2af64373c6b6",
+              "tests/test_public.py": "1ef7335898b54a5df8de6dd4f816bcc00c5629b7b7a813e4e0e917d67af79037"
+            },
+            "contentSha256": "eeec62e4efd4626f5f0a078a946446e5ea3a4fcc12d3ff4ca0bc51ab53ff5417"
+          },
+          "outcomeSha256": "f62db32dfbeb32e9363177cbd6f6766bd43b7c65a4b7088068ae0ef942e1883a",
+          "graderConfiguration": {
+            "kind": "napier.harness-grader-configuration",
+            "schemaVersion": 1,
+            "mode": "sandbox",
+            "sandboxId": "oci-container",
+            "runtimes": [
+              {
+                "runtime": "node",
+                "executable": "/usr/local/bin/node",
+                "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+                "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+              },
+              {
+                "runtime": "python",
+                "executable": "/usr/bin/python3.13",
+                "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+                "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+              }
+            ],
+            "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+          },
+          "graderExecution": {
+            "kind": "napier.harness-grader-execution",
+            "schemaVersion": 1,
+            "runId": "probe_original",
+            "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+            "graderSha256": "f62db32dfbeb32e9363177cbd6f6766bd43b7c65a4b7088068ae0ef942e1883a",
+            "graderRelativePath": "__napier_external_grader__.mjs",
+            "observedWorkspaceSha256": "eeec62e4efd4626f5f0a078a946446e5ea3a4fcc12d3ff4ca0bc51ab53ff5417",
+            "workspaceBeforeSha256": "7501f806348c50908b3e532059cdc93d3754ba2478580300c7e71864905993f4",
+            "workspaceAfterSha256": "7501f806348c50908b3e532059cdc93d3754ba2478580300c7e71864905993f4",
+            "workspaceUnchanged": true,
+            "processStatus": "exited",
+            "exitCode": 0,
+            "signal": null,
+            "stdoutSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reportOutputSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "observationComplete": true,
+            "passed": true,
+            "contentSha256": "ad5f058a0b5fefc527b59cc7bb2cdd11d0c4a886ebd165075d895951886a7af7"
+          },
+          "graderExitCode": 0,
+          "graderOutput": "Independent behavior checks passed\n",
+          "taskSuccess": true
+        }
+      },
+      {
+        "variant": "native_iso_z",
+        "workspaceRoot": "/Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/native_iso_z",
+        "host": {
+          "exitCode": 1,
+          "stderr": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Traceback (most recent call last):\n  File \"<string>\", line 6, in <module>\n  File \"/Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/native_iso_z/src/scheduling.py\", line 11, in next_free\n    current=normalize_bookings(bookings)\n  File \"/Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/native_iso_z/src/intervals.py\", line 16, in normalize_bookings\n    start=parse_instant(b.get('start'));end=parse_instant(b.get('end'))\n  File \"/Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/native_iso_z/src/intervals.py\", line 6, in parse_instant\n    result=datetime.fromisoformat(text)\nValueError: Invalid isoformat string: '2026-09-01T10:00:00Z'\n\n\n1 !== 0\n\n    at file:///Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/native_iso_z/__napier_external_grader__.mjs:3:92\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: 1,\n  expected: 0,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n"
+        },
+        "sandbox": {
+          "runId": "probe_native_iso_z",
+          "sandbox": "oci-container",
+          "observedWorkspace": {
+            "kind": "napier.harness-observed-workspace",
+            "schemaVersion": 1,
+            "runId": "probe_native_iso_z",
+            "files": {
+              "README.md": "c82d550969923349cd0af6996294d1e7f01910872ed353ef38276f3b3a87199c",
+              "src/intervals.py": "3b1a2ddf4d3baafbe29723ee8838b5fa10c06e923647ca65d8bfd9673ea159d4",
+              "src/scheduling.py": "030132c5cf12354fb63bed66cd2f0d93cb62925688e463078b4f2af64373c6b6",
+              "tests/test_public.py": "1ef7335898b54a5df8de6dd4f816bcc00c5629b7b7a813e4e0e917d67af79037"
+            },
+            "contentSha256": "f417b5c24a06db26af91477e048e1f34d807596cba86299a97fd41bef318307a"
+          },
+          "outcomeSha256": "f62db32dfbeb32e9363177cbd6f6766bd43b7c65a4b7088068ae0ef942e1883a",
+          "graderConfiguration": {
+            "kind": "napier.harness-grader-configuration",
+            "schemaVersion": 1,
+            "mode": "sandbox",
+            "sandboxId": "oci-container",
+            "runtimes": [
+              {
+                "runtime": "node",
+                "executable": "/usr/local/bin/node",
+                "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+                "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+              },
+              {
+                "runtime": "python",
+                "executable": "/usr/bin/python3.13",
+                "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+                "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+              }
+            ],
+            "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+          },
+          "graderExecution": {
+            "kind": "napier.harness-grader-execution",
+            "schemaVersion": 1,
+            "runId": "probe_native_iso_z",
+            "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+            "graderSha256": "f62db32dfbeb32e9363177cbd6f6766bd43b7c65a4b7088068ae0ef942e1883a",
+            "graderRelativePath": "__napier_external_grader__.mjs",
+            "observedWorkspaceSha256": "f417b5c24a06db26af91477e048e1f34d807596cba86299a97fd41bef318307a",
+            "workspaceBeforeSha256": "dda606ba5e9dad5da531e1fe004f9d897e0e8f5ef01ae56b24390bf3a8eb136c",
+            "workspaceAfterSha256": "dda606ba5e9dad5da531e1fe004f9d897e0e8f5ef01ae56b24390bf3a8eb136c",
+            "workspaceUnchanged": true,
+            "processStatus": "exited",
+            "exitCode": 0,
+            "signal": null,
+            "stdoutSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "reportOutputSha256": "1d1daa1afd30b03fa1cb377f8045957a41a85604463d4fcf70cb6ce37118e7b0",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "observationComplete": true,
+            "passed": true,
+            "contentSha256": "b12cecee9571842ec6e906b7d5cfd56cfaab47867ca830eefa61175545e83a0e"
+          },
+          "graderExitCode": 0,
+          "graderOutput": "Independent behavior checks passed\n",
+          "taskSuccess": true
+        }
+      },
+      {
+        "variant": "incorrect_conflicts",
+        "workspaceRoot": "/Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/incorrect_conflicts",
+        "host": {
+          "exitCode": 1,
+          "stderr": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Traceback (most recent call last):\n  File \"<string>\", line 9, in <module>\nAssertionError\n\n\n1 !== 0\n\n    at file:///Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/incorrect_conflicts/__napier_external_grader__.mjs:3:92\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: 1,\n  expected: 0,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n"
+        },
+        "sandbox": {
+          "runId": "probe_incorrect_conflicts",
+          "sandbox": "oci-container",
+          "observedWorkspace": {
+            "kind": "napier.harness-observed-workspace",
+            "schemaVersion": 1,
+            "runId": "probe_incorrect_conflicts",
+            "files": {
+              "README.md": "c82d550969923349cd0af6996294d1e7f01910872ed353ef38276f3b3a87199c",
+              "src/intervals.py": "98f427cef5cbad5768fea9f448052ccf22fac2480d4178519074d5d29a054354",
+              "src/scheduling.py": "d08118ef519fe3b710ba18e255de26312d66c7e10fb95b9148d0409e2832dee4",
+              "tests/test_public.py": "1ef7335898b54a5df8de6dd4f816bcc00c5629b7b7a813e4e0e917d67af79037"
+            },
+            "contentSha256": "2c70e5dbd8d399df195057effc6b911c6397bc510efb7bfe4b2dfd8e7b1f4086"
+          },
+          "outcomeSha256": "f62db32dfbeb32e9363177cbd6f6766bd43b7c65a4b7088068ae0ef942e1883a",
+          "graderConfiguration": {
+            "kind": "napier.harness-grader-configuration",
+            "schemaVersion": 1,
+            "mode": "sandbox",
+            "sandboxId": "oci-container",
+            "runtimes": [
+              {
+                "runtime": "node",
+                "executable": "/usr/local/bin/node",
+                "executableSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+                "runtimeIdentitySha256": "b0227988e8a83a6c3201b4cd08a2a88979d323af34d1e9517f25d488caf85541"
+              },
+              {
+                "runtime": "python",
+                "executable": "/usr/bin/python3.13",
+                "executableSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+                "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0"
+              }
+            ],
+            "contentSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0"
+          },
+          "graderExecution": {
+            "kind": "napier.harness-grader-execution",
+            "schemaVersion": 1,
+            "runId": "probe_incorrect_conflicts",
+            "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+            "graderSha256": "f62db32dfbeb32e9363177cbd6f6766bd43b7c65a4b7088068ae0ef942e1883a",
+            "graderRelativePath": "__napier_external_grader__.mjs",
+            "observedWorkspaceSha256": "2c70e5dbd8d399df195057effc6b911c6397bc510efb7bfe4b2dfd8e7b1f4086",
+            "workspaceBeforeSha256": "3f94b5d18d06899cb50c4edf5a1421104b7d0f8a54a794de6bd8944703658c69",
+            "workspaceAfterSha256": "3f94b5d18d06899cb50c4edf5a1421104b7d0f8a54a794de6bd8944703658c69",
+            "workspaceUnchanged": true,
+            "processStatus": "exited",
+            "exitCode": 1,
+            "signal": null,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e163a7db0dd2346e30b64894b6d82f9ed816395425f5d55ffbade1a34bed83c5",
+            "reportOutputSha256": "e163a7db0dd2346e30b64894b6d82f9ed816395425f5d55ffbade1a34bed83c5",
+            "stdoutTruncated": false,
+            "stderrTruncated": false,
+            "observationComplete": true,
+            "passed": false,
+            "contentSha256": "b4967f612525836a27a7e5f237ee4838530f709f2a516c78831588787dfda405"
+          },
+          "graderExitCode": 1,
+          "graderOutput": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Traceback (most recent call last):\n  File \"<string>\", line 9, in <module>\n    assert out['conflicts']==['a','b'] and not out['accepted'];out['bookings'][0]['id']='changed';assert b==saved\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n\n\n1 !== 0\n\n    at file:///Users/champ/.cache/napier-oci-scratch/grader-version-skew-gMWKUr/incorrect_conflicts/__napier_external_grader__.mjs:3:92\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:633:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: 1,\n  expected: 0,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.16.0\n",
+          "taskSuccess": false
+        }
+      }
+    ],
+    "isolation": {
+      "status": 0,
+      "stdout": "{\"node\":\"v24.16.0\",\"python\":\"Python 3.13.5\",\"readOnly\":true,\"onlyLoopback\":true}\n",
+      "stderr": "",
+      "receipt": {
+        "kind": "napier.harness-grader-execution",
+        "schemaVersion": 1,
+        "runId": "probe_isolation",
+        "configurationSha256": "726d69c418197d88604db3d060a9a86a15b40d4cb5dc9ab25004235b97c6bcd0",
+        "graderSha256": "591c3ca3d278f407d87edc60258098dc1486f067b415246bfc097eb2c03ef53c",
+        "graderRelativePath": "__napier_external_grader__.mjs",
+        "observedWorkspaceSha256": "7cdd2da48aa75c581d36b28889750357b8f5d0ec3a671a24252775b7d254b911",
+        "workspaceBeforeSha256": "04678e347af9d9b65a773feed203c126096df4e711dd80193421f22860ec2204",
+        "workspaceAfterSha256": "04678e347af9d9b65a773feed203c126096df4e711dd80193421f22860ec2204",
+        "workspaceUnchanged": true,
+        "processStatus": "exited",
+        "exitCode": 0,
+        "signal": null,
+        "stdoutSha256": "8986f25d466c824f670ad119e108de88ec89f595a22f0c015901b50961b5f065",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reportOutputSha256": "8986f25d466c824f670ad119e108de88ec89f595a22f0c015901b50961b5f065",
+        "stdoutTruncated": false,
+        "stderrTruncated": false,
+        "observationComplete": true,
+        "passed": true,
+        "contentSha256": "a4d7a8623a37bb0d24d8b9cd57c839d2daccd28bb9cf3a96d59f2d2ed96059e2"
+      }
+    },
+    "originalBenchmarkUnchanged": true,
+    "realModelRequests": 0,
+    "scope": "Offline read-only Python library oracle using the actual OCI adapter; not an Agent Run or additional quality observation",
+    "scriptSha256": "ccec5a0e79a68b3662d8a7738697dee872acf2d7235daae96bd85e78c89c64d0"
+  },
+  "focusedTests": {
+    "path": "/tmp/napier-sandbox-grader-focused-tests-v1.json",
+    "sha256": "6177398db1a39ab52409c3997bd61cdee4041cb3e21d8ed1131493aa7ea80aca",
+    "passed": 43,
+    "failed": 0,
+    "files": 5
+  },
+  "bookingOracle": {
+    "oldVersion": "booking-calendar-v1",
+    "newVersion": "booking-calendar-v2",
+    "testReport": {
+      "path": "/tmp/napier-booking-contract-oracle-tests-v2.json",
+      "sha256": "71246d877ee69560f8ce4b454143e1fb18dd5b88d6e29400fefc0efb121f518c"
+    },
+    "passed": 7,
+    "failed": 0,
+    "outcome": {
+      "path": "/Users/champ/orca/Napier/benchmarks/harness-optimization/booking-calendar-v2/outcome.mjs",
+      "sha256": "51be040b93c1532e04f32824e4c8d4ac2ea13addc46c96496993cd4e529e6958"
+    },
+    "taskBytesUnchanged": true,
+    "scope": "Only remove unspecified rejection exception classes; keep explicit ValueError and invalid-input rejection requirements",
+    "includedInCurrentFrozenSuite": false
+  },
+  "realModelRequestsForGraderWork": 0,
+  "runtimeSourceChanged": false,
+  "paidDriverChanged": false,
+  "newRootDriverPaidCampaigns": 0,
+  "currentSpending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 5000,
+    "priorSpendFen": 110,
+    "committedFen": 1512,
+    "remainingFen": 3488,
+    "requests": 207,
+    "reservedRequests": 0,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14"
+    }
+  },
+  "qualityClaim": "Deterministic grader validation only; no new independent Agent observations or default promotion"
+}

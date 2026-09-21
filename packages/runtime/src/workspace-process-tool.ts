@@ -4,9 +4,11 @@ import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
+  COMMAND_ARGUMENT_PATTERN,
+  COMMAND_PATH_PATTERN,
   MAX_COMMAND_TIMEOUT_MS,
   MIN_COMMAND_TIMEOUT_MS,
-} from "./command-execution.js";
+} from "./command-execution-input.js";
 import {
   MAX_WORKSPACE_PROCESS_INPUT_BYTES,
   MAX_WORKSPACE_PROCESS_POLL_WAIT_MS,
@@ -24,6 +26,7 @@ import {
   workspaceProcessWritePreviewToolResult as writePreviewToolResult,
 } from "./workspace-process-tool-result.js";
 import { workspaceProcessWriteActionSchema } from "./workspace-process-write-tool-schema.js";
+import { workspaceToolchainEnvironment } from "./toolchain-process-options.js";
 import {
   defineToolProgress,
   progressSemantics,
@@ -39,7 +42,7 @@ const workspaceProcessSchema = Type.Union([
       args: Type.Array(
         Type.String({
           maxLength: 2_048,
-          pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+          pattern: COMMAND_ARGUMENT_PATTERN,
         }),
         { maxItems: 64 },
       ),
@@ -47,7 +50,7 @@ const workspaceProcessSchema = Type.Union([
         Type.String({
           minLength: 1,
           maxLength: 500,
-          pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+          pattern: COMMAND_PATH_PATTERN,
         }),
       ),
       timeoutMs: Type.Optional(
@@ -147,7 +150,7 @@ export function createWorkspaceProcessTool(
     name: "workspace_process",
     label: "Workspace process",
     description:
-      "Start/control Node or POSIX shell/CLI; shell takes one script, Node literal argv. Text is redacted; starts are read-only. Writes: preview_write (1-8 scopes), then start_write, with Delta. OCI service: one health-checked port, outbound denied. Host-direct has no isolation/enforced boundaries and rejects services.",
+      "Node literal argv; POSIX shell/CLI takes one script. Text is redacted; starts are read-only. Writes: preview_write (1-8 scopes), then start_write, with Delta. OCI service: one health-checked port, outbound denied. Host-direct has no isolation/enforced boundaries and rejects services.",
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
       assertExclusiveProcessIoMode(input);
@@ -156,6 +159,7 @@ export function createWorkspaceProcessTool(
       if (input.action === "preview_write") {
         const preview = await manager.previewWrite({
           ...context,
+          ...workspaceToolchainEnvironment(input.runtime),
           command: {
             runtime: input.runtime,
             args: input.args,
@@ -185,6 +189,7 @@ export function createWorkspaceProcessTool(
       if (input.action === "start") {
         const session = await manager.start({
           ...context,
+          ...workspaceToolchainEnvironment(input.runtime),
           command: {
             runtime: input.runtime,
             args: input.args,
@@ -251,8 +256,18 @@ export function createWorkspaceProcessTool(
     schemaVersion: 1,
     classificationVersion: "1.0.0",
     modes: [
-      { modeId: "observe_process", operation: "observe", scope: "session", contribution: "neutral" },
-      { modeId: "start_workspace_write", operation: "mutate", scope: "workspace", contribution: "neutral" },
+      {
+        modeId: "observe_process",
+        operation: "observe",
+        scope: "session",
+        contribution: "neutral",
+      },
+      {
+        modeId: "start_workspace_write",
+        operation: "mutate",
+        scope: "workspace",
+        contribution: "neutral",
+      },
     ],
     resolve: (input, result) => {
       const action = recordValue(input)["action"];

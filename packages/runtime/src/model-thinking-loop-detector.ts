@@ -142,9 +142,28 @@ function overplanning(
     .filter(Boolean);
   const headings = lines.filter((line) => HEADING.test(line));
   if (headings.length < 8) return undefined;
+  // Many distinct obligations legitimately need headings. Require repeated
+  // substantive content, not just formatting or the absence of file paths.
+  // Exclude the last section: its streamed body may still be incomplete.
+  const completed: string[] = [];
+  let body: string[] | undefined;
+  for (const line of lines) {
+    if (HEADING.test(line)) {
+      if (body) completed.push(normalizeUnit(body.join(" ")));
+      body = [];
+    } else body?.push(line);
+  }
+  const recent = completed.slice(-8);
+  const latest = recent.at(-1);
+  if (
+    !latest ||
+    latest.length < 96 ||
+    recent.filter((section) => section === latest).length < 3
+  )
+    return undefined;
   return evidence(
     "overplanning_headings",
-    headings.slice(-8).join("\n"),
+    latest,
     attempt,
     observedBytes,
     chunks,

@@ -38,7 +38,12 @@ export function createEffectiveCapabilitiesPromptBuilder(
       throw new Error("Model Harness Prompt model identity is inconsistent");
     }
     return [
-      formatEffectiveCapabilitiesPrompt({ ...input, activeTools }),
+      formatEffectiveCapabilitiesPrompt({
+        ...input,
+        activeTools,
+        verificationOrder:
+          input.harnessExperimentProfile?.policies?.context.verificationOrder,
+      }),
       formatModelHarnessPrompt(
         applyModelHarnessExperimentProfile(
           input.model,

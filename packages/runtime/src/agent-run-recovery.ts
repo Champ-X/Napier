@@ -25,6 +25,7 @@ import {
 } from "./research-recovery-options.js";
 import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import { isWorkflowRunSource } from "./workflow-node-execution.js";
+import { inheritedHarnessPolicyOptions } from "./harness-run-policy.js";
 
 type RunPrompt = (options: RunPromptOptions) => Promise<RunRecord>;
 
@@ -61,6 +62,7 @@ export async function resumeInterruptedAgentRun(
 
   const events = await host.store.listRunEvents(interrupted.id);
   const recoveryOptions: RunPromptOptions = {
+    ...inheritedHarnessPolicyOptions(events, interrupted.id),
     threadId: thread.id,
     text: buildRunRecoveryPrompt(
       interrupted,
@@ -105,6 +107,10 @@ export async function continueAnsweredOperatorDecision(
     decision.runId,
   );
   return host.runPrompt({
+    ...inheritedHarnessPolicyOptions(
+      await host.store.listRunEvents(continuation.originRun.id),
+      continuation.originRun.id,
+    ),
     threadId: options.threadId,
     text: formatOperatorDecisionContinuation(decision),
     ...continuation.runOptions,
@@ -154,6 +160,7 @@ export async function resumeInterruptedAgentRunAutomatically(
 
   const events = await host.store.listRunEvents(interrupted.id);
   const recoveryOptions: RunPromptOptions = {
+    ...inheritedHarnessPolicyOptions(events, interrupted.id),
     threadId: thread.id,
     text: buildRunRecoveryPrompt(
       interrupted,

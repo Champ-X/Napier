@@ -80,6 +80,7 @@ export interface SubagentLimits {
 
 export interface RunLimits {
   maxTurns: number;
+  /** 0 means no cumulative token limit for the Run. */
   maxTotalTokens: number;
   maxCostUsd: number;
   timeoutMs: number;

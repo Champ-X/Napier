@@ -220,6 +220,13 @@ export function prepareModelHarnessCall(input: {
     initialResolution,
     input.context.messages,
   );
+  if (
+    input.harnessExperimentProfile?.policies?.context.prompt === "stable-v1"
+  ) {
+    tools.active = tools.active.toSorted((a, b) =>
+      a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+    );
+  }
   const resolution = applyModelHarnessExperimentProfile(
     input.model,
     resolveModelHarnessResolution({
@@ -307,6 +314,7 @@ function selectTools(
   }
   const protectedNames = unique([
     ...hardProtectedNames,
+    ...activeOperationTools(messages),
     ...taskPhases.flatMap((phase) => PHASE_CORE_TOOLS[phase]),
     ...usedToolNames(messages),
     ...taskPhases.flatMap((phase) => PHASE_REQUIRED_TOOLS[phase]),
@@ -328,6 +336,26 @@ function selectTools(
     active: tools.filter((tool) => selected.has(tool.name)),
     omitted: tools.filter((tool) => !selected.has(tool.name)),
   };
+}
+
+// Once a Plan operation succeeds, retain the tools needed to finish its
+// lifecycle. A larger process/tool surface must not strand a produced artifact.
+// These are still intersected with the currently admitted tool definitions.
+function activeOperationTools(messages: Context["messages"]): string[] {
+  const planTools = [
+    "create_plan",
+    "update_plan_step",
+    "update_plan_artifact",
+    "replan_plan",
+  ];
+  return messages.some(
+    (message) =>
+      message.role === "toolResult" &&
+      !message.isError &&
+      planTools.includes(message.toolName),
+  )
+    ? planTools
+    : [];
 }
 
 function usedToolNames(messages: Context["messages"]): string[] {

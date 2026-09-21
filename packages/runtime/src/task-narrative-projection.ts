@@ -174,8 +174,9 @@ function settlementNarrative(
     return {
       phase: "waiting",
       phaseLabel: partial ? "Partial" : "Paused",
+      ...(partial && run.error ? { blocker: run.error } : {}),
       currentAction: partial
-        ? "Partial result preserved at the budget boundary"
+        ? "Partial result preserved after the run stopped"
         : "Run paused at its budget boundary",
       completedItems,
       metricRunId: run.id,

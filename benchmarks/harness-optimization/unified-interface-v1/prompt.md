@@ -1,0 +1,1 @@
+Fix shippingCostCents in src/shipping.js so that shipping is free at exactly 5000 cents for both members and non-members. Preserve validation and all other pricing rules. Read before editing. Modify only src/shipping.js. If apply_patch declares operation unified_diff, use it for this edit; otherwise use its existing exact replacement format. Finish with a concise result.

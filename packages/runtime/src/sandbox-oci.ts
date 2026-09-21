@@ -18,6 +18,8 @@ import {
 } from "./sandbox-container-service.js";
 import { resolveContainerLspRuntime } from "./sandbox-container-lsp-runtime.js";
 import { resolveContainerNodeDebuggerRuntime } from "./sandbox-container-node-debugger-runtime.js";
+import { resolveContainerPythonDebuggerRuntime } from "./sandbox-container-python-debugger-runtime.js";
+import type { SandboxPythonDebuggerRuntimeBinding } from "./sandbox-types.js";
 import { createOciContainerPathMapping } from "./sandbox-container-path-mapping.js";
 import { resolveContainerVerificationRuntime } from "./sandbox-container-verification-runtime.js";
 import {
@@ -78,6 +80,9 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
   private lspRuntimeBinding: Promise<SandboxLspRuntimeBinding> | undefined;
   private nodeDebuggerRuntimeBinding:
     | Promise<SandboxNodeDebuggerRuntimeBinding>
+    | undefined;
+  private pythonDebuggerRuntimeBinding:
+    | Promise<SandboxPythonDebuggerRuntimeBinding>
     | undefined;
   private verificationRuntimeBinding:
     | Promise<SandboxVerificationRuntimeBinding>
@@ -164,6 +169,23 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       return await this.verificationRuntimeBinding;
     } catch (error) {
       this.verificationRuntimeBinding = undefined;
+      throw error;
+    }
+  }
+
+  async resolvePythonDebuggerRuntime(): Promise<SandboxPythonDebuggerRuntimeBinding> {
+    const executable = await resolveContainerLaunchExecutable(this.executable);
+    const identity = await this.resolveImage(executable);
+    this.pythonDebuggerRuntimeBinding ??= resolveContainerPythonDebuggerRuntime(
+      identity,
+      this.containerClient,
+      this.userIds,
+      this.daemonEndpoint,
+    );
+    try {
+      return await this.pythonDebuggerRuntimeBinding;
+    } catch (error) {
+      this.pythonDebuggerRuntimeBinding = undefined;
       throw error;
     }
   }

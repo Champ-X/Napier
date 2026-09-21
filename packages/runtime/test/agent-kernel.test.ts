@@ -464,6 +464,31 @@ describe("Agent Kernel", () => {
         (event) => event.type === "model.harness.resolved",
       );
       expect(harnessEvents).toHaveLength(2);
+      const timingEvents = (await services.store.listEvents(thread.id)).filter(
+        (event) => event.type === "model.stream.timing",
+      );
+      expect(timingEvents).toHaveLength(2);
+      const invocationEnvelopes = new Set(
+        (await services.store.listEvents(thread.id))
+          .filter(
+            (event) =>
+              event.type === "context.model_invocation" &&
+              event.payload.purpose === "agent_turn",
+          )
+          .map((event) => event.payload.contextEnvelopeSha256),
+      );
+      for (const event of timingEvents) {
+        expect(
+          invocationEnvelopes.has(event.payload.contextEnvelopeSha256),
+        ).toBe(true);
+        expect(event.payload).toMatchObject({
+          kind: "napier.model-stream-timing",
+          terminal: "done",
+          purpose: "agent_turn",
+          clock: "monotonic_performance_now",
+          elapsedMs: expect.any(Number),
+        });
+      }
       expect(harnessEvents[0]?.payload).toEqual(
         expect.objectContaining({
           family: "generic",

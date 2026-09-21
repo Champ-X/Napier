@@ -1,0 +1,346 @@
+{
+  "kind": "napier.large-workspace-provider-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T01:57:34.889915+00:00",
+  "sourceArchive": {
+    "path": "/tmp/napier-large-provider-current-v1",
+    "scope": "Selected sources, test cases and compiled modules only; not a complete executable snapshot.",
+    "matchesFinalSource": true
+  },
+  "files": [
+    {
+      "path": "packages/runtime/src/python-toolchain.ts",
+      "sha256": "093f28103a61c98a95634ef57ee9bdbfa9f055d7f5db28e99e244c1cb739dd61"
+    },
+    {
+      "path": "packages/runtime/src/affected-test-selection.ts",
+      "sha256": "10f55c929f4dbc39e82008f9255ea435a8c31dfcc8f11cb47f8e1127eb10523f"
+    },
+    {
+      "path": "packages/runtime/src/affected-test-verification.ts",
+      "sha256": "98431f8161a50e1aa5b784ceba0c26ea2505ec6929685dd7b1e0a32e250d2aac"
+    },
+    {
+      "path": "packages/runtime/src/task-working-state.ts",
+      "sha256": "bf5beea7de5ada32ea11036bd561d03ff3ac61aba13463020c1d099b129bc46d"
+    },
+    {
+      "path": "packages/runtime/src/agent-working-state-context.ts",
+      "sha256": "0d63b720061e0008faf6acf42465769110a025a2ee90fa11f665d9667e9ad19a"
+    },
+    {
+      "path": "packages/runtime/src/verification-test-runner.ts",
+      "sha256": "6f4fefd51c3017b1377436dee7d01540d0a5eabaa11993bc2b44525a201a9126"
+    },
+    {
+      "path": "packages/runtime/src/verification-test-sources.ts",
+      "sha256": "e0c6217bf3d9a209f8deb4a0fbad8974bf464886436ec13bae1973e3917895b7"
+    },
+    {
+      "path": "packages/runtime/src/verification-workspace-digest.ts",
+      "sha256": "cae0dd218feefe8c8692fadb72e4e7cf60a76e451a75ea02ca138ef7d00f59c0"
+    },
+    {
+      "path": "packages/runtime/src/verification-workspace-snapshot.ts",
+      "sha256": "9297251b075544d61d404851e6b48109789e5f4604072f14020a7720756bd23c"
+    },
+    {
+      "path": "packages/runtime/src/verification.ts",
+      "sha256": "b904da3a5a0b28553b3aaa3fa69747e3565fcd22700da3ddd246de6f7780b946"
+    },
+    {
+      "path": "packages/runtime/dist/python-toolchain.js",
+      "sha256": "df8a9d5211c43baf362214fe37090856460faecb8de632f3689027c3457d5d92"
+    },
+    {
+      "path": "packages/runtime/dist/python-toolchain.d.ts",
+      "sha256": "13d58b2b5d1144d7cf70fd2469437082b3d3d11bd88f08a3af438c18513fb967"
+    },
+    {
+      "path": "packages/runtime/dist/affected-test-selection.js",
+      "sha256": "37ed144a1101793f7886eef3eadce920b91ebafb6ade29a8216f0476a986167b"
+    },
+    {
+      "path": "packages/runtime/dist/affected-test-selection.d.ts",
+      "sha256": "36d477a999b45129c9a2746f56196b08ed36efd11d8a6601640244af7d57e96a"
+    },
+    {
+      "path": "packages/runtime/dist/affected-test-verification.js",
+      "sha256": "11687f340dd954530cd861319d8a5fb09530d208998c6f2a572943f89576abc6"
+    },
+    {
+      "path": "packages/runtime/dist/affected-test-verification.d.ts",
+      "sha256": "8719c4688c40dbdbab2e7365ce3ca56cdca286555ad8299cd60d273ff9ac96a6"
+    },
+    {
+      "path": "packages/runtime/dist/task-working-state.js",
+      "sha256": "f8d5487d6ad4ff8a32ad76c78e6804f82e971674fd48b275a272e98b234ef1a6"
+    },
+    {
+      "path": "packages/runtime/dist/task-working-state.d.ts",
+      "sha256": "65a34fec2bd67a58f02f61e02be3b3a9c4df2abad0112498cfec426894d31b7d"
+    },
+    {
+      "path": "packages/runtime/dist/agent-working-state-context.js",
+      "sha256": "72f28e9af5965d51f74665ff5d99661322edfa5ca13a327523df0637e0e2316f"
+    },
+    {
+      "path": "packages/runtime/dist/agent-working-state-context.d.ts",
+      "sha256": "3116e37dbfa08c86d6fab4272be039a4e54f138eac39e3d3894c8a6a15257a1f"
+    },
+    {
+      "path": "packages/runtime/dist/verification-test-runner.js",
+      "sha256": "7387ab3fad1cb6650896cf83d42ca5039acf39b120a6058dd0c186a19cdc5447"
+    },
+    {
+      "path": "packages/runtime/dist/verification-test-runner.d.ts",
+      "sha256": "6501ef040770ce54b55bc1d5630ccd865b304c4ae0be5ef3dd5cea498356ae23"
+    },
+    {
+      "path": "packages/runtime/dist/verification-test-sources.js",
+      "sha256": "d82f8719e8df6ad4f908e96cdcf288953a2cf2abc1217ef6a20d165aae3f2ce9"
+    },
+    {
+      "path": "packages/runtime/dist/verification-test-sources.d.ts",
+      "sha256": "8cb64bffdff548c23eb4a1006a5ed6aaa731ff9cf111ba5857939952cd57d2c5"
+    },
+    {
+      "path": "packages/runtime/dist/verification-workspace-digest.js",
+      "sha256": "a4e48652ee957bcc9921a87b49fe3edb2176bbaa620b0d508017ec6b70ba9c28"
+    },
+    {
+      "path": "packages/runtime/dist/verification-workspace-digest.d.ts",
+      "sha256": "b652721d7424bef73647404120828094d96d56e6bd439e1eb108a177b8b8012c"
+    },
+    {
+      "path": "packages/runtime/dist/verification-workspace-snapshot.js",
+      "sha256": "65b4a4133b2894bc24056a738bd338bca033067cd61d685848887ff4466c89bc"
+    },
+    {
+      "path": "packages/runtime/dist/verification-workspace-snapshot.d.ts",
+      "sha256": "5685c5fe25d5293200687ce3d86bc59424db37ce5e34adad1530fdbdf2dd6010"
+    },
+    {
+      "path": "packages/runtime/dist/verification.js",
+      "sha256": "ecd8aa0c3497a29a9b0cd1a50e6488a89495ec260152c4c6d17ff1be0f0da3a1"
+    },
+    {
+      "path": "packages/runtime/dist/verification.d.ts",
+      "sha256": "761a7641411ef2b2d7dee5a27c0d2563d0f9fdb132e8168a5780cdc5f81314ed"
+    },
+    {
+      "path": "packages/runtime/test/large-workspace-verification.test.ts",
+      "sha256": "68fb4246f09b65cb04bcf7e132b9251bc08218ae309fbbfe55a74d528f3b1605"
+    },
+    {
+      "path": "packages/runtime/test/verification-test-discovery.test.ts",
+      "sha256": "e6f059196f8dfc0f2ff8211537be01488007da14ded18b80da9a9699607d5a2b"
+    }
+  ],
+  "currentTrees": {
+    "packages/runtime/src": {
+      "fileCount": 1173,
+      "treeSha256": "93be5ddcbf38302e235f9b680d2aee8e2aedb6e4ecdcf9fa9d30b2464427bc1a"
+    },
+    "packages/runtime/dist": {
+      "fileCount": 3531,
+      "treeSha256": "03ce51b0510f8cada3efba748461e1941186e063fa4b47003615c1ddba633e75"
+    },
+    "packages/contracts/src": {
+      "fileCount": 79,
+      "treeSha256": "f520cbe8441acac007a61f6b294ef7b7879062e854d855db25951f2a9591745a"
+    },
+    "packages/contracts/dist": {
+      "fileCount": 238,
+      "treeSha256": "410c28c9eab53de21f0c83e8500ad117d15edbed80958539c1829b667df518d2"
+    }
+  },
+  "evidenceFiles": [
+    {
+      "path": "/tmp/napier-large-provider-before-v1.log",
+      "sha256": "aebb6eaff221ffd421d4fe936971f837d3a6454951c1598cebf8ec5065a6ae77"
+    },
+    {
+      "path": "/tmp/napier-large-provider-before-v2.log",
+      "sha256": "933c8e21f96c54e928afe6b606c32e0dacb4bdb5a07e563ae7a71ad3e12407ab"
+    },
+    {
+      "path": "/tmp/napier-large-provider-focused-v1.log",
+      "sha256": "2a8c883d376d11bcdf52a6898bfe54f72f3e4da2282a3e34b647d0cf7c24ac83"
+    },
+    {
+      "path": "/tmp/napier-large-provider-focused-v2.log",
+      "sha256": "57e360f1369ed55f14269265acfae8b66b33efc9621eb387a7b355b782bc1c4c"
+    },
+    {
+      "path": "/tmp/napier-large-provider-focused-v3.log",
+      "sha256": "3d007638c0e6efe7cb73823964d73d57a6d4bd3a744f92b318f9fb4ff349992d"
+    },
+    {
+      "path": "/tmp/napier-large-provider-build-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-large-provider-build-v2.log",
+      "sha256": "b07b079a6dd417b27561b522e318425f6201c1d0b2f4da7953e1df6e3facecb0"
+    },
+    {
+      "path": "/tmp/napier-large-provider-build-v3.log",
+      "sha256": "3e666f7b1c33acff54050a9d61dc3157675afceb35b49c6fbb6df1b5da9cfcb0"
+    },
+    {
+      "path": "/tmp/napier-large-provider-build-v4.log",
+      "sha256": "b07b079a6dd417b27561b522e318425f6201c1d0b2f4da7953e1df6e3facecb0"
+    },
+    {
+      "path": "/tmp/napier-large-provider-build-v5.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-large-provider-oci-v1.log",
+      "sha256": "9ca349d908ae14a6aba376deb97b7160d3af0b11bf3cf6d91f74353ae668b2dc"
+    },
+    {
+      "path": "/tmp/napier-large-provider-oci-v2.log",
+      "sha256": "5ed3f55b5c998d06a8d60946af8745e4b7180af769a8c73925697125cfdb3d4f"
+    },
+    {
+      "path": "/tmp/napier-large-provider-oci-resources-v2.json",
+      "sha256": "d0841c1297ef4a4a6a7079ae9661312eefbc93e3d79d12aa3f10c2da130b5241"
+    },
+    {
+      "path": "/tmp/napier-large-provider-runtime-full-v1.log",
+      "sha256": "952009792793f748d41f6e80db90b8d52157bcd386b05e6c0434d435d06791a0"
+    },
+    {
+      "path": "/tmp/napier-large-provider-runtime-full-v1.json",
+      "sha256": "a34ed4d70bfb24c69c501228d8a5d1efab36a0e18b0e76f77a8c0c34a06261e8"
+    },
+    {
+      "path": "/tmp/napier-large-provider-format-final-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-large-provider-architecture-final-v1.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-large-provider-diff-check-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/napier-large-provider-retained-receipts-v1.json",
+      "sha256": "9eeac6f19413ada6c66b47d092358b7059aac704061c525ba2d52b9ebcc359de"
+    },
+    {
+      "path": "/tmp/napier-large-provider-current-v1/manifest.json",
+      "sha256": "f949bbf1566855e9c3419995cf086ab281198f4fb04b9b8b954422b21be6cf80"
+    },
+    {
+      "path": "/tmp/napier-large-provider-before-v1/manifest.json",
+      "sha256": "a84e4129994740fc3aa520118745df12e863cbe027baf4dacf5157e13734979c"
+    },
+    {
+      "path": "/tmp/napier-durable-pre-edit-runtime-full-v1.log",
+      "sha256": "251bcdd66844ec8d2fb8a0ef678e51629fc489fd71456d3fe46996b1b2e89315"
+    }
+  ],
+  "implementation": [
+    "Python verification and affected-test selection/aggregation share the complete workspace digest.",
+    "Python receipt flags incomplete observations from either side.",
+    "Native Node discovery reads only candidate test source, retaining source/entry/time budgets, mixed-framework and symbolic-link rejection.",
+    "Working-state context uses a full digest when modern receipt freshness cannot be established from the bounded context snapshot; legacy and artifact requirements remain unchanged."
+  ],
+  "reproduction": {
+    "initial": {
+      "passed": 1,
+      "failed": 4,
+      "limitation": "First Node fallback lacked explicit node-test selection."
+    },
+    "corrected": {
+      "passed": 1,
+      "failed": 4,
+      "nodeFailure": "Explicit native fallback rejected incomplete test discovery.",
+      "pythonFailure": "Successful Python verification marked indeterminate; unnecessary affected-test fallback.",
+      "contextFailure": "Fresh actual Node verification projected as unknown."
+    },
+    "retention": "Both before logs retained; before-v1 archive contains selected source and the original first-case version, not a complete executable environment."
+  },
+  "validation": {
+    "intermediateFocused": {
+      "passed": 49,
+      "skipped": 1,
+      "scope": "Actual macOS toolchain smoke enabled; precedes final typed file-handle correction."
+    },
+    "finalOci": {
+      "passed": 5,
+      "failed": 0,
+      "imageId": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+      "platform": "linux/arm64",
+      "host": "darwin/Colima",
+      "scenarios": [
+        "Direct Node verification beyond 16 MiB.",
+        "Direct Python verification beyond 16 MiB.",
+        "Node selected check passes; full-suite fallback retains an unrelated failure.",
+        "Python selected check passes; full-suite fallback retains an unrelated failure.",
+        "Actual receipt projects current; change after byte 16 MiB projects stale and requests reverify."
+      ],
+      "failedAttemptRetained": "First OCI attempt used a host temporary path absent from Colima mounts. Same tests passed using task-local TMPDIR in the existing shared scratch directory.",
+      "finalResources": {
+        "containersCount": 0,
+        "networksCount": 0,
+        "scratchCount": 0
+      }
+    },
+    "finalRuntimeFull": {
+      "passed": 2667,
+      "failed": 2,
+      "skipped": 59,
+      "files": 530,
+      "durationSeconds": 301.93,
+      "failures": [
+        {
+          "file": "agent-capability-contract-v2.test.ts",
+          "fullName": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+          "firstError": "AssertionError: expected 'b8a26579de3a3eb9f6cef217c962be001e463…' to be '56d32e5912d14ad608257b126c9950a1f98d5…' // Object.is equality"
+        },
+        {
+          "file": "agent-capability-contract.test.ts",
+          "fullName": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+          "firstError": "AssertionError: expected [ { …(6) }, { …(6) }, { …(6) }, …(50) ] to deeply equal ArrayContaining{…}"
+        }
+      ],
+      "matchesPriorFailureTitlesAndFirstErrors": true,
+      "fullHistoricalAssertionMatchingPerformed": false
+    },
+    "build": "Original build:compile passed after correcting stream flag typing and waiting for existing TypeScript watcher to settle. ENOTEMPTY and compile error logs retained.",
+    "format": "passed",
+    "diffWhitespace": "passed",
+    "architecture": {
+      "knownViolations": 7,
+      "newViolations": 0,
+      "budgetsRaised": false
+    },
+    "historicalReceiptsUnchanged": true
+  },
+  "scope": {
+    "newPaidModelCalls": 0,
+    "liveModelCampaignStarted": false,
+    "modelQualityQualified": false,
+    "promotionReady": false,
+    "qualityGate": "30 distinct cases x 3 paired trials unchanged",
+    "colimaRestarted": false,
+    "zteServicesManaged": false,
+    "legacyReceiptsReplaced": false,
+    "registryPublished": false,
+    "crossHostAcceptance": false,
+    "limits": [
+      "Workspace digest remains optimistic before/after observation, not filesystem locking or complete dependency/environment attestation.",
+      "Static graph incompleteness still requires full-suite fallback.",
+      "Native discovery rejects links and incomplete relevant-source inventory instead of silently dropping tests.",
+      "Legacy file-list receipt freshness and artifact freshness still require their original complete context snapshot.",
+      "No default policy promotion or new real-model non-regression claim."
+    ]
+  },
+  "contentSha256": "90bf2e18c52f27dcbcd5d9fd2eea8d4f9a5432a56cd36efa4cb54c00e0ed203d"
+}

@@ -7,8 +7,20 @@ import {
   type PromptCompilerLayerInput,
 } from "./prompt-compiler.js";
 import { PROMPT_INVARIANT_CORE } from "./prompt-invariant-core.js";
+import {
+  CONTRACT_VERIFICATION_PROTOCOL,
+  CONTRACT_TRANSITION_VERIFICATION_PROTOCOL,
+  CONTRACT_STAGED_VERIFICATION_PROTOCOL,
+} from "./contract-verification-protocol.js";
 
 export interface AgentPromptLayerSources {
+  promptPolicy?: "legacy" | "stable-v1" | undefined;
+  contextDelivery?: "tail-v1" | undefined;
+  validationProtocol?:
+    | "contract-first-v1"
+    | "contract-transitions-v2"
+    | "contract-staged-v3"
+    | undefined;
   resolvedSystemPrompt: string;
   skillCatalog: string;
   effectiveCapabilities: string;
@@ -21,6 +33,8 @@ export interface AgentPromptLayerSources {
   delegation: string;
   milestones: string;
   toolLoopGuard: string;
+  workingState?: string;
+  budgetContext?: string;
 }
 
 export function createAgentPromptCompilerLayers(
@@ -73,6 +87,21 @@ export function createAgentPromptCompilerLayers(
           1_000,
         ),
         optionalSource("task.skill_catalog", sources.skillCatalog, 800),
+        ...(sources.validationProtocol === "contract-first-v1" ||
+        sources.validationProtocol === "contract-transitions-v2" ||
+        sources.validationProtocol === "contract-staged-v3"
+          ? [
+              requiredSource(
+                "task.contract_verification",
+                sources.validationProtocol === "contract-staged-v3"
+                  ? CONTRACT_STAGED_VERIFICATION_PROTOCOL
+                  : sources.validationProtocol === "contract-transitions-v2"
+                  ? CONTRACT_TRANSITION_VERIFICATION_PROTOCOL
+                  : CONTRACT_VERIFICATION_PROTOCOL,
+                950,
+              ),
+            ]
+          : []),
       ],
     },
     {
@@ -86,7 +115,19 @@ export function createAgentPromptCompilerLayers(
           1_000,
         ),
         optionalSource("workspace.checkpoint", sources.checkpoint, 950),
+        ...(sources.budgetContext
+          ? [requiredSource("workspace.run_budget", sources.budgetContext, 990)]
+          : []),
         optionalSource("workspace.memory", sources.memory, 900),
+        ...(sources.workingState
+          ? [
+              optionalSource(
+                "workspace.task_working_state",
+                sources.workingState,
+                975,
+              ),
+            ]
+          : []),
         optionalSource("workspace.delegation", sources.delegation, 850),
         optionalSource("workspace.milestones", sources.milestones, 800),
         optionalSource(

@@ -1,11 +1,17 @@
 import type { JsonValue, RunEvent } from "@napier/contracts";
 
 const STRONG_UNAVAILABLE_ASSERTION =
-  /\b(?:cannot|can't|disabled|no access|not available|unavailable)\b|不可用|无法|不能|无权限|未提供|受限/giu;
+  /\b(?:cannot|can't|unable|not able|disabled|no access|not available|unavailable)\b|不可用|无法|不能|无权限|未提供|受限/giu;
 const WEAK_UNAVAILABLE_ASSERTION =
   /\b(?:lack|lacking|missing|no)\b|没有|缺少/giu;
 const AVAILABLE_ASSERTION =
   /\b(?:available|can use|have access|enabled)\b|可以|能够|(?<!不)(?<!未)可用|已提供|有权限/giu;
+const ACTIVITY_SCOPE =
+  "(?:(?:this|that|the|current|previous|earlier|later|first|second|recovered|original|either|both|same)\\s+)*(?:runs?|phases?|turns?|steps?|tasks?|requests?|process(?:es)?|executions?)";
+const ABSENT_ACTIVITY_PREDICATE = new RegExp(
+  `^\\s+(?:(?:in|during|from|after|before)\\s+${ACTIVITY_SCOPE}(?:\\s+(?:and|or)\\s+${ACTIVITY_SCOPE})?\\s+)?(?:(?:was|were)\\s+)?(?:made|run|performed|executed|sent|targeted|touched|changed|used|needed|recorded|observed|attempted|issued)\\b`,
+  "iu",
+);
 
 const CAPABILITY_CLAIM_GROUPS: ReadonlyArray<{
   pattern: RegExp;
@@ -149,6 +155,7 @@ function eventToolName(payload: JsonValue): string | undefined {
 
 function safeCapabilityClaimText(args: unknown): string {
   try {
+    if (typeof args === "string") return args.slice(0, 16_000);
     const serialized = JSON.stringify(args);
     return typeof serialized === "string" ? serialized.slice(0, 16_000) : "";
   } catch {
@@ -182,8 +189,16 @@ function assertsUnavailableNear(
       start,
       end,
       180,
+      true,
     ),
-    nearestAssertionDistance(text, WEAK_UNAVAILABLE_ASSERTION, start, end, 40),
+    nearestAssertionDistance(
+      text,
+      WEAK_UNAVAILABLE_ASSERTION,
+      start,
+      end,
+      40,
+      true,
+    ),
   );
   if (!Number.isFinite(unavailableDistance)) return false;
   const availableDistance = nearestAssertionDistance(
@@ -192,6 +207,7 @@ function assertsUnavailableNear(
     start,
     end,
     80,
+    true,
   );
   return unavailableDistance < availableDistance;
 }
@@ -202,6 +218,7 @@ function nearestAssertionDistance(
   start: number,
   end: number,
   radius: number,
+  requireDirectRelation = false,
 ): number {
   const windowStart = Math.max(0, start - radius);
   const windowEnd = Math.min(text.length, end + radius);
@@ -209,6 +226,51 @@ function nearestAssertionDistance(
   for (const match of matches(text.slice(windowStart, windowEnd), pattern)) {
     const assertionStart = windowStart + match.index;
     const assertionEnd = assertionStart + match.text.length;
+    // English "no" introduces a following noun, not the preceding capability
+    // in "network requests, no edit failures".
+    if (
+      pattern === WEAK_UNAVAILABLE_ASSERTION &&
+      assertionStart >= end &&
+      /^(?:no|lack|lacking)$/iu.test(match.text)
+    )
+      continue;
+    if (
+      pattern === AVAILABLE_ASSERTION &&
+      /(?:\b(?:no|not|never|without|lack|lacking)\s+(?:(?:currently|any)\s+)?|没有|无|不|未)$/iu.test(
+        text.slice(Math.max(0, assertionStart - 32), assertionStart),
+      )
+    )
+      continue;
+    if (
+      pattern === STRONG_UNAVAILABLE_ASSERTION &&
+      /(?:\b(?:not|never|isn't|aren't)\s+(?:actually\s+)?|并非|并不|不是)$/iu.test(
+        text.slice(Math.max(0, assertionStart - 32), assertionStart),
+      )
+    )
+      continue;
+    const between =
+      assertionEnd <= start
+        ? text.slice(assertionEnd, start)
+        : text.slice(end, assertionStart);
+    // Availability belongs to the capability in this clause. A nearby report
+    // of "no OS isolation; run_command succeeded" describes a different fact.
+    if (/[;；。!?！？\n]|\.\s|\\n/u.test(between)) continue;
+    // "No network calls" reports activity. The negated noun is not access.
+    // A modal predicate ("no network calls are allowed") does deny capability.
+    if (
+      pattern === WEAK_UNAVAILABLE_ASSERTION &&
+      assertionEnd <= start &&
+      describesAbsentActivity(
+        text.slice(end, Math.min(text.length, end + 160)),
+        text.slice(start, end),
+      )
+    )
+      continue;
+    if (
+      requireDirectRelation &&
+      !directUnavailableRelation(between, assertionEnd <= start)
+    )
+      continue;
     const distance =
       assertionEnd < start
         ? start - assertionEnd
@@ -218,4 +280,54 @@ function nearestAssertionDistance(
     nearest = Math.min(nearest, distance);
   }
   return nearest;
+}
+
+function directUnavailableRelation(between: string, before: boolean): boolean {
+  // Do not attach a predicate from a preceding label or parenthesized subject:
+  // "bytecode disabled: workspace_process succeeded" describes bytecode.
+  if (
+    before &&
+    (/[:：()\[\]]/u.test(between) || /^[\s`"']*[,，]/u.test(between))
+  )
+    return false;
+  let relation = between.replace(EXPLICIT_CAPABILITY_TOOL, " ");
+  for (const { pattern } of CAPABILITY_CLAIM_GROUPS)
+    relation = relation.replace(new RegExp(pattern.source, "giu"), " ");
+  const words = relation.replace(/[\s`"'*:()\[\],，：、/]/gu, " ").trim();
+  if (!words) return true;
+  const modifiers = before
+    ? /^(?:(?:a|an|the|working|available|usable|enabled|tool|tools|named|called|access|to|for|use|invoke|execute|run|call|and|or|any|either|both|currently|successfully)\s*)+$/iu
+    : /^(?:(?:is|are|was|were|has|have|been|seems|currently|still|temporarily|apparently|tool|tools|access|capability|capabilities|calls|requests|and|or|both|all)\s*)+$/iu;
+  return (
+    modifiers.test(words) ||
+    /^(?:任何|可用的?|相关的?|当前|目前|工具|能力|访问|权限|是|仍然|暂时|完全|使用|调用|执行|以及|和|或|均|都|的|\s)+$/u.test(
+      words,
+    )
+  );
+}
+
+function describesAbsentActivity(suffix: string, capability: string): boolean {
+  const clause = suffix.split(/[，,;；。\n]/u)[0]!;
+  if (/^(?:请求|调用|操作|流量|连接|错误|失败|更改|改动)/u.test(clause))
+    return !/(?:能力|权限|工具|功能|支持|允许|可用)/u.test(clause);
+  if (
+    /^(?:修改|编辑|写入)$/u.test(capability) &&
+    /^(?:任何)?(?:文件|代码|文档|配置)/u.test(clause)
+  )
+    return !/(?:能力|权限|工具|功能|方式|手段)/u.test(clause);
+  if (
+    // A completed-action predicate, optionally qualified by execution scope,
+    // describes history: "no write in this run targeted ...". Access/tool
+    // qualifiers and modal denials are not admitted by this scope grammar.
+    ABSENT_ACTIVITY_PREDICATE.test(clause)
+  )
+    return true;
+  const activity =
+    /^[\s`"'*]*(?:calls?|invocations?|requests?|commands?|operations?|executions?|connections?|traffic|activity|changes?|edits?|errors?|failures?|warnings?)\b/iu.exec(
+      suffix,
+    );
+  if (!activity) return false;
+  return !/^\s+(?:(?:is|are|were|was)\s+)?(?:allowed|possible|supported|permitted|available)\b/iu.test(
+    suffix.slice(activity[0].length),
+  );
 }

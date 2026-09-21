@@ -7,6 +7,7 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { recordCompatibilityHit } from "./compatibility-telemetry.js";
+import { applyProviderWireCompatibility } from "./model-provider-wire-compatibility.js";
 
 export type ModelAdapterId =
   | "napier.anthropic-messages.v1"
@@ -227,7 +228,7 @@ export function createModelAdapterModels(models: MutableModels): MutableModels {
       ) {
         return (model: Model<Api>, context: unknown, options?: StreamOptions) =>
           Reflect.apply(target[property], target, [
-            model,
+            applyProviderWireCompatibility(model),
             context,
             applyModelAdapterOptions(model, options),
           ]);

@@ -1,5 +1,7 @@
 import type { RunEvent } from "@napier/contracts";
 import { assertRunContextProjectionBinding } from "./run-context-projection-evidence.js";
+import { assertRuntimeContextBinding } from "./runtime-context-evidence.js";
+import { RUNTIME_CONTEXT_PROTOCOL_ID } from "./runtime-context-delivery.js";
 
 import {
   COMPILED_PROMPT_PACKAGE_EVENT,
@@ -118,6 +120,7 @@ function assertProjectionSourceBinding(
     "model.context.token_pressure",
   );
   assertRunContextProjectionBinding(events, event, receipt, pruning, pressure);
+  assertRuntimeContextBinding(events, event, receipt, pressure);
   if (
     !validProjectionSourceSequence(event, pruning, pressure) ||
     !projectionSourceReceiptsMatch(receipt, pruning?.payload, pressure?.payload)
@@ -169,7 +172,14 @@ function assertProjectionOutputBinding(
     !projectionOutputSequenceMatches(event, evidence) ||
     !projectionEnvelopeMatches(receipt, evidence) ||
     !projectionAdapterMatches(receipt, evidence) ||
-    !projectionPromptSourcesMatch(receipt, evidence.packageReceipt)
+    !projectionPromptSourcesMatch(receipt, evidence.packageReceipt) ||
+    Boolean(receipt.runtimeContextReceiptSha256) !==
+      evidence.packageReceipt?.layers.some((layer) =>
+        layer.sources.some(
+          (source) =>
+            source.sourceId === RUNTIME_CONTEXT_PROTOCOL_ID && source.included,
+        ),
+      )
   ) {
     throw new Error(`${label} envelope binding is invalid: ${event.runId}`);
   }

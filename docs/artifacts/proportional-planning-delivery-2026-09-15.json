@@ -1,0 +1,344 @@
+{
+  "kind": "napier.proportional-planning-delivery-audit",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:54:38.131Z",
+  "runId": "run_b34f6531cdd547cb9bcf",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-proportional-planning-core-v15/atomic_json_patch_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "369e46b8bef9af0e0e6b28bf64a0435cb66791d2f8fce7d024a986f09d38f998",
+  "sourceFreezeSha256": "82d51ccaf77be2471c062ac5cef62be13b482317e0b47c9364c5211fbe4da78e",
+  "profileFileSha256": "f5406ee1a169f1060ee7c1648c0332eb0b340dfcc9389ff64be0d3767fa2bb75",
+  "invocations": [
+    {
+      "seq": 22,
+      "capsuleSha256": "f732e7dad12b510a782fb552c17fd4acfd6b1bda316b652afd26e23163126b3c",
+      "contextEnvelopeSha256": "60077a9cec511b25d9e1f7ec9fa7614fda07ac09ca2518adf2a64ce6c791da8e",
+      "turnIndex": 0,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    },
+    {
+      "seq": 70,
+      "capsuleSha256": "32e875ae5962cd757c035109c7dcdc6fdc84779a89b3d731e3fd0757186a8b53",
+      "contextEnvelopeSha256": "e62ff2f6b6dc3264ce0491313c6c7b6ec2686b13de3f9a04075b553c9e9f36f7",
+      "turnIndex": 1,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    },
+    {
+      "seq": 131,
+      "capsuleSha256": "89a35294c00fc7385ee54c6c430c7c009b2adec10a648e97dfbc279f66cabd02",
+      "contextEnvelopeSha256": "f7b0fee26be97fddc63d58ef6c54ee2367822221d770bffe6c2531f35c152446",
+      "turnIndex": 2,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    },
+    {
+      "seq": 329,
+      "capsuleSha256": "d15714da67409700a81a28bbc9e82344a719c08d01464727fb6fd997635f5124",
+      "contextEnvelopeSha256": "d2c7bb64c05cd93087ae2deadd652f15232ea1601400c009f31bf6cd0814b501",
+      "turnIndex": 3,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    },
+    {
+      "seq": 377,
+      "capsuleSha256": "026c4a90d4d83fe0a05840f2dfb6491d02e81c3a1846789c7541a2768f141f6e",
+      "contextEnvelopeSha256": "e98774458ebe3c4ee9d4a2a85955fdbd351a061efaf75583378cb157fa17c5de",
+      "turnIndex": 4,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    },
+    {
+      "seq": 441,
+      "capsuleSha256": "6c620d59608d08735bc2bb175b37297dff15e8d8c890d257680751f5e736cb9a",
+      "contextEnvelopeSha256": "d4cc4c9a52e802ce20c5061e1e5fb7d00e4b0a77a238a0360fdeb00d1c3bd3eb",
+      "turnIndex": 5,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    },
+    {
+      "seq": 478,
+      "capsuleSha256": "8a94d74431ce37d07fe472f9202d484eb4065724573b76a635582e7c1740c181",
+      "contextEnvelopeSha256": "5149d263b8e9149545fa37e193aabe532ddcba4eea6eaa891954b0cc8838f769",
+      "turnIndex": 6,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    },
+    {
+      "seq": 587,
+      "capsuleSha256": "ee9118d4b70579b5d4a579ae9057973013a3bcfe3d05cfdef26612584f522a7c",
+      "contextEnvelopeSha256": "af9c33dc4fb4390a664c8b95873921a90fdb93787d38c7f1ed3b986faa89361c",
+      "turnIndex": 7,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    },
+    {
+      "seq": 636,
+      "capsuleSha256": "9647038bf8c4baf00d85120c4606679227b52424b921069ae0b392c9ba240517",
+      "contextEnvelopeSha256": "5788def67f487b76389246cb03a2cce8246bd7128c7463d0bed328d57dd67694",
+      "turnIndex": 8,
+      "guidanceSha256": "e87ab739aec6467129eb674765792a5f81189f6546187376190dc00f9ed211c9",
+      "guidanceBytes": 3529,
+      "delivered": true
+    }
+  ],
+  "activity": [
+    {
+      "seq": 44,
+      "createdAt": "2026-09-15T02:49:53.229Z",
+      "type": "tool.started",
+      "toolName": "read_file",
+      "reason": null
+    },
+    {
+      "seq": 46,
+      "createdAt": "2026-09-15T02:49:53.232Z",
+      "type": "tool.started",
+      "toolName": "list_files",
+      "reason": null
+    },
+    {
+      "seq": 50,
+      "createdAt": "2026-09-15T02:49:53.249Z",
+      "type": "tool.completed",
+      "toolName": "read_file",
+      "reason": null
+    },
+    {
+      "seq": 54,
+      "createdAt": "2026-09-15T02:49:53.255Z",
+      "type": "tool.completed",
+      "toolName": "list_files",
+      "reason": null
+    },
+    {
+      "seq": 99,
+      "createdAt": "2026-09-15T02:50:08.117Z",
+      "type": "tool.started",
+      "toolName": "read_file",
+      "reason": null
+    },
+    {
+      "seq": 101,
+      "createdAt": "2026-09-15T02:50:08.126Z",
+      "type": "tool.started",
+      "toolName": "read_file",
+      "reason": null
+    },
+    {
+      "seq": 103,
+      "createdAt": "2026-09-15T02:50:08.135Z",
+      "type": "tool.started",
+      "toolName": "read_file",
+      "reason": null
+    },
+    {
+      "seq": 107,
+      "createdAt": "2026-09-15T02:50:08.144Z",
+      "type": "tool.completed",
+      "toolName": "read_file",
+      "reason": null
+    },
+    {
+      "seq": 111,
+      "createdAt": "2026-09-15T02:50:08.159Z",
+      "type": "tool.completed",
+      "toolName": "read_file",
+      "reason": null
+    },
+    {
+      "seq": 115,
+      "createdAt": "2026-09-15T02:50:08.165Z",
+      "type": "tool.completed",
+      "toolName": "read_file",
+      "reason": null
+    },
+    {
+      "seq": 300,
+      "createdAt": "2026-09-15T02:51:41.436Z",
+      "type": "tool.started",
+      "toolName": "verify_workspace",
+      "reason": null
+    },
+    {
+      "seq": 303,
+      "createdAt": "2026-09-15T02:51:41.999Z",
+      "type": "tool.completed",
+      "toolName": "verify_workspace",
+      "reason": null
+    },
+    {
+      "seq": 310,
+      "createdAt": "2026-09-15T02:51:42.018Z",
+      "type": "tool.started",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 313,
+      "createdAt": "2026-09-15T02:51:42.448Z",
+      "type": "tool.completed",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 348,
+      "createdAt": "2026-09-15T02:51:51.074Z",
+      "type": "tool.started",
+      "toolName": "apply_patch",
+      "reason": null
+    },
+    {
+      "seq": 352,
+      "createdAt": "2026-09-15T02:51:51.089Z",
+      "type": "tool.failed",
+      "toolName": "apply_patch",
+      "reason": null
+    },
+    {
+      "seq": 357,
+      "createdAt": "2026-09-15T02:51:51.104Z",
+      "type": "tool.started",
+      "toolName": "apply_patch",
+      "reason": null
+    },
+    {
+      "seq": 361,
+      "createdAt": "2026-09-15T02:51:51.114Z",
+      "type": "tool.failed",
+      "toolName": "apply_patch",
+      "reason": null
+    },
+    {
+      "seq": 421,
+      "createdAt": "2026-09-15T02:52:26.076Z",
+      "type": "tool.started",
+      "toolName": "apply_patch",
+      "reason": null
+    },
+    {
+      "seq": 425,
+      "createdAt": "2026-09-15T02:52:26.381Z",
+      "type": "tool.completed",
+      "toolName": "apply_patch",
+      "reason": null
+    },
+    {
+      "seq": 457,
+      "createdAt": "2026-09-15T02:52:34.356Z",
+      "type": "tool.started",
+      "toolName": "apply_patch",
+      "reason": null
+    },
+    {
+      "seq": 461,
+      "createdAt": "2026-09-15T02:52:34.635Z",
+      "type": "tool.completed",
+      "toolName": "apply_patch",
+      "reason": null
+    },
+    {
+      "seq": 537,
+      "createdAt": "2026-09-15T02:53:39.792Z",
+      "type": "tool.started",
+      "toolName": "verify_workspace",
+      "reason": null
+    },
+    {
+      "seq": 540,
+      "createdAt": "2026-09-15T02:53:40.060Z",
+      "type": "tool.completed",
+      "toolName": "verify_workspace",
+      "reason": null
+    },
+    {
+      "seq": 547,
+      "createdAt": "2026-09-15T02:53:40.083Z",
+      "type": "tool.started",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 550,
+      "createdAt": "2026-09-15T02:53:40.251Z",
+      "type": "tool.completed",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 557,
+      "createdAt": "2026-09-15T02:53:40.275Z",
+      "type": "tool.started",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 560,
+      "createdAt": "2026-09-15T02:53:40.435Z",
+      "type": "tool.completed",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 567,
+      "createdAt": "2026-09-15T02:53:40.463Z",
+      "type": "tool.started",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 570,
+      "createdAt": "2026-09-15T02:53:40.622Z",
+      "type": "tool.completed",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 571,
+      "createdAt": "2026-09-15T02:53:40.627Z",
+      "type": "tool.failed",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 607,
+      "createdAt": "2026-09-15T02:53:48.358Z",
+      "type": "tool.started",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 610,
+      "createdAt": "2026-09-15T02:53:48.527Z",
+      "type": "tool.completed",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 617,
+      "createdAt": "2026-09-15T02:53:48.554Z",
+      "type": "tool.started",
+      "toolName": "run_command",
+      "reason": null
+    },
+    {
+      "seq": 620,
+      "createdAt": "2026-09-15T02:53:48.712Z",
+      "type": "tool.completed",
+      "toolName": "run_command",
+      "reason": null
+    }
+  ],
+  "modelRequests": 0,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Prepared primary input delivery verified from original bound capsules. A capsule can precede a transport-denied admission and is not itself proof of provider dispatch; financial reservations remain separately audited. Guidance delivery does not establish its efficacy."
+}

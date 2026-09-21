@@ -10,8 +10,6 @@ import {
   type ModelAdvisorRuleId,
   type ModelRef,
   type ResolvedModelAdvisorPolicy,
-  type RunLimits,
-  type SubagentLimits,
   type UpdateAgentProfileRequest,
 } from "@napier/contracts";
 import { nowIso } from "./ids.js";
@@ -78,26 +76,22 @@ const AGENT_REVISION_SOURCES = new Set<AgentProfileRevisionSource>([
   "migrated",
 ]);
 
-export const DEFAULT_SUBAGENT_LIMITS: Readonly<SubagentLimits> = {
-  maxConcurrent: 4,
-  maxTotal: 8,
-  maxTurns: 16,
-  timeoutMs: 300_000,
-};
-
-export const DEFAULT_RUN_LIMITS: Readonly<RunLimits> = {
-  maxTurns: 64,
-  maxTotalTokens: 1_000_000,
-  maxCostUsd: 25,
-  timeoutMs: 1_800_000,
-};
-
-export const DEFAULT_AUTOMATIC_RECOVERY_POLICY: Readonly<AutomaticRecoveryPolicy> =
-  {
-    mode: "manual",
-    maxAttempts: 2,
-    backoffMs: 5_000,
-  };
+import {
+  DEFAULT_SUBAGENT_LIMITS,
+  DEFAULT_RUN_LIMITS,
+  DEFAULT_AUTOMATIC_RECOVERY_POLICY,
+  normalizeAutomaticRecoveryPolicy,
+  normalizeSubagentLimits,
+  normalizeRunLimits,
+} from "./agent-budget-policy.js";
+export {
+  DEFAULT_SUBAGENT_LIMITS,
+  DEFAULT_RUN_LIMITS,
+  DEFAULT_AUTOMATIC_RECOVERY_POLICY,
+  normalizeAutomaticRecoveryPolicy,
+  normalizeSubagentLimits,
+  normalizeRunLimits,
+} from "./agent-budget-policy.js";
 
 export const DEFAULT_MODEL_ADVISOR_POLICY: Readonly<ResolvedModelAdvisorPolicy> =
   {
@@ -210,8 +204,14 @@ export function updateAgentProfile(
       : {}),
   };
   if (request.clearModelRoute) delete updated.modelRoute;
-  if (request.enabledSubagents === undefined && updated.enabledSubagents && !coderSubagentCapabilitiesAvailable(updated)) {
-    updated.enabledSubagents = updated.enabledSubagents.filter((role) => role !== "coder");
+  if (
+    request.enabledSubagents === undefined &&
+    updated.enabledSubagents &&
+    !coderSubagentCapabilitiesAvailable(updated)
+  ) {
+    updated.enabledSubagents = updated.enabledSubagents.filter(
+      (role) => role !== "coder",
+    );
   }
   assertIndependentAdvisorModel(updated);
   assertCoderSubagentCapabilities(updated);
@@ -371,7 +371,9 @@ export function rollbackAgentProfile(
       profile.promptVariables,
     ),
     toolLoopGuard: effectiveToolLoopGuardPolicy(profile),
-    ...(profile.modelRoute ? { modelRoute: effectiveModelRoutePolicy(profile)! } : { clearModelRoute: true }),
+    ...(profile.modelRoute
+      ? { modelRoute: effectiveModelRoutePolicy(profile)! }
+      : { clearModelRoute: true }),
   });
   if (updated.revision === current.revision) {
     throw new Error("Agent profile already matches the target revision");
@@ -622,13 +624,21 @@ function normalizeSubagents(
 }
 
 function assertCoderSubagentCapabilities(profile: AgentProfile): void {
-  if (profile.enabledSubagents?.includes("coder") && !coderSubagentCapabilitiesAvailable(profile)) {
-    throw new Error("Coder Subagents require workspace policy plus apply_patch and lsp_diagnostics");
+  if (
+    profile.enabledSubagents?.includes("coder") &&
+    !coderSubagentCapabilitiesAvailable(profile)
+  ) {
+    throw new Error(
+      "Coder Subagents require workspace policy plus apply_patch and lsp_diagnostics",
+    );
   }
 }
 function coderSubagentCapabilitiesAvailable(profile: AgentProfile): boolean {
-  return profile.toolPolicy !== "observe" && profile.enabledTools.includes("apply_patch") &&
-    profile.enabledTools.includes("lsp_diagnostics");
+  return (
+    profile.toolPolicy !== "observe" &&
+    profile.enabledTools.includes("apply_patch") &&
+    profile.enabledTools.includes("lsp_diagnostics")
+  );
 }
 
 function preserveEquivalentSet<T extends string>(
@@ -674,83 +684,6 @@ export function effectiveAutomaticRecoveryPolicy(
     profile.automaticRecovery ??
       structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY),
   );
-}
-
-export function normalizeAutomaticRecoveryPolicy(
-  input: AutomaticRecoveryPolicy,
-): AutomaticRecoveryPolicy {
-  if (!input || (input.mode !== "manual" && input.mode !== "safe_read_only")) {
-    throw new Error("Automatic recovery mode is invalid");
-  }
-  return {
-    mode: input.mode,
-    maxAttempts: boundedInteger(
-      input.maxAttempts,
-      "Automatic recovery maxAttempts",
-      1,
-      3,
-    ),
-    backoffMs: boundedInteger(
-      input.backoffMs,
-      "Automatic recovery backoffMs",
-      1_000,
-      3_600_000,
-    ),
-  };
-}
-
-export function normalizeSubagentLimits(input: SubagentLimits): SubagentLimits {
-  return {
-    maxConcurrent: boundedInteger(input.maxConcurrent, "maxConcurrent", 1, 8),
-    maxTotal: boundedInteger(input.maxTotal, "maxTotal", 1, 24),
-    maxTurns: boundedInteger(input.maxTurns, "maxTurns", 1, 32),
-    timeoutMs: boundedInteger(input.timeoutMs, "timeoutMs", 1_000, 900_000),
-  };
-}
-
-export function normalizeRunLimits(input: RunLimits): RunLimits {
-  return {
-    maxTurns: boundedInteger(input.maxTurns, "run maxTurns", 1, 128),
-    maxTotalTokens: boundedInteger(
-      input.maxTotalTokens,
-      "run maxTotalTokens",
-      1_000,
-      10_000_000,
-    ),
-    maxCostUsd: boundedNumber(input.maxCostUsd, "run maxCostUsd", 0.01, 1_000),
-    timeoutMs: boundedInteger(
-      input.timeoutMs,
-      "run timeoutMs",
-      10_000,
-      3_600_000,
-    ),
-  };
-}
-
-function boundedInteger(
-  value: number,
-  label: string,
-  minimum: number,
-  maximum: number,
-): number {
-  if (!Number.isInteger(value) || value < minimum || value > maximum) {
-    throw new Error(
-      `${label} must be an integer from ${minimum} to ${maximum}`,
-    );
-  }
-  return value;
-}
-
-function boundedNumber(
-  value: number,
-  label: string,
-  minimum: number,
-  maximum: number,
-): number {
-  if (!Number.isFinite(value) || value < minimum || value > maximum) {
-    throw new Error(`${label} must be from ${minimum} to ${maximum}`);
-  }
-  return Math.round(value * 1_000_000) / 1_000_000;
 }
 
 function requiredText(value: string, label: string, maxLength: number): string {

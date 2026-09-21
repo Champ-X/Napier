@@ -1,0 +1,384 @@
+{
+  "kind": "napier.history-linear-full-runtime-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T10:13:22.366075+00:00",
+  "source": {
+    "source": "/tmp/napier-harness-history-linear-v1",
+    "audit": "/tmp/napier-runtime-audit-history-linear-v1",
+    "bindings": {
+      "packages/runtime/src": {
+        "files": 1177,
+        "sha256": "ece8d9f23422c70aed944fb6e778397f678d2fac706fb18b7184ba07e10bf36f"
+      },
+      "packages/runtime/dist": {
+        "files": 3543,
+        "sha256": "cdad69f2da7d7b1c4f4df1fb9df2891d8352a8539c1da86c2044263eea2179e5"
+      },
+      "packages/runtime/test": {
+        "files": 566,
+        "sha256": "a5059b61ac1627a096296181a2de4e36fd717331b6ea99a099bfc14a6b35e69e"
+      },
+      "packages/contracts/src": {
+        "files": 79,
+        "sha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced"
+      },
+      "packages/contracts/dist": {
+        "files": 238,
+        "sha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d"
+      }
+    },
+    "testConfigSha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c",
+    "supportFilesReceiptSha256": "b537afb7e4044d2ddecd47dedbe2c7411d8f6a5fc61832ed19f63c0bab231636",
+    "scope": "Full Runtime suite in isolated source copy; dependencies are linked; no live opt-ins or model keys passed."
+  },
+  "sourceAndSupportUnchanged": true,
+  "current": {
+    "passed": 2710,
+    "failed": 3,
+    "skipped": 60,
+    "files": 537,
+    "failures": [
+      {
+        "file": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+        "title": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+        "firstMessage": "AssertionError: expected 'b8a26579de3a3eb9f6cef217c962be001e463\u2026' to be '56d32e5912d14ad608257b126c9950a1f98d5\u2026' // Object.is equality"
+      },
+      {
+        "file": "packages/runtime/test/agent-capability-contract.test.ts",
+        "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+        "firstMessage": "AssertionError: expected [ { \u2026(6) }, { \u2026(6) }, { \u2026(6) }, \u2026(50) ] to deeply equal ArrayContaining{\u2026}"
+      },
+      {
+        "file": "packages/runtime/test/workflow-runtime.test.ts",
+        "title": "Execution Plan Workflow runtime keeps Agent revision pinning and reused outputs out of public execution requests",
+        "firstMessage": "AssertionError: expected undefined to deeply equal { report: 'Live model report', \u2026(1) }"
+      }
+    ],
+    "success": false
+  },
+  "previous": {
+    "passed": 2686,
+    "failed": 2,
+    "skipped": 60,
+    "files": 533,
+    "failures": [
+      {
+        "file": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+        "title": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+        "firstMessage": "AssertionError: expected 'b8a26579de3a3eb9f6cef217c962be001e463\u2026' to be '56d32e5912d14ad608257b126c9950a1f98d5\u2026' // Object.is equality"
+      },
+      {
+        "file": "packages/runtime/test/agent-capability-contract.test.ts",
+        "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+        "firstMessage": "AssertionError: expected [ { \u2026(6) }, { \u2026(6) }, { \u2026(6) }, \u2026(50) ] to deeply equal ArrayContaining{\u2026}"
+      }
+    ],
+    "success": false
+  },
+  "comparison": {
+    "newFailures": [
+      "packages/runtime/test/workflow-runtime.test.ts::Execution Plan Workflow runtime keeps Agent revision pinning and reused outputs out of public execution requests"
+    ],
+    "commonStatusChanges": [
+      {
+        "test": "packages/runtime/test/workflow-runtime.test.ts::Execution Plan Workflow runtime keeps Agent revision pinning and reused outputs out of public execution requests",
+        "before": [
+          "passed"
+        ],
+        "after": [
+          "failed"
+        ]
+      }
+    ],
+    "newTests": [
+      {
+        "test": "packages/runtime/test/effective-capabilities-prompt.test.ts::announces the active ordering rule for a visible or discoverable verifier, without inventing unavailable execution",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-control-history.test.ts::continues a branch containing historical steering without rewriting either ledger",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-control-history.test.ts::continues a branch containing historical follow_up without rewriting either ledger",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::projects immutable copied controls as history and binds their branch marker into working-state evidence",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::rejects invalid branch history: missing_marker",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::rejects invalid branch history: duplicate_marker",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::rejects invalid branch history: wrong_cutoff",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::rejects invalid branch history: same_thread_source",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::rejects invalid branch history: tampered_text",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::rejects invalid branch history: mixed_control_events",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::does not exempt unvalidated live controls in a running branch Run",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::does not exempt unvalidated live controls in a failed branch Run",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::does not apply a historical control exemption to a later Run in the same thread",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-branch-history.test.ts::keeps copied history after passive compaction receipts without treating them as instructions",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-query-provenance.test.ts::retains task memory when repeated runtime user-role hints displace the original request",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-query-provenance.test.ts::recovers task queries from the validated parent lineage with legacy working state",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-query-provenance.test.ts::recovers task queries from the validated parent lineage with evidence-v1 working state",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-query-provenance.test.ts::rejects undelivered control text instead of treating it as a user amendment",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-query-provenance.test.ts::uses workflow input but never promotes queued messages or runtime hints into the query",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-query-provenance.test.ts::does not infer an original user request from a compacted transcript when no durable task source exists",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-query-provenance.test.ts::retains prior user turns for an ordinary follow-up without importing their tool state",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-query-provenance.test.ts::uses branch-local copied history during recovery without following the foreign source parent",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-memory-thread-history.test.ts::keeps task-memory provenance across actual thread turns and a copied branch cutoff",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-requirement-revisions.test.ts::keeps interleaved Run control lifecycles independent even when their control IDs match",
+        "status": [
+          "passed"
+        ]
+      },
+      {
+        "test": "packages/runtime/test/task-requirement-revisions.test.ts::never validates a control delivery with a queued request from another Run",
+        "status": [
+          "passed"
+        ]
+      }
+    ],
+    "removedTests": []
+  },
+  "retainedSetupAttempts": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/runtime-audit-tests.json",
+      "sha256": "845e3b1c53df9feea9fbec279fe9d9df0d8e3b99c17c2f1527b655147ca57652",
+      "testsExecuted": 0,
+      "reason": "Frozen runtime snapshot omitted root tsconfig.base.json required by source tests."
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/runtime-audit-tests-v2.json",
+      "sha256": "d79e1327f693322a630f00080383d48b7727072e350308aee25e6610452a8c44",
+      "summary": {
+        "passed": 2693,
+        "failed": 20,
+        "skipped": 60,
+        "files": 537,
+        "failures": [
+          {
+            "file": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+            "title": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+            "firstMessage": "AssertionError: expected '81fa7ccb919d348716405c83b0e1db90ff2b7\u2026' to be '56d32e5912d14ad608257b126c9950a1f98d5\u2026' // Object.is equality"
+          },
+          {
+            "file": "packages/runtime/test/agent-capability-contract.test.ts",
+            "title": "default Agent Capability Contract seeds a recommendation binding and projects the negotiated environment exposure",
+            "firstMessage": "AssertionError: expected [ { \u2026(6) }, { \u2026(6) }, { \u2026(6) }, \u2026(50) ] to deeply equal ArrayContaining{\u2026}"
+          },
+          {
+            "file": "packages/runtime/test/agent-capability-contract.test.ts",
+            "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+            "firstMessage": "AssertionError: expected [ { \u2026(6) }, { \u2026(6) }, { \u2026(6) }, \u2026(50) ] to deeply equal ArrayContaining{\u2026}"
+          },
+          {
+            "file": "packages/runtime/test/agent-skill-snapshot-run.test.ts",
+            "title": "Run-bound project Skill snapshots uses the persisted default Skill loader without a run-scoped preset",
+            "firstMessage": "AssertionError: expected { \u2026(11) } to deeply equal ObjectContaining{\u2026}"
+          },
+          {
+            "file": "packages/runtime/test/browser-automation-skill.test.ts",
+            "title": "Browser Automation Skill loads through the workspace Skill catalog with a stable fingerprint",
+            "firstMessage": "AssertionError: expected [] to deeply equal [ ObjectContaining{\u2026} ]"
+          },
+          {
+            "file": "packages/runtime/test/doctor-runtime-probes.test.ts",
+            "title": "Skill loader Doctor probe executes the production loader and returns only sanitized evidence",
+            "firstMessage": "AssertionError: expected { status: 'ready', \u2026(3) } to deeply equal ObjectContaining{\u2026}"
+          },
+          {
+            "file": "packages/runtime/test/doctor-runtime-probes.test.ts",
+            "title": "Skill loader Doctor probe does not report ready when a present Skill fails production admission",
+            "firstMessage": "Error: expected { status: 'unavailable', \u2026(3) } to deeply equal ObjectContaining{\u2026}"
+          },
+          {
+            "file": "packages/runtime/test/frontend-design-skill.test.ts",
+            "title": "Frontend Design Skill progressive disclosure senses frontend intent from metadata without injecting the Skill body",
+            "firstMessage": "AssertionError: expected '' to contain 'frontend-design'"
+          },
+          {
+            "file": "packages/runtime/test/frontend-design-skill.test.ts",
+            "title": "Frontend Design Skill progressive disclosure loads the selected body first and its referenced quality gate only afterwards",
+            "firstMessage": "ProjectSkillSnapshotError: Project Skill snapshot failed: workspace_untrusted"
+          },
+          {
+            "file": "packages/runtime/test/launch-skills-quality.test.ts",
+            "title": "launch Skill quality contract loads all six launch Skills without diagnostics",
+            "firstMessage": "AssertionError: expected { schemaVersion: 1, \u2026(6) } to deeply equal ObjectContaining{\u2026}"
+          },
+          {
+            "file": "packages/runtime/test/launch-skills-quality.test.ts",
+            "title": "launch Skill quality contract keeps Frontend Design tied to rendered browser verification and a progressively loaded gate",
+            "firstMessage": "Error: ENOENT: no such file or directory, open '/private/tmp/napier-runtime-audit-history-linear-v1/skills/frontend-design/SKILL.md'"
+          },
+          {
+            "file": "packages/runtime/test/launch-skills-quality.test.ts",
+            "title": "launch Skill quality contract keeps Artifact Studio bound to the real Plan verification workflow",
+            "firstMessage": "Error: ENOENT: no such file or directory, open '/private/tmp/napier-runtime-audit-history-linear-v1/skills/artifact-studio/SKILL.md'"
+          },
+          {
+            "file": "packages/runtime/test/launch-skills-quality.test.ts",
+            "title": "launch Skill quality contract keeps Research Brief bounded by evidence sufficiency",
+            "firstMessage": "Error: ENOENT: no such file or directory, open '/private/tmp/napier-runtime-audit-history-linear-v1/skills/research-brief/SKILL.md'"
+          },
+          {
+            "file": "packages/runtime/test/lsp-definition.test.ts",
+            "title": "LSP definition runner resolves the fixed TypeScript example through standard definitions",
+            "firstMessage": "Error: ENOENT: no such file or directory, realpath '/private/tmp/napier-runtime-audit-history-linear-v1/examples/lsp-definition/'"
+          },
+          {
+            "file": "packages/runtime/test/lsp-references.test.ts",
+            "title": "LSP references runner resolves the fixed multi-file example with declaration control",
+            "firstMessage": "Error: ENOENT: no such file or directory, realpath '/private/tmp/napier-runtime-audit-history-linear-v1/examples/lsp-references/'"
+          },
+          {
+            "file": "packages/runtime/test/lsp-rename.test.ts",
+            "title": "LSP rename runner previews a real multi-file TypeScript rename without writing",
+            "firstMessage": "Error: ENOENT: no such file or directory, realpath '/private/tmp/napier-runtime-audit-history-linear-v1/examples/lsp-references/'"
+          },
+          {
+            "file": "packages/runtime/test/skill-lifecycle-projection.test.ts",
+            "title": "active Skill lifecycle projection projects a default Skill from the bundled source in an empty workspace",
+            "firstMessage": "AssertionError: expected { \u2026(14) } to match object { state: 'loaded', \u2026(2) }"
+          },
+          {
+            "file": "packages/runtime/test/standard-skill-snapshot.test.ts",
+            "title": "standard project and user Skill snapshots loads every default Skill from the read-only distribution bundle",
+            "firstMessage": "AssertionError: expected { \u2026(11) } to match object { schemaVersion: 2, \u2026(2) }"
+          },
+          {
+            "file": "packages/runtime/test/standard-skill-snapshot.test.ts",
+            "title": "standard project and user Skill snapshots binds mixed project and bundled roots in one canonical snapshot",
+            "firstMessage": "AssertionError: expected [ 'project_standard' ] to deeply equal [ 'project_standard', \u2026(1) ]"
+          },
+          {
+            "file": "packages/runtime/test/standard-skill-snapshot.test.ts",
+            "title": "standard project and user Skill snapshots uses bundled fallbacks when the selected workspace path is a symlink without local Skills",
+            "firstMessage": "AssertionError: expected [] to deeply equal [ 'research-brief' ]"
+          }
+        ],
+        "success": false
+      },
+      "reason": "Source-test tree lacked tracked root Skill and LSP example fixtures; added only those assets before final full rerun."
+    }
+  ],
+  "bindings": {
+    "previousReportSha256": "21e78c715e3175e35765d7dd3ab56cb88cf179aaa64c5492c998866bee00dd26",
+    "currentReportPath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/runtime-audit-tests-v3.json",
+    "currentReportSha256": "503e7e05a8cabe219e371a97ab101686fd0aa7446ab455c53f96c5ee55046e75",
+    "supportFilesReceiptSha256": "b537afb7e4044d2ddecd47dedbe2c7411d8f6a5fc61832ed19f63c0bab231636"
+  },
+  "paidApiCalls": 0,
+  "limitations": [
+    "Offline full Runtime suite, with API keys, live opt-ins, tokens, secrets and NODE_OPTIONS removed.",
+    "Shared external dependencies remain linked; this is not a hermetic installation.",
+    "The retained failing assertions are not counted as passes.",
+    "Full Runtime tests do not establish whole-composition real-model quality or complete the seven-module goal."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

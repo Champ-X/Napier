@@ -1,0 +1,988 @@
+{
+  "kind": "napier.memory-selection-component-comparison",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:33:56.695Z",
+  "inputs": {
+    "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/inputs.json",
+    "sha256": "9209afc1b95b8c9c3b1548bed98abcc5ed31c6e3a8e8465e9c6241fe7ab019bd"
+  },
+  "snapshotReceipt": {
+    "path": "/tmp/napier-harness-memory-selection-v2/freeze-receipt.json",
+    "sha256": "77a0dd00a3d2917905af3b5704fd4baf246627d4e15f791c3fe3965b10711f89"
+  },
+  "collectionComplete": true,
+  "scenarioPairs": 3,
+  "stageComparisons": 6,
+  "paired": [
+    {
+      "trial": 1,
+      "stage": "edit",
+      "workspaceBytesEqual": true,
+      "promptSha256": "5520a9c05b3c366734c856b7f9efbc8fcf9d8403a67b8bf520ec7ae84b27b43d",
+      "seedSha256": "5382d30aaf1f76e11923503507f906dde78e7429a6a4f81c5b72eb442fdd10f7",
+      "workspaceSha256": "d92f54aece52a254c187bee138349d2e31bc61192d098adb10b5d1f61c32d975",
+      "profilesDifferOnlyInMemoryPolicy": true
+    },
+    {
+      "trial": 1,
+      "stage": "restart",
+      "workspaceBytesEqual": true,
+      "promptSha256": "55837e707b65fbc3b5030bc90be5d9c07c5e42a364be068d64a6e324cdf51ed2",
+      "seedSha256": "de8ef62bade669464357036fbde6b8c1e879baa0c21a9556141404bf56df1b51",
+      "workspaceSha256": "376fabdfb6ed7e7bda41b98b10737cd7548f45e52248f0904aee4e5afe58334d",
+      "profilesDifferOnlyInMemoryPolicy": true
+    },
+    {
+      "trial": 2,
+      "stage": "edit",
+      "workspaceBytesEqual": true,
+      "promptSha256": "5520a9c05b3c366734c856b7f9efbc8fcf9d8403a67b8bf520ec7ae84b27b43d",
+      "seedSha256": "5382d30aaf1f76e11923503507f906dde78e7429a6a4f81c5b72eb442fdd10f7",
+      "workspaceSha256": "d92f54aece52a254c187bee138349d2e31bc61192d098adb10b5d1f61c32d975",
+      "profilesDifferOnlyInMemoryPolicy": true
+    },
+    {
+      "trial": 2,
+      "stage": "restart",
+      "workspaceBytesEqual": true,
+      "promptSha256": "55837e707b65fbc3b5030bc90be5d9c07c5e42a364be068d64a6e324cdf51ed2",
+      "seedSha256": "de8ef62bade669464357036fbde6b8c1e879baa0c21a9556141404bf56df1b51",
+      "workspaceSha256": "376fabdfb6ed7e7bda41b98b10737cd7548f45e52248f0904aee4e5afe58334d",
+      "profilesDifferOnlyInMemoryPolicy": true
+    },
+    {
+      "trial": 3,
+      "stage": "edit",
+      "workspaceBytesEqual": true,
+      "promptSha256": "5520a9c05b3c366734c856b7f9efbc8fcf9d8403a67b8bf520ec7ae84b27b43d",
+      "seedSha256": "5382d30aaf1f76e11923503507f906dde78e7429a6a4f81c5b72eb442fdd10f7",
+      "workspaceSha256": "d92f54aece52a254c187bee138349d2e31bc61192d098adb10b5d1f61c32d975",
+      "profilesDifferOnlyInMemoryPolicy": true
+    },
+    {
+      "trial": 3,
+      "stage": "restart",
+      "workspaceBytesEqual": true,
+      "promptSha256": "55837e707b65fbc3b5030bc90be5d9c07c5e42a364be068d64a6e324cdf51ed2",
+      "seedSha256": "de8ef62bade669464357036fbde6b8c1e879baa0c21a9556141404bf56df1b51",
+      "workspaceSha256": "376fabdfb6ed7e7bda41b98b10737cd7548f45e52248f0904aee4e5afe58334d",
+      "profilesDifferOnlyInMemoryPolicy": true
+    }
+  ],
+  "rows": [
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "stage": "edit",
+      "runId": "run_24c92115b64341a3bfac",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [
+        "policy.json"
+      ],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/candidate-trial-1/edit-result.json",
+        "sha256": "af5e9be5a76866d7e31bd6fea0a3b6c033d706d0f52aa61f544fa731b8eca82a"
+      },
+      "usage": {
+        "inputTokens": 11241,
+        "outputTokens": 760,
+        "cacheReadTokens": 14848,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0018281144000000002
+      },
+      "exposures": [
+        {
+          "eventId": "event_70afceca8e314d7bbce7",
+          "capsuleSha256": "f809928084625ed3090de0efba01387f0be32082fc20c5431e04b0a7d813767f",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 228,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 3,
+            "matchedCount": 2,
+            "candidateCount": 2,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_a4dc89c5b8a84806952d",
+          "capsuleSha256": "729342532a1b0078a84a213b10ab89f80cd1f7687016b7e9236cd1f47b8a0089",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 228,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 3,
+            "matchedCount": 2,
+            "candidateCount": 2,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_e4a602d96ebd4faf81d7",
+          "capsuleSha256": "6b2a5e474f921813338610bf6583f209bb5122da4e9bcb83782fb66e61031913",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 77,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 2,
+            "matchedCount": 1,
+            "candidateCount": 1,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_fb9971320e88413489e1",
+          "capsuleSha256": "5551a9906fca794b3fa6d0ea3ed871044737eb8ec87fd9bc735e01b23a2fc080",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 77,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 2,
+            "matchedCount": 1,
+            "candidateCount": 1,
+            "excludedCount": 1
+          }
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "stage": "restart",
+      "runId": "run_78c81578ba334dfe9661",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/candidate-trial-1/restart-result.json",
+        "sha256": "847490dace28944c102c5a3ebbb64067ea35c275f3ccd8eb5f786b1cd5b7fabb"
+      },
+      "usage": {
+        "inputTokens": 7745,
+        "outputTokens": 152,
+        "cacheReadTokens": 5376,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0011419128
+      },
+      "exposures": [
+        {
+          "eventId": "event_1c8fc365f7594acd85ec",
+          "capsuleSha256": "3f9607c5bae62f822adb49f1b9ad315b5cdba20fae40c6b26407a79dc17c24f6",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": {
+            "mode": "fallback_no_match",
+            "queryTermCount": 47,
+            "eligibleCount": 1,
+            "matchedCount": 0,
+            "candidateCount": 1,
+            "excludedCount": 0
+          }
+        },
+        {
+          "eventId": "event_8088d5e5e462426f899c",
+          "capsuleSha256": "e284617efd5f29eb959823f525466b860058bb235db4608a0a92e9336786c1c6",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": {
+            "mode": "fallback_no_match",
+            "queryTermCount": 47,
+            "eligibleCount": 1,
+            "matchedCount": 0,
+            "candidateCount": 1,
+            "excludedCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "stage": "edit",
+      "runId": "run_a93f41ab0dae49a985c4",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [
+        "policy.json"
+      ],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/baseline-trial-1/edit-result.json",
+        "sha256": "980738e1ad17fb70641705f1f2f5f6f5b4b188a594d89fcd13c0de43ab5302b1"
+      },
+      "usage": {
+        "inputTokens": 11430,
+        "outputTokens": 905,
+        "cacheReadTokens": 14848,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0018951744000000003
+      },
+      "exposures": [
+        {
+          "eventId": "event_012a6804164f481c8ccb",
+          "capsuleSha256": "fe9f7c2bd4ea5f83f4a2c4a7b81307ca36b6cd11bb5a16ba048506d7c7416431",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 3,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 310,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_6de7321823cc4888b477",
+          "capsuleSha256": "f6a686944ab0e6603cafaab99b8330891658f1decfe07e8a953acf9a1df0f23c",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 3,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 310,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_4241196e9b684ac0a9bc",
+          "capsuleSha256": "5e34ebbdc6a31565744398466991aa96c741ae1def29264339367fa0b3c2a8f3",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 159,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_07d413a3d3474c169dd5",
+          "capsuleSha256": "0656a5c377515b48beb92f3f849476145bdb62f7b961475bc186fb0c13ab2f07",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 159,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "stage": "restart",
+      "runId": "run_62c9e45c20854571b931",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/baseline-trial-1/restart-result.json",
+        "sha256": "cc3efaf1ab2e464e5abe747d61c54037739c6a2c04bad7251e588f25cd12ef3c"
+      },
+      "usage": {
+        "inputTokens": 7874,
+        "outputTokens": 138,
+        "cacheReadTokens": 5376,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0011560528000000001
+      },
+      "exposures": [
+        {
+          "eventId": "event_5069d977bc3e49d7ab62",
+          "capsuleSha256": "5bc8295cbc7736f328d70161a32d9d6d88c1b062bf530d541e078a43a7b1af9d",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_cc363595265344e9b8ad",
+          "capsuleSha256": "bd2726234252647e361851f97a2a9deb9b9fd033d1d14f58e9fc3a4f3c28732a",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "trial": 2,
+      "stage": "edit",
+      "runId": "run_1aae4e0050cb492c8164",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [
+        "policy.json"
+      ],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/candidate-trial-2/edit-result.json",
+        "sha256": "ef68d510d887d5f6e4dbe8b35d7289980a86e762ff8d32bdf7e7f5ae25ed553e"
+      },
+      "usage": {
+        "inputTokens": 15684,
+        "outputTokens": 1117,
+        "cacheReadTokens": 24960,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.002578408
+      },
+      "exposures": [
+        {
+          "eventId": "event_44342bf4efda412395a9",
+          "capsuleSha256": "7a2cb7cffbae8e3d12d4cc5a2023bf424e83849619ea867cff0f7e0f403ab7e4",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 228,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 3,
+            "matchedCount": 2,
+            "candidateCount": 2,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_1a5ab2e070974015823b",
+          "capsuleSha256": "1d5947d107b1f0b847936448a9e0dfad9fb2201b731507868e8393a313af197e",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 228,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 3,
+            "matchedCount": 2,
+            "candidateCount": 2,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_ebb142376433493ebead",
+          "capsuleSha256": "72fb375472f0743289a1158d63c8ef356193e46e00aae36f6c94bc25948db070",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 228,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 3,
+            "matchedCount": 2,
+            "candidateCount": 2,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_fea7801b32fc47748607",
+          "capsuleSha256": "a6cb11256e540077c8a289cc4701fb0decfec5a1b4935fe8b92c69ceef925df0",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 228,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 3,
+            "matchedCount": 2,
+            "candidateCount": 2,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_2f483b8cb35b4aa289a8",
+          "capsuleSha256": "9f2f4ffc6b49acc6c727afc881b51371baf7167fb45e2abfe5f62216cf9505c0",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 77,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 2,
+            "matchedCount": 1,
+            "candidateCount": 1,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_ec3b5f498ec94a10b59f",
+          "capsuleSha256": "f68a0217b80c9ed30bc0b59ec3e0ce9f953fd91769df6a4b233b2aa776af72dc",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 77,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 2,
+            "matchedCount": 1,
+            "candidateCount": 1,
+            "excludedCount": 1
+          }
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "trial": 2,
+      "stage": "restart",
+      "runId": "run_276404b8ff3c40919e58",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/candidate-trial-2/restart-result.json",
+        "sha256": "f95d310ac89d1884cd7c8e4bd902abfd3d7cf5dc5ad9d97c0d6957f8f278e7a8"
+      },
+      "usage": {
+        "inputTokens": 8270,
+        "outputTokens": 112,
+        "cacheReadTokens": 5888,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0012056464
+      },
+      "exposures": [
+        {
+          "eventId": "event_843386f434da4c73bcb5",
+          "capsuleSha256": "b3c5c845ad40bd6fee3db1854f0f8e23a36af50228dff28eb0b40a816c1bf5d9",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": {
+            "mode": "fallback_no_match",
+            "queryTermCount": 47,
+            "eligibleCount": 1,
+            "matchedCount": 0,
+            "candidateCount": 1,
+            "excludedCount": 0
+          }
+        },
+        {
+          "eventId": "event_a6f023abc2cb4aa299bc",
+          "capsuleSha256": "fc925f32905897db42d009e5f015c29fc68c975c2df5f951594e9dbaf23fea63",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": {
+            "mode": "fallback_no_match",
+            "queryTermCount": 47,
+            "eligibleCount": 1,
+            "matchedCount": 0,
+            "candidateCount": 1,
+            "excludedCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "stage": "edit",
+      "runId": "run_e1be08ddc5bf4f9498f6",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [
+        "policy.json"
+      ],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/baseline-trial-2/edit-result.json",
+        "sha256": "1dc0a04aa69dc5008fa0eded2e94b6e9a5b0a104af9170039edc6fec551948f0"
+      },
+      "usage": {
+        "inputTokens": 11833,
+        "outputTokens": 958,
+        "cacheReadTokens": 14848,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0019664344
+      },
+      "exposures": [
+        {
+          "eventId": "event_9921b0034d2340d8af0c",
+          "capsuleSha256": "313527cbbb005ca251c7db8a1e5617fd3a4e50008255e82f20f8659ea79c913c",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 3,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 310,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_e8f6afde50ee41648a91",
+          "capsuleSha256": "3314e9497d4069b71cf92d97643fd8a5944b027064b82f31648027e8d4e6148b",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 3,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 310,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_20b9254e05fd40da93da",
+          "capsuleSha256": "2726ecf3e02baec58a64618fd9305449612c8f5de73bd24ebc0aa6ee3398361a",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 159,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_862b4ebfafbd4c75b42e",
+          "capsuleSha256": "7099c1e8b6c9e6332443264e87113e2e0014221393970074941f18555ca5f8ec",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 159,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "stage": "restart",
+      "runId": "run_11fb413188f84c2fbc21",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/baseline-trial-2/restart-result.json",
+        "sha256": "a7d1ee74eb3cd2bed4eb1143c605041452e7cd7513a7e0e6f258b137d167bd91"
+      },
+      "usage": {
+        "inputTokens": 8076,
+        "outputTokens": 130,
+        "cacheReadTokens": 5504,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0011824512
+      },
+      "exposures": [
+        {
+          "eventId": "event_2447e6569031414cabe5",
+          "capsuleSha256": "7745ccfd48b1d4976994a7042e741dc12362ed15d8c4578dfe78f46b057e6bcf",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_9fe18d3232164e6f8e51",
+          "capsuleSha256": "29aec5b0aea443273e8807f829d3f130d1297e0e657d28f311dc7badbf2d69fc",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "trial": 3,
+      "stage": "edit",
+      "runId": "run_19089d79b06640b59436",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [
+        "policy.json"
+      ],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/baseline-trial-3/edit-result.json",
+        "sha256": "3471d75cd2fe7a64302a9086b9cf4dadde9461b198755d0937ba89d8a89021d7"
+      },
+      "usage": {
+        "inputTokens": 11273,
+        "outputTokens": 781,
+        "cacheReadTokens": 14848,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0018384744000000002
+      },
+      "exposures": [
+        {
+          "eventId": "event_b4266d0946ad4300a845",
+          "capsuleSha256": "d0bb30eeaa502c781b93bf10ed441c35f4ae356ec90319084a7351e2746afdf4",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 3,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 310,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_359791f414d840a39936",
+          "capsuleSha256": "69e53828fe9f08636e4edd103a75f4c1c5e36d60a5f3ebf5fda8a3a325c462f2",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 3,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 310,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_09f9e6523bd943bd8ee9",
+          "capsuleSha256": "079e7a253c7fbfaa105a70e89b2fa8732314e439d95805bb46c2594885180d30",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 159,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_f7a91227f0914ed2a030",
+          "capsuleSha256": "67bb9c73dfe3326faad8a395e71f9c37ef7730a4288c5bd256fe92383c8489e6",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 159,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "trial": 3,
+      "stage": "restart",
+      "runId": "run_93ccae25fbc04b42ab38",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/baseline-trial-3/restart-result.json",
+        "sha256": "f282797ee2dba2b20119dd4d05d7d66e2b734a73d94679d95eef6cffec52f009"
+      },
+      "usage": {
+        "inputTokens": 7738,
+        "outputTokens": 96,
+        "cacheReadTokens": 5376,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0011252528
+      },
+      "exposures": [
+        {
+          "eventId": "event_9c1ca61c3bd642db89f0",
+          "capsuleSha256": "220c80116dd324251c48c57c479ac5ad93744475b92feb00d7f2f4a1a857dc3f",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        },
+        {
+          "eventId": "event_033984ccb16f4dba8bbb",
+          "capsuleSha256": "f2f503b565f781a2ee9d8b89b7834fa3519fb2443ff98a00cb109782811e2853",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": null
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "trial": 3,
+      "stage": "edit",
+      "runId": "run_d2e20752ffc148948f38",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [
+        "policy.json"
+      ],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/candidate-trial-3/edit-result.json",
+        "sha256": "ad0534f4710ba01e53c2c126495635e30f01fba6eb945c70c9c4745f04deb38f"
+      },
+      "usage": {
+        "inputTokens": 11042,
+        "outputTokens": 709,
+        "cacheReadTokens": 14848,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0017859744000000002
+      },
+      "exposures": [
+        {
+          "eventId": "event_61a6b2ae4975415e9049",
+          "capsuleSha256": "2b95fbc44e94d998a4703b9d4a19579bf365f09e8227598a208004d5bd30b8ae",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 228,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 3,
+            "matchedCount": 2,
+            "candidateCount": 2,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_61454dde915348e69435",
+          "capsuleSha256": "0f00d5fb00b4f64f5d622352618a710d976f5c7ca3c4fbfef6c78d76ac88bf97",
+          "afterEdit": false,
+          "availableRelevant": 2,
+          "recalledRelevant": 2,
+          "deliveredFacts": 2,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 228,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 3,
+            "matchedCount": 2,
+            "candidateCount": 2,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_f21b4d5fe8e141559fa8",
+          "capsuleSha256": "b58861848885cf2bee6f02cc3ab9f34115c21919aca998a179166d9ed9e998c9",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 77,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 2,
+            "matchedCount": 1,
+            "candidateCount": 1,
+            "excludedCount": 1
+          }
+        },
+        {
+          "eventId": "event_e9fa7c35c0594c31a7aa",
+          "capsuleSha256": "89d95aa4207d3e99377fef4afb5b38d1d240618a9d03b22e697585485d7fd826",
+          "afterEdit": true,
+          "availableRelevant": 1,
+          "recalledRelevant": 1,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 0,
+          "factTextCharacters": 77,
+          "unrelatedFactTextCharacters": 0,
+          "selection": {
+            "mode": "matched_and_general",
+            "queryTermCount": 36,
+            "eligibleCount": 2,
+            "matchedCount": 1,
+            "candidateCount": 1,
+            "excludedCount": 1
+          }
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "trial": 3,
+      "stage": "restart",
+      "runId": "run_2948b12d0f2148e2b77a",
+      "status": "completed",
+      "taskSuccess": true,
+      "changed": [],
+      "report": {
+        "path": "/Users/champ/.cache/napier-seven-quality/memory-selection-paired-v1/candidate-trial-3/restart-result.json",
+        "sha256": "127e786597d2f7170e11adefc3f58851c9ea58452c541bd8440bcb37b077c668"
+      },
+      "usage": {
+        "inputTokens": 7751,
+        "outputTokens": 161,
+        "cacheReadTokens": 5248,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0011449144
+      },
+      "exposures": [
+        {
+          "eventId": "event_9aed8d21e36b44808c55",
+          "capsuleSha256": "4c264afe0793da422afde11c374d9ea067af789fd1fe5908c8d54f8984e656c5",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": {
+            "mode": "fallback_no_match",
+            "queryTermCount": 47,
+            "eligibleCount": 1,
+            "matchedCount": 0,
+            "candidateCount": 1,
+            "excludedCount": 0
+          }
+        },
+        {
+          "eventId": "event_8a62e42038c8480ab87e",
+          "capsuleSha256": "3c62977663f2da046d4abf2e539586c92f25bdd8ac049d06faedef88c735079a",
+          "afterEdit": false,
+          "availableRelevant": 0,
+          "recalledRelevant": 0,
+          "deliveredFacts": 1,
+          "unrelatedFacts": 1,
+          "factTextCharacters": 82,
+          "unrelatedFactTextCharacters": 82,
+          "selection": {
+            "mode": "fallback_no_match",
+            "queryTermCount": 47,
+            "eligibleCount": 1,
+            "matchedCount": 0,
+            "candidateCount": 1,
+            "excludedCount": 0
+          }
+        }
+      ]
+    }
+  ],
+  "arms": {
+    "baseline": {
+      "runs": 6,
+      "passed": 6,
+      "invocations": 18,
+      "relevantRecall": {
+        "recalled": 18,
+        "available": 18
+      },
+      "unrelatedFactExposure": {
+        "unrelated": 18,
+        "total": 36
+      },
+      "unrelatedFactTextCharacters": {
+        "unrelated": 1476,
+        "total": 3306
+      },
+      "staleFactDeliveries": 0,
+      "ineligibleFactDeliveries": 0
+    },
+    "candidate": {
+      "runs": 6,
+      "passed": 6,
+      "invocations": 20,
+      "relevantRecall": {
+        "recalled": 22,
+        "available": 22
+      },
+      "unrelatedFactExposure": {
+        "unrelated": 6,
+        "total": 28
+      },
+      "unrelatedFactTextCharacters": {
+        "unrelated": 492,
+        "total": 2778
+      },
+      "staleFactDeliveries": 0,
+      "ineligibleFactDeliveries": 0
+    }
+  },
+  "promotionReady": false,
+  "scope": "Three paired repetitions of one two-stage shipping source-transition scenario, twelve real Runs total. Same model, initial prompt, operator memory seed contents, initial workspace and budgets; restart inherits the history of each arm and generated proposals (unreviewed, excluded), so stages are not independent paired trials; explicit policy compositions differ only in memory strategy, Runtime snapshots differ in the selection implementation. Actual hash-bound invocation capsules were re-read. Repeated fact exposures are not independent memory samples. No-match restart fallback still admits unrelated context. Lexical selection can omit relevant synonyms when another fact matches; this scenario does not exercise that risk. Different trajectories and concurrent execution do not establish latency, cache or cost gains. Earlier rejected campaigns are not pooled; the full 30-distinct-case x 3 quality gate remains unmet."
+}

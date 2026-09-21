@@ -1,0 +1,139 @@
+{
+  "kind": "napier.external-outcome-export-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T22:07:07.276013+00:00",
+  "sourceDeltaFromFrozenStreamTimingV1": [
+    "packages/runtime/src/external-outcome-review.ts",
+    "packages/runtime/src/run-input-reproduction.ts"
+  ],
+  "contractsSourceAndDistUnchanged": true,
+  "files": [
+    {
+      "path": "packages/runtime/src/external-outcome-review.ts",
+      "sha256": "88a0e616fba4886e53f186b8ceafa772ec6105857dd9f55860aa7abf42b7186f"
+    },
+    {
+      "path": "packages/runtime/src/run-input-reproduction.ts",
+      "sha256": "d9a0a83c2d7aa036d6d3a4bafa2ab942373edc632c58558e63b0d292b739f548"
+    },
+    {
+      "path": "packages/runtime/test/external-outcome-export.test.ts",
+      "sha256": "d05e712f1ab51f574b37d7d426886880b063808c29ac5fb5dd95ff71f1295441"
+    },
+    {
+      "path": "scripts/export-run-input-reproduction.mjs",
+      "sha256": "9447d701726db0583b68a07a47ef76cad1fe8dd5af8b55444021b49fd0d92b8b"
+    }
+  ],
+  "validation": {
+    "focusedTestsPassed": 8,
+    "compilePassed": true,
+    "fullRuntime": {
+      "passed": 2599,
+      "skipped": 59,
+      "failed": 2,
+      "files": 520,
+      "durationSeconds": 301.14,
+      "failures": [
+        "Original capability-vector history/current V5 expectation",
+        "Original production Skill loader readiness expectation"
+      ]
+    },
+    "architecture": {
+      "existingViolations": 7,
+      "newViolations": 0,
+      "limitsRaised": false,
+      "initialAttempt": "Exporter complexity 26; optional-review resolution extracted, restoring the 25 limit."
+    },
+    "formatPassed": true,
+    "diffCheckPassed": true
+  },
+  "realExport": {
+    "kind": "napier.external-outcome-export-live",
+    "schemaVersion": 1,
+    "recordedAt": "2026-09-13T22:04:10.372Z",
+    "rows": [
+      {
+        "runId": "run_0194d70617974ee3a7db",
+        "threadId": "thread_c5193b221b9449df943b",
+        "originalStatus": "completed",
+        "originalGraderExitCode": 1,
+        "toolFailures": 0,
+        "reviewPath": "/Users/champ/.cache/napier-seven-quality/external-outcome-export-v2/run_0194d70617974ee3a7db-review.json",
+        "reviewSha256": "fb79de0e498b8acb8f7138fb835fe877415cf212079a4a82a8fe1ddcf744ab50",
+        "originalReportSha256": "fdfb78be9cc7a653b8e5976ae1497e4509496efd7da9ceebd6f6326779ec8a06",
+        "exportReceiptSha256": "b55c8e4029c39e57637da7e257a5e62a938f4b2e093abed15c770b25cf4785e4",
+        "matchedInitialFiles": 5,
+        "originalStateAndEventsUnchanged": true,
+        "originalReportUnchanged": true,
+        "qualificationReady": false
+      },
+      {
+        "runId": "run_e270a55bcea54c688b26",
+        "threadId": "thread_3bb0bc7f5e6445edbcf8",
+        "originalStatus": "completed",
+        "originalGraderExitCode": 1,
+        "toolFailures": 0,
+        "reviewPath": "/Users/champ/.cache/napier-seven-quality/external-outcome-export-v2/run_e270a55bcea54c688b26-review.json",
+        "reviewSha256": "a836aa65e67771cacde6844ec8d162fdba3a0f21ba4e8ac7d87a7fa13c148821",
+        "originalReportSha256": "4dee5db81785a41167842bb65a2160af9b22f9d9295100fff7231ddc27d155bb",
+        "exportReceiptSha256": "52bf14062a24c69f06113b4ba4c7b45f9cd34adb177513afc674aa33d9c1602b",
+        "matchedInitialFiles": 5,
+        "originalStateAndEventsUnchanged": true,
+        "originalReportUnchanged": true,
+        "qualificationReady": false
+      }
+    ],
+    "scope": "Actual CLI export of two already-completed real-model Runs that have independent grader failures and no tool failure. No Run, invocation, original result or task output was rewritten. Caller review is hash-bound but not promoted to an authenticated Runtime verdict."
+  },
+  "realExportReceiptSha256": "cc28ca5e00f25bccc8bd0e4080736e1db866e5c71204922a040cce9ef8140bc9",
+  "initialDriverRejection": "The v1 review used the raw benchmark prompt digest including its trailing newline. Validation correctly rejected it; v2 uses the normalized prompt digest from the initial capsule. Original failed review and log retained. No Run was rerun.",
+  "scope": "Post-run diagnostic export only. Optional caller assessment cannot change Runtime status, authorization, task grades or promotion readiness. All previous frozen model evaluations retain their original source identities; these tests are not a fresh Agent composition qualification.",
+  "logs": [
+    {
+      "path": "/tmp/napier-external-outcome-tests-v1.log",
+      "sha256": "193527feff31eaa47317f5489bc6b6fa4f964a5f29ed8761d28ed3e5aee79b8f"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-compile-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-compile-v2.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-architecture-v1.log",
+      "sha256": "1f5cc5646129c93d3b45269bc93ffae79e8ef2a93cbfe39f6d2691b42e593967"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-architecture-v2.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-runtime-full-v1.log",
+      "sha256": "90708054515f16ddba2880dce423bc0c9d894cb83bd191d8bdac222f671805ea"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-format-check-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-real-v1.mjs",
+      "sha256": "e0e666f53ef5f8985a66c97f5f180c6c2c1175851c084c4bc2aabb1715ce834e"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-real-v1.log",
+      "sha256": "c8f0415abd31043dc0bc3828b71aa7920ea29bfd81751cb9eecc8f14486c73fa"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-real-v2.mjs",
+      "sha256": "68215926f3c9dd6f98cddcf0a333c8dfb302085f631fea0f7ef7dd1bb22a42de"
+    },
+    {
+      "path": "/tmp/napier-external-outcome-real-v2.log",
+      "sha256": "79a30f1b7b8da5b3539ea35ab3b45e4fd7d70e20ee57a7368ae24361b2930b9d"
+    }
+  ],
+  "promotionReady": false
+}

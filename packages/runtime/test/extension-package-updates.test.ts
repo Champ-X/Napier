@@ -76,6 +76,7 @@ async function createSignedPackage(
     routingHint?: string;
     schema?: JsonValue;
     effect?: Exclude<McpToolEffect, "unknown">;
+    expiresAt?: string;
   },
 ): Promise<SignedExtensionPackageEnvelope> {
   let extension = createMcpExtension({
@@ -105,6 +106,7 @@ async function createSignedPackage(
     extension,
     options.publisher ?? "Example Labs",
     anchor,
+    { expiresAt: options.expiresAt },
   );
 }
 
@@ -160,6 +162,9 @@ describe("reviewed Extension package updates", () => {
     });
     const nextEnvelope = await createSignedPackage(anchor, {
       version: "1.3.0",
+      // Exercise lifecycle changes even when both packages are signed in
+      // the same millisecond and therefore have identical createdAt values.
+      expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
       url: "https://example.com/v2/mcp",
       description: "Portable signed records v2",
       schema: {

@@ -1,0 +1,287 @@
+{
+  "kind": "napier.validation-envelope-rollout-pair-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T12:06:20.962903+00:00",
+  "candidateSource": "/tmp/napier-harness-validation-envelope-v1",
+  "baselineSource": "/tmp/napier-harness-baseline-c454a155",
+  "productionSourceChangedThisPhase": false,
+  "frozenInputsUnchangedAfterRun": true,
+  "results": [
+    {
+      "arm": "baseline",
+      "runId": "run_3605f006e3174af1ab2a",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/rollout_dependency_plan_v2-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "46641c19c3a1cd838e2084f3f206a0ea9436a1e9ec2051d53adcd19609d87839",
+      "status": "completed",
+      "taskSuccess": true,
+      "externalGradePassed": true,
+      "supplementalV3GradePassed": true,
+      "allowedChanges": true,
+      "changed": ["src/graph.mjs", "src/rollout.mjs"],
+      "requests": 16,
+      "chargeFen": 102,
+      "durationMs": 471684,
+      "toolCalls": 24,
+      "toolFailures": 1,
+      "failureDetails": [
+        {
+          "eventId": "event_5c038a2d46bc4ebc889a",
+          "tool": "run_command",
+          "failureClass": "invalid_input",
+          "outputSha256": "27d14b2fda12a3c5c38f1f809df81bec488d68ebd7acb56d32a453939e31a4b8"
+        }
+      ],
+      "verificationStatuses": [],
+      "editOperations": ["replace", "replace"]
+    },
+    {
+      "arm": "candidate",
+      "runId": "run_c5e3d49f40404fddb34b",
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/rollout_dependency_plan_v2-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "b5a7011b558474221f55aded444b584227f393fdd2c266890e57d75d21930da6",
+      "status": "completed",
+      "taskSuccess": true,
+      "externalGradePassed": true,
+      "supplementalV3GradePassed": true,
+      "allowedChanges": true,
+      "changed": ["src/graph.mjs", "src/rollout.mjs"],
+      "requests": 11,
+      "chargeFen": 67,
+      "durationMs": 307984,
+      "toolCalls": 24,
+      "toolFailures": 0,
+      "failureDetails": [],
+      "verificationStatuses": ["failed", "passed"],
+      "editOperations": ["replace", "replace"]
+    }
+  ],
+  "invocationAudit": {
+    "kind": "napier.core-pair-invocation-audit",
+    "schemaVersion": 1,
+    "results": [
+      {
+        "arm": "baseline",
+        "runId": "run_3605f006e3174af1ab2a",
+        "reportFileSha256": "46641c19c3a1cd838e2084f3f206a0ea9436a1e9ec2051d53adcd19609d87839",
+        "capsulesAudited": 15,
+        "firstInvocationHasPreEditGuidance": false,
+        "preEditPolicyBlocks": 0,
+        "verificationCalls": [],
+        "allVerificationCallsCaptured": true,
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "observedWorkspaceSha256": "1b055c2598af61037f3dd98afba5336a87fc3be5a217d965f377e1f7d2db7d75"
+      },
+      {
+        "arm": "candidate",
+        "runId": "run_c5e3d49f40404fddb34b",
+        "reportFileSha256": "b5a7011b558474221f55aded444b584227f393fdd2c266890e57d75d21930da6",
+        "capsulesAudited": 10,
+        "firstInvocationHasPreEditGuidance": true,
+        "preEditPolicyBlocks": 0,
+        "verificationCalls": [
+          {
+            "callId": "call_01_PtUVKUa3SUZ7O8Nx9P7D6208",
+            "arguments": {
+              "runtime": "node",
+              "kind": "test"
+            },
+            "sourceCapsuleSha256": "65e23495064296bf990d871d5635b02c31a6cb48e14d7e7f6fa7a8d592109249"
+          },
+          {
+            "callId": "call_03_cjorXvvcX0qegY8q3gNW1464",
+            "arguments": {
+              "runtime": "node",
+              "kind": "test"
+            },
+            "sourceCapsuleSha256": "65e23495064296bf990d871d5635b02c31a6cb48e14d7e7f6fa7a8d592109249"
+          }
+        ],
+        "allVerificationCallsCaptured": true,
+        "workspaceMatches": true,
+        "graderMatches": true,
+        "observedWorkspaceSha256": "640b33f4deb8673f4e9e7b5bd7f8d5705b033d8a7d127303e56d10bfe1f8d552"
+      }
+    ]
+  },
+  "supplementalContractAudit": {
+    "oracleFreezePath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/rollout-v3-oracle-freeze.json",
+    "oracleFreezeSha256": "1fabcff1b8bfbd60d20a8e9cf6745988d86c8d3988142763dbe03388fc9d98c1",
+    "oracleFrozenBeforeCandidateResult": true,
+    "tests": {
+      "path": "/tmp/napier-rollout-contract-oracle-v3.json",
+      "sha256": "7fca28d084b2e85f31206d043bcfc14f309613842678a5db2467d80fffce51e2",
+      "passed": 8,
+      "failed": 0
+    },
+    "scope": "Supplemental offline grading on unchanged retained outputs only. Does not add model observations or replace original v2 campaign reports. Any adverse supplemental result remains a quality blocker.",
+    "regrades": [
+      {
+        "path": "/tmp/napier-rollout-v3-regrade-baseline-v1.json",
+        "sha256": "12eaff81063fb9ee368b3a731ffdc06f19609c25c908b1fe50783341229c238b",
+        "result": {
+          "kind": "napier.rollout-v3-retained-output-regrade",
+          "schemaVersion": 1,
+          "scope": "Host Node execution with sanitized environment in separate disposable workspace copies. No model calls, original metadata edits, additional independent observations or OS isolation claim.",
+          "results": [
+            {
+              "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/rollout_dependency_plan_v2-baseline-trial-1/trial-1/result.json",
+              "reportSha256": "46641c19c3a1cd838e2084f3f206a0ea9436a1e9ec2051d53adcd19609d87839",
+              "runId": "run_3605f006e3174af1ab2a",
+              "arm": "baseline",
+              "recordedStatus": "completed",
+              "recordedTaskSuccess": true,
+              "recordedGraderPassed": true,
+              "observedWorkspaceSha256": "1b055c2598af61037f3dd98afba5336a87fc3be5a217d965f377e1f7d2db7d75",
+              "grades": {
+                "v2": {
+                  "passed": true,
+                  "exitCode": 0,
+                  "signal": null,
+                  "graderSha256": "7f7df43c3c86b8fa134881e35a82e3f2cb3f0db56f0886f883adc53c1f2e101c",
+                  "diagnosticSha256": "578dd3b9627675f68e05a0adc59645897315399c1689b40288b110d83a707fb1",
+                  "output": "Dependency closure, ordering, cycle validation and ownership passed\n"
+                },
+                "v3": {
+                  "passed": true,
+                  "exitCode": 0,
+                  "signal": null,
+                  "graderSha256": "6d81557b1d8a18542c834540f4843a3d82ab43d43263642bbffabfac32aea5e6",
+                  "diagnosticSha256": "b7d805b47380de6e8416e003a9b3e749cfe11bf0f819b9a4e7c75a4643470f49",
+                  "output": "Dependency closure, ordering, cycle validation and ownership passed\nMixed-case ordering, independent waves, full validation and fresh results passed\n"
+                }
+              },
+              "originalUnchanged": true,
+              "newModelObservation": false
+            }
+          ],
+          "paidApiCalls": 0
+        }
+      },
+      {
+        "path": "/tmp/napier-rollout-v3-regrade-candidate-v1.json",
+        "sha256": "1c96b2f1b7bd04aec84fcd270ee3bc5e76f160ff319a42b1799f56c23c2f2411",
+        "result": {
+          "kind": "napier.rollout-v3-retained-output-regrade",
+          "schemaVersion": 1,
+          "scope": "Host Node execution with sanitized environment in separate disposable workspace copies. No model calls, original metadata edits, additional independent observations or OS isolation claim.",
+          "results": [
+            {
+              "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/rollout_dependency_plan_v2-candidate-trial-1/trial-1/result.json",
+              "reportSha256": "b5a7011b558474221f55aded444b584227f393fdd2c266890e57d75d21930da6",
+              "runId": "run_c5e3d49f40404fddb34b",
+              "arm": "candidate",
+              "recordedStatus": "completed",
+              "recordedTaskSuccess": true,
+              "recordedGraderPassed": true,
+              "observedWorkspaceSha256": "640b33f4deb8673f4e9e7b5bd7f8d5705b033d8a7d127303e56d10bfe1f8d552",
+              "grades": {
+                "v2": {
+                  "passed": true,
+                  "exitCode": 0,
+                  "signal": null,
+                  "graderSha256": "7f7df43c3c86b8fa134881e35a82e3f2cb3f0db56f0886f883adc53c1f2e101c",
+                  "diagnosticSha256": "578dd3b9627675f68e05a0adc59645897315399c1689b40288b110d83a707fb1",
+                  "output": "Dependency closure, ordering, cycle validation and ownership passed\n"
+                },
+                "v3": {
+                  "passed": true,
+                  "exitCode": 0,
+                  "signal": null,
+                  "graderSha256": "6d81557b1d8a18542c834540f4843a3d82ab43d43263642bbffabfac32aea5e6",
+                  "diagnosticSha256": "b7d805b47380de6e8416e003a9b3e749cfe11bf0f819b9a4e7c75a4643470f49",
+                  "output": "Dependency closure, ordering, cycle validation and ownership passed\nMixed-case ordering, independent waves, full validation and fresh results passed\n"
+                }
+              },
+              "originalUnchanged": true,
+              "newModelObservation": false
+            }
+          ],
+          "paidApiCalls": 0
+        }
+      }
+    ],
+    "originalReportsAndWorkspacesUnchanged": true,
+    "additionalModelObservations": 0
+  },
+  "costAndFrequency": {
+    "newRequests": 27,
+    "newChargeFen": 169,
+    "minimumObservedIntervalMs": 30000,
+    "concurrency": 1,
+    "perRunRequestLimit": 20,
+    "ledger": "/Users/champ/.cache/napier-seven-quality/budget-50cny-2026-09-14.sqlite",
+    "maxFen": 5000,
+    "committedFen": 1373,
+    "remainingFen": 3627,
+    "requests": 193,
+    "reservedRequests": 0,
+    "denied": 0,
+    "providerInvoice": false
+  },
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 1,
+    "cases": 1,
+    "regressions": [],
+    "evidenceBlockers": [],
+    "blockers": [
+      "Need 30 cases; observed 1",
+      "rollout_dependency_plan_v2: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "8315210272733a123c9f9ee6cae5f6c7e7dc7de697578d8c23396b174cb30c6b"
+  },
+  "plannedJobs": 180,
+  "notStartedJobs": 178,
+  "bindings": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/plan.json",
+      "sha256": "53a53fb052ef2ba92753c94e3b283444ef48cc91fa0ce66f3845ea4b027ee19f"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/schedule.json",
+      "sha256": "35820cfa669510e7b2f118c32d6999cdc75e732bd346bfa4f318343526636ce0"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/phase-1-result.json",
+      "sha256": "46969d245cc71003fd61ecf6fed588d2eb371b2ffc33905a822e47e73592189b"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/invocation-audit.json",
+      "sha256": "07e78f48db60f8744991f12db3b687638e8ef62a6c6d72c974a6389058ef4540"
+    },
+    {
+      "path": "/tmp/napier-cny-validation-envelope-first-pair-v1.mjs",
+      "sha256": "dcf4e756797eec7c3f545d7287aa70d073f442ad06bff787731ee4f03fbfa30e"
+    },
+    {
+      "path": "/tmp/napier-cny-validation-envelope-invocation-audit-v1.mjs",
+      "sha256": "a810e1892e8c497f249401b3ab4525e45bed4198068837c37afe2515c61b93fd"
+    },
+    {
+      "path": "/tmp/napier-rollout-v3-retained-regrade-v1.mjs",
+      "sha256": "7622f4beff48fd13f7cb5e7a18847da883e81ba60e0497370fff339fbf6598c2"
+    }
+  ],
+  "limitations": [
+    "One paired trial on one case; no broad quality or statistical qualification. The thirty-case/three-trial gate remains unchanged.",
+    "V3 is a supplementary offline contract regrade of the same two outputs, not another task or independent paired trial.",
+    "Both arms use replacement edits, so this does not qualify preferred unified-diff adoption.",
+    "Lower candidate requests, duration and conservative cost in one observation do not establish a causal efficiency improvement.",
+    "Linked dependencies are not hermetic; supplemental host grading does not establish OS isolation.",
+    "The earlier unexplained Workflow failure remains retained even though the current full offline Runtime suite passes."
+  ],
+  "goalComplete": false,
+  "promotionReady": false,
+  "modelRequestEvidenceBindingsValid": {
+    "baseline": true,
+    "candidate": true
+  }
+}

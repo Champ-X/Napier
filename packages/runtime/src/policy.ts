@@ -349,7 +349,7 @@ export function assessToolCall(
             : toolName === "python_kernel"
               ? "persistent sandboxed Python state lifecycle"
               : toolName === "node_debugger"
-                ? "persistent sandboxed Node DAP lifecycle"
+                ? debuggerPolicyReason(input)
                 : "read-only sandboxed command execution",
     };
   }
@@ -436,4 +436,10 @@ function workspaceWritePathDenial(
         reason: `writes cannot modify protected path segment: ${protectedSegment}`,
       }
     : undefined;
+}
+
+function debuggerPolicyReason(input: JsonValue): string {
+  return getStringField(input, "runtime") === "python"
+    ? "Python DAP execution; isolation depends on the explicitly selected provider"
+    : "persistent sandboxed Node DAP lifecycle";
 }

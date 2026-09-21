@@ -1,0 +1,280 @@
+{
+  "kind": "napier.resource-task-intent-corpus-replay",
+  "schemaVersion": 1,
+  "rows": [
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "incremental_ndjson_v1",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "rollout_dependency_plan_v2",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "http_retry_policy_v2",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "access_rule_evaluation_v2",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "booking_calendar_v2",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "safe_csv_export_v1",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "inventory_event_projection_v1",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "weighted_expense_allocation_v1",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "http_etag_preconditions_v2",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "bounded_async_queue_v4",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "http_byte_ranges_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "sql_named_binding_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "transaction_savepoints_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "atomic_json_patch_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "weighted_route_planning_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "resumable_byte_upload_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "binary_frame_decoder_v2",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "path_glob_selection_v2",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "streaming_csv_decoder_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "business_calendar_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "source_map_vlq_v1",
+      "before": [
+        "general"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "bm25_document_search_v1",
+      "before": [
+        "research"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "config_layers_v1",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "cursor_pagination_v1",
+      "before": [
+        "research"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "ledger_reconciliation_v1",
+      "before": [
+        "coding",
+        "data"
+      ],
+      "after": [
+        "coding",
+        "data"
+      ]
+    },
+    {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "before": [
+        "coding"
+      ],
+      "after": [
+        "coding"
+      ]
+    }
+  ],
+  "modelRequests": 0,
+  "scope": "Replay the unchanged original task instructions through old and current classifiers. This is not model execution or task-quality qualification."
+}

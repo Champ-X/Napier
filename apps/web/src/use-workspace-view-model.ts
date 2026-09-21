@@ -116,10 +116,7 @@ import {
 import { messagePayload } from "./message-payload";
 import { commitThreadLocation, threadIdFromLocation } from "./thread-location";
 import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
-import {
-  executeLoadedNextRunPrompt,
-  useNextRunCapabilityPreset,
-} from "./use-next-run-capability-preset";
+import { useNextRunOptions } from "./use-next-run-options";
 import {
   upsertThreadControlMessage,
   useMemoryProvenanceDraft,
@@ -255,7 +252,8 @@ export function useWorkspaceViewModel() {
   const {
     preset: nextRunCapabilityPreset,
     setPreset: setNextRunCapabilityPreset,
-  } = useNextRunCapabilityPreset(detail?.thread.id);
+    harnessPolicy: nextRunHarnessPolicy,
+  } = useNextRunOptions(detail?.thread.id);
   const selectedThreadIdRef = useRef<string | undefined>(undefined);
   const threadDetailCacheRef = useRef(new Map<string, WebThreadDetail>());
   selectedThreadIdRef.current = selectedThreadId;
@@ -624,7 +622,7 @@ export function useWorkspaceViewModel() {
       const promptImages = promptImagesFromAttachments(imageAttachments);
       setComposer("");
       setComposerImages([]);
-      await executeLoadedNextRunPrompt({
+      await nextRunHarnessPolicy.execute({
         threadId,
         text,
         ...(promptImages ? { images: promptImages } : {}),
@@ -648,6 +646,7 @@ export function useWorkspaceViewModel() {
       finishRunUi,
       isRunning,
       nextRunCapabilityPreset,
+      nextRunHarnessPolicy.execute,
       openOperatorDecision,
       refreshBootstrap,
       selectedModel.configured,
@@ -2110,6 +2109,7 @@ export function useWorkspaceViewModel() {
     composer,
     composerImages,
     nextRunCapabilityPreset,
+    nextRunHarnessPolicy,
     activeRunId,
     controlMessageMode,
     goalDraft,

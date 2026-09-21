@@ -25,6 +25,61 @@ export interface HarnessExperimentProfile {
   schemaVersion: 1;
   id: string;
   maxActiveTools: number;
+  /** Omitted means a fixed experimental limit. model_default never expands
+   * the serving model's resolved tool limit, including on recovery/fallback. */
+  maxActiveToolsMode?: "model_default";
+  policies?: HarnessPolicyProfile;
+  contentSha256: string;
+}
+
+export const HARNESS_POLICY_PRESET_IDS = [
+  "coding-node.v1",
+  "coding-python.v1",
+  "research.v1",
+] as const;
+export type HarnessPolicyPresetId = (typeof HARNESS_POLICY_PRESET_IDS)[number];
+
+export interface ContextPolicy {
+  prompt: "legacy" | "stable-v1";
+  memory:
+    | "legacy"
+    | "task-aware-v1"
+    | "task-aware-selective-v2"
+    | "task-aware-grouped-v3";
+  workingState: "legacy" | "evidence-v1";
+  delivery?: "tail-v1";
+  finalization?: "request-aware-v1" | "request-aware-v2";
+  validation?:
+    | "contract-first-v1"
+    | "contract-transitions-v2"
+    | "contract-staged-v3";
+  verificationOrder?: "before-first-patch-v1";
+  planning?: "proportional-v1";
+}
+export interface ToolSurfacePolicy {
+  editReferences: boolean;
+  unifiedDiff?: boolean;
+  editPreference?: EditFormatPreference;
+}
+export interface EditFormatPreference {
+  provider: string;
+  model: string;
+  api: string;
+  taskPhase: "coding" | "research" | "browser" | "data" | "general";
+  dialect: "structured_patch" | "hashline" | "unified_diff";
+}
+export type VerificationPolicy = "node-v1" | "node-python-v1";
+export type ModelCallPolicy = "bounded-thinking-v1";
+
+/** Serializable strategy composition. Policy identities are bound into each run's evidence. */
+export interface HarnessPolicyProfile {
+  schemaVersion: 1;
+  id: string;
+  revision: number;
+  context: ContextPolicy;
+  toolSurface: ToolSurfacePolicy;
+  verification: VerificationPolicy;
+  modelCall?: ModelCallPolicy;
   contentSha256: string;
 }
 

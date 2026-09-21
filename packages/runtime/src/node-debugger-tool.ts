@@ -3,6 +3,7 @@ import type { JsonValue } from "@napier/contracts";
 import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import type { PythonDebuggerToolRuntime } from "./python-debugger-tool.js";
 import {
   DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
   DEFAULT_NODE_DEBUG_SESSION_TIMEOUT_MS,
@@ -118,11 +119,19 @@ const nodeDebuggerSchema = Type.Union([
   ),
 ]);
 Object.assign(nodeDebuggerSchema, { type: "object" });
+type NodeDebuggerToolInput = Static<typeof nodeDebuggerSchema>;
+type PythonDebuggerToolDetails = Awaited<
+  ReturnType<PythonDebuggerToolRuntime["execute"]>
+>["details"];
 
 export function createNodeDebuggerTool(
   manager: NodeDebuggerManager,
   context: { threadId: string; runId: string },
-): AgentTool<typeof nodeDebuggerSchema, NodeDebuggerToolDetails> {
+  python?: PythonDebuggerToolRuntime,
+): AgentTool<
+  typeof nodeDebuggerSchema,
+  NodeDebuggerToolDetails | PythonDebuggerToolDetails
+> {
   return {
     name: "node_debugger",
     label: "Node debugger",
@@ -131,78 +140,102 @@ export function createNodeDebuggerTool(
     parameters: nodeDebuggerSchema,
     async execute(_toolCallId, input, signal) {
       assertDebuggerControlFields(input);
-      let result: NodeDebuggerActionResult;
-      if (input.action === "launch") {
-        result = await manager.launch({
-          ...context,
-          path: input.path,
-          ...(input.programPath ? { programPath: input.programPath } : {}),
-          ...(input.sourceMapPath
-            ? { sourceMapPath: input.sourceMapPath }
-            : {}),
-          breakpoints: input.breakpoints,
-          args: input.args ?? [],
-          pauseOnExceptions: input.pauseOnExceptions ?? "uncaught",
-          sessionTimeoutMs:
-            input.sessionTimeoutMs ?? DEFAULT_NODE_DEBUG_SESSION_TIMEOUT_MS,
-          actionTimeoutMs:
-            input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
-          ...(signal ? { signal } : {}),
-        });
-      } else if (input.action === "stack_trace") {
-        result = await manager.stackTrace({
-          ...context,
-          processId: input.processId,
-          timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
-          ...(signal ? { signal } : {}),
-        });
-      } else if (input.action === "scopes") {
-        result = await manager.scopes({
-          ...context,
-          processId: input.processId,
-          frameId: input.frameId!,
-          timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
-          ...(signal ? { signal } : {}),
-        });
-      } else if (input.action === "variables") {
-        result = await manager.variables({
-          ...context,
-          processId: input.processId,
-          variablesReference: input.variablesReference!,
-          timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
-          ...(signal ? { signal } : {}),
-        });
-      } else if (input.action === "evaluate") {
-        result = await manager.evaluate({
-          ...context,
-          processId: input.processId,
-          frameId: input.frameId!,
-          expression: input.expression!,
-          timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
-          ...(signal ? { signal } : {}),
-        });
-      } else if (
-        input.action === "continue" ||
-        input.action === "next" ||
-        input.action === "step_in" ||
-        input.action === "step_out"
-      ) {
-        result = await manager.resume({
-          ...context,
-          action: input.action,
-          processId: input.processId,
-          timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
-          ...(signal ? { signal } : {}),
-        });
-      } else {
-        result = await manager.cancel({
-          ...context,
-          processId: input.processId,
-        });
-      }
-      return formatNodeDebuggerToolResult(result);
+      const selected = selectedPythonDebugger(input, python);
+      if (selected) return selected.execute(context, input, signal);
+      return executeNodeDebuggerAction(manager, context, input, signal);
     },
   };
+}
+
+async function executeNodeDebuggerAction(
+  manager: NodeDebuggerManager,
+  context: { threadId: string; runId: string },
+  input: NodeDebuggerToolInput,
+  signal?: AbortSignal,
+) {
+  let result: NodeDebuggerActionResult;
+  if (input.action === "launch") {
+    result = await manager.launch({
+      ...context,
+      path: input.path,
+      ...(input.programPath ? { programPath: input.programPath } : {}),
+      ...(input.sourceMapPath ? { sourceMapPath: input.sourceMapPath } : {}),
+      breakpoints: input.breakpoints,
+      args: input.args ?? [],
+      pauseOnExceptions: input.pauseOnExceptions ?? "uncaught",
+      sessionTimeoutMs:
+        input.sessionTimeoutMs ?? DEFAULT_NODE_DEBUG_SESSION_TIMEOUT_MS,
+      actionTimeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
+      ...(signal ? { signal } : {}),
+    });
+  } else if (input.action === "stack_trace") {
+    result = await manager.stackTrace({
+      ...context,
+      processId: input.processId,
+      timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
+      ...(signal ? { signal } : {}),
+    });
+  } else if (input.action === "scopes") {
+    result = await manager.scopes({
+      ...context,
+      processId: input.processId,
+      frameId: input.frameId!,
+      timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
+      ...(signal ? { signal } : {}),
+    });
+  } else if (input.action === "variables") {
+    result = await manager.variables({
+      ...context,
+      processId: input.processId,
+      variablesReference: input.variablesReference!,
+      timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
+      ...(signal ? { signal } : {}),
+    });
+  } else if (input.action === "evaluate") {
+    result = await manager.evaluate({
+      ...context,
+      processId: input.processId,
+      frameId: input.frameId!,
+      expression: input.expression!,
+      timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
+      ...(signal ? { signal } : {}),
+    });
+  } else if (
+    input.action === "continue" ||
+    input.action === "next" ||
+    input.action === "step_in" ||
+    input.action === "step_out"
+  ) {
+    result = await manager.resume({
+      ...context,
+      action: input.action,
+      processId: input.processId,
+      timeoutMs: input.timeoutMs ?? DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
+      ...(signal ? { signal } : {}),
+    });
+  } else {
+    result = await manager.cancel({
+      ...context,
+      processId: input.processId,
+    });
+  }
+  return formatNodeDebuggerToolResult(result);
+}
+
+function selectedPythonDebugger(
+  input: NodeDebuggerToolInput,
+  python?: PythonDebuggerToolRuntime,
+) {
+  const runtime = (input as NodeDebuggerToolInput & { runtime?: string })
+    .runtime;
+  if (runtime === "python") {
+    if (!python)
+      throw new Error("Python debugger process service is unavailable");
+    return python;
+  }
+  if (runtime !== undefined && runtime !== "node")
+    throw new Error("Unsupported debugger runtime");
+  return undefined;
 }
 
 export function nodeDebuggerToolCallArgumentsLedgerProjection(
@@ -226,6 +259,7 @@ export function nodeDebuggerToolCallArgumentsLedgerProjection(
     schemaVersion: 1,
     redacted: true,
     action,
+    ...(value["runtime"] === "python" ? { runtime: "python" } : {}),
     ...(typeof value["processId"] === "string"
       ? { processId: value["processId"] }
       : {}),

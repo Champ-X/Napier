@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "initialText": "Review the shipping boundary regression in src/shipping.js against the current shipping requirements. All amounts are integer cents.",
+  "mode": "steering",
+  "amendmentText": "For this branch, replace the README free-shipping threshold with 7000 cents inclusive, for both members and non-members. Below that threshold keep member shipping at 299 cents and non-member shipping at 599 cents. Keep rejection of negative or non-integer subtotals.",
+  "sourceLaterText": "This later change is for the original thread: replace the free-shipping threshold with 9000 cents inclusive."
+}

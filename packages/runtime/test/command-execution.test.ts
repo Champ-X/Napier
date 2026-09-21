@@ -532,7 +532,7 @@ describe("sandboxed command execution", () => {
       runner.run({ runtime: "node", args: [], cwd: "outside-link" }),
     ).rejects.toThrow("resolves outside");
     await expect(
-      runner.run({ runtime: "node", args: ["bad\nargument"] }),
+      runner.run({ runtime: "node", args: ["bad\u0000argument"] }),
     ).rejects.toThrow("bounded explicit argv");
     await expect(
       runner.run({ runtime: "python3" as "node", args: [] }),

@@ -1,0 +1,1404 @@
+{
+  "kind": "napier.harness-core-quality-rejection",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T19:20:48.778174+00:00",
+  "campaignRoot": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1",
+  "baselineSnapshot": "/tmp/napier-harness-baseline-c454a155",
+  "candidateSnapshot": "/tmp/napier-harness-input-capture-v2",
+  "model": "deepseek/deepseek-v4-flash",
+  "planned": {
+    "cases": 30,
+    "pairedTrialsPerCase": 3,
+    "runs": 180
+  },
+  "stoppedEarly": true,
+  "stopReason": "A completed paired HTTP trial regressed; stop this rejected composition before further sampling",
+  "collectionComplete": false,
+  "inputsStable": true,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 7,
+    "cases": 3,
+    "regressions": [
+      "http_retry_policy_v1:2: task completion regressed",
+      "http_retry_policy_v1:2: new false completion"
+    ],
+    "blockers": [
+      "booking_calendar_v1:0: missing arm",
+      "Need 30 cases; observed 3",
+      "access_rule_evaluation_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "regressed",
+    "promotionReady": false,
+    "contentSha256": "fd67bc3f772bf86eba891a175f635438244ec828a578e8578b42a6d9a9bfdc2d"
+  },
+  "counts": {
+    "baseline": {
+      "passed": 5,
+      "settled": 7
+    },
+    "candidate": {
+      "passed": 7,
+      "settled": 8
+    }
+  },
+  "observations": [
+    {
+      "caseId": "access_rule_evaluation_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_9408f4ff4e97471ca680",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 3,
+      "durationMs": 154091,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    },
+    {
+      "caseId": "booking_calendar_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_28871d4e3c97446bb6f9",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 0,
+      "durationMs": 106246,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    },
+    {
+      "caseId": "rollout_dependency_plan_v1",
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_e88f1e17364a4b0bb3e8",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 0,
+      "durationMs": 82149,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    },
+    {
+      "caseId": "rollout_dependency_plan_v1",
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_8ccf2718e5fd4ab68476",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 1,
+      "durationMs": 111646,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    },
+    {
+      "caseId": "rollout_dependency_plan_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_d79087c88bce4a44b206",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 2,
+      "durationMs": 114199,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_66e3a5dc4ac147f29b2f",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 1,
+      "durationMs": 147148,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "profile": null
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_91f7467bcd6046dba3d7",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 5,
+      "durationMs": 141781,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "profile": null
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_be3bafc06bd74da0a106",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 4,
+      "durationMs": 184686,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "profile": null
+    },
+    {
+      "caseId": "access_rule_evaluation_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_be8b68fd96fd4eee80b6",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 0,
+      "durationMs": 153446,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "profile": null
+    },
+    {
+      "caseId": "rollout_dependency_plan_v1",
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_879e7a61f79a46f6b008",
+      "taskSuccess": false,
+      "status": "failed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 0,
+      "durationMs": 102965,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "profile": null
+    },
+    {
+      "caseId": "rollout_dependency_plan_v1",
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_66ee48db664c4605ae71",
+      "taskSuccess": false,
+      "status": "failed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 6,
+      "durationMs": 94339,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "profile": null
+    },
+    {
+      "caseId": "rollout_dependency_plan_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_3ae7a814d1734ef98e01",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 1,
+      "durationMs": 76807,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "profile": null
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_40a90cafd580462e886a",
+      "taskSuccess": false,
+      "status": "completed",
+      "graderExitCode": 1,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 1,
+      "durationMs": 154302,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_4983674268234f579a38",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 1,
+      "durationMs": 126899,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    },
+    {
+      "caseId": "http_retry_policy_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_bc9c03a3f87b4aeeb42d",
+      "taskSuccess": true,
+      "status": "completed",
+      "graderExitCode": 0,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "toolFailures": 1,
+      "durationMs": 181149,
+      "runtimeArtifactSha256": "007d6ef170419d267ee852e6a851fefd1e793d7412b02f226370cd533b3ae7ed",
+      "profile": {
+        "kind": "napier.model-harness-experiment-profile",
+        "schemaVersion": 1,
+        "id": "napier.harness-preset.coding-python.v1",
+        "maxActiveTools": 32,
+        "maxActiveToolsMode": "model_default",
+        "policies": {
+          "schemaVersion": 1,
+          "id": "coding-python.v1",
+          "revision": 1,
+          "context": {
+            "prompt": "stable-v1",
+            "memory": "task-aware-v1",
+            "workingState": "evidence-v1",
+            "delivery": "tail-v1",
+            "finalization": "request-aware-v1"
+          },
+          "toolSurface": {
+            "editReferences": true
+          },
+          "verification": "node-python-v1",
+          "contentSha256": "99c9ebd42b8ed673b1be6af13652383656cb81a33e213921cd10ae49582ba450"
+        },
+        "contentSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    }
+  ],
+  "missingResults": [
+    {
+      "caseId": "access_rule_evaluation_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "access_rule_evaluation_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "access_rule_evaluation_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "access_rule_evaluation_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "booking_calendar_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "booking_calendar_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "booking_calendar_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "booking_calendar_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "booking_calendar_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "safe_csv_export_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "safe_csv_export_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "safe_csv_export_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "safe_csv_export_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "safe_csv_export_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "safe_csv_export_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "inventory_event_projection_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "inventory_event_projection_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "inventory_event_projection_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "inventory_event_projection_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "inventory_event_projection_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "inventory_event_projection_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "weighted_expense_allocation_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "weighted_expense_allocation_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "weighted_expense_allocation_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "weighted_expense_allocation_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "weighted_expense_allocation_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "weighted_expense_allocation_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "http_etag_preconditions_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "http_etag_preconditions_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "http_etag_preconditions_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "http_etag_preconditions_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "http_etag_preconditions_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "http_etag_preconditions_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "incremental_ndjson_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "incremental_ndjson_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "incremental_ndjson_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "incremental_ndjson_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "incremental_ndjson_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "incremental_ndjson_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "bounded_async_queue_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "bounded_async_queue_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "bounded_async_queue_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "bounded_async_queue_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "bounded_async_queue_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "bounded_async_queue_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "semantic_version_order_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "ttl_lru_cache_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "http_byte_ranges_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "http_byte_ranges_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "http_byte_ranges_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "http_byte_ranges_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "http_byte_ranges_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "http_byte_ranges_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "sql_named_binding_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "sql_named_binding_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "sql_named_binding_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "sql_named_binding_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "sql_named_binding_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "sql_named_binding_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "transaction_savepoints_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "transaction_savepoints_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "transaction_savepoints_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "transaction_savepoints_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "transaction_savepoints_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "transaction_savepoints_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "atomic_json_patch_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "atomic_json_patch_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "atomic_json_patch_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "atomic_json_patch_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "atomic_json_patch_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "atomic_json_patch_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "weighted_route_planning_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "weighted_route_planning_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "weighted_route_planning_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "weighted_route_planning_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "weighted_route_planning_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "weighted_route_planning_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "resumable_byte_upload_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "binary_frame_decoder_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "binary_frame_decoder_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "binary_frame_decoder_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "binary_frame_decoder_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "binary_frame_decoder_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "binary_frame_decoder_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "path_glob_selection_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "path_glob_selection_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "path_glob_selection_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "path_glob_selection_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "path_glob_selection_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "path_glob_selection_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "streaming_csv_decoder_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "streaming_csv_decoder_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "streaming_csv_decoder_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "streaming_csv_decoder_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "streaming_csv_decoder_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "streaming_csv_decoder_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "business_calendar_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "business_calendar_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "business_calendar_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "business_calendar_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "business_calendar_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "business_calendar_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "source_map_vlq_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "source_map_vlq_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "source_map_vlq_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "source_map_vlq_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "source_map_vlq_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "source_map_vlq_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "bm25_document_search_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "bm25_document_search_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "bm25_document_search_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "bm25_document_search_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "bm25_document_search_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "bm25_document_search_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "config_layers_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "config_layers_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "config_layers_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "config_layers_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "config_layers_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "config_layers_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "cursor_pagination_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "cursor_pagination_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "cursor_pagination_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "cursor_pagination_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "cursor_pagination_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "cursor_pagination_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "ledger_reconciliation_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "ledger_reconciliation_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "ledger_reconciliation_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "ledger_reconciliation_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "ledger_reconciliation_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "ledger_reconciliation_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "arm": "baseline",
+      "trial": 2
+    },
+    {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "coding_loyalty_discount_debug_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "candidate",
+      "trial": 0
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "candidate",
+      "trial": 1
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "candidate",
+      "trial": 2
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "baseline",
+      "trial": 0
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "baseline",
+      "trial": 1
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "baseline",
+      "trial": 2
+    }
+  ],
+  "cancelledJobs": [
+    {
+      "caseId": "access_rule_evaluation_v1",
+      "caseRoot": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1/cases/access_rule_evaluation_v1",
+      "arm": "baseline",
+      "output": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1/access_rule_evaluation_v1-baseline"
+    },
+    {
+      "caseId": "access_rule_evaluation_v1",
+      "caseRoot": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1/cases/access_rule_evaluation_v1",
+      "arm": "candidate",
+      "output": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1/access_rule_evaluation_v1-candidate"
+    },
+    {
+      "caseId": "booking_calendar_v1",
+      "caseRoot": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1/cases/booking_calendar_v1",
+      "arm": "candidate",
+      "output": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1/booking_calendar_v1-candidate"
+    },
+    {
+      "caseId": "booking_calendar_v1",
+      "caseRoot": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1/cases/booking_calendar_v1",
+      "arm": "baseline",
+      "output": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1/booking_calendar_v1-baseline"
+    }
+  ],
+  "counterexample": {
+    "candidateRunId": "run_40a90cafd580462e886a",
+    "baselineRunId": "run_66e3a5dc4ac147f29b2f",
+    "inputs": [
+      {
+        "method": "GET",
+        "status": 200,
+        "attempt": 0,
+        "nowMs": -1
+      },
+      {
+        "method": "GET",
+        "status": 503,
+        "attempt": 0,
+        "nowMs": -1
+      }
+    ],
+    "baselineResults": [
+      {
+        "error": "TypeError"
+      },
+      {
+        "error": "TypeError"
+      }
+    ],
+    "candidateResults": [
+      {
+        "returned": null
+      },
+      {
+        "returned": 100
+      }
+    ],
+    "finding": "retryDelay validates nowMs only by calling parseRetryAfter on one branch; omitted Retry-After and nonretryable branches bypass validation",
+    "finalizationReceipts": [
+      {
+        "eventId": "event_fe2669d5479449bea2b8",
+        "status": "reserved",
+        "reasons": [
+          "timeout"
+        ],
+        "observed": {
+          "turns": 5,
+          "inFlightTurns": 0,
+          "totalTokens": 45730,
+          "rawTotalTokens": 84364,
+          "costUsd": 0.0092511272,
+          "rawCostUsd": 0.0092511272,
+          "elapsedMs": 89330,
+          "usage": {
+            "inputTokens": 24589,
+            "outputTokens": 20351,
+            "cacheReadTokens": 39424,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0092511272
+          }
+        },
+        "limits": {
+          "maxTurns": 40,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "reservedTurns": 6,
+        "reservedTokens": 87351,
+        "reservedTimeoutMs": 180000,
+        "requestForecast": {
+          "strategy": "request-aware-v1",
+          "sampleCount": 3,
+          "uncachedCallTokens": 29117,
+          "callsReserved": 3
+        },
+        "message": "Run entered deterministic finalization reserve: timeout"
+      }
+    ],
+    "structuredVerificationExecutions": 0,
+    "causalAttribution": "Observed task defect; no isolated causal attribution to a single policy component"
+  },
+  "failureBundles": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1-failures",
+  "inputExports": "/Users/champ/.cache/napier-seven-quality/core-quality-suite-v1-input-exports",
+  "scope": "Rejected partial composition campaign; cancelled or unscheduled runs are not successful observations and no trial is replaced",
+  "promotionReady": false
+}

@@ -34,6 +34,7 @@ import {
   type CliWorkflowOptions,
 } from "./cli-options.js";
 import { cliRunPromptOptions } from "./cli-run-options.js";
+import { loadCliHarnessProfile } from "./cli-harness-profile.js";
 import { assertCliResumeReadiness, prepareCliRunTarget } from "./cli-run-readiness.js";
 import { executeCliInvocation } from "./cli-invocation.js";
 import { createCliWorkflowExperimentRequest } from "./cli-workflow-experiment.js";
@@ -135,6 +136,7 @@ async function executeRun(
     options.threadId ?? "thread_cli_preflight",
     true,
     async (services, signal) => {
+      const profile = await loadCliHarnessProfile(options.harnessProfileFile, io.cwd, signal);
       const { existing, agent } = await prepareCliRunTarget(services, options, signal, dependencies.runReadiness);
       await configureCliModelCredential(services, options, io.env);
       const thread =
@@ -145,7 +147,7 @@ async function executeRun(
         }));
       return {
         threadId: thread.id,
-        invoke: (signal, onEvent) => services.kernel.runPrompt(cliRunPromptOptions(options, thread.id, signal, onEvent)),
+        invoke: (signal, onEvent) => services.kernel.runPrompt(cliRunPromptOptions(options, thread.id, signal, onEvent, profile)),
       };
     },
   );

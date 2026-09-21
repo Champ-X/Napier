@@ -96,6 +96,8 @@ Run options:
   --agent <agent-id>     Agent for a new Thread
   --thread <thread-id>   Append to an existing Thread
   --source-run <run-id>  Explicit completed same-Thread Run for private Source continuity
+  --harness-policy <id> Experimental Run strategy: coding-node.v1, coding-python.v1, research.v1
+  --harness-profile-file <path> Experimental hash-validated JSON profile; exclusive with --harness-policy
   --title <text>         Title for a new Thread
   --preset <id>          Temporary capability preset for this Run only
                          Safe Automation Browser actions require TTY approve/reject

@@ -539,6 +539,15 @@ export function assertPlanArtifactEventBindings({
     const planId = payloadString(payload, "planId");
     const artifactId = payloadString(payload, "artifactId");
     const status = payloadString(payload, "status");
+    // Older HTTP lifecycle events used an operator run ID while retaining the
+    // artifact's already-bound source Run. Accept only that proven inheritance.
+    const previous = latestArtifactEvents.get(`${planId}:${artifactId}`);
+    const inheritedOperatorSource =
+      /^runctl_[a-z0-9]{8,80}$/u.test(event.runId) &&
+      previous !== undefined &&
+      previous.seq < event.seq &&
+      payload?.sourceRunId !== undefined &&
+      payload.sourceRunId === objectPayload(previous.payload)?.sourceRunId;
     if (
       !payload ||
       !planId ||
@@ -548,7 +557,9 @@ export function assertPlanArtifactEventBindings({
       event.visibility !== "user" ||
       event.type !== `plan.artifact.${status}` ||
       hasUnsupportedArtifactEventPayloadKey(payload) ||
-      (payload.sourceRunId !== undefined && payload.sourceRunId !== event.runId)
+      (payload.sourceRunId !== undefined &&
+        payload.sourceRunId !== event.runId &&
+        !inheritedOperatorSource)
     ) {
       throw new Error(`${label} plan.artifact event binding mismatch`);
     }

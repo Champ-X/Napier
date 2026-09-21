@@ -1,0 +1,408 @@
+{
+  "kind": "napier.streaming-workspace-oci-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T01:38:34.476634+00:00",
+  "gitHead": "c454a15557e9d6d7ce9db87cbd104f058919b027",
+  "predecessorRuntimeSnapshot": "/tmp/napier-harness-durable-pre-edit-v1",
+  "archive": {
+    "path": "/tmp/napier-streaming-digest-source-v1",
+    "scope": "Selected changed sources and compiled modules only; not a full runnable environment.",
+    "matchesCurrentFiles": true
+  },
+  "files": [
+    {
+      "path": "packages/runtime/src/verification-workspace-digest.ts",
+      "sha256": "cae0dd218feefe8c8692fadb72e4e7cf60a76e451a75ea02ca138ef7d00f59c0"
+    },
+    {
+      "path": "packages/runtime/src/verification-workspace-snapshot.ts",
+      "sha256": "9297251b075544d61d404851e6b48109789e5f4604072f14020a7720756bd23c"
+    },
+    {
+      "path": "packages/runtime/src/verification-scope.ts",
+      "sha256": "2da73bdba5c025f2c66dcfbba0c1f2da2cd0bddbf921864ca67bee3a3bfb593b"
+    },
+    {
+      "path": "packages/runtime/src/verification.ts",
+      "sha256": "b904da3a5a0b28553b3aaa3fa69747e3565fcd22700da3ddd246de6f7780b946"
+    },
+    {
+      "path": "packages/runtime/test/verification-workspace-digest.test.ts",
+      "sha256": "d916da07ad30cabcdc05ee9c7ae48a3c4437385c8e9c272e392faf6075ebde68"
+    },
+    {
+      "path": "packages/runtime/test/verification-workspace-freshness.test.ts",
+      "sha256": "d4276ff3195bc96dc6bcd1a28cee280caec55bc99e4dc3746027b529afd3d6db"
+    },
+    {
+      "path": "packages/runtime/test/verification.test.ts",
+      "sha256": "9a959d01f379ea9893855826ba8018d985a4df1d7f73f89fafb07439b27c3a71"
+    },
+    {
+      "path": "scripts/sandbox-build-environment.test.mjs",
+      "sha256": "8973da8de6f98f4d381601726cb86d655817a397c68522604ae3c5facaac2870"
+    },
+    {
+      "path": "scripts/sandbox-multi-architecture-live.mjs",
+      "sha256": "1b3d523b03e171cb5f67c7d4672ba86f301d6f523903da032467c8a3fa96b448"
+    },
+    {
+      "path": "scripts/check-sandbox-multi-architecture.mjs",
+      "sha256": "e65d26760740fba26a5c94ef9549a3f5307a73d6f3289a1c03194437290da9bc"
+    },
+    {
+      "path": "scripts/sandbox-multi-architecture-artifact.mjs",
+      "sha256": "24851beebd112d98b0c06f59298b83174aedb445179838628d80a7b54ccba814"
+    },
+    {
+      "path": "packages/runtime/dist/verification-workspace-digest.js",
+      "sha256": "a4e48652ee957bcc9921a87b49fe3edb2176bbaa620b0d508017ec6b70ba9c28"
+    },
+    {
+      "path": "packages/runtime/dist/verification-workspace-digest.d.ts",
+      "sha256": "b652721d7424bef73647404120828094d96d56e6bd439e1eb108a177b8b8012c"
+    },
+    {
+      "path": "packages/runtime/dist/verification-workspace-snapshot.js",
+      "sha256": "65b4a4133b2894bc24056a738bd338bca033067cd61d685848887ff4466c89bc"
+    },
+    {
+      "path": "packages/runtime/dist/verification-workspace-snapshot.d.ts",
+      "sha256": "5685c5fe25d5293200687ce3d86bc59424db37ce5e34adad1530fdbdf2dd6010"
+    },
+    {
+      "path": "packages/runtime/dist/verification-scope.js",
+      "sha256": "3f50d05c7215d2958f427365db5a732546083d0b7abfe6697fcd8a93e414620f"
+    },
+    {
+      "path": "packages/runtime/dist/verification-scope.d.ts",
+      "sha256": "44f6c286a1d164b5f4cd0ab50c3ee7b2bb44358d66d9b6a0f60fd3925035070f"
+    },
+    {
+      "path": "packages/runtime/dist/verification.js",
+      "sha256": "ecd8aa0c3497a29a9b0cd1a50e6488a89495ec260152c4c6d17ff1be0f0da3a1"
+    },
+    {
+      "path": "packages/runtime/dist/verification.d.ts",
+      "sha256": "761a7641411ef2b2d7dee5a27c0d2563d0f9fdb132e8168a5780cdc5f81314ed"
+    }
+  ],
+  "currentTrees": {
+    "packages/runtime/src": {
+      "fileCount": 1172,
+      "treeSha256": "80f2a3b0817665ed66d5ea1ac4b9a7f73cdf363bdc46cfeb8b34019bd7b4a664"
+    },
+    "packages/runtime/dist": {
+      "fileCount": 3528,
+      "treeSha256": "3f2a785bc2dadd4099667366983464434edfb78595300afcf7cf87578b753f34"
+    },
+    "packages/contracts/src": {
+      "fileCount": 79,
+      "treeSha256": "f520cbe8441acac007a61f6b294ef7b7879062e854d855db25951f2a9591745a"
+    },
+    "packages/contracts/dist": {
+      "fileCount": 238,
+      "treeSha256": "410c28c9eab53de21f0c83e8500ad117d15edbed80958539c1829b667df518d2"
+    }
+  },
+  "evidenceFiles": [
+    {
+      "path": "/tmp/napier-multiarch-current-v1.log",
+      "sha256": "5372167af18992fbab832ad06f0f065fe2717cb3291e84740de819d2877cdb7c"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-failure-v1.json",
+      "sha256": "10fafefb5b3bceb28075ab64d9302a476ece217cbe0d5ffc7ee4fbd1a84d1792"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-v2.log",
+      "sha256": "bac347cc45003a8d27c20cd5e8338242e3312074cbcca81a2c10f3ce533489e4"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-failure-v2.json",
+      "sha256": "5816fa4cf71517d7bcb7c7fcba2bd5f956f43a95931abdc35097c22b3f0a8094"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-v3.mjs",
+      "sha256": "614e7811dff9694cb49e1d347ca6562a91eacb404389e6c91b9aa0bf36b08eee"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-v3.log",
+      "sha256": "f26a603393327fd7ae67891384bb29ad06229605c0a60fa99a88355907038e8e"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-failure-v3.json",
+      "sha256": "3710e9f3f28a1bfde9248fd0cb8ad9a12f65a15fb6def6459e469ab86b65148b"
+    },
+    {
+      "path": "/tmp/napier-multiarch-diagnostic-v3-typecheck.json",
+      "sha256": "0346998b13536f4d618cdd189e1dfe7365944b52aebcf10ec9ce4205b34c7d9b"
+    },
+    {
+      "path": "/tmp/napier-multiarch-diagnostic-v3-test.json",
+      "sha256": "cc504e9926226a78160ed703fb87c4b8c562a2583814c67fbc2c6d51b9027c6c"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-v4.mjs",
+      "sha256": "8614f46fdb770f42e6daa2031471c73ef8a60a83075dc54fc542e22b9b11437c"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-v4.log",
+      "sha256": "89b0932a6bab7b5cabc4c28370007759933a6b27fc90a26879c45ba097ff820b"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-v4.json",
+      "sha256": "9853268e17e4838d636e6067150784e94e1a79ab4e8cf0a2d6eede1fe5ac2a3c"
+    },
+    {
+      "path": "/tmp/napier-multiarch-current-verifier-v4.json",
+      "sha256": "a3a2a2eeaf48ddd22d2b050d8f193cb58eaba7862121977718679b844c3410df"
+    },
+    {
+      "path": "/tmp/napier-multiarch-resource-final-v4.json",
+      "sha256": "2195ddaa28ba1015dd98eb19e273fa260499a9483534efb52b8e2eaafdb71a29"
+    },
+    {
+      "path": "/tmp/napier-multiarch-retained-receipts-v4.json",
+      "sha256": "9eeac6f19413ada6c66b47d092358b7059aac704061c525ba2d52b9ebcc359de"
+    },
+    {
+      "path": "/tmp/napier-multiarch-focused-v3.log",
+      "sha256": "afa401596e88f4aa710315d8b66220e887ff59a73c9a86fcb86caac7b7e7082e"
+    },
+    {
+      "path": "/tmp/napier-workspace-digest-focused-v1.log",
+      "sha256": "0a625aea888e8d4cda614a779c7e8434b01fff1d45f16d6e9a09a1928ff4e579"
+    },
+    {
+      "path": "/tmp/napier-workspace-digest-focused-v2.log",
+      "sha256": "c6b9f9d2e50fa6c4553a97d6d86c711fc318ef9ab18c097d3cf1a0359bbfa0ee"
+    },
+    {
+      "path": "/tmp/napier-workspace-digest-build-v2.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-workspace-digest-architecture-v1.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-workspace-digest-format-final-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-workspace-digest-diff-check-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/napier-workspace-digest-real-v1.json",
+      "sha256": "1b2b7fb03b29324ce124655a7a7f7f784514e33c5bd211140bd3bbdeeba3dbb3"
+    },
+    {
+      "path": "/tmp/napier-buildx-install-v1.log",
+      "sha256": "ed7c030f7217aea299ed25789c772b91c9f207e64eeb1201bca43f5090d25113"
+    },
+    {
+      "path": "/tmp/napier-buildx-inspect-v1.log",
+      "sha256": "1b2dcf4754c56ddcaddc8a88ac64b10715b20081dc3413ce2f6edc82a959a064"
+    },
+    {
+      "path": "/tmp/napier-streaming-digest-source-v1/manifest.json",
+      "sha256": "b1eb647c7ae50ae3997d9651e524e42252e8c0225abbfacd820a5523e2656caf"
+    }
+  ],
+  "componentArtifacts": [
+    {
+      "path": "docs/artifacts/current-image-lsp-component-2026-09-14.json",
+      "sha256": "80d0c95efc14837939f0747176112c9bbebf27a357ffd223d0e1eed567cccedf"
+    },
+    {
+      "path": "docs/artifacts/current-multi-architecture-component-2026-09-14.json",
+      "sha256": "9853268e17e4838d636e6067150784e94e1a79ab4e8cf0a2d6eede1fe5ac2a3c"
+    }
+  ],
+  "observations": {
+    "v1": "Failed registry authentication connectivity; retained.",
+    "v2": "Built amd64 and passed nine probes; workspace verification failed; retained.",
+    "v3": {
+      "scope": "Diagnostic replay wrapped VerificationRunner.run only to record unchanged real outputs; no model or verifier mock.",
+      "details": {
+        "typecheck": {
+          "status": "failed",
+          "exitCode": 0,
+          "snapshotStatus": "indeterminate",
+          "workspaceSnapshotFileCount": 1388,
+          "workspaceSnapshotBytes": 16698098,
+          "workspaceSnapshotTruncated": true
+        },
+        "test": {
+          "status": "failed",
+          "exitCode": 0,
+          "snapshotStatus": "indeterminate",
+          "workspaceSnapshotFileCount": 1388,
+          "workspaceSnapshotBytes": 16698098,
+          "workspaceSnapshotTruncated": true
+        }
+      },
+      "contractsAssertionsPassed": 98
+    },
+    "v4": {
+      "status": "passed",
+      "platforms": [
+        {
+          "platform": "linux/amd64",
+          "imageId": "sha256:0f638252fe0a00f4f03ce4b25880e298c8180789c68c380b3db1efcafc00cb26",
+          "durationMs": 69153,
+          "checkCodes": [
+            "sandbox_process_ready",
+            "sandbox_resources_ready",
+            "verification_ready",
+            "shell_ready",
+            "python_ready",
+            "git_ready",
+            "lsp_ready",
+            "dap_ready",
+            "service_ready"
+          ],
+          "verification": {
+            "typecheckStatus": "passed",
+            "testStatus": "passed",
+            "typecheckVersion": "5.9.3",
+            "testVersion": "4.1.9",
+            "typecheckResultSha256": "cd56f6b02535c756bcfb1854b5f7ca3f38445c4b615f63c67f154dd3f4528e3f",
+            "testResultSha256": "bd1aae69cbe2c498af80af7c66902c0f027c9ec8f06fca9028b0cb9fcc744e3b"
+          }
+        },
+        {
+          "platform": "linux/arm64",
+          "imageId": "sha256:0a2877470b3822a6243740e63a1a5cd3a2c40b683bd324df704ba85fa69c4df7",
+          "durationMs": 32208,
+          "checkCodes": [
+            "sandbox_process_ready",
+            "sandbox_resources_ready",
+            "verification_ready",
+            "shell_ready",
+            "python_ready",
+            "git_ready",
+            "lsp_ready",
+            "dap_ready",
+            "service_ready"
+          ],
+          "verification": {
+            "typecheckStatus": "passed",
+            "testStatus": "passed",
+            "typecheckVersion": "5.9.3",
+            "testVersion": "4.1.9",
+            "typecheckResultSha256": "690552a47e2018b39e500664f95ceae03ba0acdd98ebd5770d908b8b06550751",
+            "testResultSha256": "02dc1405ee75370c39c4f633cc07279ef1ba55ca198b850ab6d18e3f7e87c035"
+          }
+        }
+      ],
+      "parity": {
+        "distinctImageIds": true,
+        "toolchainVersionsEqual": true,
+        "manifestHashesEqual": true,
+        "allProductionChecksReady": true,
+        "explicitPlatformLaunch": true,
+        "evidenceSha256": "de06beec90cdf768c9eacbc7172d4940bb811607d4d2f70d411dfdf5c49af7b6"
+      },
+      "resourceClosure": {
+        "exactBaselineRestored": true,
+        "containerDeltaCount": 0,
+        "networkDeltaCount": 0,
+        "imageDeltaCount": 0,
+        "scratchDeltaCount": 0,
+        "temporaryTagDeltaCount": 0
+      },
+      "artifactVerifier": {
+        "valid": true,
+        "errors": [],
+        "path": "docs/artifacts/current-multi-architecture-component-2026-09-14.json",
+        "sha256": "9853268e17e4838d636e6067150784e94e1a79ab4e8cf0a2d6eede1fe5ac2a3c"
+      }
+    },
+    "finalResourceCounts": {
+      "containersCount": 0,
+      "networksCount": 0,
+      "temporaryTagsCount": 0,
+      "scratchCount": 0
+    },
+    "completeRepositoryDigest": {
+      "sha256": "e6babbcf4e90dc7278ea5b4e3bb07dbb51a4383aa6a6e325fb87da7111559bdc",
+      "fileCount": 9765,
+      "bytes": 76285322,
+      "truncated": false,
+      "durationMs": 1217
+    },
+    "tests": {
+      "initialFocused": {
+        "passed": 25,
+        "failed": 1,
+        "reason": "Pre-aborted request now aborts during digest without launching a verifier. Existing test split into prelaunch cancellation and postlaunch termination."
+      },
+      "finalFocused": {
+        "passed": 37,
+        "failed": 0,
+        "files": 6
+      },
+      "proxyAndHistoricalReceipt": {
+        "passed": 4,
+        "failed": 1,
+        "failure": "Retained historical multiarchitecture receipt has different implementation bindings."
+      }
+    },
+    "runtimeCompile": "passed",
+    "format": "passed",
+    "diffWhitespace": "passed",
+    "architecture": {
+      "knownViolations": 7,
+      "newViolations": 0,
+      "budgetsRaised": false
+    },
+    "historicalReceipts": [
+      {
+        "path": "docs/artifacts/oci-crash-recovery-stage11.json",
+        "sha256": "794559d4d9aa89007d3376b412908ed9203f91f1af05b0dfc5d5c643216d50f6",
+        "unchangedFromHead": true
+      },
+      {
+        "path": "docs/artifacts/sandbox-portable-lsp-stage16.json",
+        "sha256": "ada65ff5049c7b15351cd3fb85515365a32784e1684726d14fdd1734bd5fe0ed",
+        "unchangedFromHead": true
+      },
+      {
+        "path": "docs/artifacts/sandbox-multi-architecture-stage14.json",
+        "sha256": "52db6c96c8c2a26ed8f0dfc2c2666835dce5e93183171a007e2d8b1860b31da9",
+        "unchangedFromHead": true
+      },
+      {
+        "path": "docs/artifacts/sandbox-portable-dap-stage17.json",
+        "sha256": "76b1b815daf215ebd4ffe47b8d61ebf0259cc7e002cb5ffbb3f29f1f3f1dfc8d",
+        "unchangedFromHead": true
+      }
+    ]
+  },
+  "scope": {
+    "newPaidModelCalls": 0,
+    "paidCampaignWorkersObserved": 0,
+    "fullRuntimeSuiteRerun": false,
+    "fullRootSuiteRerun": false,
+    "modelQualityQualified": false,
+    "promotionReady": false,
+    "qualityGate": "30 distinct cases x 3 paired trials unchanged",
+    "defaultPolicyPromoted": false,
+    "colimaRestartedAgain": false,
+    "zteServicesManaged": false,
+    "legacyReleaseReceiptsReplaced": false,
+    "registryPublished": false,
+    "crossHostAcceptance": false,
+    "limits": [
+      "Optimistic filesystem observation, not locking.",
+      "Directory and file reads have a cooperative 30 second deadline and a 100000 entry budget; incomplete reads cannot attest passing stability.",
+      "Same .git, .napier and node_modules exclusions as prior snapshots; no full dependency/environment attestation.",
+      "Task-context snapshots retain existing limits and may report freshness unknown on large workspaces.",
+      "Source archive contains selected files only; tree hashes bind current Runtime/Contracts source and dist but are not a complete executable snapshot."
+    ]
+  },
+  "contentSha256": "3436307d07f835c52187c13c26faebdab3b99f53590fef3412c19f430eb14f8b"
+}

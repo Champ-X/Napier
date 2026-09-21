@@ -1,0 +1,77 @@
+{
+  "kind": "napier.amended-requirement-repeated-compaction",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T20:34:53.818791+00:00",
+  "root": "/Users/champ/.cache/napier-seven-quality/amended-compaction-v1",
+  "snapshot": "/tmp/napier-harness-capability-activity-v1",
+  "sourceScenario": "/Users/champ/.cache/napier-seven-quality/steered-recovery-probe-v3",
+  "model": "deepseek/deepseek-v4-flash",
+  "rounds": [
+    {
+      "compaction": {
+        "round": 1,
+        "sourceThreadId": "thread_3d4a4c5e3d974231b6a7",
+        "targetThreadId": "thread_1e48cd810eb5436b968d",
+        "previewSha256": "45b037fe1cffc123db608a8b5b18b5564247daf0e1f1a9fad5c1a2363dc1a1ec",
+        "checkpointId": "checkpoint_0f2880f8763940b899da",
+        "sourceMessageCount": 3,
+        "retainedMessageCount": 2,
+        "workspaceUnchanged": true
+      },
+      "verification": {
+        "runId": "run_490338f30c1b4b97ac98",
+        "status": "completed",
+        "final": "{\"standardFee\":9,\"freeThreshold\":120,\"expeditedSurcharge\":3,\"feeAt110\":9,\"expeditedFeeAt110\":12,\"readmeIsCurrent\":false}",
+        "workspaceUnchanged": true,
+        "bindingsVerified": true,
+        "firstInvocationSha256": "5020b77dad99207ca014c3e23ad5c4196d2c5d754cdae641c89284a52a3f0bab",
+        "checkpointDelivered": true,
+        "workingStateDelivered": true,
+        "verificationPassed": true,
+        "answerMatches": true
+      }
+    },
+    {
+      "compaction": {
+        "round": 2,
+        "sourceThreadId": "thread_1e48cd810eb5436b968d",
+        "targetThreadId": "thread_f4bad19e98954350bebe",
+        "previewSha256": "044b885c672287a8ff73434bbe7fdbaa9117a8623d6d0613253d1e569456141e",
+        "checkpointId": "checkpoint_b21cb74619054e1d8d31",
+        "sourceMessageCount": 5,
+        "retainedMessageCount": 2,
+        "workspaceUnchanged": true
+      },
+      "verification": {
+        "runId": "run_01793734fb9c4f55800f",
+        "status": "completed",
+        "final": "{\"standardFee\":9,\"freeThreshold\":120,\"expeditedSurcharge\":3,\"feeAt110\":9,\"expeditedFeeAt110\":12,\"readmeIsCurrent\":false}",
+        "workspaceUnchanged": true,
+        "bindingsVerified": true,
+        "firstInvocationSha256": "9e2e826dd97885700133b79eb81979ba75d0fa4427cb4b7484a4e097660724d8",
+        "checkpointDelivered": true,
+        "workingStateDelivered": true,
+        "verificationPassed": true,
+        "answerMatches": true
+      }
+    }
+  ],
+  "freshProcessPerStage": true,
+  "graderExcludedFromCopiedWorkspace": true,
+  "scope": "Two real manual thread compactions with a fresh verification process after each, on a copy of a task with amended requirements and prior interrupted recovery. Does not lower model limits or establish natural automatic same-Run compaction, long-window performance, or a paired quality gate.",
+  "logs": [
+    {
+      "path": "/tmp/napier-amended-compaction-v1.mjs",
+      "sha256": "c6b8faaaaf7c0f42f92873b17764463868f53aec139e37b5b76605165e202739"
+    },
+    {
+      "path": "/tmp/napier-amended-compaction-v1.log",
+      "sha256": "da961d3662e07d19982c99654097f07cceadc0839828615de949fbf30c39b000"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/amended-compaction-v1/prelude.json",
+      "sha256": "d54cdd6e9dc106421d2d5645387f2680feca98ad15e2713db3f91cf9deb39465"
+    }
+  ],
+  "promotionReady": false
+}

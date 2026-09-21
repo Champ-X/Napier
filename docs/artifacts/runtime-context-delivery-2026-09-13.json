@@ -1,0 +1,520 @@
+{
+  "kind": "napier.runtime-context-delivery-pilot",
+  "schemaVersion": 1,
+  "date": "2026-09-13",
+  "snapshot": "/tmp/napier-harness-runtime-tail-v1",
+  "runtimeArtifactSha256": "e99b4da427a3c4d0fd24a752f27d086c48558c87709e3752e50c407f4e0577d7",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "sourceIdentity": {
+    "packages/runtime/src": "0f8999e835496e61d44645d5d3197fb88c82869f65178b8cc2809c8c699bf09d",
+    "packages/contracts/src": "af25270ab81576064992ba4a61bfc921e88aa68b5f27889cbd67da344683c1ce",
+    "packages/contracts/dist": "0bb01e62a31fc9e440bbe153d7810d3f9acc0016c04438d04050df4281f4b5cc",
+    "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+    "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+    "nodeVersion": "v24.19.0"
+  },
+  "policyComparison": {
+    "base": "coding-node.v1",
+    "baseline": {
+      "kind": "napier.model-harness-experiment-profile",
+      "schemaVersion": 1,
+      "id": "napier.harness-preset.coding-node.v1",
+      "maxActiveTools": 32,
+      "maxActiveToolsMode": "model_default",
+      "policies": {
+        "schemaVersion": 1,
+        "id": "coding-node.v1",
+        "revision": 1,
+        "context": {
+          "prompt": "stable-v1",
+          "memory": "task-aware-v1",
+          "workingState": "evidence-v1"
+        },
+        "toolSurface": {
+          "editReferences": true
+        },
+        "verification": "node-v1",
+        "contentSha256": "530bc049b2428a286cb0f7d410d8508ebc8d264e4f5d8191887c51841d3545b6"
+      },
+      "contentSha256": "21d1254f96c84083650e9ec28192bcf1e884f1d5a9e6291148ef03bbaca1f4ad"
+    },
+    "candidate": {
+      "kind": "napier.model-harness-experiment-profile",
+      "schemaVersion": 1,
+      "id": "napier.harness-preset.coding-node.v1",
+      "maxActiveTools": 32,
+      "maxActiveToolsMode": "model_default",
+      "policies": {
+        "schemaVersion": 1,
+        "id": "coding-node.v1",
+        "revision": 1,
+        "context": {
+          "prompt": "stable-v1",
+          "memory": "task-aware-v1",
+          "workingState": "evidence-v1",
+          "delivery": "tail-v1"
+        },
+        "toolSurface": {
+          "editReferences": true
+        },
+        "verification": "node-v1",
+        "contentSha256": "02571ba0ed1198603e45d9d6bc14f1ddddadae04d9bb8cd3d038781187b9a55c"
+      },
+      "contentSha256": "f75ccfdcd1a52f093f89da4fc32ea531c7d551eef45610061d87429ac2742445"
+    },
+    "changedDimension": "context.delivery: absent -> tail-v1"
+  },
+  "limitations": [
+    "Two cases with three paired trials; no default promotion or broad quality claim.",
+    "Concurrent pilot durations and costs do not isolate cache-delivery effects from model trajectory variation.",
+    "Cache tokens and cost are provider usage across all Run purposes; canonical prefixes are separate local diagnostics.",
+    "Host-direct execution supplies no OS isolation evidence."
+  ],
+  "gate": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 6,
+    "cases": 2,
+    "regressions": [],
+    "blockers": [
+      "Need 30 cases; observed 2"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "5e8e60bd22f64c75285d445cfc8121df9756eee02190e92859268afffc5fa652"
+  },
+  "aggregate": {
+    "baseline": {
+      "runs": 6,
+      "passed": 6,
+      "permittedChanges": 6,
+      "toolCalls": 83,
+      "toolFailures": 3,
+      "usage": {
+        "inputTokens": 386230,
+        "outputTokens": 39322,
+        "cacheReadTokens": 304256,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0659342768
+      },
+      "adjacentCount": 55,
+      "identicalSystemAndTools": 28,
+      "nonzeroCompleteMessagePrefix": 28,
+      "runtimeDeliveries": 0,
+      "auditedRuntimeCapsules": 0
+    },
+    "candidate": {
+      "runs": 6,
+      "passed": 6,
+      "permittedChanges": 6,
+      "toolCalls": 57,
+      "toolFailures": 3,
+      "usage": {
+        "inputTokens": 148047,
+        "outputTokens": 24313,
+        "cacheReadTokens": 248448,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.028229874400000004
+      },
+      "adjacentCount": 35,
+      "identicalSystemAndTools": 35,
+      "nonzeroCompleteMessagePrefix": 35,
+      "runtimeDeliveries": 41,
+      "auditedRuntimeCapsules": 41
+    }
+  },
+  "observations": [
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_c41ab3eea1524cd9a825",
+      "reportPath": "/tmp/napier-seven-quality/tail-memory-system-v1/trial-1/result.json",
+      "reportSha256": "e6348b1fb138232adf386df3637d84bb6aa2d14b9b587e12caf40abbb128f177",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 0,
+        "auditedCapsules": 0
+      },
+      "toolCalls": 6,
+      "toolFailures": 0,
+      "durationMs": 17273,
+      "usage": {
+        "inputTokens": 16574,
+        "outputTokens": 2115,
+        "cacheReadTokens": 24704,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0029817311999999997
+      },
+      "cacheProjection": {
+        "adjacentCount": 4,
+        "identicalSystemAndTools": 3,
+        "nonzeroCompleteMessagePrefix": 3,
+        "commonCompleteMessagePrefixBytes": 6823
+      }
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_74650a18204a46f18606",
+      "reportPath": "/tmp/napier-seven-quality/tail-memory-system-v1/trial-2/result.json",
+      "reportSha256": "37dfc862d8e205f00c7d81639b24872958ef576b66cebc2624042e927554ca4b",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 0,
+        "auditedCapsules": 0
+      },
+      "toolCalls": 17,
+      "toolFailures": 0,
+      "durationMs": 35956,
+      "usage": {
+        "inputTokens": 106611,
+        "outputTokens": 4800,
+        "cacheReadTokens": 61184,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0164408552
+      },
+      "cacheProjection": {
+        "adjacentCount": 14,
+        "identicalSystemAndTools": 4,
+        "nonzeroCompleteMessagePrefix": 4,
+        "commonCompleteMessagePrefixBytes": 33547
+      }
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_4ff43f0edebe44c58532",
+      "reportPath": "/tmp/napier-seven-quality/tail-memory-system-v1/trial-3/result.json",
+      "reportSha256": "80b61e079b304a734096e46a7af730c932470a876a547eb89d0268be9154c187",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 0,
+        "auditedCapsules": 0
+      },
+      "toolCalls": 6,
+      "toolFailures": 0,
+      "durationMs": 18023,
+      "usage": {
+        "inputTokens": 16664,
+        "outputTokens": 2314,
+        "cacheReadTokens": 34560,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0030776480000000005
+      },
+      "cacheProjection": {
+        "adjacentCount": 5,
+        "identicalSystemAndTools": 4,
+        "nonzeroCompleteMessagePrefix": 4,
+        "commonCompleteMessagePrefixBytes": 18338
+      }
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_9f22d33483154d88b7d5",
+      "reportPath": "/tmp/napier-seven-quality/tail-memory-candidate-v1/trial-1/result.json",
+      "reportSha256": "12b70577358244f822db7e0f2aefbb9df688102012661c88aa798934eb9410bd",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 6,
+        "auditedCapsules": 6
+      },
+      "toolCalls": 6,
+      "toolFailures": 0,
+      "durationMs": 16497,
+      "usage": {
+        "inputTokens": 23963,
+        "outputTokens": 2170,
+        "cacheReadTokens": 29312,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0040444936
+      },
+      "cacheProjection": {
+        "adjacentCount": 5,
+        "identicalSystemAndTools": 5,
+        "nonzeroCompleteMessagePrefix": 5,
+        "commonCompleteMessagePrefixBytes": 22156
+      }
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_7e8629a5900147cdaa8e",
+      "reportPath": "/tmp/napier-seven-quality/tail-memory-candidate-v1/trial-2/result.json",
+      "reportSha256": "28b0d6d2de4b37bb3ebd832558b081b98bbd9493cb00ad6d6694f352a4634fba",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 7,
+        "auditedCapsules": 7
+      },
+      "toolCalls": 7,
+      "toolFailures": 1,
+      "durationMs": 20400,
+      "usage": {
+        "inputTokens": 25267,
+        "outputTokens": 3082,
+        "cacheReadTokens": 36352,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.004502125600000001
+      },
+      "cacheProjection": {
+        "adjacentCount": 6,
+        "identicalSystemAndTools": 6,
+        "nonzeroCompleteMessagePrefix": 6,
+        "commonCompleteMessagePrefixBytes": 36563
+      }
+    },
+    {
+      "caseId": "memory_shipping_current_source_v1",
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_78cd9e7c342d4ca0a038",
+      "reportPath": "/tmp/napier-seven-quality/tail-memory-candidate-v1/trial-3/result.json",
+      "reportSha256": "59220759f51c1852f4518b4dbae6ede3f390cbdbc7979227a3b843782f27349f",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 5,
+        "auditedCapsules": 5
+      },
+      "toolCalls": 5,
+      "toolFailures": 0,
+      "durationMs": 15973,
+      "usage": {
+        "inputTokens": 18471,
+        "outputTokens": 2167,
+        "cacheReadTokens": 24192,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0032604376000000003
+      },
+      "cacheProjection": {
+        "adjacentCount": 4,
+        "identicalSystemAndTools": 4,
+        "nonzeroCompleteMessagePrefix": 4,
+        "commonCompleteMessagePrefixBytes": 20270
+      }
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "baseline",
+      "trial": 0,
+      "runId": "run_e63c6c995bbc43e08593",
+      "reportPath": "/tmp/napier-seven-quality/tail-pricing-system-v1/trial-1/result.json",
+      "reportSha256": "80af9f0c8a46b0f53eefbfd28b864f3841e1c486828640e1bb9d9f653fbe1dc7",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 0,
+        "auditedCapsules": 0
+      },
+      "toolCalls": 17,
+      "toolFailures": 1,
+      "durationMs": 62474,
+      "usage": {
+        "inputTokens": 72700,
+        "outputTokens": 13257,
+        "cacheReadTokens": 58112,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.014052673600000001
+      },
+      "cacheProjection": {
+        "adjacentCount": 9,
+        "identicalSystemAndTools": 5,
+        "nonzeroCompleteMessagePrefix": 5,
+        "commonCompleteMessagePrefixBytes": 92449
+      }
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_2b44c68264214cf78bfd",
+      "reportPath": "/tmp/napier-seven-quality/tail-pricing-system-v1/trial-2/result.json",
+      "reportSha256": "62fffcbefefc411d5e979a4f3e188e25e38acf9807eb73ecac48295863e96eb3",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 0,
+        "auditedCapsules": 0
+      },
+      "toolCalls": 13,
+      "toolFailures": 1,
+      "durationMs": 33848,
+      "usage": {
+        "inputTokens": 48487,
+        "outputTokens": 5743,
+        "cacheReadTokens": 41984,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0085137752
+      },
+      "cacheProjection": {
+        "adjacentCount": 8,
+        "identicalSystemAndTools": 4,
+        "nonzeroCompleteMessagePrefix": 4,
+        "commonCompleteMessagePrefixBytes": 57174
+      }
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_513b4f3e311640cc9769",
+      "reportPath": "/tmp/napier-seven-quality/tail-pricing-system-v1/trial-3/result.json",
+      "reportSha256": "69083a9429b6b695ece3e6eb55376663c7280ea16d4f6491c5f5485b70d0c49a",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 0,
+        "auditedCapsules": 0
+      },
+      "toolCalls": 24,
+      "toolFailures": 1,
+      "durationMs": 59888,
+      "usage": {
+        "inputTokens": 125194,
+        "outputTokens": 11093,
+        "cacheReadTokens": 83712,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.020867593599999998
+      },
+      "cacheProjection": {
+        "adjacentCount": 15,
+        "identicalSystemAndTools": 8,
+        "nonzeroCompleteMessagePrefix": 8,
+        "commonCompleteMessagePrefixBytes": 123475
+      }
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "candidate",
+      "trial": 0,
+      "runId": "run_573ac14dc9604bda848e",
+      "reportPath": "/tmp/napier-seven-quality/tail-pricing-candidate-v1/trial-1/result.json",
+      "reportSha256": "94c8cb153c102c3859c7a7a6c53e076743374a11e5439867ad8520aa5c976b2a",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 9,
+        "auditedCapsules": 9
+      },
+      "toolCalls": 14,
+      "toolFailures": 1,
+      "durationMs": 40314,
+      "usage": {
+        "inputTokens": 33166,
+        "outputTokens": 7628,
+        "cacheReadTokens": 72832,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.006983009600000001
+      },
+      "cacheProjection": {
+        "adjacentCount": 8,
+        "identicalSystemAndTools": 8,
+        "nonzeroCompleteMessagePrefix": 8,
+        "commonCompleteMessagePrefixBytes": 168803
+      }
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_f74b3e6b4dc64e9691fe",
+      "reportPath": "/tmp/napier-seven-quality/tail-pricing-candidate-v1/trial-2/result.json",
+      "reportSha256": "0bb64b5d11c07c53c257916b5a922dd9f38e35f67cafe9c52169937c43c64dc6",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 8,
+        "auditedCapsules": 8
+      },
+      "toolCalls": 15,
+      "toolFailures": 1,
+      "durationMs": 29693,
+      "usage": {
+        "inputTokens": 28876,
+        "outputTokens": 5158,
+        "cacheReadTokens": 50560,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.005628448
+      },
+      "cacheProjection": {
+        "adjacentCount": 7,
+        "identicalSystemAndTools": 7,
+        "nonzeroCompleteMessagePrefix": 7,
+        "commonCompleteMessagePrefixBytes": 79733
+      }
+    },
+    {
+      "caseId": "coding_pricing_options_migration_v1",
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_2a7b0e9ad2284e098d54",
+      "reportPath": "/tmp/napier-seven-quality/tail-pricing-candidate-v1/trial-3/result.json",
+      "reportSha256": "2d35476f3e94c7edd3ae431e6bd6c069b902f9bad56313371697d665e5dca760",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "qualifyingEvidence": true,
+      "runtimeContextEvidence": {
+        "valid": true,
+        "deliveries": 6,
+        "auditedCapsules": 6
+      },
+      "toolCalls": 10,
+      "toolFailures": 0,
+      "durationMs": 23916,
+      "usage": {
+        "inputTokens": 18304,
+        "outputTokens": 4108,
+        "cacheReadTokens": 35200,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0038113599999999997
+      },
+      "cacheProjection": {
+        "adjacentCount": 5,
+        "identicalSystemAndTools": 5,
+        "nonzeroCompleteMessagePrefix": 5,
+        "commonCompleteMessagePrefixBytes": 50273
+      }
+    }
+  ],
+  "contentSha256": "d8db72e9e6b5c17c145e413182d781a7eb3ad3f713448d75eb43b6dce196ee4e"
+}

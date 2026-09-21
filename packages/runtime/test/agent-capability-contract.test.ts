@@ -3,11 +3,12 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
 import { SqliteLedger } from "../src/sqlite-ledger.js";
+import { createCapabilityContractTestRuntime } from "./capability-contract-test-fixture.js";
 import {
   DEFAULT_AGENT_CAPABILITY_CONTRACT_HISTORY,
   DEFAULT_AGENT_CAPABILITY_RECOMMENDATION,
@@ -34,49 +35,27 @@ import {
 const roots: string[] = [];
 const CODER_SAFE_TOOLS = ["apply_patch", "lsp_diagnostics", "read_file"];
 
+const isolatedHome = vi.hoisted(() => ({ path: "" }));
+vi.mock("node:os", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:os")>()),
+  homedir: () => isolatedHome.path,
+}));
+
+beforeEach(async () => {
+  isolatedHome.path = await mkdtemp(
+    path.join(tmpdir(), "napier-capability-contract-home-"),
+  );
+  roots.push(isolatedHome.path);
+});
+
 afterEach(async () => {
   await Promise.all(
     roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
   );
 });
 
-async function createRuntime() {
-  const root = await mkdtemp(
-    path.join(tmpdir(), "napier-capability-contract-"),
-  );
-  roots.push(root);
-  const workspaceRoot = path.join(root, "workspace");
-  await mkdir(workspaceRoot);
-  return createLocalAgentRuntime({
-    workspaceRoot,
-    dataRoot: path.join(root, "state"),
-    env: {},
-    sandbox: new UnsupportedSandboxAdapter("capability-contract-test"),
-  });
-}
-
-async function createRuntimeWithSkills(names: readonly string[]) {
-  const root = await mkdtemp(
-    path.join(tmpdir(), "napier-capability-contract-skills-"),
-  );
-  roots.push(root);
-  const workspaceRoot = path.join(root, "workspace");
-  await mkdir(workspaceRoot);
-  for (const name of names) {
-    const directory = path.join(workspaceRoot, "skills", name);
-    await mkdir(directory, { recursive: true });
-    await writeFile(
-      path.join(directory, "SKILL.md"),
-      `---\nname: ${name}\ndescription: ${name} readiness fixture.\n---\n\n# ${name}\n\nFollow the bounded workflow.\n`,
-    );
-  }
-  return createLocalAgentRuntime({
-    workspaceRoot,
-    dataRoot: path.join(root, "state"),
-    env: {},
-    sandbox: new UnsupportedSandboxAdapter("capability-contract-skill-test"),
-  });
-}
+const createRuntime = (skills?: readonly string[]) =>
+  createCapabilityContractTestRuntime(roots, skills);
 
 async function createFixtureRuntime(name: "pre-search" | "search-fetch") {
   const root = await mkdtemp(path.join(tmpdir(), "napier-capability-legacy-"));
@@ -246,7 +225,7 @@ describe("default Agent Capability Contract", () => {
   });
 
   it("projects the production Skill loader as ready when the default catalog is loadable", async () => {
-    const services = await createRuntimeWithSkills(
+    const services = await createRuntime(
       DEFAULT_AGENT_CAPABILITY_RECOMMENDATION.enabledSkills,
     );
     try {

@@ -1,0 +1,408 @@
+{
+  "kind": "napier.capability-contract-home-isolation-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T10:33:08.775037+00:00",
+  "productionSourceChanged": false,
+  "paidApiCalls": 0,
+  "rootCause": {
+    "scope": "Two deterministic capability-contract test failures, not the separate intermittent Workflow failure",
+    "observation": "Uncontrolled os.homedir exposes installed frontend-design from user_standard. This changes the empty-workspace readiness detail and its projection hash; combined with the project_legacy fixture it correctly produces skill_ambiguous.",
+    "probePath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/capability-readiness-triage-v1.json",
+    "probeSha256": "b124ff2607aaa58aa8064b5ab6da52e3ee09c8f64db85d24051d8facdc8175a3",
+    "probeObservations": [
+      {
+        "localSkills": false,
+        "projectionSha256": "b8a26579de3a3eb9f6cef217c962be001e4637d3ba6e58eefd4378b1767c851c",
+        "readiness": [
+          {
+            "id": "skill:artifact-studio",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from bundled root bundled_standard and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:browser-automation",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from bundled root bundled_standard and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:data-analysis",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from bundled root bundled_standard and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:frontend-design",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from user root user_standard and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:research-brief",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from bundled root bundled_standard and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:software-delivery",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from bundled root bundled_standard and loadable through the production Runtime"
+          },
+          {
+            "id": "tool:skill_load",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Tool is constructed and exposed by the current Runtime"
+          }
+        ]
+      },
+      {
+        "localSkills": true,
+        "projectionSha256": "0b57751a8974902faa4d3f1c17923a01ef903ab39d6fb04ef0401840e4be74fb",
+        "readiness": [
+          {
+            "id": "skill:artifact-studio",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from project root project_legacy and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:browser-automation",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from project root project_legacy and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:data-analysis",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from project root project_legacy and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:frontend-design",
+            "status": "unavailable",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": false,
+            "detail": "Skill is unavailable (skill_ambiguous; candidates: project_legacy, user_standard)"
+          },
+          {
+            "id": "skill:research-brief",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from project root project_legacy and loadable through the production Runtime"
+          },
+          {
+            "id": "skill:software-delivery",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Skill is snapshot-bound from project root project_legacy and loadable through the production Runtime"
+          },
+          {
+            "id": "tool:skill_load",
+            "status": "ready",
+            "configured": true,
+            "allowedByPolicy": true,
+            "exposed": true,
+            "detail": "Tool is constructed and exposed by the current Runtime"
+          }
+        ]
+      }
+    ],
+    "resolution": "Mock only os.homedir to a fresh temporary directory per test; retain production Skill scanner, loader, bundled assets, expected hashes and readiness assertions. No HOME env mutation or edits to installed Skills."
+  },
+  "testBindings": [
+    {
+      "file": "packages/runtime/test/agent-capability-contract.test.ts",
+      "sha256": "f853e958d1b818aa2cc42e3eb83a74a8ce42fe309514650953a0ef71b55fe0a1",
+      "lines": 997
+    },
+    {
+      "file": "packages/runtime/test/agent-capability-contract-v2.test.ts",
+      "sha256": "d8f869117af64dfc553957578c2a4e12bfd95e4b1ad1372fee798275a2c5eb70",
+      "lines": 496
+    },
+    {
+      "file": "packages/runtime/test/capability-contract-test-fixture.ts",
+      "sha256": "e7b44de76e35b51904fc936c3e242eed3232f100ec10eb5437099474ce587747",
+      "lines": 34
+    }
+  ],
+  "verification": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/capability-isolation-tests-v1.json",
+      "sha256": "33e38a1045620a63e466d092617aa5733473877d1bc881db72dbd5bd3fe684d4",
+      "passed": 26,
+      "failed": 0,
+      "skipped": 0,
+      "files": 2,
+      "tests": [
+        {
+          "title": "default Agent Capability Contract history pins V1-V4 history and current V5 full-capability vectors",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract history projects a bound V2 profile as stale and upgrades it to V5",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract history upgrades only unowned V2 fields and preserves explicit Skill overrides",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract history refuses to infer a safe upgrade for an unmanaged custom Profile",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract verifies the reproducible pre-search fixture manifest",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract verifies the reproducible search-fetch fixture manifest",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract seeds a recommendation binding and projects the negotiated environment exposure",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract tracks coarse explicit overrides and copies target ownership on rollback",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract detects the authentic pre-search historical fixture without changing its profile",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract detects the authentic search-fetch historical fixture without changing its profile",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract preserves an unknown configured tool while excluding it from runtime exposure",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract fails closed on a simulated future contract binding without changing the profile",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract prunes deleted Agents but retains corrupt live-Agent orphans as broken",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract keeps current ownership under a simulated future recommendation history",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects malformed binding combination as broken: {\"ownership\":\"recommended\",\"explicitOverrideFields\":[\"enabledTools\"]}",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects malformed binding combination as broken: {\"ownership\":\"explicit_overrides\",\"explicitOverrideFields\":[]}",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects malformed binding combination as broken: {\"source\":\"seeded\",\"ownership\":\"unknown_legacy\"}",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects malformed binding combination as broken: {\"source\":\"legacy_detected\",\"ownership\":\"unknown_legacy\",\"explicitOverrideFields\":[\"toolPolicy\",\"enabledTools\",\"enabledSkills\",\"enabledSubagents\"],\"legacySignatureSha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\"}",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract reports only a successful production probe as ready while preserving policy control",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract restores only an exact revision and hash-bound preview",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract records an explicit metadata restore even when the managed diff is empty",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract retains malformed non-array metadata as actionable broken state across restarts",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract prunes only deleted-Agent and actually pruned-revision bindings through LocalStore restart",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract rolls back in-memory restore state on persistence failure and restarts cleanly",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract fails an interrupted stale restore and projects the exact atomic commit",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/capability-isolation-tests-v2.json",
+      "sha256": "73228ffc9b3d8b784b45e8d194eb5862df2fd602bfec4ee48b8cbe62279f97bd",
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "files": 1,
+      "tests": [
+        {
+          "title": "default Agent Capability Contract verifies the reproducible pre-search fixture manifest",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract verifies the reproducible search-fetch fixture manifest",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract seeds a recommendation binding and projects the negotiated environment exposure",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects the production Skill loader as ready when the default catalog is loadable",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract tracks coarse explicit overrides and copies target ownership on rollback",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract detects the authentic pre-search historical fixture without changing its profile",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract detects the authentic search-fetch historical fixture without changing its profile",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract preserves an unknown configured tool while excluding it from runtime exposure",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract fails closed on a simulated future contract binding without changing the profile",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract prunes deleted Agents but retains corrupt live-Agent orphans as broken",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract keeps current ownership under a simulated future recommendation history",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects malformed binding combination as broken: {\"ownership\":\"recommended\",\"explicitOverrideFields\":[\"enabledTools\"]}",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects malformed binding combination as broken: {\"ownership\":\"explicit_overrides\",\"explicitOverrideFields\":[]}",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects malformed binding combination as broken: {\"source\":\"seeded\",\"ownership\":\"unknown_legacy\"}",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract projects malformed binding combination as broken: {\"source\":\"legacy_detected\",\"ownership\":\"unknown_legacy\",\"explicitOverrideFields\":[\"toolPolicy\",\"enabledTools\",\"enabledSkills\",\"enabledSubagents\"],\"legacySignatureSha256\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\"}",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract reports only a successful production probe as ready while preserving policy control",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract restores only an exact revision and hash-bound preview",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract records an explicit metadata restore even when the managed diff is empty",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract retains malformed non-array metadata as actionable broken state across restarts",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract prunes only deleted-Agent and actually pruned-revision bindings through LocalStore restart",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract rolls back in-memory restore state on persistence failure and restarts cleanly",
+          "status": "passed"
+        },
+        {
+          "title": "default Agent Capability Contract fails an interrupted stale restore and projects the exact atomic commit",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "distinctTestsPassed": 26,
+  "repeatedChecksNotAdditionalEvidence": true,
+  "fixtureRefactor": "Extract unchanged local Skill/runtime setup from the over-budget capability test into a helper. The refactored file alone was rerun; the other already-passing file was unchanged.",
+  "architecture": {
+    "passed": false,
+    "violationsBefore": 7,
+    "violationsAfter": 6,
+    "resolved": "agent-capability-contract.test.ts is 997 lines under the 1000-line limit",
+    "remaining": [
+      "apps/web/src/use-workspace-view-model.ts:2317>1884",
+      "packages/contracts/src/skill-load-standard.ts:533>500",
+      "packages/runtime/src/browser-session.ts:506>500",
+      "packages/runtime/src/standard-skill-snapshot-compose.ts:506>500",
+      "apps/web/src/conversation-thinking-view-model.ts complexity26>25",
+      "apps/web/src/api.ts coupling111>102"
+    ],
+    "budgetsRaised": false
+  },
+  "formattingAndDiffCheck": {
+    "threeChangedFilesPrettierPassed": true
+  },
+  "spending": {
+    "maxFen": 5000,
+    "priorSpendFen": 110,
+    "requests": 128,
+    "committedFen": 831,
+    "remainingFen": 4169,
+    "reservedRequests": 0,
+    "denied": 0
+  },
+  "limitations": [
+    "The latest complete Runtime run before this test-only fix remains 2711 passed, 2 failed, 60 skipped; focused passing checks are not reported as a new full-suite pass.",
+    "Original Workflow failure remains retained and unexplained despite later complete/targeted passes.",
+    "Does not qualify whole-composition real-model task quality."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

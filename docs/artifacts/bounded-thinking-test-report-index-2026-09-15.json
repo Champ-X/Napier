@@ -1,0 +1,37 @@
+{
+  "kind": "napier.bounded-thinking-offline-test-copies",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T08:12:31.796561+00:00",
+  "entries": [
+    {
+      "originalPath": "/tmp/napier-bounded-thinking-offline-tests-2026-09-15.json",
+      "durablePath": "docs/artifacts/bounded-thinking-runtime-tests-2026-09-15.json",
+      "sha256": "fe5b145db34fe3341718be1a657be5f9c401166df00302a34199acd9e7bf7eba",
+      "passed": 48,
+      "failed": 0
+    },
+    {
+      "originalPath": "/tmp/napier-bounded-thinking-cli-tests-2026-09-15.json",
+      "durablePath": "docs/artifacts/bounded-thinking-cli-tests-2026-09-15.json",
+      "sha256": "8e59e0f76b77d42334fa25ee26656d661dfb7a9fbd4606963a9658a05a344c03",
+      "passed": 7,
+      "failed": 0
+    },
+    {
+      "originalPath": "/tmp/napier-bounded-thinking-schedule-tests-2026-09-15.json",
+      "durablePath": "docs/artifacts/bounded-thinking-schedule-tests-2026-09-15.json",
+      "sha256": "1858933461bc533c46ff78511f3edeccebfffa8dfbceb08a18eaa58bf02142bd",
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "originalPath": "/tmp/napier-paired-summary-tests-2026-09-15.json",
+      "durablePath": "docs/artifacts/paired-summary-tests-2026-09-15.json",
+      "sha256": "641ebf684eeb4ab79b9bef9690a73fefd7617b6126b7790c2ccf218948d9d858",
+      "passed": 4,
+      "failed": 0
+    }
+  ],
+  "modelRequests": 0,
+  "scope": "Byte-identical durable copies of original successful offline reports. Runtime/CLI/schedule/summary test groups are separate; these are not real-model quality observations."
+}

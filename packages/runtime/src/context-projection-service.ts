@@ -25,6 +25,14 @@ import {
 import type { LocalStore } from "./store.js";
 import { pruneToolResultContext } from "./tool-result-context-pruner.js";
 import type { TokenMeterRegistry } from "./token-meter-provider.js";
+import {
+  appendRuntimeContext,
+  runtimeContextDelivery,
+} from "./runtime-context-delivery.js";
+import {
+  createRuntimeContextReceipt,
+  RUNTIME_CONTEXT_EVENT,
+} from "./runtime-context-receipt.js";
 
 export const CONTEXT_PROJECTION_EXTENSION_ID =
   "napier.context-projection-service";
@@ -108,6 +116,7 @@ export class ContextProjectionService {
       throw new Error("Context Projection preparation is unavailable");
     }
     await hydrateTokenCalibrationRegistry(this.store, this.tokenMeters);
+    let delivery = runtimeContextDelivery(call.compiledPrompt);
     const working = await call.runContextCompaction?.project({
       sourceContext: prepared.sourceContext,
       prunedContext: prepared.prunedContext,
@@ -118,17 +127,28 @@ export class ContextProjectionService {
       tokenMeters: this.tokenMeters,
       modelAttempt: call.attempt,
       recoveryAttempt: call.recoveryAttempt,
+      ...(delivery ? { runtimeContextMessages: [delivery.message] } : {}),
     });
+    // Compaction can spend auxiliary tokens. Refresh accounting before the
+    // final token-pressure check and bind that same prompt into the capsule.
+    const compiledPrompt = call.refreshBudgetPrompt?.() ?? call.compiledPrompt;
+    delivery = runtimeContextDelivery(compiledPrompt);
+    const base = working?.context ?? call.context;
+    const withRuntime = delivery
+      ? appendRuntimeContext(call.run, base, delivery)
+      : base;
     const projection = await projectModelContextTokenPressureWithProvider(
       {
         model: call.model,
-        context: working?.context ?? call.context,
+        context: withRuntime,
         options: call.options,
-        compiledPrompt: call.compiledPrompt,
+        compiledPrompt,
         modelAttempt: call.attempt,
         recoveryAttempt: call.recoveryAttempt,
         recoveryContextReduced: working?.recoveryReduced ?? false,
-        preserveUserMessages: working?.preserveUserMessages ?? false,
+        preserveUserMessages: delivery
+          ? true
+          : (working?.preserveUserMessages ?? false),
       },
       this.tokenMeters,
     );
@@ -138,6 +158,25 @@ export class ContextProjectionService {
       "model.context.token_pressure",
       projection.receipt,
     );
+    const runtimeReceipt = delivery
+      ? createRuntimeContextReceipt({
+          runId: call.run.id,
+          modelAttempt: call.attempt,
+          recoveryAttempt: call.recoveryAttempt,
+          systemPromptSha256: compiledPrompt.systemPromptSha256,
+          tokenPressureReceiptSha256: projection.receipt.contentSha256,
+          delivery,
+          prepared: withRuntime,
+          active: projection.context,
+        })
+      : undefined;
+    if (runtimeReceipt)
+      await appendProjectionEvent(
+        this.store,
+        call,
+        RUNTIME_CONTEXT_EVENT,
+        runtimeReceipt,
+      );
     const receipt = createContextProjectionReceipt({
       provider: call.model.provider,
       model: call.model.id,
@@ -147,9 +186,12 @@ export class ContextProjectionService {
       toolDefinitionSetSha256: modelContextToolDefinitionSetSha256(
         call.context.tools ?? [],
       ),
-      compiledPrompt: call.compiledPrompt,
+      compiledPrompt,
       prepared: prepared.receipt,
       pressure: projection.receipt,
+      ...(runtimeReceipt
+        ? { runtimeContextReceiptSha256: runtimeReceipt.contentSha256 }
+        : {}),
       ...(working?.receiptSha256
         ? { runCompactionReceiptSha256: working.receiptSha256 }
         : {}),
@@ -190,6 +232,7 @@ async function appendProjectionEvent(
   call: { run: RunRecord; onEvent?: EventSink },
   type:
     | typeof CONTEXT_PROJECTION_EVENT
+    | typeof RUNTIME_CONTEXT_EVENT
     | "model.context.tool-results.pruned"
     | "model.context.token_pressure",
   receipt: object,

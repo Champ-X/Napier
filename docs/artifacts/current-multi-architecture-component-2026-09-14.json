@@ -1,0 +1,170 @@
+{
+  "kind": "napier.sandbox-multi-architecture-stage14",
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-14T01:35:41.614Z",
+  "source": {
+    "dockerfilePath": "docker/napier-sandbox/Dockerfile",
+    "dockerfileSha256": "9600cd986d716f9ed7f022e0027d91f4507b472baa1439d5e96f4f3d6d788fe1",
+    "packageJsonPath": "docker/napier-sandbox/package.json",
+    "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
+    "packageLockPath": "docker/napier-sandbox/package-lock.json",
+    "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
+    "contextSha256": "6c76e506c368c10ff530806bddde67dcd07d269102c62965cb3ff4b4cbd3cbca"
+  },
+  "implementation": {
+    "containerIdentitySha256": "ed83e9a2b2584a4ac08a1b61c4ff4bb7de2f281e9739e435984db5c8e93e2314",
+    "pathMappingSha256": "1f56ece466497569a30b3eb90c4276fa6bfee439da71f75ea75213c5e38934d5",
+    "launchPolicySha256": "7dcde3a01b32f46f95c8cade2d673231b007da6225c7b058b6f6fed592abe0fa",
+    "ociAdapterSha256": "40a4047357ce0c825c5b1c49b2812ac87983414df71699cff29dee85a2cd65d1",
+    "ociLaunchArgumentsSha256": "c3eefc0a292f7f3964a39808cfe80e590f0f7ac00fff69a11b3c85c166c348bd",
+    "lspProbeSha256": "e2c4e6654d1607d4618bdd8017d1cdaee6b46656980803960ae60fef4af85a23",
+    "checkScriptSha256": "e65d26760740fba26a5c94ef9549a3f5307a73d6f3289a1c03194437290da9bc",
+    "artifactVerifierSha256": "24851beebd112d98b0c06f59298b83174aedb445179838628d80a7b54ccba814",
+    "liveHarnessSha256": "1b3d523b03e171cb5f67c7d4672ba86f301d6f523903da032467c8a3fa96b448"
+  },
+  "builder": {
+    "driver": "docker",
+    "buildxVersion": "v0.37.1",
+    "buildkitVersion": "v0.30.0",
+    "supportedPlatforms": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "explicitPlatformBuild": true,
+    "localLoadOnly": true,
+    "registryPublished": false,
+    "signed": false,
+    "attested": false,
+    "identitySha256": "09596b5a7861f3041fd5f53f5fb9927fa42c8154824fd20f1fcf7b2b5d26e85e"
+  },
+  "platforms": [
+    {
+      "platform": "linux/amd64",
+      "imageId": "sha256:0f638252fe0a00f4f03ce4b25880e298c8180789c68c380b3db1efcafc00cb26",
+      "imageIdentitySha256": "3aa7303c15a06bc2deb42445a2be841bdc659a659c456f6ac4a596db073ccfac",
+      "buildStatus": "passed",
+      "buildOutputSha256": "e21ab42567f45042656ac9f6f3af95d287abcb5fd5a6be89d71f5cb76dbc740f",
+      "buildOutputBytes": 72,
+      "durationMs": 69153,
+      "checkCodes": [
+        "sandbox_process_ready",
+        "sandbox_resources_ready",
+        "verification_ready",
+        "shell_ready",
+        "python_ready",
+        "git_ready",
+        "lsp_ready",
+        "dap_ready",
+        "service_ready"
+      ],
+      "toolchain": {
+        "node": "24.16.0",
+        "shellSha256": "a6f559e00b69a4aa4d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7",
+        "python": "3.13.5",
+        "pythonSha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9",
+        "git": "git version 2.47.3",
+        "gitSha256": "356db14e102d68a1a37d8a1ac577dfd678d45d46e92f468bef8b7154e7bfdc60",
+        "typescript": "5.9.3",
+        "typescriptLanguageServer": "5.3.0",
+        "vitest": "4.1.9",
+        "prettier": "3.8.4",
+        "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
+        "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
+        "runtimeIdentitySha256": "732524d8cb3eb21c0525ef59cf964d5b101e4d6204978774e549d6f6d1ed444f"
+      },
+      "verification": {
+        "typecheckStatus": "passed",
+        "testStatus": "passed",
+        "typecheckVersion": "5.9.3",
+        "testVersion": "4.1.9",
+        "typecheckResultSha256": "cd56f6b02535c756bcfb1854b5f7ca3f38445c4b615f63c67f154dd3f4528e3f",
+        "testResultSha256": "bd1aae69cbe2c498af80af7c66902c0f027c9ec8f06fca9028b0cb9fcc744e3b"
+      },
+      "evidenceSha256": "83c18ac933e1588d3950f8d667058e9a9575b4803222ad336cb035c8f1c0c70c"
+    },
+    {
+      "platform": "linux/arm64",
+      "imageId": "sha256:0a2877470b3822a6243740e63a1a5cd3a2c40b683bd324df704ba85fa69c4df7",
+      "imageIdentitySha256": "94d74e1d201a2d9744923c3070b2f907ad8dcd76f3f18023d48199769903b563",
+      "buildStatus": "passed",
+      "buildOutputSha256": "49aabea6bfb0603f235f551e6ddd5099abf500fbae28fedcf0a53a1c7643ca30",
+      "buildOutputBytes": 72,
+      "durationMs": 32208,
+      "checkCodes": [
+        "sandbox_process_ready",
+        "sandbox_resources_ready",
+        "verification_ready",
+        "shell_ready",
+        "python_ready",
+        "git_ready",
+        "lsp_ready",
+        "dap_ready",
+        "service_ready"
+      ],
+      "toolchain": {
+        "node": "24.16.0",
+        "shellSha256": "367967c823a0c391e5049b15a67c6a0a629c88b9b6dcdca75ef13ac9d65334b1",
+        "python": "3.13.5",
+        "pythonSha256": "273cb29e073b748379ba546affa562283ed795f84ff230349e12ce610e60975c",
+        "git": "git version 2.47.3",
+        "gitSha256": "a0e562e4bd3c4c79379e91d8c07a10104b2cefe8fac966dc6bd4874a57a807f3",
+        "typescript": "5.9.3",
+        "typescriptLanguageServer": "5.3.0",
+        "vitest": "4.1.9",
+        "prettier": "3.8.4",
+        "packageJsonSha256": "4a3eb71735e5f7024bbf16f22ee907f4b7024a7c326abf09f3df1146609c3d31",
+        "packageLockSha256": "4b600c3297a63fc501a3ca619eae9cbf93e4fc83adcd527f4965950a16581dc5",
+        "runtimeIdentitySha256": "155e355c4d39cc122e6f4f589ce29e7be31a9059e2a70aca402f3654540cfdc7"
+      },
+      "verification": {
+        "typecheckStatus": "passed",
+        "testStatus": "passed",
+        "typecheckVersion": "5.9.3",
+        "testVersion": "4.1.9",
+        "typecheckResultSha256": "690552a47e2018b39e500664f95ceae03ba0acdd98ebd5770d908b8b06550751",
+        "testResultSha256": "02dc1405ee75370c39c4f633cc07279ef1ba55ca198b850ab6d18e3f7e87c035"
+      },
+      "evidenceSha256": "bf3180e4a91b9e04c63cff8a3e54d972b2e8e654599f325d6de5ac549b612e5c"
+    }
+  ],
+  "parity": {
+    "distinctImageIds": true,
+    "toolchainVersionsEqual": true,
+    "manifestHashesEqual": true,
+    "allProductionChecksReady": true,
+    "explicitPlatformLaunch": true,
+    "evidenceSha256": "de06beec90cdf768c9eacbc7172d4940bb811607d4d2f70d411dfdf5c49af7b6"
+  },
+  "resourceClosure": {
+    "exactBaselineRestored": true,
+    "containerDeltaCount": 0,
+    "networkDeltaCount": 0,
+    "imageDeltaCount": 0,
+    "scratchDeltaCount": 0,
+    "temporaryTagDeltaCount": 0
+  },
+  "retention": {
+    "credentialValues": false,
+    "rawBuildOutput": false,
+    "rawDockerOutput": false,
+    "resourceNames": false,
+    "temporaryTags": false,
+    "workspacePaths": false,
+    "daemonEndpoints": false
+  },
+  "scope": {
+    "sliceComplete": true,
+    "s1Complete": false,
+    "localBuildAndExecution": true,
+    "registryPublication": false,
+    "signature": false,
+    "crossHostAcceptance": false,
+    "remaining": [
+      "multi-architecture registry publication",
+      "image signature and external attestation",
+      "non-POSIX host user and path mapping",
+      "Windows and Linux host product acceptance"
+    ]
+  },
+  "contentSha256": "5a17ea6fc48efefb065c4686a19d81200a72f680ee20e401c06541b24ac699b7"
+}

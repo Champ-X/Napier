@@ -1,0 +1,103 @@
+{
+  "kind": "napier.proportional-planning-offline-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:48:15.862Z",
+  "sourceFiles": {
+    "packages/contracts/src/harness-experiments.ts": "120bcba87887632f5d568ccd0aed74ba8ca7a18525108f97c325e417fcd8f920",
+    "packages/runtime/src/harness-policy-profile.ts": "38a21c2e6fe099ffe4479ea16ed9c8f92c7e52ffe5a28c10770b977dc605ca6e",
+    "packages/runtime/src/plan-guidance-policy.ts": "b1d7e748a2090f8b8751375014d8b0670c855c4b6fe45f813bb0d4cb28d48914",
+    "packages/runtime/src/agent-runtime-utils.ts": "4d5bf6da58667a1c73be22eba4dbe9a1d81efe15708583e87fdda30ff24fa386",
+    "packages/runtime/src/agent-runtime-step-lifecycle.ts": "5fa98c058a6a9272f5c050c83bf10a68494da4d457a3d500ba6727442102dd4f",
+    "packages/runtime/test/plan-guidance-policy.test.ts": "b542318ce677d3218b12a34ced53464330f001ed8d998fee2c3f17e8e3666285",
+    "packages/runtime/test/harness-policy-recovery.test.ts": "39b640f7c84a8d301bc306d99fc79e37c2a2b7aea1bbc9e7b02d6a302f464b44",
+    "packages/runtime/test/harness-composition-integration.test.ts": "77a2c9c8ee9a9f5e8bf3dc5b58bf5c092515ed1e7e23a7affc4b6fd23385faee",
+    "benchmarks/harness-profiles/current-integrated.v4.json": "f5406ee1a169f1060ee7c1648c0332eb0b340dfcc9389ff64be0d3767fa2bb75"
+  },
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/proportional-planning-offline-tests-2026-09-15.json",
+    "sha256": "286f13036e62b1d9d1137d2ecea2d0b5e1af2c666e817adda7777d906016417b",
+    "passed": 30,
+    "failed": 0,
+    "skipped": 0
+  },
+  "contractsCompilePassed": true,
+  "runtimeCompilePassed": true,
+  "defaultGuidanceByteIdenticalToolSubsets": 64,
+  "unchangedPolicies": [
+    "model-thinking-loop-guard.ts",
+    "model-thinking-loop-policy.ts",
+    "model-turn-deadline.ts",
+    "run-budget.ts",
+    "contract-verification-protocol.ts",
+    "plan-tools.ts",
+    "plan-step-transition.ts"
+  ],
+  "architecture": {
+    "preexistingViolations": 6,
+    "newViolations": 0,
+    "fullyPassing": false
+  },
+  "profileFileSha256": "f5406ee1a169f1060ee7c1648c0332eb0b340dfcc9389ff64be0d3767fa2bb75",
+  "profile": {
+    "kind": "napier.model-harness-experiment-profile",
+    "schemaVersion": 1,
+    "id": "napier.current-integrated.v4",
+    "maxActiveTools": 32,
+    "maxActiveToolsMode": "model_default",
+    "policies": {
+      "schemaVersion": 1,
+      "id": "current-integrated.v4",
+      "revision": 4,
+      "context": {
+        "prompt": "stable-v1",
+        "memory": "task-aware-grouped-v3",
+        "workingState": "evidence-v1",
+        "delivery": "tail-v1",
+        "finalization": "request-aware-v2",
+        "validation": "contract-transitions-v2",
+        "verificationOrder": "before-first-patch-v1",
+        "planning": "proportional-v1"
+      },
+      "toolSurface": {
+        "editReferences": true,
+        "unifiedDiff": true
+      },
+      "verification": "node-python-v1",
+      "contentSha256": "17af902babbbf408937d97d741ea092bb3a4217847aa27613b0e217242b031c2"
+    },
+    "contentSha256": "019b7dbc679e731ba8edfac4c3121e9c46bc0b33f479647af547bb441afe28af"
+  },
+  "diagnosticSource": "docs/artifacts/thinking-trace-live-audit-2026-09-15.json",
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 9041,
+    "remainingFen": 959,
+    "requests": 715,
+    "reservedRequests": 8,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "modelRequests": 0,
+  "frozen": false,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Opt-in proportional planning clarifies when durable plans are useful and the existing ready-step completion semantics. The model trace shows repeated implementation design and future-call planning before any baseline execution, but does not establish planning guidance as the sole cause. Existing defaults, watchdog, billing, verification ordering and transition API remain unchanged; local integration proves delivery and permissions, not actual-model effectiveness."
+}

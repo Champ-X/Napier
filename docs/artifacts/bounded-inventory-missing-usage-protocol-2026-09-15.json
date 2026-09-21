@@ -1,0 +1,45 @@
+{
+  "kind": "napier.missing-usage-recovery-protocol",
+  "schemaVersion": 1,
+  "required": {
+    "minimumCases": 30,
+    "minimumTrials": 3
+  },
+  "caseId": "inventory_event_projection_v1",
+  "originalTrial": 0,
+  "supplementalTrial": 3,
+  "baselineRunId": "run_0aa5c49110e54ca58a60",
+  "baselineReportDigest": "87c456774b671fc314febf8c59baf87e3dbebfdcd164133723e86a2b59730ba1",
+  "candidateRunId": "run_a03b91bc514d4a37976b",
+  "candidateReportDigest": "a18a9c7e619b2ec1b675d2560c4aa32437db339e3149d569620f9987548f4d12",
+  "originalScheduleDigest": "71289603f13956b41a781dd61650b778ab7a1f90f2d3065b5d747e7769f48fd1",
+  "originalSchedulePositions": 180,
+  "originalPairQuality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 0,
+    "cases": 0,
+    "regressions": [],
+    "evidenceBlockers": [
+      "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 0"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "c9db2a3c39c8553ef2347f3d31eda60e2b819a3547775ec24274912c8f9c9b21"
+  },
+  "originalReservationDelta": 1,
+  "originalRunIdsMustRemainVisible": [
+    "run_0aa5c49110e54ca58a60",
+    "run_a03b91bc514d4a37976b"
+  ],
+  "scope": "A new prospective qualification cohort, not repair or promotion of the original campaign. Preserve the original schedule and append one whole new trial; require three eligible pairs per case. No candidate failure or eligible baseline failure may be retired. No reservation is released.",
+  "contentSha256": "f863af1906d82c0d223c67091e4eb9c0e33b639fa8c13baa1f1256494ef45d4b"
+}

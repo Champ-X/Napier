@@ -9,6 +9,7 @@ import type {
 } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
 import type { ModelRouteRequest } from "@napier/contracts/model-route";
+import type { HarnessPolicyPresetId } from "@napier/contracts/harness-experiments";
 
 import type { EventSink } from "./event-sink.js";
 import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
@@ -36,6 +37,8 @@ export interface RunPromptOptions {
   model?: ModelRef;
   modelRoute?: ModelRouteRequest;
   harnessExperimentProfile?: ModelHarnessExperimentProfile;
+  harnessPolicyPreset?: HarnessPolicyPresetId;
+  captureInitialState?: boolean;
   agentRevision?: number;
   capabilityPreset?: AgentCapabilityPresetId | undefined;
   sourceContinuityRunId?: string;

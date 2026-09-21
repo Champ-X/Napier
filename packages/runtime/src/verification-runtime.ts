@@ -1,4 +1,5 @@
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { OsSandboxAdapter } from "./sandbox-types.js";
@@ -29,6 +30,7 @@ export interface VerificationRuntime {
   runtimeReadPaths: string[];
   runtimeIdentitySha256?: string;
   hostBinding?: VerificationToolchainBinding;
+  testRunner?: "node-test" | "vitest";
 }
 
 export async function resolveVerificationRuntime(input: {
@@ -38,6 +40,7 @@ export async function resolveVerificationRuntime(input: {
   nodeExecutable: string;
   nodeExecutableExplicit: boolean;
   toolchainRoot?: string;
+  testRunner?: "node-test" | "vitest";
 }): Promise<VerificationRuntime> {
   const provider = await input.sandbox.resolveVerificationRuntime?.();
   if (provider) {
@@ -48,6 +51,26 @@ export async function resolveVerificationRuntime(input: {
       );
     }
     const selected = providerVerifier(provider, input.kind);
+    if (input.testRunner === "node-test") {
+      return {
+        location: "provider",
+        testRunner: "node-test",
+        nodeExecutable: provider.nodeExecutable,
+        nodeExecutableSha256: provider.nodeExecutableSha256,
+        verifierPath: provider.nodeExecutable,
+        verifierPathSha256: sha256("node:test"),
+        verifierSha256: provider.nodeExecutableSha256,
+        toolchainExternal: false,
+        toolchainSha256: sha256(
+          canonicalJson({
+            node: provider.nodeExecutableSha256,
+            runner: "node:test",
+          }),
+        ),
+        runtimeReadPaths: [],
+        runtimeIdentitySha256: provider.runtimeIdentitySha256,
+      };
+    }
     return {
       location: "provider",
       nodeExecutable: provider.nodeExecutable,
@@ -72,6 +95,23 @@ export async function resolveVerificationRuntime(input: {
   if (input.sandbox.id === "oci-container") {
     throw new Error("OCI image-bound verification runtime is unavailable");
   }
+  if (input.testRunner === "node-test") {
+    const nodeSha256 = sha256(await readFile(input.nodeExecutable));
+    return {
+      location: "host",
+      testRunner: "node-test",
+      nodeExecutable: input.nodeExecutable,
+      nodeExecutableSha256: nodeSha256,
+      verifierPath: input.nodeExecutable,
+      verifierPathSha256: sha256("node:test"),
+      verifierSha256: nodeSha256,
+      toolchainExternal: true,
+      toolchainSha256: sha256(
+        canonicalJson({ node: nodeSha256, runner: "node:test" }),
+      ),
+      runtimeReadPaths: [],
+    };
+  }
   const hostBinding = await resolveVerificationToolchain({
     workspaceRoot: input.workspaceRoot,
     ...(input.toolchainRoot ? { toolchainRoot: input.toolchainRoot } : {}),
@@ -95,6 +135,16 @@ export async function assertVerificationRuntimeStable(
   sandbox: OsSandboxAdapter,
 ): Promise<void> {
   if (runtime.location === "host") {
+    if (runtime.testRunner === "node-test") {
+      if (
+        sha256(await readFile(runtime.nodeExecutable)) !==
+        runtime.nodeExecutableSha256
+      )
+        throw new Error(
+          "Native Node verification runtime changed during execution",
+        );
+      return;
+    }
     await assertVerificationToolchainStable(runtime.hostBinding!);
     return;
   }

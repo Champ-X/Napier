@@ -19,6 +19,10 @@ import {
   toolLoopGuardBlockReason,
 } from "./tool-loop-guard.js";
 import { policyToolFailureLedgerProjection } from "./tool-failure-semantics.js";
+import {
+  assessPreEditVerification,
+  preEditVerificationAvailable,
+} from "./pre-edit-verification.js";
 
 type PolicyContext = Omit<
   Parameters<AgentTurnPipeline["preflightPolicy"]>[0],
@@ -42,6 +46,7 @@ export function createAgentToolPreflight(input: {
   activeToolNames(): ReadonlySet<string>;
   runtimeAvailableToolNames(): ReadonlySet<string>;
   toolLoopGuardPolicy: ToolLoopGuardPolicy;
+  verificationOrder?: "before-first-patch-v1" | undefined;
   onEvent?: EventSink;
 }): {
   governed(
@@ -95,10 +100,41 @@ export function createAgentToolPreflight(input: {
       args,
       ...(signal ? { signal } : {}),
     });
-    return (
-      block ??
-      preflightProgressTool(input.progress, input.lifecycle, toolCall, args)
+    if (block) return block;
+    const progressBlock = await preflightProgressTool(
+      input.progress,
+      input.lifecycle,
+      toolCall,
+      args,
     );
+    if (progressBlock) return progressBlock;
+    if (
+      input.verificationOrder === "before-first-patch-v1" &&
+      toolCall.name === "apply_patch"
+    ) {
+      signal?.throwIfAborted();
+      const active = input.activeToolNames();
+      const available = input.runtimeAvailableToolNames();
+      const assessment = assessPreEditVerification({
+        runId: input.policy.run.id,
+        toolName: toolCall.name,
+        verificationAvailable: preEditVerificationAvailable(available, active),
+        events: await input.store.listRunEvents(input.policy.run.id),
+      });
+      signal?.throwIfAborted();
+      if (assessment.status === "test_required") {
+        return recordBlock(
+          toolCall,
+          args,
+          "This Run's before-first-patch verification policy requires a settled verify_workspace(kind=test) attempt before apply_patch. Read the contract and test scope, run the relevant existing test and wait for its result. If verify_workspace is hidden, discover it with capability(uri=cap://tools/verify_workspace). A failed or denied attempt permits continued work within the original permissions; it is not a passing test. No new files are required, and this ordering rule does not establish contract coverage.",
+          {
+            harnessInterventionReason: "pre_edit_verification",
+            verificationOrder: input.verificationOrder,
+          },
+        );
+      }
+    }
+    return undefined;
   };
   return {
     governed,
@@ -223,7 +259,7 @@ async function append(
     payload,
   });
   try {
-    await input.onEvent?.(event);
+    await (input.onEvent ?? input.policy.onEvent)?.(event);
   } catch {
     // Durable policy evidence survives a disconnected observer.
   }

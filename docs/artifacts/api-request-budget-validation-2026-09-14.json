@@ -1,0 +1,124 @@
+{
+  "kind": "napier.api-request-budget-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T00:41:46.642398+00:00",
+  "files": [
+    {
+      "path": "scripts/harness-api-request-budget.mjs",
+      "sha256": "f6c601bd13379062f480db001084872d5b750a222a0ea5eadd1aced49286e727"
+    },
+    {
+      "path": "scripts/harness-api-request-budget.test.mjs",
+      "sha256": "303167ca26837063cdb7c75a90ced2a1a6cc8d418910aae9c09281964c0a8157"
+    },
+    {
+      "path": "scripts/run-harness-optimization-campaign.mjs",
+      "sha256": "7fd0a19155f9b80091c18d0f78d1c09967e76e5f19b743708a95b598f8f8d40f"
+    },
+    {
+      "path": "scripts/run-harness-optimization-suite.mjs",
+      "sha256": "3ca61c3da23d3eb03a7ee891b8017e5128c651f71de8a43c4cbcde8805b94cdf"
+    },
+    {
+      "path": "scripts/harness-campaign-evidence.mjs",
+      "sha256": "a9ff67f88c9004bafaa97d7471e07e37d1396d496b17e2e118dcd424b1ba6cea"
+    },
+    {
+      "path": "scripts/harness-campaign-evidence.test.mjs",
+      "sha256": "bbadee576ae83801e54540d5008dc64a5911c8d329f1c09166ded94f42058123"
+    },
+    {
+      "path": "scripts/registry.json",
+      "sha256": "9240222e075a519c4d461f22301090995a6c483ca94ad6f36de5cd4666bfe503"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-api-budget-targeted-v1.log",
+      "sha256": "84d27aa6603e8a43146c0aa999a1c3645711e435d232121750255c52d0e3f5dd"
+    },
+    {
+      "path": "/tmp/napier-api-budget-targeted-v2.log",
+      "sha256": "cf2f4a197344d514b8037da251c8cc89ecf1d08320dce09bbc41218fec3a773b"
+    },
+    {
+      "path": "/tmp/napier-api-budget-targeted-v3.log",
+      "sha256": "576e68c6959ebc928f8a3c523b7fdf37cf4715c456b7bbc4c160aca9b6f98d48"
+    },
+    {
+      "path": "/tmp/napier-api-budget-format-check-v1.log",
+      "sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20"
+    },
+    {
+      "path": "/tmp/napier-api-budget-architecture-v1.log",
+      "sha256": "a8d444f8edf866131503b5c24bc73e082485b02f1a5f32d516acc5d946399667"
+    },
+    {
+      "path": "/tmp/napier-api-budget-dead-code-v1.log",
+      "sha256": "ca857a5d29106f6541acfdb8cc345b9c45c95d40f8d7041a946de19efc576293"
+    }
+  ],
+  "sourceArchive": "/tmp/napier-api-budget-driver-v1",
+  "archiveScope": "Changed driver/helper/test files only; not a standalone executable or hermetic runtime.",
+  "runtimeSnapshot": "/tmp/napier-harness-durable-pre-edit-v1",
+  "runtimeSourceAndDistUnchanged": true,
+  "targeted": {
+    "passed": 31,
+    "files": 6,
+    "durationSeconds": 0.525
+  },
+  "apiTesting": {
+    "newPaidCalls": 0,
+    "newPaidCampaignsPaused": true,
+    "positiveBudgetLiveRuns": 0
+  },
+  "localEvidence": {
+    "concurrentProcesses": 4,
+    "sharedMaxRequests": 7,
+    "totalAdmitted": 7,
+    "deniedAttempts": 33,
+    "sdk": "Installed Pi/OpenAI provider, local mocked fetch responses only",
+    "paths": [
+      "SDK retry exhaustion",
+      "Successful SDK SSE content preservation",
+      "Cross-process shared cap and durable reopen",
+      "Admission spacing and cancelled waiting",
+      "Failed transport without refunds",
+      "Unrelated HTTP fetch unchanged",
+      "Invalid/changed/reused budget fail-closed",
+      "Both CLIs reject absent explicit budgets",
+      "Zero-budget suite has six missing observations and no campaign process",
+      "Budget mismatch/exhaustion preserves adverse outcomes"
+    ]
+  },
+  "architecture": {
+    "violations": 7,
+    "matchesPreviousAudit": true,
+    "passed": false
+  },
+  "deadCode": {
+    "issues": [
+      "scripts/check-workspace-html-preview.mjs",
+      "integrations/tessmora/scripts/mma-rag.mjs",
+      "apps/server/test/workspace-html-preview-browser-fixture.ts"
+    ],
+    "matchesPreviousAudit": true,
+    "passed": false
+  },
+  "formatPassed": true,
+  "diffCheckPassed": true,
+  "limitations": [
+    "Request reservations are not provider billing",
+    "Admission interval is not exact network dispatch timing",
+    "Only standard DeepSeek origin through campaign global fetch is guarded",
+    "No network sandbox or child-process interception",
+    "No live model qualification",
+    "Old frozen drivers are unchanged and do not gain this guard"
+  ],
+  "requiredQualityGate": {
+    "minimumCases": 30,
+    "minimumTrials": 3,
+    "unchanged": true
+  },
+  "promotionReady": false
+}

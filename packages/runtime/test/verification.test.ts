@@ -328,6 +328,11 @@ describe("sandboxed workspace verification", () => {
       expect.objectContaining({
         command: binding.nodeExecutable,
         args: [
+          // OCI refreshes directory visibility before the same image verifier.
+          "--eval",
+          expect.any(String),
+          "--",
+          await realpath(workspaceRoot),
           binding.typecheckPath,
           "-p",
           await realpath(
@@ -589,7 +594,12 @@ describe("sandboxed workspace verification", () => {
       sandbox: fake.sandbox,
     });
     const controller = new AbortController();
-    controller.abort();
+    const launch = fake.sandbox.launch.bind(fake.sandbox);
+    fake.sandbox.launch = async (request) => {
+      const process = await launch(request);
+      controller.abort();
+      return process;
+    };
 
     await expect(
       runner.run(
@@ -601,6 +611,23 @@ describe("sandboxed workspace verification", () => {
       ),
     ).rejects.toThrow("verification was aborted");
     expect(fake.terminate).toHaveBeenCalledOnce();
+  });
+
+  it("does not launch a verifier for an already cancelled request", async () => {
+    const { workspaceRoot } = await createWorkspace();
+    const fake = createFakeSandbox({ hang: true });
+    const runner = new VerificationRunner({
+      workspaceRoot,
+      sandbox: fake.sandbox,
+    });
+    await expect(
+      runner.run(
+        { kind: "test", cwd: "packages/example" },
+        AbortSignal.abort(),
+      ),
+    ).rejects.toThrow("verification was aborted");
+    expect(fake.launchRequests).toHaveLength(0);
+    expect(fake.terminate).not.toHaveBeenCalled();
   });
 
   it("rejects path escape and unsupported platforms before execution", async () => {

@@ -1,0 +1,11 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_terminal_recovery_v1",
+  "cases": [
+    {
+      "path": "harness-optimization/rollout-dependency-plan-v1",
+      "coverage": ["reasoning-only-terminal-recovery", "required-verification"]
+    }
+  ]
+}

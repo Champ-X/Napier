@@ -4,7 +4,7 @@ import {
   createReadStream,
   type Stats,
 } from "node:fs";
-import { access, readdir, realpath, stat } from "node:fs/promises";
+import { access, readdir, readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -39,6 +39,15 @@ const PYTHON_RUNTIME_REQUIRED_ASSETS = [
   "threading.py",
   "tracemalloc.py",
   "types.py",
+  "unittest/__init__.py",
+  "unittest/case.py",
+  "unittest/loader.py",
+  "unittest/main.py",
+  "unittest/result.py",
+  "unittest/runner.py",
+  "unittest/signals.py",
+  "unittest/suite.py",
+  "unittest/util.py",
 ] as const;
 const PYTHON_RUNTIME_OPTIONAL_ASSETS = [
   "_bootlocale.py",
@@ -183,13 +192,34 @@ export async function resolveCommandRuntimeBinding(
   } catch {
     throw new Error("python runtime assets are unavailable");
   }
+  // Python discovers pyvenv.cfg relative to the invocation path. Resolving a
+  // venv symlink and then invoking its target silently selects the base env.
+  const environment = await pythonInvocationEnvironment(candidate, resolved);
+  runtimeAssets.push(...environment.assets);
   return {
-    executable: resolved,
+    executable: environment.executable,
     executableSha256,
     runtimeReadPaths: [runtimeRoot],
     runtimeAssets,
     runtimeAssetSetSha256: runtimeAssetSetSha256(runtimeAssets),
   };
+}
+
+async function pythonInvocationEnvironment(candidate: string, resolved: string) {
+  const config = path.resolve(candidate, "../../pyvenv.cfg");
+  try {
+    const content = await readFile(config, "utf8");
+    if (!/^home\s*=\s*\S+/mu.test(content))
+      throw new Error("Python environment configuration is invalid");
+    return {
+      executable: path.resolve(candidate),
+      assets: [{ path: config, sha256: sha256(content) }],
+    };
+  } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT"))
+      throw error;
+    return { executable: resolved, assets: [] };
+  }
 }
 
 function runtimeAssetSetSha256(runtimeAssets: CommandRuntimeAsset[]): string {

@@ -1,0 +1,49 @@
+{
+  "kind": "napier.harness-resume-snapshot",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T03:07:30.255Z",
+  "target": "/tmp/napier-harness-patch-diagnostics-v1",
+  "sourceFreezeSha256": "2c89b872dccb8b89492c3b36c96b7e3edc967b5489049538b159dbbbf23d28c7",
+  "boundFiles": 5658,
+  "profileFileSha256": "f5406ee1a169f1060ee7c1648c0332eb0b340dfcc9389ff64be0d3767fa2bb75",
+  "changedSource": [
+    "packages/runtime/src/workspace-edit-reference-tools.ts",
+    "packages/runtime/src/workspace-patch-tool.ts"
+  ],
+  "validationPath": "/Users/champ/orca/Napier/docs/artifacts/patch-argument-diagnostics-validation-2026-09-15.json",
+  "validationSha256": "e3f2fcaab7eb9c4aa4f4cd670414456df722affef418c5c27cc1c229c1342f32",
+  "spending": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 9708,
+    "remainingFen": 292,
+    "requests": 728,
+    "reservedRequests": 9,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "modelRequests": 0,
+  "paidJobsRunning": 0,
+  "paidJobsQueued": 0,
+  "fullQualityGatePassed": false,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Current verified argument-diagnostics delta archived for later qualification. All earlier frozen reports remain in their original cohorts. No model task is scheduled, and no prior candidate observation qualifies this new snapshot."
+}

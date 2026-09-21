@@ -1,0 +1,103 @@
+{
+  "kind": "napier.supervised-recovered-full-statistics-plan",
+  "createdAt": "2026-09-15T09:08:39.602Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/recovered-full-statistics-v1/plan.json",
+  "planSha256": "8fbe88f0d0ca095aa254316a8315c47d832ff6cc3e179bb664a87e46c8bc1ba0",
+  "source": "/tmp/napier-harness-bounded-thinking-v1",
+  "sourceFreezeSha256": "f1738687b1d40df52f6ff9ce4388a4fad638ce36ad4e8c4720c7560dad3850cc",
+  "profileFileSha256": "68edc7d8664ba3b6d13f4db172d49a87ae88c4400662e774c3b683139a769db8",
+  "originalPositions": 180,
+  "rawPositions": 182,
+  "retainedObservations": 20,
+  "retainedEligiblePairs": 9,
+  "remainingOriginalPairs": 81,
+  "remainingBaselineReuses": 8,
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 6234,
+    "remainingFen": 3766,
+    "requests": 530,
+    "reservedRequests": 4,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "processSupervision": {
+    "terminalGraceMs": 10000,
+    "killGraceMs": 5000,
+    "pollMs": 250,
+    "maxProcessMs": 1020000
+  },
+  "evidenceRecovery": {
+    "modulePath": "/Users/champ/orca/Napier/scripts/harness-evidence-recovery.mjs",
+    "moduleSha256": "70d5ed44cb70257183d89442e4f1542d63a5e62a61bb63caa33205b5921b48cc",
+    "protocolPath": "/Users/champ/orca/Napier/docs/artifacts/bounded-inventory-missing-usage-protocol-2026-09-15.json",
+    "protocolSha256": "370cc54659c9876fd00f16f7642bfe3a21a591e6da62a53ddd1063b5be45a66c",
+    "protocol": {
+      "kind": "napier.missing-usage-recovery-protocol",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "caseId": "inventory_event_projection_v1",
+      "originalTrial": 0,
+      "supplementalTrial": 3,
+      "baselineRunId": "run_0aa5c49110e54ca58a60",
+      "baselineReportDigest": "87c456774b671fc314febf8c59baf87e3dbebfdcd164133723e86a2b59730ba1",
+      "candidateRunId": "run_a03b91bc514d4a37976b",
+      "candidateReportDigest": "a18a9c7e619b2ec1b675d2560c4aa32437db339e3149d569620f9987548f4d12",
+      "originalScheduleDigest": "71289603f13956b41a781dd61650b778ab7a1f90f2d3065b5d747e7769f48fd1",
+      "originalSchedulePositions": 180,
+      "originalPairQuality": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 0,
+        "cases": 0,
+        "regressions": [],
+        "evidenceBlockers": [
+          "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence"
+        ],
+        "blockers": [
+          "inventory_event_projection_v1:0: missing, changed or exhausted API request budget evidence",
+          "Need 30 cases; observed 0"
+        ],
+        "verdict": "insufficient_evidence",
+        "promotionReady": false,
+        "contentSha256": "c9db2a3c39c8553ef2347f3d31eda60e2b819a3547775ec24274912c8f9c9b21"
+      },
+      "originalReservationDelta": 1,
+      "originalRunIdsMustRemainVisible": [
+        "run_0aa5c49110e54ca58a60",
+        "run_a03b91bc514d4a37976b"
+      ],
+      "scope": "A new prospective qualification cohort, not repair or promotion of the original campaign. Preserve the original schedule and append one whole new trial; require three eligible pairs per case. No candidate failure or eligible baseline failure may be retired. No reservation is released.",
+      "contentSha256": "f863af1906d82c0d223c67091e4eb9c0e33b639fa8c13baa1f1256494ef45d4b"
+    }
+  },
+  "necessity": "The required supplemental inventory pair is now eligible under the unchanged prospective protocol. Continue the remaining 81 original pairs to complete 30 cases x 3 eligible paired trials. Eight not-yet-consumed immutable baseline reuses avoid duplicate calls. Every original failure, old reservation, cleanup and recovery observation remains bound and visible.",
+  "scope": "Same frozen v6 candidate, original baseline, model, driver, task inputs, graders, Run limits, 15-second serial admissions and cumulative CNY100 ledger. The 182-position raw record retains the ineligible original inventory pair; only the already registered qualification protocol can yield 90 eligible pairs. Stop on any new regression, evidence defect, candidate failure, cancellation or budget refusal. Bounded post-terminal cleanup keeps actual process exit and report evidence.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

@@ -205,7 +205,12 @@ export class RunContextCompactor implements RunContextCompactionPort {
     return measureModelContextWithProvider(
       {
         model: input.model,
-        context,
+        context: input.runtimeContextMessages?.length
+          ? {
+              ...context,
+              messages: [...context.messages, ...input.runtimeContextMessages],
+            }
+          : context,
         options: input.options,
         compiledPrompt: input.compiledPrompt,
         recoveryAttempt: input.recoveryAttempt,

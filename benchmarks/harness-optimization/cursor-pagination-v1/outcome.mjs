@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';import {paginate} from './src/paginate.mjs';import {encodeCursor,decodeCursor} from './src/cursor.mjs';
+const rows=[{id:'b',createdAt:20,status:'open'},{id:'z',createdAt:30,status:'closed'},{id:'a',createdAt:20,status:'open'},{id:'c',createdAt:10,status:'open'}];const saved=JSON.stringify(rows);
+const p=paginate(rows,{limit:1,status:'open'});assert.deepEqual(p.items.map(r=>r.id),['a']);assert.equal(JSON.stringify(rows),saved);p.items[0].id='changed';assert.equal(rows[2].id,'a');
+const next=paginate([{id:'new',createdAt:99,status:'open'},...rows.filter(r=>r.id!=='a')],{limit:2,status:'open',cursor:p.nextCursor});assert.deepEqual(next.items.map(r=>r.id),['b','c']);assert.equal(next.nextCursor,null);
+const key={createdAt:20,id:'b',status:'open'},token=encodeCursor(key);const decoded=decodeCursor(token,'open');assert.deepEqual({createdAt:decoded.createdAt,id:decoded.id,status:decoded.status},key);
+for(const bad of ['',token+'=',Buffer.from(JSON.stringify({v:2,...key})).toString('base64url'),Buffer.from(JSON.stringify({v:1,...key,extra:1})).toString('base64url'),'!','A'.repeat(1025)])assert.throws(()=>paginate(rows,{cursor:bad,status:'open'}),TypeError);
+assert.throws(()=>paginate(rows,{cursor:token,status:'closed'}),TypeError);
+for(const limit of [0,-1,101,1.5,'2'])assert.throws(()=>paginate(rows,{limit}),TypeError);
+for(const rs of [[{id:'a',createdAt:-1,status:'open'}],[{id:'a',createdAt:1,status:'other'}],[rows[0],rows[0]]])assert.throws(()=>paginate(rs),TypeError);
+let all=[],cursor=null;do{const q=paginate(rows,{limit:1,cursor});all.push(...q.items.map(x=>x.id));cursor=q.nextCursor;}while(cursor);assert.deepEqual(all,['z','a','b','c']);assert.deepEqual(paginate([],{}),{items:[],nextCursor:null});
+console.log('Independent filtering, keyset, insertion, cursor validation and ownership checks passed');

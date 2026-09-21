@@ -1,0 +1,23 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_input_capture_v1",
+  "cases": [
+    {
+      "path": "harness-optimization/http-retry-policy-v1",
+      "coverage": [
+        "initial-input-capture",
+        "contract-validation",
+        "time-boundaries"
+      ]
+    },
+    {
+      "path": "harness-optimization/incremental-ndjson-v1",
+      "coverage": [
+        "initial-input-capture",
+        "native-verification",
+        "incremental-state"
+      ]
+    }
+  ]
+}

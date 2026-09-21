@@ -3,7 +3,7 @@ import type { WorkspaceProcessStatus } from "@napier/contracts";
 import {
   MAX_COMMAND_TIMEOUT_MS,
   MIN_COMMAND_TIMEOUT_MS,
-} from "./command-execution.js";
+} from "./command-execution-input.js";
 import { validWorkspaceProcessLocalServiceFields } from "./workspace-process-local-service-events.js";
 
 const PROCESS_ID = /^process_[a-z0-9]{8,80}$/u;

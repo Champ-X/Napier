@@ -1,0 +1,30 @@
+{
+  "kind": "napier.model-harness-experiment-profile",
+  "schemaVersion": 1,
+  "id": "napier.current-integrated.v6",
+  "maxActiveTools": 32,
+  "maxActiveToolsMode": "model_default",
+  "policies": {
+    "schemaVersion": 1,
+    "id": "current-integrated.v6",
+    "revision": 6,
+    "context": {
+      "prompt": "stable-v1",
+      "memory": "task-aware-grouped-v3",
+      "workingState": "evidence-v1",
+      "delivery": "tail-v1",
+      "finalization": "request-aware-v2",
+      "validation": "contract-staged-v3",
+      "verificationOrder": "before-first-patch-v1",
+      "planning": "proportional-v1"
+    },
+    "toolSurface": {
+      "editReferences": true,
+      "unifiedDiff": true
+    },
+    "verification": "node-python-v1",
+    "modelCall": "bounded-thinking-v1",
+    "contentSha256": "722527044e887351ced45f82cdf71eeb95d18a4ebc20b93a6a02b622a147987e"
+  },
+  "contentSha256": "c8da53421028f5e08a39571304ad8a9fddb3ea7cf349f33ad0bc7df1ab634a2d"
+}

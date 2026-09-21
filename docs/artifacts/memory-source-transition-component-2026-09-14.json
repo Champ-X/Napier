@@ -1,0 +1,164 @@
+{
+  "kind": "napier.memory-source-transition-component",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T20:57:45.033Z",
+  "root": "/Users/champ/.cache/napier-seven-quality/memory-source-transition-v1",
+  "snapshot": "/tmp/napier-harness-tool-surface-v2",
+  "model": "deepseek/deepseek-v4-flash",
+  "profileSha256": "049dbb48f7c74bb4a9cf2cec3042e6c60ae39f3c58a7d475d6a676333c641de9",
+  "edit": {
+    "stage": "edit",
+    "runId": "run_bdafad25ca284e418b58",
+    "status": "completed",
+    "answerMatches": true,
+    "fileMatches": true,
+    "allowedChanges": true,
+    "changed": [
+      "policy.json"
+    ],
+    "bindingsVerified": true,
+    "receipts": [
+      {
+        "eventId": "event_1196f882bb0f4d3ebb6d",
+        "capsuleSha256": "ef49b36ed5a34375725198f2144f30db7fdc8743c845b3367ae2ea2804c54aed",
+        "afterEdit": false,
+        "linkedDelivered": true,
+        "constraintDelivered": true,
+        "forbiddenDelivered": false,
+        "unrelatedDelivered": true,
+        "linkedRecordedStale": false,
+        "contextFactIds": [
+          "memory_d384f84f9e424a77961e",
+          "memory_b455c7e61b564a108cb6",
+          "memory_0134b35dc1ff4a79891d"
+        ]
+      },
+      {
+        "eventId": "event_e1960d86c8c94b9aa1cf",
+        "capsuleSha256": "7847732a59d3f22bfcb73d608a13797c904e4c9fe7f09a61000a748df9eb0cf6",
+        "afterEdit": false,
+        "linkedDelivered": true,
+        "constraintDelivered": true,
+        "forbiddenDelivered": false,
+        "unrelatedDelivered": true,
+        "linkedRecordedStale": false,
+        "contextFactIds": [
+          "memory_d384f84f9e424a77961e",
+          "memory_b455c7e61b564a108cb6",
+          "memory_0134b35dc1ff4a79891d"
+        ]
+      },
+      {
+        "eventId": "event_54799ed808a44aa19f82",
+        "capsuleSha256": "f9f81325126fb8bd4613f69623319c89d9137091637d9deba446f463830aa64c",
+        "afterEdit": true,
+        "linkedDelivered": false,
+        "constraintDelivered": true,
+        "forbiddenDelivered": false,
+        "unrelatedDelivered": true,
+        "linkedRecordedStale": true,
+        "contextFactIds": [
+          "memory_b455c7e61b564a108cb6",
+          "memory_0134b35dc1ff4a79891d"
+        ]
+      },
+      {
+        "eventId": "event_a3a1461a1a724e03adb0",
+        "capsuleSha256": "4f4e8c1f57f703a72ae276ed31c7b370d5a4a5c4993c1e96d1ecb99dc1319932",
+        "afterEdit": true,
+        "linkedDelivered": false,
+        "constraintDelivered": true,
+        "forbiddenDelivered": false,
+        "unrelatedDelivered": true,
+        "linkedRecordedStale": true,
+        "contextFactIds": [
+          "memory_b455c7e61b564a108cb6",
+          "memory_0134b35dc1ff4a79891d"
+        ]
+      }
+    ],
+    "firstEditSeq": 78
+  },
+  "restart": {
+    "stage": "restart",
+    "runId": "run_3052de5153dc4101b797",
+    "status": "completed",
+    "answerMatches": true,
+    "fileMatches": true,
+    "allowedChanges": true,
+    "changed": [],
+    "bindingsVerified": true,
+    "receipts": [
+      {
+        "eventId": "event_56de4e7add18421ea62b",
+        "capsuleSha256": "39576c4e0df3fc6e0db2a70abbecd950e6ddbb19acd8d35744916cba1bad7001",
+        "afterEdit": false,
+        "linkedDelivered": false,
+        "constraintDelivered": false,
+        "forbiddenDelivered": false,
+        "unrelatedDelivered": true,
+        "linkedRecordedStale": true,
+        "contextFactIds": [
+          "memory_0134b35dc1ff4a79891d"
+        ]
+      },
+      {
+        "eventId": "event_ea3ffa32737b401f9762",
+        "capsuleSha256": "214d684b8009d0ef2f748f080acd2dcf27c81c2b1a26ea410387cc4b31bce8eb",
+        "afterEdit": false,
+        "linkedDelivered": false,
+        "constraintDelivered": false,
+        "forbiddenDelivered": false,
+        "unrelatedDelivered": true,
+        "linkedRecordedStale": true,
+        "contextFactIds": [
+          "memory_0134b35dc1ff4a79891d"
+        ]
+      }
+    ],
+    "firstEditSeq": null
+  },
+  "indices": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/memory-source-transition-v1/data/memory-search-v1/293c0fe0aacee07e644d6a9cee790e0f3d827991ea734d45a2131add2de4228a.sqlite",
+      "sha256": "d2b243ddf3e24295fb48c221aedb24439b59fec4ea9b213c27c4475e109a2d4b",
+      "indexedFactIds": [
+        "memory_0134b35dc1ff4a79891d"
+      ]
+    }
+  ],
+  "initialProbeAssertionRejected": "Driver incorrectly required unrelated approved memories to be absent. Existing retrieval prioritizes relevant facts and can include unrelated reviewed facts if space remains. Original failed driver and first Run receipts are retained; no original Run was replaced.",
+  "assessment": "Original edit Run changed only policy.json, passed numeric outcomes and delivered source-bound memory first, then omitted it after the real edit. A fresh process archived the general constraint using the public store API; its read-only Run omitted both stale and archived facts. Unreviewed and rejected synthetic facts were absent from all six actual Agent invocation capsules. The persistent index was reconciled and contains none of those ineligible facts.",
+  "scope": "Two real component Runs, with real model edits and a process restart; not an original-baseline comparison, broad corpus gate, or proof of erasing previously observed conversation history.",
+  "promotionReady": false,
+  "logs": [
+    {
+      "path": "/tmp/napier-memory-source-transition-v1.mjs",
+      "sha256": "ae9a8a406b09807dee0e7fa6b70f170e6fef2a1e80b502c796c01590a0a3feab"
+    },
+    {
+      "path": "/tmp/napier-memory-source-transition-v2.mjs",
+      "sha256": "6f8323c329ebbede986e685776dc4d3390de007f1ef50f593ab9bf7d46cd8c40"
+    },
+    {
+      "path": "/tmp/napier-memory-source-transition-v1.log",
+      "sha256": "a0f08e78995b539077b513086c777c5235f7997a623f85d739047abbd2a8065b"
+    },
+    {
+      "path": "/tmp/napier-memory-source-transition-v2.log",
+      "sha256": "7155295cefe05bea01c995b8cab8a605585f0ee522a1964169d505055a9599fa"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/memory-source-transition-v1/initial.json",
+      "sha256": "afc5051491ce8ab761a3b8a0a4a208c8ca497f4f0ee69eedf13c8032916a93ba"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/memory-source-transition-v1/edit-result.json",
+      "sha256": "156846c5d2bb200e971eb08a5168663a4c06742a43db40d72ce9483055817b0a"
+    },
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/memory-source-transition-v1/restart-result.json",
+      "sha256": "c5e351c558dde970420c5d79d55258db5ebf00e9e64a0dbfee8defb6d61fb4a4"
+    }
+  ]
+}

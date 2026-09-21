@@ -1,0 +1,39 @@
+{
+  "kind": "napier.harness-optimization-case",
+  "schemaVersion": 1,
+  "id": "python_debugger_shipping_v1",
+  "title": "Observe a real Python breakpoint and repair shipping",
+  "maxTurns": 48,
+  "promptPath": "prompt.md",
+  "fixturePath": "fixture",
+  "outcomeTestPath": "outcome.mjs",
+  "allowedChangedPaths": ["shipping.py", "report.json"],
+  "requiredTools": ["node_debugger", "verify_workspace"],
+  "requiredCompletedTools": ["node_debugger", "apply_patch"],
+  "processAcceptance": {
+    "requiredActions": {},
+    "noRunningSessions": true
+  },
+  "debuggerAcceptance": {
+    "runtime": "python",
+    "sourcePath": "shipping.py",
+    "breakpointLine": 5,
+    "requiredActions": [
+      "launch",
+      "stack_trace",
+      "scopes",
+      "variables",
+      "evaluate",
+      "cancel"
+    ],
+    "variables": {
+      "subtotal": "50",
+      "expedited": "True",
+      "base": "0"
+    },
+    "evaluation": {
+      "expression": "base + (8 if expedited else 0)",
+      "result": "8"
+    }
+  }
+}

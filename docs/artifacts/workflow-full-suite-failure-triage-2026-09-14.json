@@ -1,0 +1,51 @@
+{
+  "kind": "napier.workflow-full-suite-failure-triage",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T10:20:36.800129+00:00",
+  "fullRunFailure": "Execution Plan Workflow runtime keeps Agent revision pinning and reused outputs out of public execution requests",
+  "failureDurationMs": 892.6588750000001,
+  "concurrentFile": "packages/runtime/test/workflow-experiments.test.ts",
+  "concurrentWindows": {
+    "workflowRuntime": [
+      1789380422392,
+      1789380448203.0862
+    ],
+    "workflowExperiments": [
+      1789380422376,
+      1789380464251.0554
+    ]
+  },
+  "isolatedRetry": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 37,
+    "reportSha256": "23bc99ea83496fd823918049f6e243cb5a8dce67a881180158a0caed44fd3729"
+  },
+  "concurrentFilesRetry": {
+    "passed": 62,
+    "failed": 0,
+    "skipped": 0,
+    "reportSha256": "a75040c7df69d143ce1c4af2c09ef37943b4fe0dadb209da8e1445406a38ed42"
+  },
+  "diagnosticChange": {
+    "file": "packages/runtime/test/workflow-runtime.test.ts",
+    "sha256": "d3c3f7547f6997296f93033d9b5f6bd0dedbd23a7e3597bda47391ca8b9d7845",
+    "scope": "Add serialized typed Workflow result to the assertion message. Expected output, rejection checks, timeouts, Run logic and provider responses are unchanged. The same diagnostic source passed both targeted reproductions in the isolated tree."
+  },
+  "status": "unresolved_intermittent_failure",
+  "rootCauseEstablished": false,
+  "fullFailureRetained": true,
+  "productionSourceChanged": false,
+  "paidApiCalls": 0,
+  "promotionReady": false,
+  "notes": [
+    "The initial targeted launcher retained an inherited full-suite console label, but its recorded argv selects only the named test; JSON reports one executed assertion.",
+    "Passing targeted reruns do not erase the original full-suite failure or establish that the cause is harmless or pre-existing.",
+    "Failure duration under one second does not support attributing it to the five-second node timeout."
+  ],
+  "formattingCheck": {
+    "wholeFilePassed": false,
+    "remainingDiff": "Pre-existing unformatted updateAgent call in the separate observe-policy test; unchanged from frozen source.",
+    "newDiagnosticAssertionFormatted": true
+  }
+}

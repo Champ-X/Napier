@@ -1,0 +1,39 @@
+{
+  "kind": "napier.post-terminal-process-cleanup",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T08:48:50.393096+00:00",
+  "pid": 62877,
+  "command": "/Users/champ/.local/lib/node-v24.19.0/bin/node /tmp/napier-cny-sandbox-quality-driver-v8/scripts/run-harness-optimization-campaign.mjs --runtime-root /tmp/napier-harness-baseline-c454a155 --case-root /Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/cases/inventory_event_projection_v1 --output /Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-baseline-trial-1 --arm baseline --trials 1 --trial-offset 0 --max-api-requests 64 --api-request-interval-ms 15000 --max-cost-usd 0.05 --run-timeout-ms 900000 --spending-budget /Users/champ/.cache/napier-seven-quality/budget-100cny-user-reconciled-2026-09-15.sqlite --grader-mode sandbox --grader-runtimes node,python --profile-mode default",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-bounded-thinking-core-v18/inventory_event_projection_v1-baseline-trial-1/trial-1/result.json",
+  "reportSha256": "c2718bb1f726cd1149c278403d590947e1efd3a56799dec4d93c7507d637e1cb",
+  "runId": "run_0aa5c49110e54ca58a60",
+  "existingRunStatus": "failed",
+  "existingGraderExitCode": 0,
+  "originalTerminalAt": "2026-09-15T08:43:30.385Z",
+  "cancellationFailedEvents": [
+    {
+      "id": "event_b0778085e7d34e72beb9",
+      "threadId": "thread_c01fcb592e394a4696de",
+      "runId": "run_0aa5c49110e54ca58a60",
+      "seq": 449,
+      "type": "model.stream.cancellation_failed",
+      "category": "model",
+      "visibility": "debug",
+      "createdAt": "2026-09-15T08:43:31.864Z",
+      "payload": {
+        "kind": "napier.model-stream-cancellation-failure",
+        "schemaVersion": 1,
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "graceMs": 5000,
+        "contentSha256": "4ee8eaa0fb3fa8b1f56eb56e201ccc8bcb60644b174f17326cc2ec6bbbf309e1"
+      },
+      "schemaVersion": 1
+    }
+  ],
+  "action": "SIGTERM to the already terminal benchmark child only",
+  "children": [],
+  "usageReservationReleased": false,
+  "modelRequests": 0,
+  "scope": "The Run and grader had completed before operator cleanup. The existing failed report and unresolved usage are not changed. The parent will retain its nonzero process result; reconciliation must preserve this intervention and the original failure."
+}

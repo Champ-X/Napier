@@ -1,0 +1,124 @@
+{
+  "kind": "napier.explicit-profile-preflight-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T02:43:48.728842+00:00",
+  "paidApiCalls": 0,
+  "promotionReady": false,
+  "qualificationReady": false,
+  "sourceBindings": [
+    {
+      "path": "scripts/harness-campaign-profile.mjs",
+      "sha256": "569c4235545874e4d0c7b0b2de9be78eea1749b6ca3877b89a8ba5e97072d3ed",
+      "archive": "/tmp/napier-harness-current-profile-v1/scripts/harness-campaign-profile.mjs"
+    },
+    {
+      "path": "scripts/harness-campaign-profile.test.mjs",
+      "sha256": "59005a357c0621d283b20920c17973fbf4caf59a74cf80997dbe5a1286e83b62",
+      "archive": "/tmp/napier-harness-current-profile-v1/scripts/harness-campaign-profile.test.mjs"
+    },
+    {
+      "path": "scripts/run-harness-optimization-campaign.mjs",
+      "sha256": "0b4270d3737cc2cd783997a45530c3cc08df3848bf7405550475109feacce8ed",
+      "archive": "/tmp/napier-harness-current-profile-v1/scripts/run-harness-optimization-campaign.mjs"
+    },
+    {
+      "path": "scripts/run-harness-optimization-suite.mjs",
+      "sha256": "57e324a9c775a871e2eab878991ecd4fa2a0212a4b70eca718aaedfa93f4ddd5",
+      "archive": "/tmp/napier-harness-current-profile-v1/scripts/run-harness-optimization-suite.mjs"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "/tmp/napier-harness-current-profile-v1/freeze-receipt.json",
+      "sha256": "2e934ba379c5b2c7c7064c8029ef7439ee42f9eb52cca3a990171bc0a8cc84de"
+    },
+    {
+      "path": "/tmp/napier-harness-current-profile-v1/candidate-profile.json",
+      "sha256": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4"
+    },
+    {
+      "path": "/tmp/napier-harness-current-profile-v1/runtime-dependencies.preflight.json",
+      "sha256": "ff1c261105b60d10107ec185b52012125d97d492334b283941669221ba6aed4e"
+    },
+    {
+      "path": "/tmp/napier-current-profile-zero-preflight-v1/schedule.json",
+      "sha256": "ec328f919ade14f4b265f039f8142891a86098d697e356a942357646aac4caa7"
+    },
+    {
+      "path": "/tmp/napier-current-profile-zero-preflight-v1/suite-result.json",
+      "sha256": "486a13193a9a12c4e861d96246f50e588582721dd69e895b8a7b7756e7d1c200"
+    },
+    {
+      "path": "/tmp/napier-current-profile-zero-preflight-v1/candidate-profile.json",
+      "sha256": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4"
+    },
+    {
+      "path": "/tmp/napier-current-profile-zero-preflight-v1/cases/inputs.json",
+      "sha256": "6cbb2c6d864f8b0633c97c6e08d5bd6a37bad06a700a242421aa8e3e96312b66"
+    },
+    {
+      "path": "/tmp/napier-current-profile-zero-preflight-v1.command.json",
+      "sha256": "310f812905e7f77bf1977ea257f2a9b9f2687e95d0f991b19e0acecb9e5134ec"
+    },
+    {
+      "path": "/tmp/napier-explicit-profile-focused-v1.log",
+      "sha256": "16ac17e0b3fd12916b859a59793d0af905ffc50e1ddde7baf0099bc20cd0bd53"
+    },
+    {
+      "path": "/tmp/napier-explicit-profile-focused-v2.log",
+      "sha256": "35573faa4d900d1414ea5d04b3d3fc3a376999a476662ac184c4cd6f3177b377"
+    },
+    {
+      "path": "/tmp/napier-explicit-profile-consumers-v1.log",
+      "sha256": "41aa31b6bd47e0483c4c1b3b1e5cdcda058aa083cdf7144d906a79366536e465"
+    },
+    {
+      "path": "/tmp/napier-explicit-profile-consumers-v1.json",
+      "sha256": "6c520c2ec7d5af7fc5ee80105e16b55909b4cba5a617e3e0f1150603c57104a7"
+    },
+    {
+      "path": "/tmp/napier-explicit-profile-architecture-v1.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-freeze-current-profile-v1.py",
+      "sha256": "3cbbdfde7006903716ec6c06783cf6ff45480f177862453974e9d24e16d3ef47"
+    },
+    {
+      "path": "/tmp/napier-current-profile-preflight-v1.mjs",
+      "sha256": "61c9ebcc247ff94090b53f8e512cf66c7b948282ff87ba3056ec1132f0377673"
+    },
+    {
+      "path": "/tmp/napier-current-profile-preflight-v1.log",
+      "sha256": "6d01afb90c730868d0a678c434cab1ba8166d8fc8b905891aa5f0b04206069a8"
+    },
+    {
+      "path": "/tmp/napier-current-profile-zero-preflight-v1.log",
+      "sha256": "9c0afc826f1c0395e5ec9641dd960342ec0ea8feec1a526ea97a4895399f6c8d"
+    }
+  ],
+  "validation": {
+    "passed": 139,
+    "failed": 0,
+    "files": 25,
+    "architectureKnownViolations": 7
+  },
+  "preflight": {
+    "snapshot": "/tmp/napier-harness-current-profile-v1",
+    "baseline": "/tmp/napier-harness-baseline-c454a155",
+    "cases": 30,
+    "trials": 3,
+    "missingObservations": 180,
+    "childCampaignsStarted": 0,
+    "apiRequestsAdmitted": 0,
+    "expectedExitCode": 1,
+    "complete": false
+  },
+  "limits": [
+    "Zero-budget preflight does not execute a baseline or candidate Agent.",
+    "The explicit current composition has no fresh real-model quality qualification.",
+    "Snapshot includes Runtime/Contracts and MJS drivers; other dependency links and external services are not frozen.",
+    "No paid request-count or USD allowance is established; subsequent live execution remains paused."
+  ],
+  "contentSha256": "57bb4ee351ade58985dadf3df4d796611f4d88e60eb3d4942c026079f6d088ac"
+}

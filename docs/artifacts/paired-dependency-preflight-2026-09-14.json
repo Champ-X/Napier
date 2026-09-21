@@ -1,0 +1,55 @@
+{
+  "kind": "napier.paired-dependency-preflight",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T03:17:36.501Z",
+  "roots": {
+    "baseline": "/tmp/napier-harness-baseline-c454a155",
+    "candidate": "/tmp/napier-harness-container-visibility-v1"
+  },
+  "bindings": [
+    {
+      "arm": "baseline",
+      "path": "/tmp/napier-paired-dependency-preflight-v1.baseline.json",
+      "sha256": "a12916eaadbbc365521a3adbf593fc626ed25ac9fdf0d67db7a61572dd6f8356",
+      "graphSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+      "packages": 129
+    },
+    {
+      "arm": "candidate",
+      "path": "/tmp/napier-paired-dependency-preflight-v1.candidate.json",
+      "sha256": "78ed3fae78b87784f94056d085de2e1d4e68eb1e3acd8ecc8f79a72627797621",
+      "graphSha256": "a8d426c32e4f6b55f8af74efe59b850dfb8202ea22a3b50c613bd97c04c050fa",
+      "packages": 129
+    }
+  ],
+  "comparedExternalPackages": 127,
+  "externalGraphEqual": true,
+  "candidateGraphUnchanged": true,
+  "excludedIntendedSourcePackages": [
+    "@napier/runtime",
+    "@napier/contracts"
+  ],
+  "paidApiCalls": 0,
+  "promotionReady": false,
+  "limitations": [
+    "Read-only installed-package comparison; no model request or Agent Run.",
+    "Snapshots intentionally differ in Runtime/Contracts; external services, OCI image availability and credentials are outside this comparison.",
+    "Later campaigns must re-inventory dependencies and keep their source identities separate."
+  ],
+  "validationBindings": [
+    {
+      "path": "/tmp/napier-paired-dependency-preflight-v1.json",
+      "sha256": "c448caf52a192dec94ef21698e2b0c87b9ca3f5571d4bd8ed8fbc67ed06dd174"
+    },
+    {
+      "path": "/tmp/napier-paired-dependency-preflight-v1.mjs",
+      "sha256": "49453bfb01ded479e0180d7dcf7093cfa93b9c9a32c26b2f63659e8344fbfd14"
+    },
+    {
+      "path": "/tmp/napier-paired-dependency-preflight-v1.log",
+      "sha256": "545267a230259bbefa7b7604043c18a186281bb544cbd3965efd5edf4eebaab8"
+    }
+  ],
+  "pendingInput": "DeepSeek paid testing remains paused while the user chooses continued pause or supplies total USD ceiling, maximum API requests and minimum admission interval.",
+  "contentSha256": "8f8e7f2caa5b29ca3131ed9ed8d442f1895403c8748c62fe96303ed8398a6070"
+}

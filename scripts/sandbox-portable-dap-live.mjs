@@ -21,6 +21,7 @@ import {
 } from "../packages/runtime/dist/index.js";
 import { createNodeDebuggerProtocolSourceBinding } from "../packages/runtime/dist/node-debugger-protocol-path-binding.js";
 import { PORTABLE_CONTAINER_USER_IDS } from "../packages/runtime/dist/sandbox-container-runtime.js";
+import { createProcessLeaseOwnerId } from "../packages/runtime/dist/ids.js";
 
 const execFile = promisify(execFileWithCallback);
 const CONTAINER_NAME = /^napier-[a-f0-9]{32}$/u;
@@ -107,9 +108,16 @@ async function runArm(workspaceRoot, dataRoot, imageId, userIds) {
   });
   await processes.initialize();
   const manager = new NodeDebuggerManager(processes, workspaceRoot);
-  const thread = store.listThreads()[0];
-  const run = store.listRuns(thread.id)[0];
   try {
+    const agent = store.listAgents()[0];
+    const thread = await store.createThread({
+      title: "Portable DAP acceptance",
+      agentId: agent.id,
+    });
+    const { run } = await store.createLeasedRun(
+      { threadId: thread.id, agentId: agent.id },
+      { ownerId: createProcessLeaseOwnerId("dap_acceptance"), ttlMs: 120_000 },
+    );
     const launched = await manager.launch({
       threadId: thread.id,
       runId: run.id,

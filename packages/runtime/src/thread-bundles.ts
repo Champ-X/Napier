@@ -112,7 +112,8 @@ const RUN_SOURCES = new Set([
   "channel",
   "workflow",
   "workflow_reuse",
-  "workflow_simulation", "context_compaction",
+  "workflow_simulation",
+  "context_compaction",
   "model_experiment",
   "tool_experiment",
 ]);
@@ -1366,7 +1367,8 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         prompt: task["prompt"] as string,
       });
     }
-    if (task["error"] !== undefined) assertText(task["error"], `subagents[${index}].error`, 200_000);
+    if (task["error"] !== undefined)
+      assertText(task["error"], `subagents[${index}].error`, 200_000);
     assertNonNegativeInteger(
       task["stepCount"],
       `subagents[${index}].stepCount`,
@@ -1953,7 +1955,7 @@ function assertRunLimits(value: unknown, label: string): void {
     limits["maxTurns"],
     `${label}.maxTurns`,
   );
-  const maxTotalTokens = assertPositiveInteger(
+  const maxTotalTokens = assertNonNegativeInteger(
     limits["maxTotalTokens"],
     `${label}.maxTotalTokens`,
   );
@@ -1964,7 +1966,7 @@ function assertRunLimits(value: unknown, label: string): void {
   const maxCostUsd = limits["maxCostUsd"];
   if (
     maxTurns > 128 ||
-    maxTotalTokens < 1_000 ||
+    (maxTotalTokens !== 0 && maxTotalTokens < 1_000) ||
     maxTotalTokens > 10_000_000 ||
     timeoutMs < 10_000 ||
     timeoutMs > 3_600_000 ||

@@ -13,6 +13,7 @@ import {
   type CommandExecutionResult,
   type CommandRunnerOptions,
 } from "./command-execution.js";
+import { COMMAND_PATH_PATTERN } from "./command-execution-input.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 const commandSchema = Type.Object(
@@ -31,7 +32,7 @@ const commandSchema = Type.Object(
       Type.String({
         minLength: 1,
         maxLength: 500,
-        pattern: COMMAND_ARGUMENT_PATTERN,
+        pattern: COMMAND_PATH_PATTERN,
       }),
     ),
     timeoutMs: Type.Optional(
@@ -52,7 +53,7 @@ export function createCommandTool(
     name: "run_command",
     label: "Run command",
     description:
-      "Run Node with literal argv (no shell/interpolation/env expansion) via the active process provider. workspace-relative cwd defaults root; timeoutMs bounds runtime. Isolated providers are read-only/offline, deny inherited env, and cap output. Explicit host-direct has no OS isolation; results are labeled.",
+      'Run Node with literal argv, no shell/env expansion. Multiline: args=["-e","JavaScript"], no file needed. workspace-relative cwd defaults to root; timeoutMs bounds runtime. Isolated providers: read-only/offline, no inherited env, capped output. host-direct has no OS isolation.',
     parameters: commandSchema,
     async execute(_toolCallId, input, signal) {
       const result = await runner.run(input, signal);
@@ -77,7 +78,9 @@ export function commandToolCallArgumentsLedgerProjection(
       ? (args as Record<string, unknown>)
       : undefined;
   const runtime =
-    record?.["runtime"] === "node" ? record["runtime"] : "unknown";
+    record?.["runtime"] === "node" || record?.["runtime"] === "python"
+      ? record["runtime"]
+      : "unknown";
   const argumentCount = Array.isArray(record?.["args"])
     ? record["args"].length
     : 0;
@@ -88,6 +91,12 @@ export function commandToolCallArgumentsLedgerProjection(
     redacted: true,
     runtime,
     argumentCount,
+    ...(typeof record?.["code"] === "string"
+      ? {
+          inlineCode: true,
+          codeBytes: Buffer.byteLength(record["code"], "utf8"),
+        }
+      : {}),
     cwdPathSha256: sha256(cwd),
     inputSha256: commandCallSha256(args),
   };

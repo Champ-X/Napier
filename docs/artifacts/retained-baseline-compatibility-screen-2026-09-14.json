@@ -1,0 +1,35 @@
+{
+  "referencePath": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/bounded_async_queue_v3-baseline-trial-1/trial-1/result.json",
+  "observations": 265,
+  "matches": [
+    {
+      "path": "/Users/champ/.cache/napier-seven-quality/cny-history-linear-core-v3/bounded_async_queue_v3-baseline-trial-1/trial-1/result.json",
+      "schemaVersion": 8,
+      "caseId": "bounded_async_queue_v3",
+      "trial": 0,
+      "runId": "run_55961b5a8b144811a768",
+      "success": false
+    }
+  ],
+  "mismatchCounts": {
+    "runLimits": 263,
+    "campaignScriptSha256": 264,
+    "campaignHelperSha256": 264,
+    "apiPolicy": 261,
+    "spendingPolicy": 261,
+    "dependencyHash": 83,
+    "runtimeArtifactSha256": 44,
+    "sourceIdentity": 44,
+    "profile": 44,
+    "experimentalTurnPipeline": 9
+  },
+  "kind": "napier.retained-baseline-compatibility-screen",
+  "schemaVersion": 1,
+  "scope": "Read-only metadata screening against the latest budgeted original baseline; not task-quality regrading or qualification.",
+  "sourceInventorySha256": "1dcd92392c8ff9ecbb49c98d4709623134e14785658e60fc82a1df92048989ed",
+  "referenceSha256": "499d934ba0df206ddfccd1c18ca422d46a4696ad1d029d3a7a98d05ca8a40e12",
+  "conclusion": "Only the reference queue report itself matches all screened runtime, model, driver, limit, dependency and admission-policy fields. Other historical baseline reports cannot be pooled under the current evaluator unchanged.",
+  "paidApiCalls": 0,
+  "reportsModified": false,
+  "promotionReady": false
+}

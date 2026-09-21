@@ -1,0 +1,227 @@
+{
+  "kind": "napier.branch-control-history-validation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T08:55:06.250551+00:00",
+  "snapshot": "/tmp/napier-harness-branch-history-v2",
+  "previousSnapshot": "/tmp/napier-harness-thread-memory-v1",
+  "problem": "Branch copying retains source control metadata but does not replay queue/delivery events. Strict current-Run delivery validation therefore rejected inherited steering/follow-up messages during memory query preparation.",
+  "implementation": [
+    "Recognize local copied user history only for completed branch Runs with a matching single branch.created marker and positive source cutoff.",
+    "Validate retained control ID/mode/body hash; reject mismatched markers, tampered text and mixed active control lifecycle.",
+    "Preserve original event bytes and add explicit branch-copy provenance to derived requirements and query receipts.",
+    "Do not expose inherited controlMode as a new local delivery; working-state source hashes include the branch marker.",
+    "Allow passive context receipts on completed branches without treating summaries as instructions or counting them as copied source messages."
+  ],
+  "validation": {
+    "uniqueChecksPassed": 36,
+    "branchControlAgentRuntimeChecksPassed": 2,
+    "boundaryAndRequirementChecksPassed": 32,
+    "existingThreadAndCompactionAgentRuntimeChecksPassed": 2,
+    "runtimeCompilePassed": true,
+    "architectureExistingViolations": 7,
+    "architectureNewViolations": 0,
+    "fullSuiteRepeated": false,
+    "refactorValidation": "The added complexity-26 function was split without raising the limit; fifteen affected tests passed again. The final passive-context allowance passed eleven branch-history tests, which overlap the unique total.",
+    "initialFixtureCorrection": "Initial source fixture defaulted to the demo model, which correctly rejects live control messages. It was changed to an explicit local faux-model identity before reproducing the intended branch failure."
+  },
+  "integrationEvidence": [
+    "Production queue/delivery repository methods created steering and follow_up source messages.",
+    "Production createThreadBranch copied their unchanged payloads without delivery events.",
+    "Both subsequent scripted-model AgentRuntime Runs failed before correction and completed after correction.",
+    "Tests assert source and copied ledgers remain byte-equivalent as JSON data after execution.",
+    "Current Run controls still fail without validated delivery; incomplete or failed branch Runs receive no history exemption.",
+    "Existing actual thread follow-up/branch and overflow-compaction integrations continue to pass."
+  ],
+  "scopeLimits": [
+    "Branch-copy provenance establishes inherited local conversation, not a newly executed control delivery or independently revalidated remote source.",
+    "Tests use local scripted providers; no stochastic real-model task-quality comparison qualifies this source.",
+    "Large-thread projection cost, bounded query recall and the broad seven-module quality gate remain open.",
+    "Snapshot has inherited external dependency links and scripts; it is not a hermetic paid-execution environment."
+  ],
+  "qualityGate": {
+    "requiredCases": 30,
+    "requiredPairedTrials": 3,
+    "promotionReady": false,
+    "overallGoalComplete": false
+  },
+  "spending": {
+    "newApiRequests": 0,
+    "sharedRequests": 84,
+    "committedFen": 555,
+    "remainingFen": 4445,
+    "reservedRequests": 0,
+    "denied": 0
+  },
+  "freeze": {
+    "kind": "napier.harness-runtime-freeze",
+    "schemaVersion": 1,
+    "snapshot": "/tmp/napier-harness-branch-history-v2",
+    "parentSnapshot": "/tmp/napier-harness-branch-history-v1",
+    "recordedAt": "2026-09-14T08:53:04.864924+00:00",
+    "runtimeSourceChanges": ["task-branch-history.ts"],
+    "bindings": [
+      {
+        "path": "packages/runtime/src",
+        "fileCount": 1177,
+        "inventorySha256": "6433b769ee5c8d53c17aa8d6be4fb988a5f40f79ef0be9431d15ca660f816320",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/runtime/dist",
+        "fileCount": 3543,
+        "inventorySha256": "2e03827a409cd4903c00b58fc4ef5754816b5f2d40fc6d0c9452cd58c74b8496",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/runtime/test",
+        "fileCount": 566,
+        "inventorySha256": "e7bc77fb8686af00aa1366c83077aea4a9bcb31ef09058d91731ca26b9ec7a96",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/src",
+        "fileCount": 79,
+        "inventorySha256": "26298845c42c6426bab137abd1b71b82975851fdf8ecc3691f8087a54faa2ced",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/dist",
+        "fileCount": 238,
+        "inventorySha256": "92cd212e16d492f26df889d827faedb622dc3c97f304704f0190a138cd47854d",
+        "matchesWorkspaceAtFreeze": true
+      },
+      {
+        "path": "packages/contracts/test",
+        "fileCount": 11,
+        "inventorySha256": "451e3f5a93653aa9e548a73b437b13e230b22145ff7953a9782ec66d4f117296",
+        "matchesWorkspaceAtFreeze": true
+      }
+    ],
+    "workspaceAliases": {
+      "runtime": "/private/tmp/napier-harness-branch-history-v2/packages/runtime",
+      "contracts": "/private/tmp/napier-harness-branch-history-v2/packages/contracts"
+    },
+    "profileFileSha256": "bf70c1791490cb5c9e512f44058716ee6b13d0842463da739f9b318b5d8809a4",
+    "scope": "Runtime/Contracts source, dist and tests frozen. Inherited scripts and external dependency links are not a current execution driver or hermetic environment.",
+    "paidApiCalls": 0,
+    "qualityQualified": false
+  },
+  "files": [
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/task-branch-history.ts",
+      "sha256": "c23e1c337404ecb8c24a37ae42e32c531480291557aca625e71867ceccb1a0ee"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/src/task-branch-history.ts",
+      "sha256": "c23e1c337404ecb8c24a37ae42e32c531480291557aca625e71867ceccb1a0ee"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/task-requirement-revisions.ts",
+      "sha256": "888f87469c450500ee6862608594cf419ee4b31e671ae4a74e8899640561289c"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/src/task-requirement-revisions.ts",
+      "sha256": "888f87469c450500ee6862608594cf419ee4b31e671ae4a74e8899640561289c"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/task-working-state.ts",
+      "sha256": "b76c47dfc7c0405cbb5623b4019eb85ebe55b4bd6bb490647cf2189141750411"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/src/task-working-state.ts",
+      "sha256": "b76c47dfc7c0405cbb5623b4019eb85ebe55b4bd6bb490647cf2189141750411"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/task-memory-query.ts",
+      "sha256": "b222ccba5f0b0837918e20f6fe80f0945279675b222d2f6dd0babe107f47a398"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/src/task-memory-query.ts",
+      "sha256": "b222ccba5f0b0837918e20f6fe80f0945279675b222d2f6dd0babe107f47a398"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/agent-working-state-context.ts",
+      "sha256": "41f8d1642d521fc530c05f9f2dfd008925c6f4ad8b8542eb68c4ec1b541b3971"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/src/agent-working-state-context.ts",
+      "sha256": "41f8d1642d521fc530c05f9f2dfd008925c6f4ad8b8542eb68c4ec1b541b3971"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/src/agent-invocation-context.ts",
+      "sha256": "d74aa4dc155c5e20d78b0baeabae05006db410eefb725a5c661064a7c7608192"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/src/agent-invocation-context.ts",
+      "sha256": "d74aa4dc155c5e20d78b0baeabae05006db410eefb725a5c661064a7c7608192"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/task-branch-history.test.ts",
+      "sha256": "c78113a9993c8b5f5ff878b5007057bd2a25dde62c264d494c95be15d569d44d"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/test/task-branch-history.test.ts",
+      "sha256": "c78113a9993c8b5f5ff878b5007057bd2a25dde62c264d494c95be15d569d44d"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/task-branch-control-history.test.ts",
+      "sha256": "d0147b0d83efefadeca55c70f239926b811d1d8e82eaeb84068fde1025ff079c"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/test/task-branch-control-history.test.ts",
+      "sha256": "d0147b0d83efefadeca55c70f239926b811d1d8e82eaeb84068fde1025ff079c"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/packages/runtime/test/task-memory-query-provenance.test.ts",
+      "sha256": "1a31094bdeecd024e52f32967f46d3a1d1fda28bfa292a65b6717ed18a274fb7"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/packages/runtime/test/task-memory-query-provenance.test.ts",
+      "sha256": "1a31094bdeecd024e52f32967f46d3a1d1fda28bfa292a65b6717ed18a274fb7"
+    },
+    {
+      "path": "/tmp/napier-branch-control-before-v1.log",
+      "sha256": "a9fb746ae474d9e19ea73d700be089f6631759cb9c606b9beecd9c0062a1a059"
+    },
+    {
+      "path": "/tmp/napier-branch-control-before-v2.log",
+      "sha256": "5c075cf4a4c19482786aae20025db3bf0135f13856d5c42023a43918722de415"
+    },
+    {
+      "path": "/tmp/napier-branch-control-after-v1.log",
+      "sha256": "0df1903ae489f42d4ab56a4d36726f25e0313cce004d55ceda16af8a860c8491"
+    },
+    {
+      "path": "/tmp/napier-branch-history-boundaries-v1.log",
+      "sha256": "dcb5b0233cd92d7a8c26dce5be8238f9df180a8048e79d5ae4769a01b15ee988"
+    },
+    {
+      "path": "/tmp/napier-branch-history-refactor-tests-v1.log",
+      "sha256": "4f601ab65838d8e8d53366348423dc0e03bfb32d90dd71b2ed4f5ffff212630f"
+    },
+    {
+      "path": "/tmp/napier-branch-history-passive-receipts-v1.log",
+      "sha256": "195dbff909c8e4fbe06db41cdc0b275cf458a638b9f641ef6fb3c1a786672c62"
+    },
+    {
+      "path": "/tmp/napier-branch-history-existing-integration-v1.log",
+      "sha256": "7fe638070c0f3566cdac27cc295b002f02e7b324a4fbf956155613ad49a95be4"
+    },
+    {
+      "path": "/tmp/napier-branch-history-build-v3.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "path": "/tmp/napier-branch-history-architecture-v1.log",
+      "sha256": "005d79b0bf660586d309729a0491378450cbe83ef9a1abcd178dffada6b00175"
+    },
+    {
+      "path": "/tmp/napier-branch-history-architecture-v3.log",
+      "sha256": "c3a6a72f948ef58670ae9f4334d879ade3a427c462a18cfb750fad0cff541558"
+    },
+    {
+      "path": "/tmp/napier-harness-branch-history-v2/freeze-receipt.json",
+      "sha256": "2b94c8ca3cf75db26673328f77f668b35223e78c8957c4bedecb65d2c38a8122"
+    }
+  ]
+}

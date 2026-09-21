@@ -1,0 +1,73 @@
+{
+  "kind": "napier.live-cache-spending-migration",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T14:50:02.743Z",
+  "ledger": "/Users/champ/.cache/napier-seven-quality/budget-50cny-2026-09-14.sqlite",
+  "backup": "/Users/champ/.cache/napier-seven-quality/budget-before-cache-accounting-2026-09-14.sqlite",
+  "backupSha256": "9c57fd70cc4cf74735c7e4b1934693a281deaa990c93a3c4690451e7f5de6932",
+  "settledBatchSha256": "eb637fc47824252b32dfaebdd78c85b418848a81ffd35cedc16c4765b8a39b33",
+  "migration": {
+    "authorizationId": 1,
+    "before": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 3160,
+      "remainingFen": 6840,
+      "requests": 404,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14"
+      }
+    },
+    "after": {
+      "kind": "napier.harness-spending-budget",
+      "schemaVersion": 1,
+      "currency": "CNY",
+      "maxFen": 10000,
+      "priorSpendFen": 110,
+      "committedFen": 3160,
+      "remainingFen": 6840,
+      "requests": 404,
+      "reservedRequests": 0,
+      "denied": 0,
+      "policy": {
+        "modelAliases": [
+          "deepseek-flash",
+          "deepseek-v4-flash"
+        ],
+        "inputFenPerMillion": 200,
+        "outputFenPerMillion": 800,
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 384000,
+        "reservationFen": 600,
+        "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+        "checkedOn": "2026-09-14",
+        "cacheHitFenPerMillion": 4,
+        "settlement": "provider-cache-split-v1"
+      }
+    }
+  },
+  "historicalRowsSha256": "a4e876234a679aec26107d1b02af7c19c156d40b611fcaa036aaeba12c091d27",
+  "historicalRequestsPreserved": 404,
+  "historicalChargesUnchanged": true,
+  "cumulativeCeilingUnchanged": true,
+  "allKnownDispatchersStopped": true,
+  "modelRequests": 0,
+  "driver": "/tmp/napier-cny-sandbox-quality-driver-v5",
+  "driverFreezeSha256": "be90c30f33877b551a51c4731f7d8a29688bca76ab7fa866cca497eaf4531474",
+  "scope": "Forward-only cache-aware settlement after stopped NDJSON batch. Every old charge remains conservative and unchanged; incomplete cache usage still charges all input at peak miss price. No paid tests are running or queued."
+}

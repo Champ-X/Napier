@@ -19,6 +19,7 @@ import type {
 } from "@napier/contracts";
 
 import { preserveAgentToolIdentity } from "./agent-tool-metadata.js";
+import { agentInvocationContextFor } from "./agent-invocation-context.js";
 import { builtInToolHarnessProjection } from "./agent-tool-effects.js";
 import { createEffectiveCapabilitiesPromptBuilder } from "./effective-capabilities-prompt-builder.js";
 import { runAgentStepLifecycleStream } from "./agent-step-lifecycle-stream.js";
@@ -34,6 +35,11 @@ import type { AgentLifecyclePipelineHost } from "./lifecycle-extension-pipeline.
 import { modernRunConfiguration } from "./effective-run-profile.js";
 import { formatEditDialectGuidance } from "./edit-dialect-adapter.js";
 import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
+export {
+  applyHarnessToolPolicies,
+  bindRunHarnessProfile,
+} from "./model-harness-experiment-profile.js";
+export { recordRunHarnessPolicy } from "./harness-run-policy.js";
 import type { ToolProtocolRegistry } from "./tool-protocol-registry.js";
 import type { LocalStore } from "./store.js";
 import type { EventSink } from "./event-sink.js";
@@ -317,7 +323,13 @@ export function createRuntimeCompiledPromptBuilder(input: {
         ? { harnessExperimentProfile: input.harnessExperimentProfile }
         : {}),
     })(activeToolNames, adapter, requestContext.messages);
+    const dynamicContext = agentInvocationContextFor(requestContext);
     return input.turnPipeline.createPromptBuilder({
+      promptPolicy: input.harnessExperimentProfile?.policies?.context.prompt,
+      contextDelivery:
+        input.harnessExperimentProfile?.policies?.context.delivery,
+      validationProtocol:
+        input.harnessExperimentProfile?.policies?.context.validation,
       resolvedSystemPrompt: input.resolvedSystemPrompt,
       skillCatalog: input.skillCatalog,
       effectiveCapabilities,
@@ -327,15 +339,28 @@ export function createRuntimeCompiledPromptBuilder(input: {
         formatEditDialectGuidance({
           model: requestModel,
           availableToolNames: activeToolNames,
+          messages: requestContext.messages,
+          editPreference:
+            input.harnessExperimentProfile?.policies?.toolSurface
+              .editPreference,
+          preferredContentDialect: input.harnessExperimentProfile?.policies
+            ?.toolSurface.unifiedDiff
+            ? "unified_diff"
+            : undefined,
         }),
       ]
         .filter(Boolean)
         .join("\n\n"),
-      planToolGuidance: formatPlanToolGuidance(requestContext.tools ?? []),
+      planToolGuidance: formatPlanToolGuidance(
+        requestContext.tools ?? [],
+        input.harnessExperimentProfile?.policies?.context.planning,
+      ),
       sourceContinuityGuidance: input.sourceContinuityGuidance,
       importedLedgerBoundary: input.importedLedgerBoundary,
       checkpoint: input.checkpoint,
-      memory: input.memory,
+      memory: dynamicContext.memory ?? input.memory,
+      workingState: dynamicContext.workingState,
+      budgetContext: dynamicContext.budget,
     })(adapter, input.delegation(), input.milestones(), input.toolLoopGuard());
   };
 }

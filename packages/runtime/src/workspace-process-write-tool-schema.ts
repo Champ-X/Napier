@@ -1,9 +1,11 @@
 import { Type } from "typebox";
 
 import {
+  COMMAND_ARGUMENT_PATTERN,
+  COMMAND_PATH_PATTERN,
   MAX_COMMAND_TIMEOUT_MS,
   MIN_COMMAND_TIMEOUT_MS,
-} from "./command-execution.js";
+} from "./command-execution-input.js";
 import { MAX_WORKSPACE_PROCESS_WRITE_SCOPES } from "./workspace-process-write-preview.js";
 import {
   MAX_TERMINAL_COLUMNS,
@@ -14,13 +16,13 @@ import {
 
 const argument = Type.String({
   maxLength: 2_048,
-  pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+  pattern: COMMAND_ARGUMENT_PATTERN,
 });
 const cwd = Type.Optional(
   Type.String({
     minLength: 1,
     maxLength: 500,
-    pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+    pattern: COMMAND_PATH_PATTERN,
   }),
 );
 const timeoutMs = Type.Optional(
@@ -33,7 +35,7 @@ const writePaths = Type.Array(
   Type.String({
     minLength: 1,
     maxLength: 500,
-    pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+    pattern: COMMAND_PATH_PATTERN,
   }),
   { minItems: 1, maxItems: MAX_WORKSPACE_PROCESS_WRITE_SCOPES },
 );

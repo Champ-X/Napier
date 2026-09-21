@@ -1,0 +1,138 @@
+{
+  "kind": "napier.validation-error-oracle-corrections",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T11:32:19.895838+00:00",
+  "cases": [
+    {
+      "case": "rollout-dependency-plan",
+      "previousOutcomeSha256": "38ca9281cd762b949726a3e9a610c10cb90d8af8e3645ae249ae286c54ee468d",
+      "currentOutcomeSha256": "7f7df43c3c86b8fa134881e35a82e3f2cb3f0db56f0886f883adc53c1f2e101c",
+      "unchangedFiles": [
+        "prompt.md",
+        "fixture/README.md",
+        "expected/src/graph.mjs",
+        "expected/src/rollout.mjs",
+        "fixture/test/public.test.mjs",
+        "fixture/src/graph.mjs",
+        "fixture/src/rollout.mjs"
+      ],
+      "change": "Reject invalid selection and maxParallel without imposing an unspecified error class; graph TypeError checks remain."
+    },
+    {
+      "case": "access-rule-evaluation",
+      "previousOutcomeSha256": "9b83c8b6c450e7f85c0690060cf0dfe20a8c79734489c2887e32b9f77e4efb30",
+      "currentOutcomeSha256": "94c4c1b5212e594ca52509011013fb4c6fbcbbfeb53a9330555310c8f12e3080",
+      "unchangedFiles": [
+        "prompt.md",
+        "fixture/README.md",
+        "expected/src/resource.mjs",
+        "expected/src/access.mjs",
+        "fixture/test/public.test.mjs",
+        "fixture/src/resource.mjs",
+        "fixture/src/access.mjs"
+      ],
+      "change": "Reject duplicate rule IDs and duplicate principal groups without imposing an unspecified error class; malformed path TypeError checks remain."
+    },
+    {
+      "case": "http-etag-preconditions",
+      "previousOutcomeSha256": "1f8d9122c26534b7c8707ca77ec12ff7b7446c7cd31b470ff9c7e7e02a8f1529",
+      "currentOutcomeSha256": "163673e3d952e3dacf7dbee0e4a38f69859bb6bca12266e4780315e21efc0b16",
+      "unchangedFiles": [
+        "prompt.md",
+        "fixture/README.md",
+        "expected/src/etag.mjs",
+        "expected/src/preconditions.mjs",
+        "fixture/test/public.test.mjs",
+        "fixture/src/etag.mjs",
+        "fixture/src/preconditions.mjs"
+      ],
+      "change": "Reject supplying a current ETag for a nonexistent resource without imposing an unspecified error class; header parser TypeError checks remain."
+    }
+  ],
+  "validation": {
+    "reportPath": "/tmp/napier-validation-error-oracles-v2.json",
+    "sha256": "2da476f464e62b69e14542b31b6ec7263d0e3016eff8ab55a61e418784c0d87a",
+    "passed": 19,
+    "failed": 0,
+    "checks": "Accept TypeError/RangeError/Error only where error class is unspecified; reject acceptance of invalid input and wrong explicitly required TypeError; preserve fixtures/references/prompts; retain thirty tasks and reject duplicate input aliases."
+  },
+  "preservedShippingOracle": {
+    "reason": "The existing implementation throws TypeError and the prompt explicitly asks to preserve input validation, so the stronger existing constraint was not removed.",
+    "fixtureSha256": "d16cad5d17a29b2fa1694f5e3027aeda1acc4134450d89ebe1605ae674a5b266",
+    "promptSha256": "789ea07f96230155ab33e7cbd6a140eba6d0744983a5879514831ee0b7e2ff66"
+  },
+  "bindings": [
+    {
+      "path": "scripts/harness-validation-error-oracles.test.mjs",
+      "sha256": "58e62186809db47c0a77b2d729d1512041e62d9fd45513cdeea995d6ebeb03e4"
+    },
+    {
+      "path": "benchmarks/harness-core-quality-suite-v6.json",
+      "sha256": "e1f9248ec9a726aca5bea6704cda4d67d2f9fc0e7704d34b0e9aac8d2082e083"
+    },
+    {
+      "path": "benchmarks/harness-optimization/rollout-dependency-plan-v1/outcome.mjs",
+      "sha256": "38ca9281cd762b949726a3e9a610c10cb90d8af8e3645ae249ae286c54ee468d"
+    },
+    {
+      "path": "benchmarks/harness-optimization/rollout-dependency-plan-v1/manifest.json",
+      "sha256": "65f0adffb189275d1022c3d5a812c30e492c7706d8196300435c5e07268ac1ac"
+    },
+    {
+      "path": "benchmarks/harness-optimization/rollout-dependency-plan-v2/outcome.mjs",
+      "sha256": "7f7df43c3c86b8fa134881e35a82e3f2cb3f0db56f0886f883adc53c1f2e101c"
+    },
+    {
+      "path": "benchmarks/harness-optimization/rollout-dependency-plan-v2/manifest.json",
+      "sha256": "7e03666949d3c55f81c4cc7595e98ab440703fe98f26867e94d1b8545dac181e"
+    },
+    {
+      "path": "benchmarks/harness-optimization/access-rule-evaluation-v1/outcome.mjs",
+      "sha256": "9b83c8b6c450e7f85c0690060cf0dfe20a8c79734489c2887e32b9f77e4efb30"
+    },
+    {
+      "path": "benchmarks/harness-optimization/access-rule-evaluation-v1/manifest.json",
+      "sha256": "4c303fb7c234962326f9791f43b94ca22004db968ba3886b9871c6e9e664cabb"
+    },
+    {
+      "path": "benchmarks/harness-optimization/access-rule-evaluation-v2/outcome.mjs",
+      "sha256": "94c4c1b5212e594ca52509011013fb4c6fbcbbfeb53a9330555310c8f12e3080"
+    },
+    {
+      "path": "benchmarks/harness-optimization/access-rule-evaluation-v2/manifest.json",
+      "sha256": "c9471eacd5baa125b10603b2dac0bf8e3e9e5417367ef136ee69382ce8130240"
+    },
+    {
+      "path": "benchmarks/harness-optimization/http-etag-preconditions-v1/outcome.mjs",
+      "sha256": "1f8d9122c26534b7c8707ca77ec12ff7b7446c7cd31b470ff9c7e7e02a8f1529"
+    },
+    {
+      "path": "benchmarks/harness-optimization/http-etag-preconditions-v1/manifest.json",
+      "sha256": "919d963afe608f9d19034f02a48a34a77ce52c2054c7733fd9c49b7cbb5bcd97"
+    },
+    {
+      "path": "benchmarks/harness-optimization/http-etag-preconditions-v2/outcome.mjs",
+      "sha256": "163673e3d952e3dacf7dbee0e4a38f69859bb6bca12266e4780315e21efc0b16"
+    },
+    {
+      "path": "benchmarks/harness-optimization/http-etag-preconditions-v2/manifest.json",
+      "sha256": "4cef8e12c5ccea5422ad5c88c2765953670754bd15760a220ace705d708d19ca"
+    }
+  ],
+  "paidApiCallsForOracleValidation": 0,
+  "originalGradersAndReportsPreserved": true,
+  "activeLiveCampaignUnchanged": true,
+  "suite": {
+    "path": "benchmarks/harness-core-quality-suite-v6.json",
+    "cases": 30,
+    "requiredPairedTrials": 3,
+    "liveRunsOnChangedCases": 0
+  },
+  "limitations": [
+    "These are deterministic grader correctness checks, not Agent task-quality evidence.",
+    "No prior real-model result has been regraded or promoted.",
+    "The concurrent HTTP candidate observation retains its frozen v5 inputs."
+  ],
+  "goalComplete": false,
+  "promotionReady": false
+}

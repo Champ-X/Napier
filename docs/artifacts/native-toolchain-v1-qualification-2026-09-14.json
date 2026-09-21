@@ -1,0 +1,1022 @@
+{
+  "kind": "napier.native-toolchain-qualification",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T18:00:54.140134+00:00",
+  "campaign": "native-toolchain-suite-v1",
+  "model": "deepseek/deepseek-v4-flash",
+  "candidateRuntimeSnapshot": "/tmp/napier-harness-native-node-v1",
+  "suiteResultFileSha256": "223605018b08c70230be92693da07e7c1646e24e643f9a2f6a8ded02289a943c",
+  "agentExecutions": 18,
+  "counts": {
+    "baseline": {
+      "passed": 8,
+      "total": 9
+    },
+    "candidate": {
+      "passed": 9,
+      "total": 9
+    }
+  },
+  "collectionComplete": true,
+  "inputsStable": true,
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 9,
+    "cases": 3,
+    "regressions": [],
+    "blockers": ["Need 30 cases; observed 3"],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "b2513b8dabc3110b24e4957a16497ca3c08f017aa5b972fb8d471f731fdff1fe"
+  },
+  "staticToolDefinitionBudget": {
+    "bytes": 1748,
+    "limit": 1536,
+    "eligible": false
+  },
+  "usageComparisonEligibleRuns": 17,
+  "failureBundlesExported": 11,
+  "observations": [
+    {
+      "arm": "baseline",
+      "caseId": "bounded_async_queue_v1",
+      "trial": 0,
+      "runId": "run_ed2cd2c6d8ac4f888698",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 1,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_ed2cd2c6d8ac4f888698",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "676f59072f062143f191dae7a71149cccfad49b4393aa60bcaac1a3bc959eae6"
+      },
+      "reportFileSha256": "310867ae61b300f0d0fa7c26386a8a57e5cde646613ed765f6cbb66ea62845af",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "a6d1f5957f0a51861465bebffa5cc701eb00116155d3670d20fec2f9e1141dd0",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 76359,
+          "outputTokens": 28676,
+          "cacheReadTokens": 329344,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0196417032
+        },
+        "observedUsage": {
+          "inputTokens": 76359,
+          "outputTokens": 28676,
+          "cacheReadTokens": 329344,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0196417032
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "93d8f9e0e234563392b452caecee7cb9ea889b192e45275c788df7c162692483"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "baseline",
+      "caseId": "bounded_async_queue_v1",
+      "trial": 1,
+      "runId": "run_926a21f319f143aaaa41",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 0,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_926a21f319f143aaaa41",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "2be7953ee8ba98cba3a5dbee9de07630bc34e6fed11e37448f16f07f41cd7121"
+      },
+      "reportFileSha256": "f801d6c0410a3fab51df8360eddd80cb126f138b5e9e5219b5a11d93015b4fe8",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "298b4afad8b2ecf022b44782dc405cc949c0e6773656fa5e78b7845c1cdbf161",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 39737,
+          "outputTokens": 24449,
+          "cacheReadTokens": 99712,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0126880936
+        },
+        "observedUsage": {
+          "inputTokens": 39737,
+          "outputTokens": 24449,
+          "cacheReadTokens": 99712,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0126880936
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "d6e934fa830b34f5041bbb40db6b11b3de79274933e4ab6030d80e98c3e9e687"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "baseline",
+      "caseId": "bounded_async_queue_v1",
+      "trial": 2,
+      "runId": "run_9eddb53a5f464809a54d",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 0,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_9eddb53a5f464809a54d",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "690a9047859bcefc0c804bac072ceae2eb2dd3de7220549168e6c1e7dbde681f"
+      },
+      "reportFileSha256": "2a25c944fe1ef581ff3dcdb5e520ca7ed96c4e46f0a81fd830d207647e116fbc",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "f3baa61c57c9f1d0c0a2b6057573ef3d7d6a999b706bb7c9182c1675baf29da5",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 36289,
+          "outputTokens": 25485,
+          "cacheReadTokens": 212096,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.012810128799999999
+        },
+        "observedUsage": {
+          "inputTokens": 36289,
+          "outputTokens": 25485,
+          "cacheReadTokens": 212096,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.012810128799999999
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "e303ad50ec1d969d8292a48dd2814b8a16048b9319b234a2d27ab8432c4d6c5b"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "candidate",
+      "caseId": "bounded_async_queue_v1",
+      "trial": 0,
+      "runId": "run_4b37c0bb0e274f38ae3d",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 0,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_4b37c0bb0e274f38ae3d",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "a64871f3b4587df6b631d2a125576c4f3eabdeaa5ba71484f1762194b5c4d469"
+      },
+      "reportFileSha256": "0fd81591e88a649bcdf8f8a8cf0109000764540144106fff011e3890aadec6a9",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "9dfc249fa0e72c0f935350e900379837c8037e7e3a739c89eef1bdb63cb6a171",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 58960,
+          "outputTokens": 25199,
+          "cacheReadTokens": 214400,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.01591044
+        },
+        "observedUsage": {
+          "inputTokens": 58960,
+          "outputTokens": 25199,
+          "cacheReadTokens": 214400,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.01591044
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "5d54e6d4bd1fc398144474b6dda965d16e25050ba38d4e411a49016187f6d3ed"
+      },
+      "verificationExecutions": [
+        {
+          "eventId": "event_5868b2cc2b6747ecbe89",
+          "kind": "test",
+          "status": "passed",
+          "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+          "resultSha256": "056403ee8fdb47813624fbeba5a2cb22f2c9275271cf1b2a915bb4b0a577e5a7",
+          "selectionMode": null,
+          "selectedTestCount": null
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "caseId": "bounded_async_queue_v1",
+      "trial": 1,
+      "runId": "run_54ce2d0ad75c4738bd79",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 4,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_54ce2d0ad75c4738bd79",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "4908f78778310422ca385d5fe323f4d432fcc2b12cb96596db6be875889faee6"
+      },
+      "reportFileSha256": "3508cea3c39a03dbddd9ac4c9d5023b7dc68808f78636c1863e4dfce0f5ec4f9",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "edb85ceb5b1b1b6df583166cc887051a5f1d21c120007a3039a18ef5ec10acf5",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 73102,
+          "outputTokens": 25774,
+          "cacheReadTokens": 183424,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.017964587200000003
+        },
+        "observedUsage": {
+          "inputTokens": 73102,
+          "outputTokens": 25774,
+          "cacheReadTokens": 183424,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.017964587200000003
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "1b7c6cd5265fa17b1303280869169508ce93876e9c1b82a4558eccc9a26da001"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "candidate",
+      "caseId": "bounded_async_queue_v1",
+      "trial": 2,
+      "runId": "run_22d8de9797754cd2ac41",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 1,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_22d8de9797754cd2ac41",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "81203c2f8e149fca9a92306ee94197e91d79b981a98346806d1ccab4f94ba41a"
+      },
+      "reportFileSha256": "cc2510fa22c8541fe1135698d56ba83bd58f0607ca7197afcd36699c2a50ce13",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "8e9fb844b10f11a584c1c28b4dff76f5a4b61cfc840b369d3726edad9a96effc",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 57892,
+          "outputTokens": 29442,
+          "cacheReadTokens": 143360,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.016750048
+        },
+        "observedUsage": {
+          "inputTokens": 57892,
+          "outputTokens": 29442,
+          "cacheReadTokens": 143360,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.016750048
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "6e61da0e9d68348835ea8968c9d68c451fbe8cd09dd69e3d51ed6a3bdbc3d237"
+      },
+      "verificationExecutions": [
+        {
+          "eventId": "event_1c830dcfe4824b719d61",
+          "kind": "test",
+          "status": "passed",
+          "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+          "resultSha256": "28ccd4037a8c96b4c40e8a20faa39e1e215a8931fb7d1f71bfdc3077e62a9cca",
+          "selectionMode": null,
+          "selectedTestCount": null
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "caseId": "incremental_ndjson_v1",
+      "trial": 0,
+      "runId": "run_e61290417e5c4168a6df",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 1,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_e61290417e5c4168a6df",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "19d3f89701f8b23abade6ea14067c8bb68d492cea0ae313515d629e2adf0def8"
+      },
+      "reportFileSha256": "043356549e57691206e53e9ceca73faa10d5be3ce5f63a61860c448ca4e874a1",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "88956a2b73881ae4ebdf22c906bc73ad267394a443bc0f98e7f5d65939491f86",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 114917,
+          "outputTokens": 54854,
+          "cacheReadTokens": 368896,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.032480408800000006
+        },
+        "observedUsage": {
+          "inputTokens": 114917,
+          "outputTokens": 54854,
+          "cacheReadTokens": 368896,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.032480408800000006
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "5e4c067351c54eb9b75ac9918126c2044bbd966c75674704201b962936c45a27"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "baseline",
+      "caseId": "incremental_ndjson_v1",
+      "trial": 1,
+      "runId": "run_c38383483a9b463ca3ed",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 1,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_c38383483a9b463ca3ed",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "32654153168faedd943d16b84346490215a287adc7a9565e9ea61d2957397139"
+      },
+      "reportFileSha256": "27899c248af16e883dbfe9967dfbc46ec7b3fe5dd01378b57962209bc1e16ec6",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "a5a1017222a26bf3f8d3749338e8f591ed15ab092bc0c9d4edfcb245b84d2c91",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 52048,
+          "outputTokens": 49951,
+          "cacheReadTokens": 372608,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.022316302399999998
+        },
+        "observedUsage": {
+          "inputTokens": 52048,
+          "outputTokens": 49951,
+          "cacheReadTokens": 372608,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.022316302399999998
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "e86d06db71a92cf9039a6517717b4ba6c32be46f6dee27d20c0052cf91d11bc8"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "baseline",
+      "caseId": "incremental_ndjson_v1",
+      "trial": 2,
+      "runId": "run_0ff8287fafe942c2a56a",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 1,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_0ff8287fafe942c2a56a",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "92cb1ad450b50603c260acd815dc8a65d3dd3416912fdfa0b70df1f2bb4ea284"
+      },
+      "reportFileSha256": "769cd97abbdc048c2df8a2c1c2965e64c1af4ece4ceed1069b8dd04b1dd54cba",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "3652c982e0a405d2d59ff4692d28adc3258ed3a0a08b3bfee4035b60968bd15a",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 85776,
+          "outputTokens": 36561,
+          "cacheReadTokens": 383616,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.023319844800000003
+        },
+        "observedUsage": {
+          "inputTokens": 85776,
+          "outputTokens": 36561,
+          "cacheReadTokens": 383616,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.023319844800000003
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "6359a4e70b348a97e77fcd5366c93747727bc3a826d1a527216bbdd33fc7f3b3"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "candidate",
+      "caseId": "incremental_ndjson_v1",
+      "trial": 0,
+      "runId": "run_18612f9b96d94ee695df",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 0,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_18612f9b96d94ee695df",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "6dbc6634b5b7e2170e7f9086514dfdf9541a3e02e23bc2ae8e9d0c090754bb88"
+      },
+      "reportFileSha256": "8205d4e6f866b480b9514c6e92a16f43e8fbda023ddd4de51b7f4eda46bcad33",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "558e1895d5d2b8d6c1669c238d91f3421228730493b84276c7c4316e2544c2d3",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 71412,
+          "outputTokens": 40071,
+          "cacheReadTokens": 210816,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.021807844799999997
+        },
+        "observedUsage": {
+          "inputTokens": 71412,
+          "outputTokens": 40071,
+          "cacheReadTokens": 210816,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.021807844799999997
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "6677c4a3301ac99f812a858a7f5e2e6933cb14dc59530baaf0e648cc70907f3a"
+      },
+      "verificationExecutions": [
+        {
+          "eventId": "event_76a01dacdb9647bf90e3",
+          "kind": "test",
+          "status": "failed",
+          "verifierSha256": "b4ad88614b7b5669f5d64cc74dc710a87a13f84b872a3c8e827ba6e508314087",
+          "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0",
+          "resultSha256": "3218e3f1b07c033d0b6f4869183046bcb9025f2dcbd9d495c57535cc7eea8600",
+          "selectionMode": null,
+          "selectedTestCount": null
+        },
+        {
+          "eventId": "event_8d078b4336a240ca9d98",
+          "kind": "test",
+          "status": "passed",
+          "verifierSha256": "45e08d536033ebe6b46613f38cf8f43ea590c2bb38ba5a4ce1f907b7f2782e1d",
+          "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0",
+          "resultSha256": "4f38d39838bfde3293e701dcc1f98a80e856b8bfa2be3eef1ba883a408837e33",
+          "selectionMode": null,
+          "selectedTestCount": null
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "caseId": "incremental_ndjson_v1",
+      "trial": 1,
+      "runId": "run_f3b242b22bb44554860a",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 0,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_f3b242b22bb44554860a",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "b85af355cb2b35af02b73abb957fc6ec5a1b79d961afb6e891c0168819d8b275"
+      },
+      "reportFileSha256": "134647f434efbcc014802be3598ac276f5a926501f242c6833a4f7ae7893764f",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "262f56af5f3f3114de1b9827fac5c736d69ec7f854a61f3562f65d19275a9b54",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 87282,
+          "outputTokens": 42172,
+          "cacheReadTokens": 276096,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.024800708799999995
+        },
+        "observedUsage": {
+          "inputTokens": 87282,
+          "outputTokens": 42172,
+          "cacheReadTokens": 276096,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.024800708799999995
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "a1e88a4b490f5bf6920abc8f8f2aac89947d1ee3dc10e64696e1412d6fd11e18"
+      },
+      "verificationExecutions": [
+        {
+          "eventId": "event_7218ecaa601c4e8abdc8",
+          "kind": "test",
+          "status": "passed",
+          "verifierSha256": "b4a1dff341ae90ba2398ce740007155f5423738be528fe04a06baed67ab1031a",
+          "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0",
+          "resultSha256": "d7fce4e159d174ff4fa7f6dc22078fa9e1b2212ddb55271066d782c0ca710476",
+          "selectionMode": null,
+          "selectedTestCount": null
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "caseId": "incremental_ndjson_v1",
+      "trial": 2,
+      "runId": "run_3f07d3e7c2ce4ef3a861",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 0,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_3f07d3e7c2ce4ef3a861",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "514ac1a9e7b931757346d721f30b0d3cdb233e6fd1e1e31c472ffc427eed2c01"
+      },
+      "reportFileSha256": "5b220cee9a816746aaee6ebfb4b30a5b9ca5098c8a261425dfdef42740d96a92",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "e466b00f7c6cfc4e3b0438802941d5f48dca81f0a191c58918963647f03a3eec",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 63439,
+          "outputTokens": 23884,
+          "cacheReadTokens": 171520,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.016049235999999998
+        },
+        "observedUsage": {
+          "inputTokens": 63439,
+          "outputTokens": 26220,
+          "cacheReadTokens": 171520,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.016049235999999998
+        },
+        "blockers": [
+          "event_64546c19183e43bc9b6d: estimated_or_unknown_discarded_usage",
+          "persisted_run_usage_mismatch"
+        ],
+        "eligibleForObservedUsageComparison": false,
+        "contentSha256": "637ada7175cf420a6521dcecffe6e4f57f970f0a8c8097984c0b5d578f91b3de"
+      },
+      "verificationExecutions": [
+        {
+          "eventId": "event_ba77b584b7c346019114",
+          "kind": "test",
+          "status": "passed",
+          "verifierSha256": "9bd6394ef26d0a923f97bfb897127567e836ae2c76fae6f04f5f330c385fbecb",
+          "runtimeIdentitySha256": "a9276b40cf290a5eaaf26644bb7fd643ba41276f80070a975b398052e72e36a0",
+          "resultSha256": "e7a4914a8de5cfcdf61e0525ea0fbdadeeeac4153a35c86ce00e3d299d5c9371",
+          "selectionMode": null,
+          "selectedTestCount": null
+        }
+      ]
+    },
+    {
+      "arm": "baseline",
+      "caseId": "rollout_dependency_plan_v1",
+      "trial": 0,
+      "runId": "run_5532b3ea930742c89ccf",
+      "status": "failed",
+      "taskSuccess": false,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 3,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_5532b3ea930742c89ccf",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "c65a5c5f41cc12eb7a67ea2bf878326f39e6094e166f4df7c581e2f4eb441b70"
+      },
+      "error": "The model response made a contradicted capability claim",
+      "reportFileSha256": "c56a630ac21fa0c775d7bfaa4498d319bb4f8aa15d6a18428efba6948df27926",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "d4d4085e77c0acabe62e2da273a3bd831a26b5b1eff9b2095df8b58973629370",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 172746,
+          "outputTokens": 23106,
+          "cacheReadTokens": 209664,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.031241179200000004
+        },
+        "observedUsage": {
+          "inputTokens": 172746,
+          "outputTokens": 23106,
+          "cacheReadTokens": 209664,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.031241179200000004
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "376485ace0b5feaee1a9ea07cd903a57cc353c2ed74fc7a367b580b15caf23db"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "baseline",
+      "caseId": "rollout_dependency_plan_v1",
+      "trial": 1,
+      "runId": "run_96cbefe5259d4807b1d7",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 3,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_96cbefe5259d4807b1d7",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "76b1d928bfdb8f7e534a02198b07c7ec708fab3736014b10defaef692dab0cda"
+      },
+      "reportFileSha256": "945ccfbad2df1ad566d8428ad7e6107d1d221a458465c289e17ef08a679ae5be",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "b95b47b6fe542adfdaecf71cd8cdcaf35e5880a7d97974f0adcc506467da4655",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 39176,
+          "outputTokens": 13440,
+          "cacheReadTokens": 124544,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.009596563200000002
+        },
+        "observedUsage": {
+          "inputTokens": 39176,
+          "outputTokens": 13440,
+          "cacheReadTokens": 124544,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.009596563200000002
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "e05f3901b392e273ad7c982cdf0e815f6628dcaab63a65c7d116d710c236e3cd"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "baseline",
+      "caseId": "rollout_dependency_plan_v1",
+      "trial": 2,
+      "runId": "run_60bf5474fdc842529c42",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 1,
+      "runtimeArtifactSha256": "e96efd380c131d8aa5c288ae5abd14e030a5ac0d6f9e491f6d42fe9464022010",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_60bf5474fdc842529c42",
+        "beforeSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "afterSha256": "eb1031554d5cf017959fa594da4e0cf4f8afa968482840cd993d025272cda31e",
+        "packageCount": 129,
+        "fileCount": 24572,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "1b345366cc1504c626735eeb60f3eb974558c2131875015a8f3d675eca9396b7"
+      },
+      "reportFileSha256": "d3c608c5d0b88f2577b4103e89e5105cf58eb4e8e66727ffbadd153dfd76368d",
+      "profileSha256": null,
+      "environmentEvidenceSha256": "c0468d6f7562b93a774abe2b5c57998d6e7e0fa271230605de693e1dd7029fe5",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 40697,
+          "outputTokens": 16329,
+          "cacheReadTokens": 172032,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.010751389600000001
+        },
+        "observedUsage": {
+          "inputTokens": 40697,
+          "outputTokens": 16329,
+          "cacheReadTokens": 172032,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.010751389600000001
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "23cb45e160b8b20a347169f723124ffd279bbe229dce3db4f8a631d42b7bfdf9"
+      },
+      "verificationExecutions": []
+    },
+    {
+      "arm": "candidate",
+      "caseId": "rollout_dependency_plan_v1",
+      "trial": 0,
+      "runId": "run_c3188309f5464d89a500",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 0,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_c3188309f5464d89a500",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "0d6d0ffef9e7b5530aa22d30299a67b4ad47f3dabdef3bf83ca0d7e3eee8c565"
+      },
+      "reportFileSha256": "c6ee69be9b03ae5e7199f07cdaf7eb77a6b9f9b8dd912eae0cfdce15564b6631",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "c339b7907ee707e09c0f9032695cf8f6df5d9f77949c66b68613676b7994b2fb",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 60910,
+          "outputTokens": 16750,
+          "cacheReadTokens": 121472,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0135575216
+        },
+        "observedUsage": {
+          "inputTokens": 60910,
+          "outputTokens": 16750,
+          "cacheReadTokens": 121472,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0135575216
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "595ba03b32d06b855cb0eb9bc48ff062552039ab3295f979122fb88a31310fd7"
+      },
+      "verificationExecutions": [
+        {
+          "eventId": "event_ec3453481860454aa6e5",
+          "kind": "test",
+          "status": "passed",
+          "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+          "resultSha256": "6a8ed0d580d6078d9011449dc71b1cfcf459de669e811b1d3ada0219ea310e80",
+          "selectionMode": null,
+          "selectedTestCount": null
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "caseId": "rollout_dependency_plan_v1",
+      "trial": 1,
+      "runId": "run_9a87d993f33d4f74ad48",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 3,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_9a87d993f33d4f74ad48",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "56e789a1708c4b8f37ee5c5070c1227b1db34cca5927e42ea692e646fc828f48"
+      },
+      "reportFileSha256": "a343bc2ab2813db1d328783faf24b88fc38d80842c70fb3f3f652e60a9694a81",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "c381399dd725693c7d908623e6d07df144658117aa6169d73cbea1364f2f356b",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 81598,
+          "outputTokens": 18631,
+          "cacheReadTokens": 181760,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.017149328
+        },
+        "observedUsage": {
+          "inputTokens": 81598,
+          "outputTokens": 18631,
+          "cacheReadTokens": 181760,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.017149328
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "945bcc5e4ff50aa542488010d2b5ef3b8e8c478c334c67a6fdb0b6445a640f64"
+      },
+      "verificationExecutions": [
+        {
+          "eventId": "event_cf5b50e7e9084146b30e",
+          "kind": "test",
+          "status": "passed",
+          "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+          "resultSha256": "c64e0684aa29b4987437cc8cb9a862e1d00bb2a913b46980f222c7bfd71ad9a4",
+          "selectionMode": null,
+          "selectedTestCount": null
+        }
+      ]
+    },
+    {
+      "arm": "candidate",
+      "caseId": "rollout_dependency_plan_v1",
+      "trial": 2,
+      "runId": "run_7d99c7d661274266bf0e",
+      "status": "completed",
+      "taskSuccess": true,
+      "allowedChanges": true,
+      "requiredTools": true,
+      "graderExitCode": 0,
+      "toolFailures": 3,
+      "runtimeArtifactSha256": "4c744621f12e380bbaa778870d225757c711ca6ee24dbb2fb26c48aba26c0dcf",
+      "runtimeDependencyEvidence": {
+        "kind": "napier.runtime-dependency-evidence",
+        "schemaVersion": 1,
+        "runId": "run_7d99c7d661274266bf0e",
+        "beforeSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "afterSha256": "2a0e4761547baf4e1ec0fc06bdaee707d9b0d6e3caed2e83fa96f6bf9d962381",
+        "packageCount": 129,
+        "fileCount": 24215,
+        "stable": true,
+        "eligible": true,
+        "contentSha256": "8489f4bac18e91bfc4e715a44818b15d2d774bfea3ab48905935e15955e03f06"
+      },
+      "reportFileSha256": "73c917e222dcdacdf87bad8778346f2abe3082f2962eee41be675708fc9372e4",
+      "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+      "environmentEvidenceSha256": "9151a4ade0d003d52fe78275021017168a844577c7f4058a621733a3f45f08ec",
+      "usageEvidence": {
+        "persistedUsage": {
+          "inputTokens": 85337,
+          "outputTokens": 23894,
+          "cacheReadTokens": 155136,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.019071880800000007
+        },
+        "observedUsage": {
+          "inputTokens": 85337,
+          "outputTokens": 23894,
+          "cacheReadTokens": 155136,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.019071880800000007
+        },
+        "blockers": [],
+        "eligibleForObservedUsageComparison": true,
+        "contentSha256": "37afd84cb5c8685edf6b5ab97f6834f9fb01a1b2b4d5585ea580c835e5291014"
+      },
+      "verificationExecutions": [
+        {
+          "eventId": "event_56be0690518e429c9150",
+          "kind": "test",
+          "status": "passed",
+          "verifierSha256": "3a988781edde7f1c76751f771cf402e0866fb4a81fbcd0852a2ce2f5bd2ccd37",
+          "runtimeIdentitySha256": "533cc883546900024640f631982a26feaab492753037cb48dd116421c359dd23",
+          "resultSha256": "f1a8870dd6687fe3af684cb8727cea04bc9bff6e593eb16b42349cbfed6ebb80",
+          "selectionMode": null,
+          "selectedTestCount": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Three cases do not meet the unchanged 30-case by 3-paired-trial gate",
+    "Different Runtime snapshots are separate compositions and are not pooled",
+    "Concurrent model runs do not qualify latency or provider cache attribution",
+    "Both native snapshots predate the SQLite discarded-usage query correction",
+    "Missing or estimated discarded usage blocks provider cost conclusions",
+    "Original reports, failures, graders and persisted Run totals are unchanged",
+    "The original tool-definition budget violation independently blocks qualification"
+  ],
+  "promotionReady": false
+}

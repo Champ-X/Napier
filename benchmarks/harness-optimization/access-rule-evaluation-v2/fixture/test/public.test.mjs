@@ -1,0 +1,1 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {explainAccess} from '../src/access.mjs';test('default deny is scoped to principal',()=>assert.equal(explainAccess([{id:'a',effect:'allow',subjects:['user:alice'],actions:['read'],resource:'/docs/**'}],{id:'bob',groups:[]},'read','/docs/x').allowed,false));

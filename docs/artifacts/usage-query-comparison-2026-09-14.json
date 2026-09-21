@@ -1,0 +1,63 @@
+{
+  "kind": "napier.usage-query-comparison",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T18:01:52.870Z",
+  "runId": "run_3f07d3e7c2ce4ef3a861",
+  "sourceReportFileSha256": "5b220cee9a816746aaee6ebfb4b30a5b9ca5098c8a261425dfdef42740d96a92",
+  "compiledReplaySha256": "b005d3fe4c81172d47b65feb962cd3d2510a9b12fae07acb0fb1e457ab7d0a7b",
+  "originalPersistedUsage": {
+    "inputTokens": 63439,
+    "outputTokens": 23884,
+    "cacheReadTokens": 171520,
+    "cacheWriteTokens": 0,
+    "costUsd": 0.016049235999999998
+  },
+  "originalQueryUsage": {
+    "inputTokens": 63439,
+    "outputTokens": 23884,
+    "cacheReadTokens": 171520,
+    "cacheWriteTokens": 0,
+    "costUsd": 0.016049235999999998
+  },
+  "correctedQueryUsage": {
+    "inputTokens": 63439,
+    "outputTokens": 26220,
+    "cacheReadTokens": 171520,
+    "cacheWriteTokens": 0,
+    "costUsd": 0.016049235999999998
+  },
+  "replayUsage": {
+    "inputTokens": 63439,
+    "outputTokens": 26220,
+    "cacheReadTokens": 171520,
+    "cacheWriteTokens": 0,
+    "costUsd": 0.016049235999999998
+  },
+  "originalQueryReproducesPersistedTotal": true,
+  "correctedQueryMatchesReplay": true,
+  "discardedReceipts": [
+    {
+      "eventId": "event_64546c19183e43bc9b6d",
+      "type": "model.thinking_loop.detected",
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 2336,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0
+      },
+      "usageSource": "reasoning_bytes_estimate",
+      "action": "retry",
+      "reason": "overplanning_headings",
+      "observedBytes": 9341,
+      "contentSha256": "1cce14d43eb36936dca4bb41249e33618f10486159b69e27f816214351d9c1af"
+    }
+  ],
+  "originalDatabaseOpenedReadOnly": true,
+  "limitations": [
+    "This compares aggregate queries on original immutable Run events; no new model invocation",
+    "The original database and report were not rewritten",
+    "The recovered 2336 output tokens are a reasoning-byte estimate, not provider billing evidence",
+    "The usage fix is not part of either frozen native-toolchain v1 or v2 campaign"
+  ]
+}

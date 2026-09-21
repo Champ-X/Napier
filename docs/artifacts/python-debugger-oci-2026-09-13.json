@@ -1,0 +1,2949 @@
+{
+  "kind": "napier.oci-python-debugger-integration-evidence",
+  "schemaVersion": 1,
+  "date": "2026-09-13",
+  "baselineCommit": "c454a155",
+  "defaultPromoted": false,
+  "overallGoalComplete": false,
+  "snapshots": {
+    "baseline": "/tmp/napier-harness-python-debugger-v1",
+    "candidate": "/tmp/napier-harness-python-debugger-oci-v1"
+  },
+  "image": {
+    "base": "sha256:2229d0eb606e812d4d26242466cd406f02c33c8f804e8a48c246114265f4aae4",
+    "candidate": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+    "python": "3.13.5",
+    "debugpy": "1.8.17",
+    "wheelSha256": "60c7dca6571efe660ccb7a9508d73ca14b8796c4ed484c2002abba714226cfef",
+    "optionalExplicitSelection": true
+  },
+  "isolationTest": {
+    "initialPassed": 3,
+    "repeatHistory": [
+      {
+        "log": "oci-live-v2",
+        "passed": 2,
+        "failed": 1,
+        "reason": "DAP sequence rejection"
+      },
+      {
+        "log": "oci-live-v3",
+        "passed": 3,
+        "failed": 0
+      }
+    ],
+    "postFixFocusedPassed": 16,
+    "observed": [
+      "breakpoint",
+      "stack",
+      "evaluation",
+      "continue",
+      "exit_zero",
+      "workspace_write_denied",
+      "host_sentinel_read_denied",
+      "outbound_tcp_denied",
+      "read_only_root_and_mounts",
+      "network_none",
+      "capabilities_dropped",
+      "owned_container_removed"
+    ]
+  },
+  "readiness": {
+    "status": "ready",
+    "code": "shell_ready",
+    "message": "The active oci-container provider completed a bounded shell command through the production PTY path",
+    "evidence": {
+      "adapter": "oci-container",
+      "productionCall": true,
+      "pty": true,
+      "executableSha256": "367967c823a0c391e5049b15a67c6a0a629c88b9b6dcdca75ef13ac9d65334b1",
+      "runtimeIdentitySha256": "4f5379ab27b6681bd665a05ffd0519e6af19b8f01af1adea516ad2408bfba633",
+      "commandSha256": "93afdcb7e68173494fe28955af4d56a2549452c28a2f857db397cbab2767f23a",
+      "exitCode": 0
+    }
+  },
+  "historicalHostDiagnosticReassessment": {
+    "required": true,
+    "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+    "unavailableCapsules": 0,
+    "processes": [
+      {
+        "processId": "process_b5ae58790e274508801b",
+        "completedActions": [
+          "launch",
+          "stack_trace",
+          "scopes",
+          "variables",
+          "evaluate",
+          "cancel"
+        ],
+        "variablesMatched": true,
+        "breakpointMatched": true,
+        "evaluationMatched": true,
+        "actionsMatched": true,
+        "sameFrameMatched": true,
+        "passed": true,
+        "observations": [
+          {
+            "callId": "call_00_0khE7Sc8LTtzpQlelgox4694",
+            "eventId": "event_4895ebc664bc4385a977",
+            "capsuleSha256": "8d651cc0354853d8869a996d0f4fa26b49ab63042a9defab0b0b3a6f1bfa37a8",
+            "action": "launch",
+            "resultSha256": "566639317b7dcb641bef7b2736568b2fc65f576ddd296b14072c654cbc2298bc",
+            "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+            "isolation": "none"
+          },
+          {
+            "callId": "call_00_ZWy8yJDLmSieQK9b0hBw2894",
+            "eventId": "event_4d7953f542c946788a13",
+            "capsuleSha256": "8d651cc0354853d8869a996d0f4fa26b49ab63042a9defab0b0b3a6f1bfa37a8",
+            "action": "stack_trace",
+            "resultSha256": "5cef2bf5f2f736265b2489d2c9f91c37bf5d88c94daab240fb169eea0d5fab8e",
+            "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+            "isolation": "none"
+          },
+          {
+            "callId": "call_00_g8gkrUOwE0hq9oYoevW51111",
+            "eventId": "event_87ac56147eb341e79269",
+            "capsuleSha256": "8d651cc0354853d8869a996d0f4fa26b49ab63042a9defab0b0b3a6f1bfa37a8",
+            "action": "scopes",
+            "resultSha256": "5aa6440d6c69ab11a10dca339c35c637aa4001f225b64499e6c6a1aad394aa85",
+            "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+            "isolation": "none"
+          },
+          {
+            "callId": "call_00_XpjslQc9eJm8aWtYoo4K0185",
+            "eventId": "event_0329b2417dac41438ce3",
+            "capsuleSha256": "8d651cc0354853d8869a996d0f4fa26b49ab63042a9defab0b0b3a6f1bfa37a8",
+            "action": "variables",
+            "resultSha256": "d72da7a4e37572e179e28a74f99cb3f0d567474ce3d198c7152a46851035e8ac",
+            "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+            "isolation": "none"
+          },
+          {
+            "callId": "call_01_2t8n3Hb4jpNqdcTLlojT3290",
+            "eventId": "event_2da6fa2846494c5f88df",
+            "capsuleSha256": "8d651cc0354853d8869a996d0f4fa26b49ab63042a9defab0b0b3a6f1bfa37a8",
+            "action": "evaluate",
+            "resultSha256": "142495d0d7d2348ae1383812ce1373df083433dc1e319eee9f544379c1ac4475",
+            "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+            "isolation": "none"
+          },
+          {
+            "callId": "call_00_BnJqPgvY3261pSdKDOoW4073",
+            "eventId": "event_33116863ce544f26b6e1",
+            "capsuleSha256": "8d651cc0354853d8869a996d0f4fa26b49ab63042a9defab0b0b3a6f1bfa37a8",
+            "action": "cancel",
+            "resultSha256": "1854ad1cacf503076479c37800db1512f62bb6be90290aa21dea118cea5e5615",
+            "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+            "isolation": "none"
+          }
+        ]
+      }
+    ],
+    "reasons": [],
+    "passed": true
+  },
+  "retainedEnvironmentFailures": [
+    {
+      "kind": "napier.harness-environment-reassessment",
+      "schemaVersion": 1,
+      "originalReportsUnchanged": true,
+      "observations": [
+        {
+          "arm": "baseline",
+          "trial": 0,
+          "runId": "run_c03337f24f724ed790ec",
+          "originalReportSha256": "ed774edb72efd3c834790d0fbaa8ae44a981b0239910c1370c42dbd717738a43",
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_c03337f24f724ed790ec",
+            "sandboxId": "oci-container",
+            "configurationSha256": "4ddd76e02a84f192fd377bdfb35b94cc642e06b9cc096e38f4b91ad961957e83",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_2d300c31403c4905b2f9",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "88fbfd6c8033b0b991b23df25efc778a9fef5e0072760a53318ae6b4190a1f9b"
+          },
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v1-trial1",
+          "failureReportSha256": "de71d0446b855dfa2d45351e744622e1d7ab7f6250f0f43a8407f4375c0a4f33"
+        },
+        {
+          "arm": "baseline",
+          "trial": 1,
+          "runId": "run_656fc48a319c429787ee",
+          "originalReportSha256": "5e8a6264137098fc016747f946df93ad18d0b814f211efdd70cfd4c8abfc2511",
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_656fc48a319c429787ee",
+            "sandboxId": "oci-container",
+            "configurationSha256": "80fe90a54a5299c11e85c6a62735227aa598908db1db0367f858e24d0b45c067",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_2d6c2c166314493bba8b",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "7db06f74145de75725f3330b8ed12f99a519c7b4d53ac59e316bd35326caeac7"
+          },
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v1-trial2",
+          "failureReportSha256": "35483462cd4a565cbb7edb4827343888e55bd7117e7c0791ae80fc2eabdb671c"
+        },
+        {
+          "arm": "baseline",
+          "trial": 2,
+          "runId": "run_c49a3b19c90447fe8306",
+          "originalReportSha256": "3bbece74403e531689f3dbdd4021bb9cd2b70c5354119d0532d2d8b045c87408",
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_c49a3b19c90447fe8306",
+            "sandboxId": "oci-container",
+            "configurationSha256": "212e3b3e225295fb207974707b56f96b642dc1766a494507ac8925bc4194b6e5",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_5fd40fd9853949709bc5",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "9a48efce7884039481653f5f8c9ee2e3f6f1cd793960e19f05da1d4c4eeb54e8"
+          },
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v1-trial3",
+          "failureReportSha256": "476f0bd812a61d5c1a8c184589e4f337dccd5f6cf1991d3c7ef825b6322bf97e"
+        },
+        {
+          "arm": "candidate",
+          "trial": 0,
+          "runId": "run_96eed3e537ae4b8ba220",
+          "originalReportSha256": "c600219034cf91b71128b9bb45f301c300b25dac4d7649a9154415843dd425cb",
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_96eed3e537ae4b8ba220",
+            "sandboxId": "oci-container",
+            "configurationSha256": "4ddd76e02a84f192fd377bdfb35b94cc642e06b9cc096e38f4b91ad961957e83",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_70ed07a8873d442188ad",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "dbbb7b735d737bf1c6613029ba6f43cc87fc41ed25a957adadb7d197a881f665"
+          },
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v1-trial1",
+          "failureReportSha256": "6d119dfef094acec2aa143489487b4466ac30e1b7ad0db900457d80aa58e0a16"
+        },
+        {
+          "arm": "candidate",
+          "trial": 1,
+          "runId": "run_55402498de644effbee1",
+          "originalReportSha256": "3c41d087e99386da8a2b4ea32f2cd5fffee41b4ae09a4538fe7528a5b1a7c696",
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_55402498de644effbee1",
+            "sandboxId": "oci-container",
+            "configurationSha256": "7e13142c9edeeaa2d8641f15bfac715923a1f1e550d1be32c170a720889f9120",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_8c4b94323aaa4c288952",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "1cd12ae280d89a30f50bb1690c88c75a0e68810117d76b5aad489cee7816158c"
+          },
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v1-trial2",
+          "failureReportSha256": "6c3729de60dfdb5dc3154ca7a1932a9cb7c831a1ecb527418f89ce46ea263605"
+        },
+        {
+          "arm": "candidate",
+          "trial": 2,
+          "runId": "run_d72ff340906a43aaba6d",
+          "originalReportSha256": "42992d00916678530a599d6e5300f23a0294154ea38151ed497a50032baa2415",
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_d72ff340906a43aaba6d",
+            "sandboxId": "oci-container",
+            "configurationSha256": "b0fa522e5321daedada12cb6f303c5ec88b1d465280963cb225598e51a40a58a",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_b3b80eda23864d268b7a",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "9c082c089d188b3d86a7d508c8f8cf0f1217f22e960e3bed161f00c6f25fd4cf"
+          },
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v1-trial3",
+          "failureReportSha256": "f351e9cf0a87c83525f4e0441fb34b92f52cc1f5da7f1ec320bc5f6a22eec720"
+        }
+      ],
+      "quality": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 0,
+        "cases": 0,
+        "regressions": [],
+        "blockers": [
+          "python_debugger_shipping_v1:0: missing, invalid or degraded environment evidence",
+          "python_debugger_shipping_v1:1: missing, invalid or degraded environment evidence",
+          "python_debugger_shipping_v1:2: missing, invalid or degraded environment evidence",
+          "Need 30 cases; observed 0"
+        ],
+        "verdict": "insufficient_evidence",
+        "promotionReady": false,
+        "contentSha256": "412b8599d16316f1df6e47a616327fcc1c987a95b2be79df15dda60812bef572"
+      }
+    },
+    {
+      "kind": "napier.harness-environment-failure-campaign",
+      "schemaVersion": 1,
+      "observations": [
+        {
+          "runId": "run_59bf092fc5f84159aa05",
+          "arm": "baseline",
+          "trial": 0,
+          "taskSuccess": false,
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_59bf092fc5f84159aa05",
+            "sandboxId": "oci-container",
+            "configurationSha256": "ae457741de26beb10fa29154bbf3191dea77615da2b0d07b309094ab5acc01f6",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_7e93785378c342e79c72",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "5185a792575ee158026a138e709b78c1633bd51f08088bea04d170b956306f83"
+          },
+          "originalReportSha256": "a13da1d898792814c26d07d6ca5b52a0cc389f49c0f733654353105cb7d16b8f",
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v2-trial1"
+        },
+        {
+          "runId": "run_4007c2893e4e4a998d24",
+          "arm": "baseline",
+          "trial": 1,
+          "taskSuccess": false,
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_4007c2893e4e4a998d24",
+            "sandboxId": "oci-container",
+            "configurationSha256": "92f47e19f0834c92f217229a0725745b46d49d1af871cea3a9806938b4a140a7",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_cab94c5bb63d4d919881",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "accc46c079cf720b4cbc83f714b02fe4b2bc7ae495bdfef4a070121c1170d704"
+          },
+          "originalReportSha256": "ad86fd473cb3b06b340a2272dfb87d8b641dfc77ee9ca15fa1b0b71d4528df18",
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v2-trial2"
+        },
+        {
+          "runId": "run_71b12bd8d0084243b7f6",
+          "arm": "baseline",
+          "trial": 2,
+          "taskSuccess": false,
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_71b12bd8d0084243b7f6",
+            "sandboxId": "oci-container",
+            "configurationSha256": "43eaf2f9a3fa3ab3ea63b419a177b0c81ceb7d51af9f30e6f47ea2e5e937c3b0",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_8a858857daa248c2a9a9",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "2df4c8ceb1713d8eed5b11b27bd9cdd92f2b35a0e631d1b67f428376f2d9566c"
+          },
+          "originalReportSha256": "70c13539ca2bc2451ab0b930f4d11fad0229864d7fe746900657b553bb25a497",
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v2-trial3"
+        },
+        {
+          "runId": "run_36407d47f946467a87d5",
+          "arm": "candidate",
+          "trial": 0,
+          "taskSuccess": false,
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_36407d47f946467a87d5",
+            "sandboxId": "oci-container",
+            "configurationSha256": "ae457741de26beb10fa29154bbf3191dea77615da2b0d07b309094ab5acc01f6",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_60eb3ff5c0324473a046",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "06d6e4d254ad649d84b6174baca975da4b059c677327ae8021bd7fecfb29d442"
+          },
+          "originalReportSha256": "aee8103e7254e88642363aa8f27bf5d956f1d6f7c8b9c4e49c77e1960e546b90",
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v2-trial1"
+        },
+        {
+          "runId": "run_d7edaef252494a93995c",
+          "arm": "candidate",
+          "trial": 1,
+          "taskSuccess": false,
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_d7edaef252494a93995c",
+            "sandboxId": "oci-container",
+            "configurationSha256": "19702efcfcfcf73020a8bc96bfc9274a84fd37a00c3caf6cb6ff59f393a725a3",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_3b539999785a497bbee8",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "cc70274191215a7d2073a319317a986b1a53ebdd97a7722eb189a182d3c1b581"
+          },
+          "originalReportSha256": "e0f668b72b444d613553481af246ea7ed1bde6949f4ce4d1164a6cf310dde63f",
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v2-trial2"
+        },
+        {
+          "runId": "run_94fdcc91b9654b85be4b",
+          "arm": "candidate",
+          "trial": 2,
+          "taskSuccess": false,
+          "environmentEvidence": {
+            "kind": "napier.harness-environment-evidence",
+            "schemaVersion": 1,
+            "runId": "run_94fdcc91b9654b85be4b",
+            "sandboxId": "oci-container",
+            "configurationSha256": "7d85e9dc6e3a2551cff98aca23f3bc73be9d559f871a16ccde22e1e715316c8f",
+            "executionMode": "environment_degraded_read_only",
+            "valid": true,
+            "eligible": false,
+            "missingTools": [
+              "apply_patch",
+              "node_debugger",
+              "run_command",
+              "verify_workspace"
+            ],
+            "receipts": [
+              {
+                "eventId": "event_f588355138cf4b85b0d1",
+                "contentSha256": "aa001f55829556c4d9a17d7d042a3bd647852f9cc6b2a76c4ec6e55640607a00",
+                "reason": "sandbox_unavailable",
+                "readinessId": "sandbox:oci-container",
+                "readinessDetailSha256": "a3437a88bc721d1629bd1eff7fa920aca848b5c8577860afc1fa3b7db2c2526e",
+                "omittedToolNames": [
+                  "apply_patch",
+                  "node_debugger",
+                  "run_command",
+                  "verify_workspace"
+                ]
+              }
+            ],
+            "blockers": [],
+            "contentSha256": "52d8da631b804a9f83eb8a1e6887388be6b4392153079b99eb3b0d90749a5148"
+          },
+          "originalReportSha256": "a04c18b5149f56a5474d1fd7e923506535e2ccc083aae2b77f094c16bbdf1d6d",
+          "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v2-trial3"
+        }
+      ],
+      "quality": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 0,
+        "cases": 0,
+        "regressions": [],
+        "blockers": [
+          "python_debugger_shipping_v1:0: missing, invalid or degraded environment evidence",
+          "python_debugger_shipping_v1:1: missing, invalid or degraded environment evidence",
+          "python_debugger_shipping_v1:2: missing, invalid or degraded environment evidence",
+          "Need 30 cases; observed 0"
+        ],
+        "verdict": "insufficient_evidence",
+        "promotionReady": false,
+        "contentSha256": "412b8599d16316f1df6e47a616327fcc1c987a95b2be79df15dda60812bef572"
+      },
+      "diagnosis": "The inherited project DOCKER_HOST targeted a nonexistent foreign-user socket; the successful preflight had not loaded that environment file. Both failures and original reports remain unchanged."
+    }
+  ],
+  "comparisonBeforeSequenceFix": {
+    "observations": [
+      {
+        "arm": "baseline",
+        "caseId": "python_debugger_shipping_v1",
+        "trial": 0,
+        "runId": "run_1346c9d4a3134faa8bc9",
+        "threadId": "thread_aa9f9ded372d4a0c8b50",
+        "runtimeArtifactSha256": "2cf2a50b34b6f6fbef2c1ba1a13dba1d2cf5b7360f777039d0b4ac5b82e7f663",
+        "sourceIdentity": {
+          "packages/runtime/src": "fa9ea62e17b72a1f975077725133d4f6353cadd69c2a5b41fe76d1cbbfd6b752",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": false,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": false,
+        "toolFailures": 5,
+        "toolCalls": 27,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_1346c9d4a3134faa8bc9",
+          "sandboxId": "oci-container",
+          "configurationSha256": "e377d5fa953c892c30107a4e4a9cefbd414e4f6cd39d8acf8b0475ea8eaf78d4",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "f1d122b9c4b8f74f33c9b31ed3eb27ff66351048aaaa54cd09826e909631c282"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [],
+          "reasons": ["required_observations_missing"],
+          "passed": false
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [],
+          "runningSessions": 0,
+          "matchingProcessIds": [],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": false,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 14,
+          "auditedCapsules": 14
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 58819,
+          "outputTokens": 24858,
+          "cacheReadTokens": 249472,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.015893421600000002
+        },
+        "durationMs": 163332,
+        "originalReportSha256": "aa8dd065051449e02ac6648cb4ca6aa1fe3341eb4cdfab0dfd28ba3893533583",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+        "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v3-trial1",
+        "debuggerReceipts": [],
+        "failedTools": [
+          {
+            "eventId": "event_345355a41d874f8c9b93",
+            "callId": "call_01_rIr794Oo2pc9ve9BuuJ30368",
+            "toolName": "node_debugger",
+            "errorSha256": "be7625c40d9e1faf91f0d4756bd9a8b10485f12b45f9e788d653173ecda780dc"
+          },
+          {
+            "eventId": "event_f1b64578afbd40c184cd",
+            "callId": "call_00_Hl0VmR6af0vbsc8bADT67689",
+            "toolName": "node_debugger",
+            "errorSha256": "04f5f952bc4343f4eda1e41d847fa014328e18bb038b7a606e7345c8da7c473f"
+          },
+          {
+            "eventId": "event_4d594ba433474b459a87",
+            "callId": "call_00_8BJ7H3ycIMXQbLmW1jTO9289",
+            "toolName": "node_debugger",
+            "errorSha256": "3684d700e27cd5796fa2ce95092d8f4e3133f26ad5ad68f8ea9769a82a96ce0d"
+          },
+          {
+            "eventId": "event_72790eee72454176a0b3",
+            "callId": "call_00_NqPjGKA5Ftg2rTDPtRVp3244",
+            "toolName": "update_plan_artifact",
+            "errorSha256": "724aa8573716156ac43116427a99a1a3b848a127d9d5b77091005bc47d5d1307"
+          },
+          {
+            "eventId": "event_f742fd5c6c6540fcad81",
+            "callId": "call_01_lOI9uFr95Lz5QEjkV7nf9694",
+            "toolName": "update_plan_artifact",
+            "errorSha256": "673a6a3bd3e25df320c607e635e054c2f75fca9643980020fbe5123a98ea08b1"
+          }
+        ]
+      },
+      {
+        "arm": "baseline",
+        "caseId": "python_debugger_shipping_v1",
+        "trial": 1,
+        "runId": "run_ae493caa41f84a078fa2",
+        "threadId": "thread_5ac7e46471084512b6a0",
+        "runtimeArtifactSha256": "2cf2a50b34b6f6fbef2c1ba1a13dba1d2cf5b7360f777039d0b4ac5b82e7f663",
+        "sourceIdentity": {
+          "packages/runtime/src": "fa9ea62e17b72a1f975077725133d4f6353cadd69c2a5b41fe76d1cbbfd6b752",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": false,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": false,
+        "toolFailures": 3,
+        "toolCalls": 29,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_ae493caa41f84a078fa2",
+          "sandboxId": "oci-container",
+          "configurationSha256": "018c4cb5d2829edf5fc906da1b7cd82a187381a9f04c953f6b25fa31f0e91d67",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "d8d48398de920c365b8f6a99f53c7e883cdae7d1ba4fa0ea53cbc875cdac602a"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [],
+          "reasons": ["required_observations_missing"],
+          "passed": false
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [],
+          "runningSessions": 0,
+          "matchingProcessIds": [],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": false,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 17,
+          "auditedCapsules": 17
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 69545,
+          "outputTokens": 16037,
+          "cacheReadTokens": 267136,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.014974640800000005
+        },
+        "durationMs": 89115,
+        "originalReportSha256": "1b1045d7fdc1c3f4938acc0bb984ae01c597d5d2f6669be77507c49a04b02ccd",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+        "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v3-trial2",
+        "debuggerReceipts": [],
+        "failedTools": [
+          {
+            "eventId": "event_e8244b01bc4e41d18ba9",
+            "callId": "call_01_AvJnICkUc6obno4JtadT9911",
+            "toolName": "node_debugger",
+            "errorSha256": "a379aa9b43bc326c4a5bf67cff8280f86cc837fbcf136bc84dd18d9b4375eebe"
+          },
+          {
+            "eventId": "event_058f0521da164a1c8d06",
+            "callId": "call_00_BNmMwwXRqW5RcTOtHwUY9902",
+            "toolName": "node_debugger",
+            "errorSha256": "41b272f64eb51fb462198b311d28f9a161b07dab7e2357dcb6e03d9e832a6741"
+          },
+          {
+            "eventId": "event_ec6a970995584bb682eb",
+            "callId": "call_01_PTl1ZHUqEVT11sCXxBY77030",
+            "toolName": "record_run_milestone",
+            "errorSha256": "7f3a3fab16e063ab385771513e71a0ec4bb0bf768ac0bd4f64a2f9b541d19db9"
+          }
+        ]
+      },
+      {
+        "arm": "baseline",
+        "caseId": "python_debugger_shipping_v1",
+        "trial": 2,
+        "runId": "run_4089e529fd07479d9162",
+        "threadId": "thread_f5e73ad46f4d405d8a32",
+        "runtimeArtifactSha256": "2cf2a50b34b6f6fbef2c1ba1a13dba1d2cf5b7360f777039d0b4ac5b82e7f663",
+        "sourceIdentity": {
+          "packages/runtime/src": "fa9ea62e17b72a1f975077725133d4f6353cadd69c2a5b41fe76d1cbbfd6b752",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": false,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": false,
+        "toolFailures": 5,
+        "toolCalls": 23,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_4089e529fd07479d9162",
+          "sandboxId": "oci-container",
+          "configurationSha256": "97e0b2af4730849d66fbe2b7de25cdeb5fded257a5706b28720a130d7006eb86",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "d799c4d945c0289f60dc8c3cbd7fade72d6c2f2cda498c1c9ee422dbb95ec124"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [],
+          "reasons": ["required_observations_missing"],
+          "passed": false
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [],
+          "runningSessions": 0,
+          "matchingProcessIds": [],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": false,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 17,
+          "auditedCapsules": 17
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 74988,
+          "outputTokens": 24969,
+          "cacheReadTokens": 280960,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.018276328
+        },
+        "durationMs": 233374,
+        "originalReportSha256": "1b634d2aced9f58e0038c53c41af31c04428bbbd0e49c291de2776acfa17d286",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+        "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-baseline-v3-trial3",
+        "debuggerReceipts": [],
+        "failedTools": [
+          {
+            "eventId": "event_4273fb8a90624ba98717",
+            "callId": "call_01_nj4l4UTxPdlyqAT7PlEc0487",
+            "toolName": "node_debugger",
+            "errorSha256": "160523eb0db2e327b65a089a0c0682b314eb567693c2fc9e4c201e1662de1231"
+          },
+          {
+            "eventId": "event_09fce32d2de847d9b96d",
+            "callId": "call_00_kZxZ1lcWJP2gGxRzee555409",
+            "toolName": "node_debugger",
+            "errorSha256": "887ec7e14969660f4b3deec90e3d5fb55a07295d25474787d15fb786d735a624"
+          },
+          {
+            "eventId": "event_590355f553ac442088a7",
+            "callId": "call_01_cnPc8fLjj0dq9yruFfhR9997",
+            "toolName": "node_debugger",
+            "errorSha256": "5bf2c72e4092cb716b9214f97b3a144299e2f4ca434253a47915d47c7a7063c0"
+          },
+          {
+            "eventId": "event_ed84e801a4074fbd9ac2",
+            "callId": "call_00_Nv9WLJpL3gLiEXLvo5sm9471",
+            "toolName": "node_debugger",
+            "errorSha256": "bc1cb14f54643d513be8ba37fd911dad32cf70cb72d18bd78a0db83724e091a7"
+          },
+          {
+            "eventId": "event_628b520290144844b795",
+            "callId": "call_00_ZR0rO2nj10c50fMSTaq76598",
+            "toolName": "update_plan_artifact",
+            "errorSha256": "727fa327d22bdae32315200a4e26e5c4326b49e44f29c2decee838d4f3ccec98"
+          }
+        ]
+      },
+      {
+        "arm": "candidate",
+        "caseId": "python_debugger_shipping_v1",
+        "trial": 0,
+        "runId": "run_edfa4eaa9f5142cba0e2",
+        "threadId": "thread_17cca699293b439f9a2b",
+        "runtimeArtifactSha256": "7c4df83f9d269f2b0526c9a192978155d6850fdbcb4a1bcd9f007f22819e80ff",
+        "sourceIdentity": {
+          "packages/runtime/src": "bd73364b668288ddfda5e076f713886ed6116d6cd9ac7c3d53b194e868746b81",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": true,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": true,
+        "toolFailures": 0,
+        "toolCalls": 26,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_edfa4eaa9f5142cba0e2",
+          "sandboxId": "oci-container",
+          "configurationSha256": "a4cef71bfc2180166a0418ccc1343edd614ae37bb4614983de32aee579cca0cc",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "770f9150bf3a7a4f90e73809768acf07448a33ac69d13459ec19eced413a17c7"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [
+            {
+              "processId": "process_8e6b4dc903e24a649e57",
+              "completedActions": [
+                "launch",
+                "stack_trace",
+                "scopes",
+                "variables",
+                "evaluate",
+                "cancel"
+              ],
+              "variablesMatched": true,
+              "breakpointMatched": true,
+              "evaluationMatched": true,
+              "actionsMatched": true,
+              "sameFrameMatched": true,
+              "passed": true,
+              "observations": [
+                {
+                  "callId": "call_01_1PDfeFbflVxeZUHChxvK4197",
+                  "eventId": "event_7153b95a42b7414ea93f",
+                  "capsuleSha256": "e74a579224129e2c3a0f44f3cc456c51d1f41871e89ac142747a9e6b445fc09f",
+                  "action": "launch",
+                  "resultSha256": "73b8c91cd4195272ab3b47ee093ff04fb9a9b359dc7b797518d8e6d6b98ab6b3",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_BMOJSy9w44oc02M1As1d3536",
+                  "eventId": "event_bc514b323c86427f8643",
+                  "capsuleSha256": "e74a579224129e2c3a0f44f3cc456c51d1f41871e89ac142747a9e6b445fc09f",
+                  "action": "stack_trace",
+                  "resultSha256": "fb3a6e0cbcc0cf0c2b6ef20b7015c0303f3078a96f42841d3643cba7c5d846e3",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_rVyRZwOmzULZFwnu9tZS5589",
+                  "eventId": "event_d299c3acfcf64ec5a13d",
+                  "capsuleSha256": "e74a579224129e2c3a0f44f3cc456c51d1f41871e89ac142747a9e6b445fc09f",
+                  "action": "scopes",
+                  "resultSha256": "a4f6049a5aa44153e44bb0cd6426575455e982d76e066a586300ef6fbb26e045",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_eAtxy2l2jZVN0DSLUPgT9816",
+                  "eventId": "event_fa236e9f71a2446ea3c3",
+                  "capsuleSha256": "e74a579224129e2c3a0f44f3cc456c51d1f41871e89ac142747a9e6b445fc09f",
+                  "action": "variables",
+                  "resultSha256": "b433e91e7ad2f28786ddcf652793c771e9ffcd8af4e129fb3570d59ffc0245f6",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_x3PxZPA7CgIn1EdnqDPU0145",
+                  "eventId": "event_236420d3b9234c0a8ad1",
+                  "capsuleSha256": "e74a579224129e2c3a0f44f3cc456c51d1f41871e89ac142747a9e6b445fc09f",
+                  "action": "evaluate",
+                  "resultSha256": "6f786bfb617e690a77aecf05c3d6252e782aa36eae69031021848f8dff8a582c",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_35WUuqNLP6s7gQKFJlPN5247",
+                  "eventId": "event_e5c37187b7e4429786ca",
+                  "capsuleSha256": "e74a579224129e2c3a0f44f3cc456c51d1f41871e89ac142747a9e6b445fc09f",
+                  "action": "cancel",
+                  "resultSha256": "d3751677e53d7099e12ddf53af85387759c095745cca9083d61bf9e6ec275fcc",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                }
+              ]
+            }
+          ],
+          "reasons": [],
+          "passed": true
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [
+            {
+              "processId": "process_8e6b4dc903e24a649e57",
+              "runId": "run_edfa4eaa9f5142cba0e2",
+              "runtime": "python",
+              "status": "cancelled",
+              "actions": {}
+            }
+          ],
+          "runningSessions": 0,
+          "matchingProcessIds": ["process_8e6b4dc903e24a649e57"],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": true,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 17,
+          "auditedCapsules": 17
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 44767,
+          "outputTokens": 6553,
+          "cacheReadTokens": 205056,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.008676376800000002
+        },
+        "durationMs": 44450,
+        "originalReportSha256": "f7fa7697a1bd1f9738f63ae95561f7dec518e48ffd0a3dc0f17dcc1f42c5b2f6",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+        "debuggerReceipts": [
+          {
+            "eventId": "event_7153b95a42b7414ea93f",
+            "callId": "call_01_1PDfeFbflVxeZUHChxvK4197",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "launch",
+              "processId": "process_8e6b4dc903e24a649e57",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "70f7a18107e9d86e97e3fdfe74c095fa0dad4ec08a12c53910a5a709a26135d8",
+                "responsesSha256": "a0a649ae3df61b7fc3ec2f9bc192233dabea379a697a8da4a86cec94d50c3ecb",
+                "eventsSha256": "c1e30dbb9f1689935d3b3756ed727a0e8bcf99617e7e62d618b0d50b90640216"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "73b8c91cd4195272ab3b47ee093ff04fb9a9b359dc7b797518d8e6d6b98ab6b3",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_bc514b323c86427f8643",
+            "callId": "call_00_BMOJSy9w44oc02M1As1d3536",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "stack_trace",
+              "processId": "process_8e6b4dc903e24a649e57",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "4eaaea004bc278a598edc9be73fa36607085e0f84dfe156ab4e4afd50259d201",
+                "responsesSha256": "bc2095efa3c0a63eba7d7a34f80ed9eab7d62c18539f6a255a6e847f9110ed0b",
+                "eventsSha256": "01204b6b521c5778e57115d2e26ffb41b0b9aae2ce286126420394059e118675"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "fb3a6e0cbcc0cf0c2b6ef20b7015c0303f3078a96f42841d3643cba7c5d846e3",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_d299c3acfcf64ec5a13d",
+            "callId": "call_00_rVyRZwOmzULZFwnu9tZS5589",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "scopes",
+              "processId": "process_8e6b4dc903e24a649e57",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "6daaf22e29c1f749221b599e473ec5204344d4a61af0a3d39df003cb4eb98cdd",
+                "responsesSha256": "e895742b440167d5421b7543df993479cd3a369d447cfd3a6f87661571adc45e",
+                "eventsSha256": "01204b6b521c5778e57115d2e26ffb41b0b9aae2ce286126420394059e118675"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "a4f6049a5aa44153e44bb0cd6426575455e982d76e066a586300ef6fbb26e045",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_fa236e9f71a2446ea3c3",
+            "callId": "call_00_eAtxy2l2jZVN0DSLUPgT9816",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "variables",
+              "processId": "process_8e6b4dc903e24a649e57",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "3047305add97e92b16e55e999a1fccc8e98aa4c1458dd4be2e8b7a1bc7aca5a0",
+                "responsesSha256": "d3b609e15496510bf1aa373d1a299bde4e842d094cf910c89904494ac92767d8",
+                "eventsSha256": "01204b6b521c5778e57115d2e26ffb41b0b9aae2ce286126420394059e118675"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "b433e91e7ad2f28786ddcf652793c771e9ffcd8af4e129fb3570d59ffc0245f6",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_236420d3b9234c0a8ad1",
+            "callId": "call_00_x3PxZPA7CgIn1EdnqDPU0145",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "evaluate",
+              "processId": "process_8e6b4dc903e24a649e57",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "a5061264cbe79f5f260392d159f52a4795323364e321e18e2985e21eb82b8d91",
+                "responsesSha256": "fe91c7b2c0360a68dd6430c84c6115fd4eb8d9b2a95ba69def1a8997fab4753f",
+                "eventsSha256": "01204b6b521c5778e57115d2e26ffb41b0b9aae2ce286126420394059e118675"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "6f786bfb617e690a77aecf05c3d6252e782aa36eae69031021848f8dff8a582c",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_e5c37187b7e4429786ca",
+            "callId": "call_00_35WUuqNLP6s7gQKFJlPN5247",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "cancel",
+              "processId": "process_8e6b4dc903e24a649e57",
+              "state": "terminated",
+              "processStatus": "cancelled",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debuggeeExitCode": 247,
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "6ebfc174c9e1a8cb1491e3c2a238ec460ad1e6cafc5e0f2b0401d0d721de01bf",
+                "responsesSha256": "5e052c5f35a9799a38c575fc9bb208217ef711546ac14f63f41a42f5dcd420ee",
+                "eventsSha256": "21939adae074b76bd7868bda935ebcf4885dc50f62e890bcc405f75dbb632b3e"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "d3751677e53d7099e12ddf53af85387759c095745cca9083d61bf9e6ec275fcc",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          }
+        ],
+        "failedTools": []
+      },
+      {
+        "arm": "candidate",
+        "caseId": "python_debugger_shipping_v1",
+        "trial": 1,
+        "runId": "run_c6badedf93b642adb442",
+        "threadId": "thread_f8cc5b66aecf4c209c0c",
+        "runtimeArtifactSha256": "7c4df83f9d269f2b0526c9a192978155d6850fdbcb4a1bcd9f007f22819e80ff",
+        "sourceIdentity": {
+          "packages/runtime/src": "bd73364b668288ddfda5e076f713886ed6116d6cd9ac7c3d53b194e868746b81",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": true,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": true,
+        "toolFailures": 0,
+        "toolCalls": 26,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_c6badedf93b642adb442",
+          "sandboxId": "oci-container",
+          "configurationSha256": "6eebbec49079c301e40ad3214fd7127d55d0eaa6bbe9e3101e06c66e5e356f01",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "07e6fdaaa46b46284ec83c4670d50c7c38882f38457970b8ca83f8ff580f58a0"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [
+            {
+              "processId": "process_e498cf67551a4969a3a8",
+              "completedActions": [
+                "launch",
+                "stack_trace",
+                "scopes",
+                "variables",
+                "evaluate",
+                "cancel"
+              ],
+              "variablesMatched": true,
+              "breakpointMatched": true,
+              "evaluationMatched": true,
+              "actionsMatched": true,
+              "sameFrameMatched": true,
+              "passed": true,
+              "observations": [
+                {
+                  "callId": "call_01_OREUIX8VkKfd51QDaUfW5066",
+                  "eventId": "event_12bfc9652c9847e599fd",
+                  "capsuleSha256": "43b205f25ec622777ee5937b6317acb954caf2e3465ae632f9ef46b1cf3122c2",
+                  "action": "launch",
+                  "resultSha256": "73af457ca63a9999a122f0789d46ac462bcea8a58632d93dc35c6752c212e55e",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_rIVSxQKSnfI8bRjLQWf38586",
+                  "eventId": "event_59f243e86ba647e7a80f",
+                  "capsuleSha256": "43b205f25ec622777ee5937b6317acb954caf2e3465ae632f9ef46b1cf3122c2",
+                  "action": "stack_trace",
+                  "resultSha256": "a0b7300bc7a7032409fd71ce8a9ea586ff01e5497d5a6a6c0ad0440b72e7804b",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_eiev07FqeyxSbwdNHC4P4042",
+                  "eventId": "event_60405710426d4db880f4",
+                  "capsuleSha256": "43b205f25ec622777ee5937b6317acb954caf2e3465ae632f9ef46b1cf3122c2",
+                  "action": "scopes",
+                  "resultSha256": "4d168fc7b819ca38fa089ee15c8de8721761539ba505cea84515c657f6c2d653",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_Y3fVhmYs8tkxqdlAnFOP9053",
+                  "eventId": "event_e5588339470d4ad288dd",
+                  "capsuleSha256": "43b205f25ec622777ee5937b6317acb954caf2e3465ae632f9ef46b1cf3122c2",
+                  "action": "variables",
+                  "resultSha256": "3c732b7e3fb109bba0b0a665870c147791f29cb39b2b3d5b0b78a382cfb805ed",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_01_9pxai2LNS5XZEKBd36wD6475",
+                  "eventId": "event_38938db8132c4228b128",
+                  "capsuleSha256": "43b205f25ec622777ee5937b6317acb954caf2e3465ae632f9ef46b1cf3122c2",
+                  "action": "evaluate",
+                  "resultSha256": "ae48b7bf24c71956f02cf0300b33d443434105e5d40883f57c9a616481c60367",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_R2Dxp1CPZa99wpYcItfk9539",
+                  "eventId": "event_4c299d9f1ae04d828961",
+                  "capsuleSha256": "43b205f25ec622777ee5937b6317acb954caf2e3465ae632f9ef46b1cf3122c2",
+                  "action": "cancel",
+                  "resultSha256": "e900f24f336783eba49a5a714a13ac4875cc40482ad6d84270d54c6589f80502",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                }
+              ]
+            }
+          ],
+          "reasons": [],
+          "passed": true
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [
+            {
+              "processId": "process_e498cf67551a4969a3a8",
+              "runId": "run_c6badedf93b642adb442",
+              "runtime": "python",
+              "status": "cancelled",
+              "actions": {}
+            }
+          ],
+          "runningSessions": 0,
+          "matchingProcessIds": ["process_e498cf67551a4969a3a8"],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": true,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 19,
+          "auditedCapsules": 19
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 49779,
+          "outputTokens": 9012,
+          "cacheReadTokens": 271232,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.010251869600000001
+        },
+        "durationMs": 57347,
+        "originalReportSha256": "17288aed96d435d9d46182e314de591e843d3720e8707df34b752482da3c2f3b",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+        "debuggerReceipts": [
+          {
+            "eventId": "event_12bfc9652c9847e599fd",
+            "callId": "call_01_OREUIX8VkKfd51QDaUfW5066",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "launch",
+              "processId": "process_e498cf67551a4969a3a8",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "a7676319d35f6ba169afe6d7b697df5c1e562a303d7b9bcbebd0ff077898de55",
+                "responsesSha256": "3f0289d20d70bc083cddb3f04491d9bb36b2a5282acd5d551867a5e2ea8cc9bf",
+                "eventsSha256": "6d9f52a0c5dab6ffb25af373c43be344fc13b2fe917bcb9aef4ffb2a6f42a3ba"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "73af457ca63a9999a122f0789d46ac462bcea8a58632d93dc35c6752c212e55e",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_59f243e86ba647e7a80f",
+            "callId": "call_00_rIVSxQKSnfI8bRjLQWf38586",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "stack_trace",
+              "processId": "process_e498cf67551a4969a3a8",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "c2dde577725e41a4c700a1f56f92754b668b0d7f0d3cb510e22ed5a5584cc0e8",
+                "responsesSha256": "49f90687057fa7182c9725a0c7e17409863b17dfb388cf1d66da476bb933ecdc",
+                "eventsSha256": "22633155ea216ec99b3a3894d808f1b4ef471d427dd53c7f37e2e2454a0a0cc4"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "a0b7300bc7a7032409fd71ce8a9ea586ff01e5497d5a6a6c0ad0440b72e7804b",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_60405710426d4db880f4",
+            "callId": "call_00_eiev07FqeyxSbwdNHC4P4042",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "scopes",
+              "processId": "process_e498cf67551a4969a3a8",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "a299e7a03cfefa6c905c8ae683e97f7b75fb2e00cede646db32e6b9d56806e37",
+                "responsesSha256": "4417b29802a7c91831ffbde27bd6213190b5b509f5b7d029139ba717e1bfe9c5",
+                "eventsSha256": "22633155ea216ec99b3a3894d808f1b4ef471d427dd53c7f37e2e2454a0a0cc4"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "4d168fc7b819ca38fa089ee15c8de8721761539ba505cea84515c657f6c2d653",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_e5588339470d4ad288dd",
+            "callId": "call_00_Y3fVhmYs8tkxqdlAnFOP9053",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "variables",
+              "processId": "process_e498cf67551a4969a3a8",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "d1df8f009a9d8c6de177aa9c048dee4c32f7b65c24ea09327bb41b8c7e44d484",
+                "responsesSha256": "cc4e7fa55d42ccea0a27b4d9f62fe66e44ff6c8590e79535a1e405d4186978cf",
+                "eventsSha256": "22633155ea216ec99b3a3894d808f1b4ef471d427dd53c7f37e2e2454a0a0cc4"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "3c732b7e3fb109bba0b0a665870c147791f29cb39b2b3d5b0b78a382cfb805ed",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_38938db8132c4228b128",
+            "callId": "call_01_9pxai2LNS5XZEKBd36wD6475",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "evaluate",
+              "processId": "process_e498cf67551a4969a3a8",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "97eab3ad2155d32d78ace119ed19811284b4e3a5525baef7bfe35e97133627e3",
+                "responsesSha256": "c1f1d16848eb0e72a50ed580438b89e5a34efb7db3a706ceb3dc79c16fdae83b",
+                "eventsSha256": "22633155ea216ec99b3a3894d808f1b4ef471d427dd53c7f37e2e2454a0a0cc4"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "ae48b7bf24c71956f02cf0300b33d443434105e5d40883f57c9a616481c60367",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_4c299d9f1ae04d828961",
+            "callId": "call_00_R2Dxp1CPZa99wpYcItfk9539",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "cancel",
+              "processId": "process_e498cf67551a4969a3a8",
+              "state": "terminated",
+              "processStatus": "cancelled",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debuggeeExitCode": 247,
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "3403ff8c695ba59900b42c2597d791035f5f6d9b9acf67113fa7e90ddde72851",
+                "responsesSha256": "4a80600de90017732ac9847fdee6b6a3432cdd5c22113ca0ecc1dd54f95d3e18",
+                "eventsSha256": "6aa9c46856db8cf0aaa02989c530125f6162528db56b578e74defd959e178499"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "e900f24f336783eba49a5a714a13ac4875cc40482ad6d84270d54c6589f80502",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          }
+        ],
+        "failedTools": []
+      },
+      {
+        "arm": "candidate",
+        "caseId": "python_debugger_shipping_v1",
+        "trial": 2,
+        "runId": "run_6c918b498b22463bbd8e",
+        "threadId": "thread_a483b43f8c8d483f85a1",
+        "runtimeArtifactSha256": "7c4df83f9d269f2b0526c9a192978155d6850fdbcb4a1bcd9f007f22819e80ff",
+        "sourceIdentity": {
+          "packages/runtime/src": "bd73364b668288ddfda5e076f713886ed6116d6cd9ac7c3d53b194e868746b81",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": true,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": true,
+        "toolFailures": 0,
+        "toolCalls": 29,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_6c918b498b22463bbd8e",
+          "sandboxId": "oci-container",
+          "configurationSha256": "2a7906ec9720c4c3c04c0812d9e3addd0c9f5eb579bd1fec2569bc88806da4e9",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "83f4ce3d22f8c5cb34e219043e270ee571f752e1e8cfc894086ac8f35b2a60eb"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [
+            {
+              "processId": "process_70879225975c4061930f",
+              "completedActions": [
+                "launch",
+                "stack_trace",
+                "scopes",
+                "variables",
+                "evaluate",
+                "cancel"
+              ],
+              "variablesMatched": true,
+              "breakpointMatched": true,
+              "evaluationMatched": true,
+              "actionsMatched": true,
+              "sameFrameMatched": true,
+              "passed": true,
+              "observations": [
+                {
+                  "callId": "call_00_iUDUriATmsOZJSLiVe9E3357",
+                  "eventId": "event_3e939f7c552d4297b5f2",
+                  "capsuleSha256": "fee1ab6a9fa7d750bee25684c121a0757da5dd2c08e5fb241e874509ab5047a1",
+                  "action": "launch",
+                  "resultSha256": "b5cf631ddcb7a84dae085d131b341b48bcbead4b34b35f4bd4c218bf2c7d4bb8",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_NX1ZPf4tUajaHDJFWkFR8613",
+                  "eventId": "event_36b45469d1264eff8577",
+                  "capsuleSha256": "fee1ab6a9fa7d750bee25684c121a0757da5dd2c08e5fb241e874509ab5047a1",
+                  "action": "stack_trace",
+                  "resultSha256": "eff2e2dbc4ee4864cf5551bea8cd66b66f30d7e23a234705e73d318b98ae7434",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_MGtc9SaZQ71RpUd5Z9Ka0068",
+                  "eventId": "event_09e4d55fd4cb4f649e09",
+                  "capsuleSha256": "fee1ab6a9fa7d750bee25684c121a0757da5dd2c08e5fb241e874509ab5047a1",
+                  "action": "scopes",
+                  "resultSha256": "ce2e14fd13f3659ea326f9a611197483d638c2f5424e41a0661215311c833347",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_ycGP4HklzIaSWo6OhDNw6829",
+                  "eventId": "event_9a8561e78d1b41f8810f",
+                  "capsuleSha256": "fee1ab6a9fa7d750bee25684c121a0757da5dd2c08e5fb241e874509ab5047a1",
+                  "action": "variables",
+                  "resultSha256": "a61b7ff711848e384e5fc30182f275427b6ad543627428fa3ddc6265ceb8e739",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_YMtfTMbWPcvq7JzBLyjO6256",
+                  "eventId": "event_a10405a7fba44d15a178",
+                  "capsuleSha256": "fee1ab6a9fa7d750bee25684c121a0757da5dd2c08e5fb241e874509ab5047a1",
+                  "action": "evaluate",
+                  "resultSha256": "607c57f46f563d610dd16193711aab98203ef17da3caf2b290890e259f307191",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_rjznjQCi5h4NibMUMSyB8817",
+                  "eventId": "event_fdbd7fef436744eeb988",
+                  "capsuleSha256": "fee1ab6a9fa7d750bee25684c121a0757da5dd2c08e5fb241e874509ab5047a1",
+                  "action": "cancel",
+                  "resultSha256": "37a50a13a7fd72ee608815db172a9d337974ade7efee727dd16de3663a78504f",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                }
+              ]
+            }
+          ],
+          "reasons": [],
+          "passed": true
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [
+            {
+              "processId": "process_70879225975c4061930f",
+              "runId": "run_6c918b498b22463bbd8e",
+              "runtime": "python",
+              "status": "cancelled",
+              "actions": {}
+            }
+          ],
+          "runningSessions": 0,
+          "matchingProcessIds": ["process_70879225975c4061930f"],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": true,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 22,
+          "auditedCapsules": 22
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 55694,
+          "outputTokens": 8842,
+          "cacheReadTokens": 307712,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.011134513599999998
+        },
+        "durationMs": 57854,
+        "originalReportSha256": "d019f654d99c2ba620820befae5df6593cae83f7a87802f5ebfc40db463c4ac6",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3",
+        "debuggerReceipts": [
+          {
+            "eventId": "event_3e939f7c552d4297b5f2",
+            "callId": "call_00_iUDUriATmsOZJSLiVe9E3357",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "launch",
+              "processId": "process_70879225975c4061930f",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "72ad3251252b9d1237eab239f57a5a9b29bdf38fede3721e07d7d764f34664b9",
+                "responsesSha256": "33363af8aa379d3614ee28119b27c8395ab745268557ed8b07f1ffc77cbe2326",
+                "eventsSha256": "b4f444a255d271f648c483e70350007f95058b9d9443cbff5a6d3848990e9e6a"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "b5cf631ddcb7a84dae085d131b341b48bcbead4b34b35f4bd4c218bf2c7d4bb8",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_36b45469d1264eff8577",
+            "callId": "call_00_NX1ZPf4tUajaHDJFWkFR8613",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "stack_trace",
+              "processId": "process_70879225975c4061930f",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "89ee709d9fc905f8cd99aa4ee8dfc429aa7cf3612b877a40a6ca126d78be1fd1",
+                "responsesSha256": "94b14fa1295e1be0ba9a9ecd5e627fe2e6df9f29771e01054185d22cf077ae24",
+                "eventsSha256": "e45082f48728245a169aafa8b1ae9199d718f47c9884b939674645a8afe7a0ab"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "eff2e2dbc4ee4864cf5551bea8cd66b66f30d7e23a234705e73d318b98ae7434",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_09e4d55fd4cb4f649e09",
+            "callId": "call_00_MGtc9SaZQ71RpUd5Z9Ka0068",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "scopes",
+              "processId": "process_70879225975c4061930f",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "65b2a38045b9f8aadfb3076ff64f4a88dde687403f2661b76087cc5024e41ebd",
+                "responsesSha256": "b9fab0014f0592c14b54c0cf7d192c56aa220c9da2fa128d84ad49a99fcd932c",
+                "eventsSha256": "e45082f48728245a169aafa8b1ae9199d718f47c9884b939674645a8afe7a0ab"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "ce2e14fd13f3659ea326f9a611197483d638c2f5424e41a0661215311c833347",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_9a8561e78d1b41f8810f",
+            "callId": "call_00_ycGP4HklzIaSWo6OhDNw6829",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "variables",
+              "processId": "process_70879225975c4061930f",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "c9d2386c8c928d3e6a8ad08892459c773832aa7a74fb7f74f86fe0687dbddcc3",
+                "responsesSha256": "1ba5041d2b7db0da531432f34a15aa94a616da52fda79645a55f84b553b5c149",
+                "eventsSha256": "e45082f48728245a169aafa8b1ae9199d718f47c9884b939674645a8afe7a0ab"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "a61b7ff711848e384e5fc30182f275427b6ad543627428fa3ddc6265ceb8e739",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_a10405a7fba44d15a178",
+            "callId": "call_00_YMtfTMbWPcvq7JzBLyjO6256",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "evaluate",
+              "processId": "process_70879225975c4061930f",
+              "state": "paused",
+              "processStatus": "running",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "5e60bc977f5fe017adf5ff81aa94e24f2f715fcaa04d313821e8176c54a649b7",
+                "responsesSha256": "d66472376d414e33cfef5c75e4a0923a17e859b8d63c2d9ef9f2359c9a0a3052",
+                "eventsSha256": "e45082f48728245a169aafa8b1ae9199d718f47c9884b939674645a8afe7a0ab"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "607c57f46f563d610dd16193711aab98203ef17da3caf2b290890e259f307191",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          },
+          {
+            "eventId": "event_fdbd7fef436744eeb988",
+            "callId": "call_00_rjznjQCi5h4NibMUMSyB8817",
+            "details": {
+              "kind": "napier.python-debugger",
+              "schemaVersion": 1,
+              "action": "cancel",
+              "processId": "process_70879225975c4061930f",
+              "state": "terminated",
+              "processStatus": "cancelled",
+              "sandbox": "oci-container",
+              "isolation": "oci",
+              "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+              "runtimeIdentitySha256": "49d9349fce1260632d8ec73cfcb7ccc45d91492e012c9b3417c46146623dceb8",
+              "pythonVersion": "3.13.5",
+              "debuggeeExitCode": 247,
+              "debugpyVersion": "1.8.17",
+              "protocol": {
+                "requestsSha256": "fdddde45eef2b1bd9478604badd2ed81ad380985acc9c6aedf1ec686e65caa82",
+                "responsesSha256": "46924958d89ff44b0ed58eaf86b5fac96962ea081ff370abec8b1c327425e8f8",
+                "eventsSha256": "35a51fca9ba901bd2b70c668a756f4b68942ffd1cb0671a579d53c055a9852f1"
+              },
+              "dataTruncated": false,
+              "outputTruncated": false,
+              "resultSha256": "37a50a13a7fd72ee608815db172a9d337974ade7efee727dd16de3663a78504f",
+              "sourcePathSha256": "fde1b5a8500121065fa4983e3be1057b9db510af08be1c497949cb49430905be"
+            }
+          }
+        ],
+        "failedTools": []
+      }
+    ],
+    "quality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 3,
+      "cases": 1,
+      "regressions": [],
+      "blockers": ["Need 30 cases; observed 1"],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "cee63fe51a931861cf37b63b68bbb0fd61051661e01137d75ea8912f198d0d50"
+    },
+    "qualifiesFinalRuntime": false
+  },
+  "sequenceFix": {
+    "snapshot": "/tmp/napier-harness-python-debugger-oci-v2",
+    "controlledUpstreamSchedule": {
+      "kind": "napier.debugpy-sequence-audit",
+      "schemaVersion": 1,
+      "debugpyVersion": "1.8.17",
+      "wheelSha256": "60c7dca6571efe660ccb7a9508d73ca14b8796c4ed484c2002abba714226cfef",
+      "messagingSourceSha256": "41c65427a2acd68aeaecbe311df2ddac93e48ae95d9c97981a99e1988ea456fb",
+      "method": "Controlled thread scheduling between sequence allocation and the second send lock in the unmodified debugpy JsonMessageChannel._send_message implementation. Only _prettify was wrapped to control scheduling.",
+      "wire": [
+        {
+          "seq": 2,
+          "type": "event",
+          "event": "initialized"
+        },
+        {
+          "seq": 1,
+          "type": "event",
+          "event": "output"
+        }
+      ],
+      "oldMonotonicGuardRejects": true,
+      "duplicateSequence": false
+    },
+    "initialRegressionTests": {
+      "passed": 2,
+      "failed": 2
+    },
+    "fixedProtocolTests": {
+      "passed": 6
+    },
+    "fixedLiveHostAndOciTests": {
+      "passed": 16
+    },
+    "initialHostTestSetupFailure": "Five host tests used an incorrectly nested interpreter path; corrected to the verified venv bin/python before the successful run. Logs retained.",
+    "reusedBaselineRunIds": [
+      "run_1346c9d4a3134faa8bc9",
+      "run_ae493caa41f84a078fa2",
+      "run_4089e529fd07479d9162"
+    ],
+    "finalObservations": [
+      {
+        "arm": "candidate",
+        "trial": 0,
+        "runId": "run_47946942382345a89c77",
+        "threadId": "thread_52d78e4014e541ecbf94",
+        "runtimeArtifactSha256": "18455a763f627478731993c1cb1deff98bc206d4f4a2b2c3d27ebad45fa0ca0c",
+        "sourceIdentity": {
+          "packages/runtime/src": "fd86b0f9962186d6672908fc550a1bce33fc46a76b3e63ec61ee0dc83d6985c3",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": true,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": true,
+        "toolFailures": 1,
+        "toolCalls": 30,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_47946942382345a89c77",
+          "sandboxId": "oci-container",
+          "configurationSha256": "68f92b851afc27d746464d32901e0f778469033b4ac1b8d4e30f230ca9b33f6c",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "d8bee95703ba7da1dba705c501436f037ace2058caac5ff53d869b66a25e8a73"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [
+            {
+              "processId": "process_20d49e6b540a45219dca",
+              "completedActions": [
+                "launch",
+                "stack_trace",
+                "scopes",
+                "variables",
+                "evaluate",
+                "cancel"
+              ],
+              "variablesMatched": true,
+              "breakpointMatched": true,
+              "evaluationMatched": true,
+              "actionsMatched": true,
+              "sameFrameMatched": true,
+              "passed": true,
+              "observations": [
+                {
+                  "callId": "call_00_7OJfeJhSLVbDVwFwJPul4093",
+                  "eventId": "event_326e7bb8775c414f9d68",
+                  "capsuleSha256": "f57f2c693384e9896ed8c758f7359e426285aa2f50493214da39dc237b8e9392",
+                  "action": "launch",
+                  "resultSha256": "68340486d093dd6cb5b06b9d1fc87990464b9eab9339c7f98f23451abf40f6ae",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_jcgUxJg9dcheUZsVbciC3202",
+                  "eventId": "event_297b0af0057c403f84af",
+                  "capsuleSha256": "f57f2c693384e9896ed8c758f7359e426285aa2f50493214da39dc237b8e9392",
+                  "action": "stack_trace",
+                  "resultSha256": "76c290bc7cd578f56ad89481f6a091ca3ff8fa734d99abf1bbe4da407c37caf8",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_xp21Z7ZkhrkofWMYqRJV4607",
+                  "eventId": "event_42f044fb0ab04dee8b29",
+                  "capsuleSha256": "f57f2c693384e9896ed8c758f7359e426285aa2f50493214da39dc237b8e9392",
+                  "action": "scopes",
+                  "resultSha256": "bc3996efe060379eb72415b59e3eaefb9d5a859673aa7da79a1047920d3a5f75",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_y4ANiHd1eUU0coybPIck7566",
+                  "eventId": "event_16bcf12fb12e49dc9920",
+                  "capsuleSha256": "f57f2c693384e9896ed8c758f7359e426285aa2f50493214da39dc237b8e9392",
+                  "action": "variables",
+                  "resultSha256": "15cf2fd121296d2a2d5502f1db4d40ea814f1ad5a32593a7bd3797a722f88301",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_01_fvnEQtF6ijVhGDeJxWxG6874",
+                  "eventId": "event_a8069bdf766745f39f84",
+                  "capsuleSha256": "f57f2c693384e9896ed8c758f7359e426285aa2f50493214da39dc237b8e9392",
+                  "action": "evaluate",
+                  "resultSha256": "530f63413097c345d6ea02e0bcf70f22c19ca4ecb554222fe980f79fe22727b1",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_01_wksh0GliXfZfeh6JmBeH7992",
+                  "eventId": "event_134d03aed576412b8eab",
+                  "capsuleSha256": "f57f2c693384e9896ed8c758f7359e426285aa2f50493214da39dc237b8e9392",
+                  "action": "cancel",
+                  "resultSha256": "1d6fb1916a60aeaefc34dbe232238efe827b4888ba8b2ff7ec15c446f31f52d2",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                }
+              ]
+            }
+          ],
+          "reasons": [],
+          "passed": true
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [
+            {
+              "processId": "process_20d49e6b540a45219dca",
+              "runId": "run_47946942382345a89c77",
+              "runtime": "python",
+              "status": "cancelled",
+              "actions": {}
+            }
+          ],
+          "runningSessions": 0,
+          "matchingProcessIds": ["process_20d49e6b540a45219dca"],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": true,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 22,
+          "auditedCapsules": 22
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 57221,
+          "outputTokens": 9564,
+          "cacheReadTokens": 333056,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0116214168
+        },
+        "durationMs": 64460,
+        "reportSha256": "b572289724e33c90b2dec41fc587909843682b3dba658511448344383d839ad2",
+        "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v4-trial1",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      {
+        "arm": "candidate",
+        "trial": 1,
+        "runId": "run_a7495ba870204921b68b",
+        "threadId": "thread_db64e70bc1e54bbe8584",
+        "runtimeArtifactSha256": "18455a763f627478731993c1cb1deff98bc206d4f4a2b2c3d27ebad45fa0ca0c",
+        "sourceIdentity": {
+          "packages/runtime/src": "fd86b0f9962186d6672908fc550a1bce33fc46a76b3e63ec61ee0dc83d6985c3",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": true,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": true,
+        "toolFailures": 1,
+        "toolCalls": 24,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_a7495ba870204921b68b",
+          "sandboxId": "oci-container",
+          "configurationSha256": "478dfcc345cb39fa076f9e00aa4f301fd3eeaccc5f196512cb94001523d385b8",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "093130a86f256d3ebd39ab0d1d8bb2e2eaaa803b753868dab4c786784d0019c7"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [
+            {
+              "processId": "process_116c5a4bc697498abda5",
+              "completedActions": [
+                "launch",
+                "stack_trace",
+                "scopes",
+                "variables",
+                "evaluate",
+                "cancel"
+              ],
+              "variablesMatched": true,
+              "breakpointMatched": true,
+              "evaluationMatched": true,
+              "actionsMatched": true,
+              "sameFrameMatched": true,
+              "passed": true,
+              "observations": [
+                {
+                  "callId": "call_00_WrxIE3kAF58V18lLSzpB6046",
+                  "eventId": "event_c9184afc0e3f494e95fc",
+                  "capsuleSha256": "93760ed9ccc03a219a13d8ee231a5069bd8b1b9b9ca79b9c43848ba338881d31",
+                  "action": "launch",
+                  "resultSha256": "d54be5d1993157fc8a2664362097a4d4a9e41128041ab0bd2b9b4814e1f2a3d7",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_DEwQ25EL1OJT3NiEr75s3887",
+                  "eventId": "event_a8461634cc4549dca087",
+                  "capsuleSha256": "93760ed9ccc03a219a13d8ee231a5069bd8b1b9b9ca79b9c43848ba338881d31",
+                  "action": "stack_trace",
+                  "resultSha256": "adacb0c00e8b24cd0d35f0a31582afb906da6560cd39ef0797127af1bb68a310",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_GB7p87DI3QXYitfiSuKp4883",
+                  "eventId": "event_ad2082fe45e740e6bb12",
+                  "capsuleSha256": "93760ed9ccc03a219a13d8ee231a5069bd8b1b9b9ca79b9c43848ba338881d31",
+                  "action": "scopes",
+                  "resultSha256": "280a1347601c54c62829e3d0f5d1ed3662ec800938cfa88208ca054bf030d734",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_6NJ2G3GVp6XdobSUR34x2092",
+                  "eventId": "event_b39e056d685f43f5840c",
+                  "capsuleSha256": "93760ed9ccc03a219a13d8ee231a5069bd8b1b9b9ca79b9c43848ba338881d31",
+                  "action": "variables",
+                  "resultSha256": "9e4c43a5f129a8b323fe673f72cd8dd2bfa94ebc761e7d1a10310e0a87a502cd",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_Nr7Lcboz0p7ctAHCwfAE1860",
+                  "eventId": "event_11d980b018644d6b8ef4",
+                  "capsuleSha256": "93760ed9ccc03a219a13d8ee231a5069bd8b1b9b9ca79b9c43848ba338881d31",
+                  "action": "evaluate",
+                  "resultSha256": "5eb6b36d97a7cf19080e61af7cd53097f29be16d3846bacf4fff780996a9eb48",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_TNUq4R2v1jO50kdRvo3a7779",
+                  "eventId": "event_9acd1dda6c334f94b84a",
+                  "capsuleSha256": "93760ed9ccc03a219a13d8ee231a5069bd8b1b9b9ca79b9c43848ba338881d31",
+                  "action": "cancel",
+                  "resultSha256": "c10a72b59ec7d8a41b09e57f9b1290b396c702e7c9334d98b3652d9cee575499",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                }
+              ]
+            }
+          ],
+          "reasons": [],
+          "passed": true
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [
+            {
+              "processId": "process_116c5a4bc697498abda5",
+              "runId": "run_a7495ba870204921b68b",
+              "runtime": "python",
+              "status": "cancelled",
+              "actions": {}
+            }
+          ],
+          "runningSessions": 0,
+          "matchingProcessIds": ["process_116c5a4bc697498abda5"],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": true,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 19,
+          "auditedCapsules": 19
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 46615,
+          "outputTokens": 7148,
+          "cacheReadTokens": 233472,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0091812616
+        },
+        "durationMs": 47664,
+        "reportSha256": "f861ff642f20038ad2ce014a45d2fde28711a2ff5ce1b459a226f56bb84f57bf",
+        "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v4-trial2",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      },
+      {
+        "arm": "candidate",
+        "trial": 2,
+        "runId": "run_50cad6ee541f4811b46a",
+        "threadId": "thread_798a81fae62845598f81",
+        "runtimeArtifactSha256": "18455a763f627478731993c1cb1deff98bc206d4f4a2b2c3d27ebad45fa0ca0c",
+        "sourceIdentity": {
+          "packages/runtime/src": "fd86b0f9962186d6672908fc550a1bce33fc46a76b3e63ec61ee0dc83d6985c3",
+          "packages/contracts/src": "59d0dbe934747500e699ceee7d3d1c16f3542843276efbd2deadf4972de40c04",
+          "packages/contracts/dist": "bf5b49ba6e4764f5620bfdd9a0ce5c66264a1bacd08711265063cd8c33bcea29",
+          "packageLockSha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+          "nodeExecutableSha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+          "nodeVersion": "v24.19.0"
+        },
+        "campaignScriptSha256": "4c380cb9e536e8b58c63b1db99de3d288ef6ad785b4aa3b124135428392fd3ba",
+        "campaignHelperSha256": "fb4158c67d31c1acdc6ceedff489ef152037a63ab2c97263dc12f91e267447da",
+        "fixtureSha256": "d173141b5648c7a9063d51d1f4db9b9c95c6bd366863d61434cdca4ff40a4689",
+        "promptSha256": "bacc2ac6063a09c582720fff7310104ee3d0fd9eca17323c02c81e187bd43cb0",
+        "outcomeSha256": "203f0ec95f0c0ac7c5ad0daa12ee2858878e8335efb150857e2c3c86eeb5d634",
+        "acceptanceSha256": "6299899a737053f00f82b169039f062b90f1029c7b8bcb4c98c71598209189c1",
+        "requestedModel": {
+          "provider": "deepseek",
+          "id": "deepseek-v4-flash"
+        },
+        "runLimits": {
+          "maxTurns": 48,
+          "maxTotalTokens": 250000,
+          "maxCostUsd": 3,
+          "timeoutMs": 240000
+        },
+        "sandbox": "oci-container",
+        "status": "completed",
+        "taskSuccess": true,
+        "qualifyingEvidence": true,
+        "sourceStable": true,
+        "runtimeArtifactStable": true,
+        "servingIdentityMatched": true,
+        "changed": ["shipping.py", "report.json"],
+        "allowedChanges": true,
+        "requiredTools": true,
+        "toolFailures": 1,
+        "toolCalls": 25,
+        "environmentEvidence": {
+          "kind": "napier.harness-environment-evidence",
+          "schemaVersion": 1,
+          "runId": "run_50cad6ee541f4811b46a",
+          "sandboxId": "oci-container",
+          "configurationSha256": "e734b577dd0adeeef8fcc09a426da4541b51c3b9b0299cfe19739bdc9c7f6f0a",
+          "executionMode": "standard",
+          "valid": true,
+          "eligible": true,
+          "missingTools": [],
+          "receipts": [],
+          "blockers": [],
+          "contentSha256": "1fd47359e40a99476c3f30ed2badb946e29b4deecd0202fdfc998bb3e2a163b6"
+        },
+        "debuggerEvidence": {
+          "required": true,
+          "originalSourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+          "unavailableCapsules": 0,
+          "processes": [
+            {
+              "processId": "process_5cd7e24fc70c41d48961",
+              "completedActions": [
+                "launch",
+                "stack_trace",
+                "scopes",
+                "variables",
+                "evaluate",
+                "cancel"
+              ],
+              "variablesMatched": true,
+              "breakpointMatched": true,
+              "evaluationMatched": true,
+              "actionsMatched": true,
+              "sameFrameMatched": true,
+              "passed": true,
+              "observations": [
+                {
+                  "callId": "call_00_jwLUwEtSbKtiXfBocvXN8130",
+                  "eventId": "event_1d14ba18073e456ea589",
+                  "capsuleSha256": "be66926d937b8deea8dd65eb24ef1d70513612a0fe8fcc4fe594a4edb2763d89",
+                  "action": "launch",
+                  "resultSha256": "22f5940ced3ab441fff12dcf12f4454733d47ecb7ea40e69a081175b38c2bcc0",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_k4uYsv4FDv9fmvqL4wa34018",
+                  "eventId": "event_804b297d41b844fe9b7d",
+                  "capsuleSha256": "be66926d937b8deea8dd65eb24ef1d70513612a0fe8fcc4fe594a4edb2763d89",
+                  "action": "stack_trace",
+                  "resultSha256": "57a0c8971f7e51f104ab6baf7f90614065f38e777b80138da61dbc2f80c22032",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_4F1D17uuegUv8OuzYrhJ8956",
+                  "eventId": "event_8cef409b14754632b226",
+                  "capsuleSha256": "be66926d937b8deea8dd65eb24ef1d70513612a0fe8fcc4fe594a4edb2763d89",
+                  "action": "scopes",
+                  "resultSha256": "e75b861d3db14a953756c127d3ea20c72ac69f1668a0bf3346adecff8380627c",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_AMgmfDQOraYzCNYZ20mX3495",
+                  "eventId": "event_a3c61ad26a704a30a611",
+                  "capsuleSha256": "be66926d937b8deea8dd65eb24ef1d70513612a0fe8fcc4fe594a4edb2763d89",
+                  "action": "variables",
+                  "resultSha256": "4e2a0ba3902cdb0f357795b6114e984ba135215da61570b41a97750372468ee4",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_0upC8dzZ2ELuj9LSUVK51903",
+                  "eventId": "event_e27f6964a37f4149aa92",
+                  "capsuleSha256": "be66926d937b8deea8dd65eb24ef1d70513612a0fe8fcc4fe594a4edb2763d89",
+                  "action": "evaluate",
+                  "resultSha256": "6f537004d859e7401e1e9e24586ce40082c17f21a7171d243f8da94816784a42",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                },
+                {
+                  "callId": "call_00_HZi3C6r7tbFa0oXI7O5G1769",
+                  "eventId": "event_a8aab984a5ef44bfa460",
+                  "capsuleSha256": "be66926d937b8deea8dd65eb24ef1d70513612a0fe8fcc4fe594a4edb2763d89",
+                  "action": "cancel",
+                  "resultSha256": "a2922c094605b77624c0fc2e3c656c9dc39e208bf4e5afc2e6847ab988861aca",
+                  "sourceSha256": "8c2d95267a2dd864bf43fa6cc838c4c3c4f2ef131decadff558794765d311b93",
+                  "isolation": "oci"
+                }
+              ]
+            }
+          ],
+          "reasons": [],
+          "passed": true
+        },
+        "processEvidence": {
+          "observedBeforeCleanup": true,
+          "sessions": [
+            {
+              "processId": "process_5cd7e24fc70c41d48961",
+              "runId": "run_50cad6ee541f4811b46a",
+              "runtime": "python",
+              "status": "cancelled",
+              "actions": {}
+            }
+          ],
+          "runningSessions": 0,
+          "matchingProcessIds": ["process_5cd7e24fc70c41d48961"],
+          "requirements": {
+            "requiredActions": {},
+            "noRunningSessions": true
+          },
+          "passed": true,
+          "exchanges": {
+            "required": false,
+            "passed": true
+          }
+        },
+        "runtimeContextEvidence": {
+          "valid": true,
+          "deliveries": 19,
+          "auditedCapsules": 19
+        },
+        "graderExitCode": 0,
+        "usage": {
+          "inputTokens": 49483,
+          "outputTokens": 8402,
+          "cacheReadTokens": 244864,
+          "cacheWriteTokens": 0,
+          "costUsd": 0.0099657992
+        },
+        "durationMs": 51767,
+        "reportSha256": "379204ca5699a3666e9acd1b3b5cd12460396f1b3ed7806b0b278aa6f0cbbdfd",
+        "failureBundle": "/Users/champ/.cache/napier-seven-quality/failures/python-debugger-oci-candidate-v4-trial3",
+        "profileSha256": "6cd7f02fd2c5802d03e624349aa60e8ae43beb7fe7118a7b2c2514fe74ad49b3"
+      }
+    ],
+    "quality": {
+      "kind": "napier.harness-campaign-quality",
+      "schemaVersion": 1,
+      "required": {
+        "minimumCases": 30,
+        "minimumTrials": 3
+      },
+      "comparablePairs": 3,
+      "cases": 1,
+      "regressions": [],
+      "blockers": ["Need 30 cases; observed 1"],
+      "verdict": "insufficient_evidence",
+      "promotionReady": false,
+      "contentSha256": "cee63fe51a931861cf37b63b68bbb0fd61051661e01137d75ea8912f198d0d50"
+    },
+    "regressionComparison": {
+      "kind": "napier.dap-sequence-fix-comparison",
+      "schemaVersion": 1,
+      "baselineRole": "Previously completed OCI candidate-v3 Runs reused without modifying their reports",
+      "candidateRole": "Fresh OCI candidate-v4 Runs after sequence fix",
+      "quality": {
+        "kind": "napier.harness-campaign-quality",
+        "schemaVersion": 1,
+        "required": {
+          "minimumCases": 30,
+          "minimumTrials": 3
+        },
+        "comparablePairs": 3,
+        "cases": 1,
+        "regressions": [],
+        "blockers": ["Need 30 cases; observed 1"],
+        "verdict": "insufficient_evidence",
+        "promotionReady": false,
+        "contentSha256": "cee63fe51a931861cf37b63b68bbb0fd61051661e01137d75ea8912f198d0d50"
+      },
+      "observations": [
+        {
+          "runId": "run_edfa4eaa9f5142cba0e2",
+          "comparisonArm": "baseline",
+          "taskSuccess": true,
+          "toolFailures": 0,
+          "allowedChanges": true
+        },
+        {
+          "runId": "run_47946942382345a89c77",
+          "comparisonArm": "candidate",
+          "taskSuccess": true,
+          "toolFailures": 1,
+          "allowedChanges": true
+        },
+        {
+          "runId": "run_c6badedf93b642adb442",
+          "comparisonArm": "baseline",
+          "taskSuccess": true,
+          "toolFailures": 0,
+          "allowedChanges": true
+        },
+        {
+          "runId": "run_a7495ba870204921b68b",
+          "comparisonArm": "candidate",
+          "taskSuccess": true,
+          "toolFailures": 1,
+          "allowedChanges": true
+        },
+        {
+          "runId": "run_6c918b498b22463bbd8e",
+          "comparisonArm": "baseline",
+          "taskSuccess": true,
+          "toolFailures": 0,
+          "allowedChanges": true
+        },
+        {
+          "runId": "run_50cad6ee541f4811b46a",
+          "comparisonArm": "candidate",
+          "taskSuccess": true,
+          "toolFailures": 1,
+          "allowedChanges": true
+        }
+      ],
+      "recoveredFailures": [
+        {
+          "runId": "run_47946942382345a89c77",
+          "callId": "call_00_74AobIvRKFktzknB1Vme2656",
+          "toolName": "node_debugger",
+          "result": [
+            {
+              "text": "Python debugger does not support source maps, breakpoint columns or pauseOnExceptions",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "runId": "run_a7495ba870204921b68b",
+          "callId": "call_01_cIkrWDLmR1xcYeJR04OF4254",
+          "toolName": "update_plan_artifact",
+          "result": [
+            {
+              "text": "Cannot transition artifact from expected to verified",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "runId": "run_50cad6ee541f4811b46a",
+          "callId": "call_01_hq0W0wDgY2vGgnIYbqMj6408",
+          "toolName": "node_debugger",
+          "result": [
+            {
+              "text": "Python debugger frame is stale or unobserved",
+              "type": "text"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "verification": {
+    "runtime": {
+      "passed": 2569,
+      "skipped": 58,
+      "originalFailures": 2
+    },
+    "relatedScripts": {
+      "passed": 33
+    },
+    "architecture": {
+      "originalViolations": 9,
+      "newViolations": 0
+    },
+    "typeScript": ["runtime", "cli", "server", "harness-eval"],
+    "budgetIncreased": false
+  },
+  "limitations": [
+    "One case with three paired trials cannot satisfy the unchanged thirty-case minimum.",
+    "Runs were concurrent between arms; latency/cost differences do not establish a causal benefit.",
+    "Environment evidence establishes bound execution eligibility; it is not complete transitive dependency or live daemon state attestation.",
+    "Original environment failures, baseline debugger failures and initial calibration-test failure are retained.",
+    "Native macOS/bwrap Python DAP isolation remains unsupported; no host fallback is added.",
+    "Production initial-state capture, broad policy/long-task/memory qualification, and full statistical/cost guardrails remain open.",
+    "Original Runtime capability/Skill, public API, architecture and release-manifest failures remain unresolved."
+  ],
+  "logs": [
+    {
+      "file": "/tmp/napier-python-debugger-oci-live-v3.log",
+      "sha256": "226aea0acddf617e592bdae3868e7d35081d342ff4f95275d1387a852d1eeb06"
+    },
+    {
+      "file": "/tmp/napier-dap-sequence-regression-before-v1.log",
+      "sha256": "52e39d42a8f49438bd2e80d8b2c6175dbbfd68cfab4e500909683e7cfc6a6ac2"
+    },
+    {
+      "file": "/tmp/napier-dap-sequence-regression-after-v1.log",
+      "sha256": "82d7b1259823bcc6a0aca4155fc745104aeb31a801b906fea8ac648eb0d90348"
+    },
+    {
+      "file": "/tmp/napier-dap-sequence-runtime-compile-v1.log",
+      "sha256": "f146f80927b7950229016820e085d90433efef96137bab878bd806828bc5d560"
+    },
+    {
+      "file": "/tmp/napier-dap-sequence-live-regression-v1.log",
+      "sha256": "8984d0bf84cbf97f375d5ed62cbb91c78f250f29953e37a6d77fead8a04d8f4f"
+    },
+    {
+      "file": "/tmp/napier-dap-sequence-live-regression-v2.log",
+      "sha256": "138b6a61ca5e2242cc44bd4e7e49fa0b1188af415bd3ebbc71092872832aa626"
+    },
+    {
+      "file": "/tmp/napier-dap-sequence-runtime-full-v1.log",
+      "sha256": "ced800aa9c93d309f08e59b25132a702036b795e1f4630f977c16ce0e8ede6b3"
+    },
+    {
+      "file": "/tmp/napier-dap-sequence-architecture-v1.log",
+      "sha256": "efdfdef92c1a8898520703d6b969c590d3c67a5b9b8436cafd830145b9a3d07f"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-base-pull.log",
+      "sha256": "61dfc95617a918081ca9b94d46f2ee17c81dc8fa56f93336d95ba7eaacf2bc14"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-base-build.log",
+      "sha256": "ffd23285d6e997015d16086ab79fce5f70489b90d828018f4228d29973d1c778"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-image-build-v1.log",
+      "sha256": "ad18bc7e4983dbe655bbc62571fa2f10d605f709a2f16447430b41d9c96b379d"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-live-v1.log",
+      "sha256": "81eb53206cf2e11ef3965f06c59019cde649a90a802c2890d01ec9ac7f05556a"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-live-v2.log",
+      "sha256": "21c9ba3ef947f3ce7d18c742658236491baa2f42a9336d641a0e1eea4d9e67a5"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-full-v1.log",
+      "sha256": "22c16e863a533f81d8bf0b39deff8e506007f512d09f344e40020092031622c9"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-host-regression-v1.log",
+      "sha256": "bb5181b70746f62979e1b09186894527aa615725bd93ce10042e96be65c1c6ed"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-compile-v3.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-cli-build-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-server-build-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/tmp/napier-python-debugger-oci-harness-build-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "/tmp/napier-harness-environment-evidence-tests-v1.log",
+      "sha256": "ef85bc68d8e11969fe345ec346d3f2a8b4bd00878997c5c81786f3c549288294"
+    },
+    {
+      "file": "/tmp/napier-harness-environment-related-tests-v1.log",
+      "sha256": "37a433621cd6cf4ec359e28df8cb702fe06451610a59adc7eae54278721bf36d"
+    },
+    {
+      "file": "/tmp/napier-harness-environment-related-tests-v2.log",
+      "sha256": "0725935649eb8ba084339e2d205c86951d0dc9c02c71b418e2bc8227a542bc97"
+    },
+    {
+      "file": "/tmp/napier-harness-environment-architecture-v1.log",
+      "sha256": "efdfdef92c1a8898520703d6b969c590d3c67a5b9b8436cafd830145b9a3d07f"
+    },
+    {
+      "file": "/tmp/napier-oci-network-recovery-v1.log",
+      "sha256": "6a7b01bc3832e45141ed0592485be95f312b229f965ee339ec2bdba31218526f"
+    }
+  ]
+}

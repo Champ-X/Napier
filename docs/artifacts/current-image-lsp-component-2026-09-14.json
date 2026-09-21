@@ -1,0 +1,101 @@
+{
+  "kind": "napier.current-image-lsp-component",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-14T01:18:55.019540+00:00",
+  "runtimeSnapshot": "/tmp/napier-harness-durable-pre-edit-v1",
+  "files": [
+    {
+      "path": "scripts/sandbox-portable-lsp-live.mjs",
+      "sha256": "b8365f68c5903bb4a05566cd8d131265aee3337b874357b347d791417f47971d"
+    },
+    {
+      "path": "packages/runtime/src/lsp-runtime-assets.ts",
+      "sha256": "b5e2473489328509e35f06cbdfadb9bea8c984092ddb8f344248d1429be542fd"
+    },
+    {
+      "path": "packages/runtime/src/sandbox-types.ts",
+      "sha256": "6fc14fcb8ac7ec23b278bf430c3ee466d0b619dc30d54ace9d645920a65d2ca2"
+    },
+    {
+      "path": "packages/contracts/src/sandbox-setup.ts",
+      "sha256": "4cf4b250ddb61db85d2d80a5dd599397fc7133947bde1bf0a603159abaebce10"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/napier-offline-lsp-current-v1.mjs",
+      "sha256": "9248b7d69d00cb79397f6ef73b64dc2044ff84ca24cf64af2c3f79e2747bce21"
+    },
+    {
+      "path": "/tmp/napier-offline-lsp-current-v1.log",
+      "sha256": "3a200b1823dc0169610136a94a8ebb1767838e948da313eabfef4a9a699da144"
+    },
+    {
+      "path": "/tmp/napier-offline-lsp-current-v1.json",
+      "sha256": "71513b499d6e549b33117a156915bd77a588b3a81612619813bae862e2981d77"
+    }
+  ],
+  "result": {
+    "imageId": "sha256:9ee6f40ab58e1e022c1ae6771fdf6a6bc60419e7f74e86ccd79aedaa16c4418a",
+    "protocolBinding": {
+      "protocolWorkspaceRoot": "/workspace",
+      "workspaceRootMapped": true,
+      "targetUriMapped": true,
+      "hostUriRestored": true,
+      "escapeRejected": true,
+      "authorityRejected": true,
+      "queryRejected": true,
+      "bindingSha256": "2f08fd6ebb40f95bbe8f0763500336b209a10f19bd38970101de930a141e012a"
+    },
+    "productionParity": {
+      "hostPlatform": "darwin",
+      "sandbox": "oci-container",
+      "sameTarget": true,
+      "diagnostics": {
+        "hostStatus": "clean",
+        "portableStatus": "clean",
+        "equal": true,
+        "hostResultSha256": "26bbf4c6a02baf08aba6e98a9aca09f10d9406685635af85cbbc05e4791464c6",
+        "portableResultSha256": "237ad399477838674a05a6b94fbd2f639ff763473f96b655f9a6392504efd3fe",
+        "projectionSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "symbols": {
+        "hostStatus": "found",
+        "portableStatus": "found",
+        "equal": true,
+        "hostResultSha256": "c8f98147a27a40ec079f1318ecf02f935209b1c188e612aef16aef06dbac8a71",
+        "portableResultSha256": "d26d9bd70d2f5212b85e01865e709e7837401aa530fd45c842382d3a39e22b98",
+        "projectionSha256": "7981adfad191c06a771df419237588a8056ac15fbf56ee43085c5e46913b5f02"
+      },
+      "definition": {
+        "hostStatus": "found",
+        "portableStatus": "found",
+        "equal": true,
+        "hostResultSha256": "383972e7143a72b3d054061276c1263d344461e4a29b8ef8a0b1fd66521d5c08",
+        "portableResultSha256": "98d92bfba376180e3ffccb81fdd15aaedd3ee4b8236f01c376b9964047930fd4",
+        "projectionSha256": "caf56e3d5c48d0d4b7a0d18896fb7b06fbfcf6fd978d7347a029071373547d87"
+      },
+      "allEqual": true,
+      "evidenceSha256": "2c1d2a38f3236bcaedd4566bd7a1f83196b9c086c1af337c655079fccc1b8439"
+    },
+    "resourceClosure": {
+      "exactBaselineRestored": true,
+      "containerDeltaCount": 0,
+      "networkDeltaCount": 0,
+      "scratchDeltaCount": 0
+    }
+  },
+  "checks": [
+    "diagnostics clean",
+    "symbols found",
+    "definition found",
+    "equal projections across OCI user mappings",
+    "protocol path mapping",
+    "escape/authority/query rejection",
+    "exact resource baseline restored"
+  ],
+  "scope": "Current linux/arm64 Python-debugger image on macOS; both arms execute in OCI with different user mappings.",
+  "legacyReleaseReceiptReplaced": false,
+  "newPaidModelCalls": 0,
+  "promotionReady": false
+}

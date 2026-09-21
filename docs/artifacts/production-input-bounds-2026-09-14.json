@@ -1,0 +1,19 @@
+{
+  "kind": "napier.run-input-capture-bounds-observation",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T18:27:20.347Z",
+  "workspace": "Napier development checkout",
+  "scope": "Read-only scan; no capsule persisted; one local observation is not a latency qualification",
+  "status": "partial",
+  "fileCount": 295,
+  "directoryCount": 198,
+  "bytes": 16777208,
+  "omissionReasons": {
+    "byte_limit": 1502,
+    "excluded": 5,
+    "entry_limit": 1
+  },
+  "durationMs": 117,
+  "scannerSha256": "d94ec36adf1faa9100150e528b614c11f32471d67207fcffb4485b4ab5ebb33c",
+  "completeReproductionClaimed": false
+}

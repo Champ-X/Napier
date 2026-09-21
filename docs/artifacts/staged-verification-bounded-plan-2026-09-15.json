@@ -1,0 +1,47 @@
+{
+  "kind": "napier.staged-verification-bounded-plan",
+  "createdAt": "2026-09-15T05:04:57.510Z",
+  "planPath": "/Users/champ/.cache/napier-seven-quality/cny-staged-verification-core-v17/plan.json",
+  "planSha256": "e04ec706299dd7f46c186134572e71cbe9a110efd6e4e3d9bf0730cf16363e20",
+  "source": "/tmp/napier-harness-staged-verification-v1",
+  "boundFiles": 5658,
+  "sourceFreezeSha256": "4e0ea914bf4016a75b7207a2048f72c8fe033540d5c7e03b464e4ddca0134c7d",
+  "profileFileSha256": "6af48c643232e7df1072302c0c8f8ca01b15caac94c3ed75024dff849d5f5fd3",
+  "validationPath": "/Users/champ/orca/Napier/docs/artifacts/staged-contract-verification-offline-2026-09-15.json",
+  "validationSha256": "78b1149b6bda66f1b1fa988cbeabc59ce6c9d73ac23a280c55e268fbde21f063",
+  "dispatchIndices": [
+    5,
+    4
+  ],
+  "budgetBefore": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 2000,
+    "committedFen": 2861,
+    "remainingFen": 7139,
+    "requests": 88,
+    "reservedRequests": 1,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14",
+      "cacheHitFenPerMillion": 4,
+      "settlement": "provider-cache-split-v1"
+    }
+  },
+  "necessity": "One original NDJSON pair tests the staged verification hypothesis motivated by a fully captured semantic-stall failure. Actual initial test execution, model behavior and external outcome cannot be established by scripted offline integration. Only the new explicit protocol differs; no task-specific expected result is added. Prior source successes and failure remain in v16 and do not qualify v17.",
+  "scope": "At most one candidate-first original pair; stop on candidate failure, missing usage or regression. Driver v8, all original tasks/graders and 180 positions, 64 admissions/Run, 15-second spacing, token/cost and 15-minute limits unchanged. Preserve the historical CNY6 reservation and user-reported aggregate checkpoint; no budget reset or later batch queue.",
+  "collectionComplete": false,
+  "promotionReady": false
+}

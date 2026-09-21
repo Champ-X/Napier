@@ -1,0 +1,181 @@
+{
+  "kind": "napier.current-research-composition-qualification",
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-13T21:54:27.542Z",
+  "root": "/Users/champ/.cache/napier-seven-quality/research-current-composition-v1",
+  "baseline": "/tmp/napier-harness-baseline-c454a155",
+  "candidate": "/tmp/napier-harness-stream-timing-v1",
+  "composition": "research.v1 + tail-v1 + request-aware-v1",
+  "model": "deepseek/deepseek-v4-flash",
+  "rows": [
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "runId": "run_60d7dcee509849448caf",
+      "status": "completed",
+      "originalTaskSuccess": false,
+      "allowedChanges": false,
+      "toolFailures": 4,
+      "qualifyingEvidence": true,
+      "reportSha256": "fdf64e803ff314cdce4d6c47db44e833d1bc1b06ffe38cc04bea0e496eaae5ab",
+      "reportTextPath": "outputs/thread_6e6537897ade48d0916e/REPORT.md",
+      "reportTextSha256": "a06d73bb837f2c73012bcd22d902fb5aef8067e90962e3dbc42df61a319143c3",
+      "review": {
+        "passed": false,
+        "reason": "Requested workspace-relative report files were relocated under outputs/<thread> and failed the frozen allowed-path and grader checks."
+      },
+      "inputExport": {
+        "success": false,
+        "exitCode": 1,
+        "diagnostic": "file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:22\n        throw new Error(\"Run has no unique initial input capsule\");\n              ^\n\nError: Run has no unique initial input capsule\n    at exportRunInputReproduction (file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:22:15)\n    at async file:///Users/champ/orca/Napier/scripts/export-run-input-reproduction.mjs:65:5\n\nNode.js v24.19.0\n"
+      }
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "runId": "run_5090238696f4459a9894",
+      "status": "completed",
+      "originalTaskSuccess": false,
+      "allowedChanges": false,
+      "toolFailures": 1,
+      "qualifyingEvidence": true,
+      "reportSha256": "318b57f68d586a364970c2515fe9f0303a2eda2c030efca03b42dd86976f52c5",
+      "reportTextPath": "outputs/thread_1b704714d9f6414c9819/REPORT.md",
+      "reportTextSha256": "8f6bc411f149991a1040e9bad57d9ed37f64730365955f2481285ae3ba334cc2",
+      "review": {
+        "passed": false,
+        "reason": "Requested workspace-relative report files were relocated under outputs/<thread> and failed the frozen allowed-path and grader checks."
+      },
+      "inputExport": {
+        "success": false,
+        "exitCode": 1,
+        "diagnostic": "file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:22\n        throw new Error(\"Run has no unique initial input capsule\");\n              ^\n\nError: Run has no unique initial input capsule\n    at exportRunInputReproduction (file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:22:15)\n    at async file:///Users/champ/orca/Napier/scripts/export-run-input-reproduction.mjs:65:5\n\nNode.js v24.19.0\n"
+      }
+    },
+    {
+      "arm": "baseline",
+      "trial": 3,
+      "runId": "run_e627aa8e35234dad99fa",
+      "status": "completed",
+      "originalTaskSuccess": false,
+      "allowedChanges": false,
+      "toolFailures": 2,
+      "qualifyingEvidence": true,
+      "reportSha256": "da0423d0ec6c023fb97f300160ed37b492fd955d9866a41a4dab41c752780e8a",
+      "reportTextPath": "outputs/thread_c95206b4e3e4419c84a3/REPORT.md",
+      "reportTextSha256": "557df544a6e8f7b4e461f4941ef10fada15e18b4033966f688e527471cc65a1e",
+      "review": {
+        "passed": false,
+        "reason": "Requested workspace-relative report files were relocated under outputs/<thread> and failed the frozen allowed-path and grader checks."
+      },
+      "inputExport": {
+        "success": false,
+        "exitCode": 1,
+        "diagnostic": "file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:22\n        throw new Error(\"Run has no unique initial input capsule\");\n              ^\n\nError: Run has no unique initial input capsule\n    at exportRunInputReproduction (file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:22:15)\n    at async file:///Users/champ/orca/Napier/scripts/export-run-input-reproduction.mjs:65:5\n\nNode.js v24.19.0\n"
+      }
+    },
+    {
+      "arm": "candidate",
+      "trial": 1,
+      "runId": "run_0194d70617974ee3a7db",
+      "status": "completed",
+      "originalTaskSuccess": false,
+      "allowedChanges": true,
+      "toolFailures": 0,
+      "qualifyingEvidence": true,
+      "reportSha256": "fdfb78be9cc7a653b8e5976ae1497e4509496efd7da9ceebd6f6326779ec8a06",
+      "reportTextPath": "REPORT.md",
+      "reportTextSha256": "af935cb0b1a4396d12cbfdbb5d3072a2a1cb42b3d523d194bcccef99ef5f56a8",
+      "review": {
+        "passed": false,
+        "reason": "level-filter citation omits the separate xhigh/max branch needed to establish the supported set. Prose additionally infers no reasoning_effort transmission from absent model metadata, ignoring compatibility defaults not shown in excerpts."
+      },
+      "inputExport": {
+        "success": false,
+        "exitCode": 1,
+        "diagnostic": "file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:18\n        throw new Error(\"Reproduction export requires a settled failure or recovered tool failure\");\n              ^\n\nError: Reproduction export requires a settled failure or recovered tool failure\n    at exportRunInputReproduction (file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:18:15)\n    at async file:///Users/champ/orca/Napier/scripts/export-run-input-reproduction.mjs:65:5\n\nNode.js v24.19.0\n"
+      }
+    },
+    {
+      "arm": "candidate",
+      "trial": 2,
+      "runId": "run_e270a55bcea54c688b26",
+      "status": "completed",
+      "originalTaskSuccess": false,
+      "allowedChanges": true,
+      "toolFailures": 0,
+      "qualifyingEvidence": true,
+      "reportSha256": "4dee5db81785a41167842bb65a2160af9b22f9d9295100fff7231ddc27d155bb",
+      "reportTextPath": "REPORT.md",
+      "reportTextSha256": "092102c0b44425da8ddf5a6ee22f5dc87d7f33c9dbfdbc9074c5fe6648208307",
+      "review": {
+        "passed": false,
+        "reason": "level-filter citation omits the separate xhigh/max branch needed to establish the supported set. Prose additionally infers no reasoning_effort transmission from absent model metadata, ignoring compatibility defaults not shown in excerpts."
+      },
+      "inputExport": {
+        "success": false,
+        "exitCode": 1,
+        "diagnostic": "file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:18\n        throw new Error(\"Reproduction export requires a settled failure or recovered tool failure\");\n              ^\n\nError: Reproduction export requires a settled failure or recovered tool failure\n    at exportRunInputReproduction (file:///Users/champ/orca/Napier/packages/runtime/dist/run-input-reproduction.js:18:15)\n    at async file:///Users/champ/orca/Napier/scripts/export-run-input-reproduction.mjs:65:5\n\nNode.js v24.19.0\n"
+      }
+    },
+    {
+      "arm": "candidate",
+      "trial": 3,
+      "runId": "run_f23945e6cb3e4cf5992c",
+      "status": "completed",
+      "originalTaskSuccess": true,
+      "allowedChanges": true,
+      "toolFailures": 1,
+      "qualifyingEvidence": true,
+      "reportSha256": "ad1c982506ed998fa9b16f16e372eb35e3cccd8c3497d47df8beb01bdfa53ca0",
+      "reportTextPath": "REPORT.md",
+      "reportTextSha256": "61522a20e8008a25fb7f7a4790ff829ef237a4fce1638ce15987bce3dd271f92",
+      "review": {
+        "passed": false,
+        "reason": "Structured grader passed, but prose falsely says the wrapper has no way to reduce thinking except omitting the option despite its own supported off path. It also concludes no reasoning_effort is transmitted from absent model metadata; getCompat merges a detected true default in the hash-matching original SDK. The output cap alone does not prove a cost or latency guarantee."
+      },
+      "inputExport": {
+        "success": true,
+        "exitCode": 0,
+        "diagnostic": null
+      }
+    }
+  ],
+  "originalScores": {
+    "baseline": 0,
+    "candidate": 1,
+    "trialsPerArm": 3
+  },
+  "reviewedScores": {
+    "baseline": 0,
+    "candidate": 0,
+    "trialsPerArm": 3
+  },
+  "collectionComplete": true,
+  "suiteResultSha256": "1b5eecad06cf20def7ab8736d870117dd9051b418298589928649b0c53972e03",
+  "manualReviewSources": {
+    "path": "node_modules/@earendil-works/pi-ai/dist/api/openai-completions.js",
+    "sha256": "0d50250fe2931e66e2078279a397814202e1ecddee58faf4b8bc04c278da177a",
+    "matchesOriginalProvenance": true,
+    "excerpts": [
+      {
+        "startLine": 1149,
+        "endLine": 1149,
+        "quote": "        supportsReasoningEffort: !isGrok && !isZai && !isMoonshot && !isTogether && !isCloudflareAiGateway && !isNvidia && !isAntLing,"
+      },
+      {
+        "startLine": 1188,
+        "endLine": 1195,
+        "quote": "function getCompat(model) {\n    const detected = detectCompat(model);\n    if (!model.compat)\n        return detected;\n    return {\n        supportsStore: model.compat.supportsStore ?? detected.supportsStore,\n        supportsDeveloperRole: model.compat.supportsDeveloperRole ?? detected.supportsDeveloperRole,\n        supportsReasoningEffort: model.compat.supportsReasoningEffort ?? detected.supportsReasoningEffort,"
+      }
+    ]
+  },
+  "scope": "Six fresh Runs on one source-audit case; not pooled with older snapshots or coding composition. Mechanical original scores and all reports remain unchanged. Manual outcome review only downgrades unsupported prose; no model execution or failed trial was replaced. External SDK code was inspected by evaluator after task execution and never injected into Agent inputs.",
+  "exportBoundary": "Production input export currently refuses completed Runs with no tool.failed event, even if the independent grader rejects their artifacts. These two candidate failures retain campaign-built original-input/final-workspace bundles and captured capsules, but production-export support for external outcome failures remains a gap.",
+  "promotionReady": false,
+  "productionInputExports": {
+    "succeeded": 1,
+    "baselineMissingInitialCapsules": 3,
+    "candidateExternalFailureRefused": 2
+  }
+}

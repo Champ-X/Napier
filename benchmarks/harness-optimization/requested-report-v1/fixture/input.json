@@ -1,0 +1,82 @@
+{
+  "invoices": [
+    {
+      "id": "I1",
+      "status": "cancelled",
+      "grossCents": 1299,
+      "refundCents": 0
+    },
+    {
+      "id": "I2",
+      "status": "paid",
+      "grossCents": 1536,
+      "refundCents": 105
+    },
+    {
+      "id": "I3",
+      "status": "paid",
+      "grossCents": 1773,
+      "refundCents": 210
+    },
+    {
+      "id": "I4",
+      "status": "paid",
+      "grossCents": 2010,
+      "refundCents": 0
+    },
+    {
+      "id": "I5",
+      "status": "cancelled",
+      "grossCents": 2247,
+      "refundCents": 105
+    },
+    {
+      "id": "I6",
+      "status": "paid",
+      "grossCents": 2484,
+      "refundCents": 210
+    },
+    {
+      "id": "I7",
+      "status": "paid",
+      "grossCents": 2721,
+      "refundCents": 0
+    },
+    {
+      "id": "I8",
+      "status": "paid",
+      "grossCents": 2958,
+      "refundCents": 105
+    },
+    {
+      "id": "I9",
+      "status": "cancelled",
+      "grossCents": 3195,
+      "refundCents": 210
+    },
+    {
+      "id": "I10",
+      "status": "paid",
+      "grossCents": 3432,
+      "refundCents": 0
+    },
+    {
+      "id": "I11",
+      "status": "paid",
+      "grossCents": 3669,
+      "refundCents": 105
+    },
+    {
+      "id": "I12",
+      "status": "paid",
+      "grossCents": 3906,
+      "refundCents": 210
+    },
+    {
+      "id": "I13",
+      "status": "cancelled",
+      "grossCents": 4143,
+      "refundCents": 0
+    }
+  ]
+}

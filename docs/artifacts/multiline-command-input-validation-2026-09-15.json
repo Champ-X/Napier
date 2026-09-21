@@ -1,0 +1,102 @@
+{
+  "kind": "napier.multiline-command-input-validation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-15T02:24:49.351Z",
+  "previousFrozenSource": "/tmp/napier-harness-resource-intent-v1",
+  "previousFreezeSha256": "a66da1e9aa9e6af8e95ffb7b25bea6d32927cf13620b250038422c5a46699687",
+  "changedProduction": [
+    "packages/runtime/src/browser-runtime-verification.ts",
+    "packages/runtime/src/browser-runtime.ts",
+    "packages/runtime/src/command-execution.ts",
+    "packages/runtime/src/command-tool.ts",
+    "packages/runtime/src/lsp-source-session.ts",
+    "packages/runtime/src/sandbox-runtime-setup.ts",
+    "packages/runtime/src/toolchain-process-provider.ts",
+    "packages/runtime/src/workspace-process-session-base-validation.ts",
+    "packages/runtime/src/workspace-process-tool.ts",
+    "packages/runtime/src/workspace-process-write-tool-schema.ts"
+  ],
+  "newProduction": [
+    "packages/runtime/src/command-execution-input.ts"
+  ],
+  "sourceFiles": {
+    "packages/runtime/src/browser-runtime-verification.ts": "e7ef799801364e26f1534d10f94db001b32953121157df5c4d6deae4c5a16f6a",
+    "packages/runtime/src/browser-runtime.ts": "469ef3e94621258cbcb5055bbcfc1b0f36df0c126b93d4b5794765949884dc18",
+    "packages/runtime/src/command-execution.ts": "ffa2acb0c18f4f6a07b5e2b21f9463b35665b52083e2a74e0d760a569af1cb6d",
+    "packages/runtime/src/command-tool.ts": "0226e62388294ffb0c206205f62c39adc7e039760016a8d85f10be7a8d15d37d",
+    "packages/runtime/src/lsp-source-session.ts": "a3109ab2baae5f453ece4721563c981a9f1d67c8bf17a3bc27e7e59106af155e",
+    "packages/runtime/src/sandbox-runtime-setup.ts": "fe03d3dd2c9b37b1e2b873bc43c9e56bd7d71f5d868169bb8ed174acc580560e",
+    "packages/runtime/src/toolchain-process-provider.ts": "fd53a97d7f3b621ae30f58ad4be57b5540f41ac580dfcdb811b17a0cf1627452",
+    "packages/runtime/src/workspace-process-session-base-validation.ts": "71b85b6cbada2272f2aea921229ea1741345f2077eccce66bb8219065ea4cdcf",
+    "packages/runtime/src/workspace-process-tool.ts": "638a84363d3c59ea9c456c61461fc2cbc1a3ec1672ce77e3ec18781bd0d31dd7",
+    "packages/runtime/src/workspace-process-write-tool-schema.ts": "269b7df12230d78007b1a36b3e1a23d6947e8c19ed569895764d458a9fdd18ee",
+    "packages/runtime/src/command-execution-input.ts": "1a0eec95f7d7be55993be8810db34500c0d04e33a984f0df6d14ec1aa49d6440",
+    "packages/runtime/test/command-execution.test.ts": "aec520376757daa1c82e0ec8f2abe73481a1de5cb7c1352cb25b2c6529ff05d2",
+    "packages/runtime/test/command-multiline-arguments.test.ts": "31bf9ad5983ae2f2cb6618726475c768a92736dd51b15b99cf982eb1e18bf213"
+  },
+  "tests": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/multiline-command-complete-tests-2026-09-15.json",
+    "sha256": "719deadea61e75e42853f4a3193042a3bf30983d2b1e2c12a364f8a7c138938d",
+    "passed": 74,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runtimeCompilePassed": true,
+  "oci": {
+    "path": "/Users/champ/orca/Napier/docs/artifacts/multiline-command-oci-replay-2026-09-15.json",
+    "sha256": "58423d348a395345a4c2f1c1d26ad98f80f82293aa5a22e86269ad412c1124a7",
+    "exactHistoricalCalls": 10,
+    "programSuccesses": 8,
+    "programFailures": 2,
+    "nativeChecks": [
+      {
+        "runtime": "node",
+        "action": "command",
+        "status": "succeeded"
+      },
+      {
+        "runtime": "python",
+        "action": "command",
+        "status": "succeeded"
+      },
+      {
+        "runtime": "shell",
+        "action": "command",
+        "status": "succeeded"
+      },
+      {
+        "runtime": "node",
+        "action": "preview_write/start_write",
+        "status": "succeeded"
+      }
+    ]
+  },
+  "limitsUnchanged": {
+    "DEFAULT_COMMAND_TIMEOUT_MS": 30000,
+    "MIN_COMMAND_TIMEOUT_MS": 1000,
+    "MAX_COMMAND_TIMEOUT_MS": 1800000,
+    "MAX_COMMAND_ARGUMENTS": 64,
+    "MAX_COMMAND_ARGUMENT_CHARS": 2048,
+    "MAX_COMMAND_OUTPUT_CHARS": 32000
+  },
+  "sha256FileReexportIdentityPreserved": true,
+  "architecture": {
+    "newViolations": 0,
+    "preexistingViolations": 6,
+    "fullyPassing": false
+  },
+  "spending": {
+    "ledger": "/Users/champ/.cache/napier-seven-quality/budget-50cny-2026-09-14.sqlite",
+    "maxFen": 10000,
+    "committedFen": 8438,
+    "remainingFen": 1562,
+    "requests": 712,
+    "settledConservativeFen": 4238,
+    "unreceiptedReservedFen": 4200
+  },
+  "modelRequests": 0,
+  "frozen": false,
+  "collectionComplete": false,
+  "promotionReady": false,
+  "scope": "Shared argv contract allows HT/LF/CR as literal text while path controls, prohibited ASCII controls, count/size/deadline/output limits and sandbox/write guards remain. Input parsing separated from execution; direct imports remove new architecture violations without changing budgets. Real OCI tool acceptance is not fresh full-Agent quality qualification. Historical model failures and frozen cohorts remain unchanged."
+}

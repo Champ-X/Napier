@@ -46,3 +46,12 @@ export function createPrivateWorkspaceNodeDebuggerProcesses(options: {
       options.processes.cancel(threadId, processId),
   };
 }
+
+export type PrivateDapProcessManager = Pick<
+  WorkspaceProcessManager,
+  | "startPrivateProtocol"
+  | "writePrivateProtocolInput"
+  | "outputPrivateProtocol"
+  | "cancel"
+  | "list"
+>;

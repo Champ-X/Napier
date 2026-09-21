@@ -1,0 +1,122 @@
+{
+  "kind": "napier.node-inline-newline-observation",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T16:45:17.553Z",
+  "runId": "run_03d5399cc2bc4000812f",
+  "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-deadline-bounded-core-v9/transaction_savepoints_v1-candidate-trial-1/trial-1/result.json",
+  "reportSha256": "727b2de390972a5a0481a886e5a53a3315d3b510fc1d097f497aad87f63b6fd1",
+  "observations": [
+    {
+      "callId": "call_00_5YGayxcoRj21vLX1OOhT3515",
+      "seq": 521,
+      "argumentsSha256": "a4c4ac5222f980ba2962238438a77d68a709418b9d9181b9de0eee689091f7bc",
+      "outputTextSha256": "7ef2c35c683167ac58ebd9219982e507f615aaeb49660435b5ab1a4162f768ea",
+      "runtime": "node",
+      "evaluationArgumentIndex": 2,
+      "containsNewline": true,
+      "errorLine": "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\"",
+      "failureClass": "invalid_input"
+    },
+    {
+      "callId": "call_01_STamhudXkSGglQEeiP6w9342",
+      "seq": 522,
+      "argumentsSha256": "aedcfb4eb1bef7bc509741332a7d5c56a0d3c2343f44a3e9c194b4e07c646b2c",
+      "outputTextSha256": "bea4d72446cd82eb9cc11b9b5fd5f45d39ceba58aaf3902ae5d3ccc89915a8b6",
+      "runtime": "node",
+      "evaluationArgumentIndex": 2,
+      "containsNewline": true,
+      "errorLine": "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\"",
+      "failureClass": "invalid_input"
+    },
+    {
+      "callId": "call_02_odIRX4at74C17JlX0qQQ4276",
+      "seq": 523,
+      "argumentsSha256": "186b0657e11fa7f5598318e0e84a8a2c124c80fae6590a239430e304cc39e1a8",
+      "outputTextSha256": "6d17a441a613cc18c47341d083115f6756f850c49295415638e3005f4922e94c",
+      "runtime": "node",
+      "evaluationArgumentIndex": 2,
+      "containsNewline": true,
+      "errorLine": "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\"",
+      "failureClass": "invalid_input"
+    },
+    {
+      "callId": "call_03_X6YZSBTe5ckBtrB0rUgQ3973",
+      "seq": 524,
+      "argumentsSha256": "9bf7a4334dae6cab4c9a96424d432503d3b9046a780351573431acc1421c5f08",
+      "outputTextSha256": "4ba5fb6ae386dcce9d6c16fd06b642d3d35b87da7d42c770c2ec2e3c2a2480b6",
+      "runtime": "node",
+      "evaluationArgumentIndex": 2,
+      "containsNewline": true,
+      "errorLine": "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\"",
+      "failureClass": "invalid_input"
+    },
+    {
+      "callId": "call_04_iMIauKfXK1s1fEopjUf48171",
+      "seq": 525,
+      "argumentsSha256": "ab5379c51f7be0a13685187432dff2feb3c3f698c38ff1ac20276553b016a281",
+      "outputTextSha256": "4411c2d6b43115111747e0b81f8c2355b4008818c0ffde84b2c6ee155c071413",
+      "runtime": "node",
+      "evaluationArgumentIndex": 2,
+      "containsNewline": true,
+      "errorLine": "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\"",
+      "failureClass": "invalid_input"
+    },
+    {
+      "callId": "call_05_CzSRwA8JRgQX0npYai9B1316",
+      "seq": 526,
+      "argumentsSha256": "a7137c7921b49fb707d4bb62c120eef032b9e0f12b3810d5a78298db388d7e2d",
+      "outputTextSha256": "c87c412ae553713d6db84f45178b9b43a4d32a2ddcb7321c6d566dc473c0e174",
+      "runtime": "node",
+      "evaluationArgumentIndex": 2,
+      "containsNewline": true,
+      "errorLine": "  - args.2: must match pattern \"^[^\\u0000-\\u001f\\u007f]*$\"",
+      "failureClass": "invalid_input"
+    }
+  ],
+  "completedAfter": [
+    {
+      "callId": "call_00_3qf6ZlUdZ504E2qIeu3A3746",
+      "seq": 577,
+      "outputTextSha256": "832c3df1b6e3bd186839b143d73bebe0e979daf7e3d00cd859004b5eae54f24c"
+    },
+    {
+      "callId": "call_01_rHK2BFDp1g50ydcyN8k62336",
+      "seq": 587,
+      "outputTextSha256": "c3e7660dabcdf160b93ab5e178b64282519d870076acda7bfdb9b8719023b999"
+    },
+    {
+      "callId": "call_02_QYBGhua3uwHIWPO6vbjP9754",
+      "seq": 597,
+      "outputTextSha256": "a8e5c00f3290e6d80caa95675434f9bf27a1fcba9c81d7a4606176a1d3c7d94c"
+    },
+    {
+      "callId": "call_03_utgaSuErGewLLO1LNKgb8898",
+      "seq": 607,
+      "outputTextSha256": "395ee33875d938f4dbb17e83adc85d3c46c06be3de1b3accfb89df7ef5c6dbac"
+    },
+    {
+      "callId": "call_04_rnCOTmSowycesrmihU5m0663",
+      "seq": 617,
+      "outputTextSha256": "f780ad36b0d328a40552f19eb1c14432fcc56e1d90b49407cbcc4561f940f87e"
+    },
+    {
+      "callId": "call_05_jGkv5YZA0gMNqBri5wJH9940",
+      "seq": 627,
+      "outputTextSha256": "a563323442bb1d576f3a66822a5e58bcb0e34f384b70583f31e06c4b52007c42"
+    },
+    {
+      "callId": "call_06_0mBJRypGmROELmbzlfjb9220",
+      "seq": 637,
+      "outputTextSha256": "d399d138624e790d3a12f1d920ae45c903068ad395e3ada6af1bc24b2713c119"
+    },
+    {
+      "callId": "call_00_Uv3zEFJbx82wKKCjrdcX4650",
+      "seq": 675,
+      "outputTextSha256": "584e05fb244b70bfe3f13f3171c39d96e7540b772901106caa0b0b938f51669d"
+    }
+  ],
+  "taskSuccess": true,
+  "graderExitCode": 0,
+  "modelRequests": 0,
+  "scope": "Six same-response Node -e calls were rejected for newline-bearing argv. Raw diagnostic texts match ledger hashes and arguments come from bound invocation capsules. Subsequent admitted commands and independent grading succeed. This records an observed tool-contract limitation without changing frozen source, schemas, reports or task outcomes."
+}

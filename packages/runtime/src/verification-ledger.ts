@@ -30,6 +30,7 @@ export function verificationToolInputLedgerProjection(
   return {
     inputSha256: verificationInputSha256(args),
     inputRedacted: true,
+    verificationKind: recognizedVerificationKind(args),
   };
 }
 
@@ -51,6 +52,8 @@ export function verificationDetailsProjection(
 ): Record<string, JsonValue> {
   const fields = [
     "kind",
+    "runtime",
+    "verifier",
     "status",
     "scopeSha256",
     "cwdPathSha256",
@@ -67,6 +70,21 @@ export function verificationDetailsProjection(
     "toolchainSha256",
     "runtimeIdentitySha256",
     "workspaceSnapshotSha256",
+    "workspaceSnapshotScope",
+    "observedWorkspaceSnapshotSha256",
+    "snapshotStatus",
+    "diagnosticCount",
+    "diagnosticsTruncated",
+    "diagnosticSetSha256",
+    "diagnosticOutputSha256",
+    "selectionMode",
+    "selectionSha256",
+    "selectionReasonsJson",
+    "selectedTestCount",
+    "completedVerificationCount",
+    "selectedTestSetSha256",
+    "verificationResultSetSha256",
+    "executionResultSha256",
     "workspaceSnapshotFileCount",
     "workspaceSnapshotBytes",
     "workspaceSnapshotTruncated",
@@ -95,6 +113,14 @@ export function verificationDetailsProjection(
 
 function verificationInputSha256(args: unknown): string {
   return sha256(canonicalJson({ toolName: "verify_workspace", args }));
+}
+
+function recognizedVerificationKind(args: unknown): string {
+  const kind = record(args)?.["kind"];
+  return typeof kind === "string" &&
+    ["test", "typecheck", "format", "syntax"].includes(kind)
+    ? kind
+    : "unknown";
 }
 
 function jsonScalar(value: unknown): JsonValue | undefined {

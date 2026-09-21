@@ -673,3 +673,13 @@ function canonicalJson(value: unknown): string {
   }
   return JSON.stringify(value);
 }
+
+it("round-trips an unlimited token setting through the configuration fingerprint", () => {
+  const fingerprint = createRunConfigurationFingerprint({
+    ...PROFILE,
+    runLimits: { ...PROFILE.runLimits!, maxTotalTokens: 0 },
+  });
+  expect(
+    validateRunConfigurationFingerprint(fingerprint).runLimits.maxTotalTokens,
+  ).toBe(0);
+});

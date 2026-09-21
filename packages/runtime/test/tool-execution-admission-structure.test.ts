@@ -15,6 +15,11 @@ const admittedExecutionSurfaces = new Set([
 ]);
 
 const invocationExemptions = new Set([
+  // Same-tool decorators: metadata/name are preserved, with no new capability.
+  "workspace-edit-reference-tools.ts#withWorkspaceEditReferences",
+  "toolchain-provider.ts#withToolchainProviders",
+  "toolchain-process-provider.ts#withToolchainProcessProvider",
+  "toolchain-debugger-provider.ts#withToolchainDebuggerProvider",
   "agent-tool-failure-capture.ts#wrapToolsWithFailureCapture",
   "doctor-runtime-probes.ts#probeSkillsRuntime",
   "subagent-worktree-verification.ts#SubagentWorktreeOperationCoordinator.wrapReadOnlyTool",

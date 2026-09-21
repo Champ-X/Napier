@@ -1,0 +1,231 @@
+{
+  "kind": "napier.etag-request-cap-stop",
+  "schemaVersion": 1,
+  "createdAt": "2026-09-14T14:35:14.051Z",
+  "batchResultPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/mixed-two-pair-fast-v1/result.json",
+  "batchResultSha256": "b722d11598d5f10fde289fd32c567ac261f3f6d5857bbbd5a856cd21b0e471b1",
+  "audits": [
+    {
+      "kind": "napier.settled-harness-run-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T14:26:28.834Z",
+      "jobIndex": 14,
+      "runId": "run_b2fce25e59f54f29bdad",
+      "caseId": "http_etag_preconditions_v2",
+      "arm": "candidate",
+      "status": "completed",
+      "taskSuccess": true,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/http_etag_preconditions_v2-candidate-trial-1/trial-1/result.json",
+      "reportSha256": "73d61f62cdbdf8435839bb896ce363c9b7a506cd300c55a74f3ab8d522846654",
+      "auditedCapsules": 11,
+      "modelRequestBindingsVerified": true,
+      "toolCalls": [
+        {
+          "callId": "call_01_LkPssx0KV07T4C6snrEa6089",
+          "toolName": "verify_workspace",
+          "runtime": "node",
+          "kind": "test",
+          "argumentsSha256": "4f717d1248a44a7739548f97054a6f7ec7b86b09f7368730009a245c1165ad0c",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_03_6V59SmtdkX9WCETokTWl2860",
+          "toolName": "verify_workspace",
+          "runtime": "node",
+          "kind": "test",
+          "argumentsSha256": "4f717d1248a44a7739548f97054a6f7ec7b86b09f7368730009a245c1165ad0c",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_05_DKRNtjKXdAilQ8dXvuln2963",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "ca699f2d340b9c2c1eb35d6c522427be7e113f01da863681734b83aa78cd3a6f",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_06_Epv86PfOTFCCwWYa6ryM3369",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "693f594f0a1dd2a5588beef475559ff6eb9270e34951016fec12cce7154838f2",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_zhJSsB6pJVg4metEJy7u7443",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "85e803b89a4917d67724c463155d2df711f4522fac67817712a2d3e6908b7fcd",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_01_jn8hrQZ1AfjZM4ZSnUYk2947",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "e50272e2c4c979c24543b6f57f082c5a1958b2f43955a2e9638d5bdf41d1c4ae",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_02_QC9fvpX8DLW5xs0fiXfb7051",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "5d3627c2d95d378d307f2c2c254d01ccc26a58d7879043710bbe39fa6072181f",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_03_iGzUlw7vKsMbNQdzQ2t64605",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "ed5d15ebfcadcf4ead7c1fc04841455b614810ac06f96e85d314f789c42301bc",
+          "terminal": "tool.completed"
+        }
+      ],
+      "toolFailures": 3,
+      "changed": [
+        "src/etag.mjs",
+        "src/preconditions.mjs"
+      ],
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "verificationStatuses": [
+        "failed",
+        "passed"
+      ],
+      "admissions": 12,
+      "minimumIntervalMs": 15001,
+      "conservativeCostFen": 93,
+      "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+    },
+    {
+      "kind": "napier.settled-harness-run-audit",
+      "schemaVersion": 1,
+      "createdAt": "2026-09-14T14:32:31.353Z",
+      "jobIndex": 15,
+      "runId": "run_5a68cb51501541e39e92",
+      "caseId": "http_etag_preconditions_v2",
+      "arm": "baseline",
+      "status": "failed",
+      "taskSuccess": false,
+      "reportPath": "/Users/champ/.cache/napier-seven-quality/cny-validation-envelope-core-v6/http_etag_preconditions_v2-baseline-trial-1/trial-1/result.json",
+      "reportSha256": "62dd4600668b0d45a74e0418e97825e7594b989f12ca4a3c6cf21f0a111976ec",
+      "auditedCapsules": 21,
+      "modelRequestBindingsVerified": true,
+      "toolCalls": [
+        {
+          "callId": "call_00_jTtp0gOm4MXWno6dT6gT9660",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "a1bb22356eb6d6031dddf765157493d1bcba194d8107849460fc655e437a53e1",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_NO5MCj6gzCSoMQs15t4i2361",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "68280c241c3b899f623ec4075f85a31bd28fe11a0b9607a42451b29d902b644b",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_01_kaQuohIIdB24a1oN1HWX3278",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "547a45988e379d737ddcde3c4c938867412ff08f05e3aa5a1b546a0de4602dc4",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_xq6lJ4FH7iT0w8Jh1gvD2847",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "b55d3af0336306ae1c89ec7cef1799042f66369b592a26e6895a71bd6c9d5915",
+          "terminal": "tool.completed"
+        },
+        {
+          "callId": "call_00_ET_toP7LNbhlRm5a79H0XlK3573",
+          "toolName": "run_command",
+          "runtime": "node",
+          "kind": null,
+          "argumentsSha256": "bbd903f55273fc53f6beb5fe3b3457f8684c664671837b87e8b24cf94b036a3c",
+          "terminal": "tool.completed"
+        }
+      ],
+      "toolFailures": 1,
+      "changed": [
+        "src/etag.mjs",
+        "src/preconditions.mjs"
+      ],
+      "workspaceMatches": true,
+      "graderMatches": true,
+      "verificationStatuses": [],
+      "admissions": 20,
+      "minimumIntervalMs": 15001,
+      "conservativeCostFen": 160,
+      "scope": "Read-only audit of an existing settled Agent Run; no model requests or additional quality observations"
+    }
+  ],
+  "quality": {
+    "kind": "napier.harness-campaign-quality",
+    "schemaVersion": 1,
+    "required": {
+      "minimumCases": 30,
+      "minimumTrials": 3
+    },
+    "comparablePairs": 7,
+    "cases": 7,
+    "regressions": [],
+    "evidenceBlockers": [
+      "http_etag_preconditions_v2:0: missing, changed or exhausted API request budget evidence"
+    ],
+    "blockers": [
+      "http_etag_preconditions_v2:0: missing, changed or exhausted API request budget evidence",
+      "Need 30 cases; observed 7",
+      "rollout_dependency_plan_v2: need 3 paired trials; observed 1",
+      "http_retry_policy_v2: need 3 paired trials; observed 1",
+      "access_rule_evaluation_v2: need 3 paired trials; observed 1",
+      "booking_calendar_v2: need 3 paired trials; observed 1",
+      "safe_csv_export_v1: need 3 paired trials; observed 1",
+      "inventory_event_projection_v1: need 3 paired trials; observed 1",
+      "weighted_expense_allocation_v1: need 3 paired trials; observed 1"
+    ],
+    "verdict": "insufficient_evidence",
+    "promotionReady": false,
+    "contentSha256": "c168759afbceceff4806c8813c8ea616321379ceca886339fea95d793b259e46"
+  },
+  "spendingAtStop": {
+    "kind": "napier.harness-spending-budget",
+    "schemaVersion": 1,
+    "currency": "CNY",
+    "maxFen": 10000,
+    "priorSpendFen": 110,
+    "committedFen": 2832,
+    "remainingFen": 7168,
+    "requests": 375,
+    "reservedRequests": 0,
+    "denied": 0,
+    "policy": {
+      "modelAliases": [
+        "deepseek-flash",
+        "deepseek-v4-flash"
+      ],
+      "inputFenPerMillion": 200,
+      "outputFenPerMillion": 800,
+      "maxInputTokens": 1000000,
+      "maxOutputTokens": 384000,
+      "reservationFen": 600,
+      "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+      "checkedOn": "2026-09-14"
+    }
+  },
+  "diagnosis": "Baseline external grader passes, but the 21st API admission is denied after 20 settled requests. The twentieth admitted turn completed record_run_milestone; no final user delivery was observed. Preserve failed Run status and original evidence blocker; do not infer that an additional call would complete.",
+  "dispatch": "Both mixed and queue/semver continuations stopped. A new bounded plan retains the exact original blocker and all report hashes, and authorizes only the unstarted NDJSON pair; aggregate promotion remains blocked even if that pair passes.",
+  "scope": "Read-only diagnosis and retained capsule/workspace audits. No new trials, relabeling, promotion or Runtime changes.",
+  "promotionReady": false
+}
