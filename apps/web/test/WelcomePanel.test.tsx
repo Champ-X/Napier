@@ -5,6 +5,21 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ConversationWorkspaceProps } from "../src/ConversationWorkspace";
 
+// These tests exercise prompt behavior; real icon rendering is covered in the browser.
+vi.mock("lucide-react", () => {
+  const Icon = (props: Record<string, unknown>) => <svg {...props} />;
+  return {
+    ArrowUpRight: Icon,
+    BookOpenCheck: Icon,
+    Blocks: Icon,
+    Bug: Icon,
+    FolderSearch2: Icon,
+    GitCompare: Icon,
+    ListChecks: Icon,
+    TestTube2: Icon,
+  };
+});
+
 const containers: HTMLElement[] = [];
 
 afterEach(async () => {

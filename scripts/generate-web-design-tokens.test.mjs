@@ -17,10 +17,13 @@ describe("Napier Web design tokens", () => {
     const css = generateWebDesignCss(markdown);
 
     expect(source.semantic.color.accent.$value).toBe("{color.brand.600}");
-    expect(css).toContain("--color-accent: #34332F;");
-    expect(css).toContain("--color-focus-ring: #5B5852;");
-    expect(css).toContain("--color-navigation-bg: #F6F4F0;");
-    expect(css).toContain("--color-execution-spine: #6F6A63;");
+    expect(css).toContain("--color-accent: #2F567D;");
+    expect(css).toContain("--color-focus-ring: #426D98;");
+    expect(css).toContain("--color-navigation-bg: #F1F5F8;");
+    expect(css).toContain("--color-execution-spine: #5D7185;");
+    expect(css).toContain(
+      '--font-display: "Avenir Next", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;',
+    );
     expect(css).toContain("--layout-command-bar: 88px;");
     expect(css).toContain("--layout-composer-shell: 72px;");
     expect(css).toContain("--layout-reading-target: 760px;");

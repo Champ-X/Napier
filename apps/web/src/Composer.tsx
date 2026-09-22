@@ -1,4 +1,4 @@
-import type { ClipboardEvent, DragEvent, KeyboardEvent } from "react";
+import type { ClipboardEvent, DragEvent } from "react";
 import { lazy, Suspense, useCallback, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -12,6 +12,7 @@ import type { AgentProfile } from "@napier/contracts";
 import type { InspectorTab } from "./use-workspace-view-model";
 import { copy } from "./copy";
 import { composerCopy } from "./composer-copy";
+import { handleComposerKeys } from "./composer-keyboard";
 import {
   appendComposerImageFiles,
   ComposerImageError,
@@ -146,6 +147,7 @@ export function Composer({
           aria-label={
             vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
           }
+          aria-describedby="composer-submit-hint"
           placeholder={
             vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
           }
@@ -215,6 +217,9 @@ export function Composer({
         )}
       </div>
       <div className="composer-footer">
+        <span id="composer-submit-hint" className="composer-submit-hint">
+          {shellCopy.composer.submitHint}
+        </span>
         <div className="composer-hints">
           <button
             type="button"
@@ -469,16 +474,6 @@ function readinessWarningLabel(readiness: ComposerRunReadiness): string {
     readiness.items.find((item) => item.state === "warn")?.value ??
     composerCopy.values.availableUnverified
   );
-}
-
-function handleComposerKeys(
-  event: KeyboardEvent<HTMLTextAreaElement>,
-  submit: () => void,
-): void {
-  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-    event.preventDefault();
-    submit();
-  }
 }
 
 function composerReadinessPending(readiness: ComposerRunReadiness): boolean {

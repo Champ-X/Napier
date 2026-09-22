@@ -1,13 +1,13 @@
 /* Generated from DESIGN.md. Do not edit by hand. */
-/* source-sha256: 9740055b1b091cc442a68b8e9d6bc2cb4e78ce228df8e6418df48231e12146c1 */
+/* source-sha256: 0a29c28b860b60c1f859113ae151d64a6d59262eb3f6939c220ce4441f23ed85 */
 :root {
   color-scheme: light;
-  --color-accent: #34332F;
-  --color-accent-active: #1F1E1B;
-  --color-accent-hover: #292824;
-  --color-accent-subtle: #F3F1ED;
-  --color-bg: #FBFAF7;
-  --color-bg-subtle: #F6F4F0;
+  --color-accent: #2F567D;
+  --color-accent-active: #1C2D3F;
+  --color-accent-hover: #254767;
+  --color-accent-subtle: #EAF2F9;
+  --color-bg: #F8FAFC;
+  --color-bg-subtle: #F1F5F8;
   --color-blue-11: #131823;
   --color-blue-15: #25262A;
   --color-blue-16: #17213C;
@@ -26,23 +26,23 @@
   --color-blue-77: #B8BFD2;
   --color-blue-82: #C8CEDC;
   --color-blue-90: #DEE3EB;
-  --color-border: #D7D3CB;
-  --color-border-strong: #858078;
-  --color-border-subtle: #E8E5DF;
-  --color-canvas: #F6F4F0;
+  --color-border: #C9D5E0;
+  --color-border-strong: #778B9E;
+  --color-border-subtle: #DFE7EE;
+  --color-canvas: #F1F5F8;
   --color-danger: #B43F3E;
   --color-danger-accent: #E5484D;
   --color-danger-border: #B85A4B;
   --color-danger-fg: #843C2D;
   --color-danger-surface: #FDECEC;
-  --color-execution-spine: #6F6A63;
-  --color-execution-spine-subtle: #F0EEE9;
-  --color-fg: #1F1E1B;
-  --color-fg-disabled: #514D47;
-  --color-fg-muted: #514D47;
+  --color-execution-spine: #5D7185;
+  --color-execution-spine-subtle: #EAF0F5;
+  --color-fg: #1C2D3F;
+  --color-fg-disabled: #43576B;
+  --color-fg-muted: #43576B;
   --color-fg-on-accent: #FFFFFF;
-  --color-fg-subtle: #6F6A63;
-  --color-focus-ring: #5B5852;
+  --color-fg-subtle: #5D7185;
+  --color-focus-ring: #426D98;
   --color-gold-25: #6C4B16;
   --color-gold-26: #604C25;
   --color-gold-30: #78601F;
@@ -71,12 +71,12 @@
   --color-green-28: #315F43;
   --color-green-33: #317950;
   --color-green-85: #CAE7D7;
-  --color-navigation-bg: #F6F4F0;
-  --color-navigation-border: #E8E5DF;
-  --color-navigation-fg: #1F1E1B;
-  --color-navigation-fg-muted: #625E57;
-  --color-navigation-surface: #FBFAF7;
-  --color-navigation-surface-hover: #F0EEE9;
+  --color-navigation-bg: #F1F5F8;
+  --color-navigation-border: #DFE7EE;
+  --color-navigation-fg: #1C2D3F;
+  --color-navigation-fg-muted: #52687D;
+  --color-navigation-surface: #F8FAFC;
+  --color-navigation-surface-hover: #EAF0F5;
   --color-paper: #FFFFFF;
   --color-red-32: #744331;
   --color-red-34: #80362F;
@@ -112,9 +112,9 @@
   --color-success-border: #456B5B;
   --color-success-surface: #DFE9E0;
   --color-surface: #FFFFFF;
-  --color-surface-muted: #F0EEE9;
-  --color-surface-raised: #FBFAF7;
-  --color-surface-selected: #F3F1ED;
+  --color-surface-muted: #EAF0F5;
+  --color-surface-raised: #F8FAFC;
+  --color-surface-selected: #EAF2F9;
   --color-teal-28: #315D5C;
   --color-trajectory-input-fg: #1F7A4D;
   --color-trajectory-input-surface: #E7F4EC;
@@ -148,6 +148,7 @@
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --font-display: "Avenir Next", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: SFMono-Regular, "Cascadia Mono", "Roboto Mono", "Noto Sans Mono CJK SC", Consolas, monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif;
   --font-weight-bold: 700;

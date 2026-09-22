@@ -2,10 +2,14 @@ import { deepMergeCopy, getLocale, type LocaleOverride } from "./locale";
 
 export const shellCopyEn = {
   initialStates: {
+    retry: "Try again",
+    skipToWorkspace: "Skip to workspace",
+    welcomeEyebrow: "Your task workspace",
     loadingAria: "Loading Napier",
     openingLedger: "Opening the ledger",
   },
   composer: {
+    submitHint: "Ctrl / ⌘ + Enter to run",
     runOptions: "Run options",
     checkingRunOptions: "Checking run options...",
   },
@@ -24,10 +28,14 @@ export const shellCopyEn = {
 
 export const shellCopyZh: LocaleOverride<typeof shellCopyEn> = {
   initialStates: {
+    retry: "重新连接",
+    skipToWorkspace: "跳到工作区",
+    welcomeEyebrow: "你的任务工作台",
     loadingAria: "正在加载 Napier",
     openingLedger: "正在打开任务账本",
   },
   composer: {
+    submitHint: "Ctrl / ⌘ + Enter 发送",
     runOptions: "运行选项",
     checkingRunOptions: "正在检查运行选项……",
   },

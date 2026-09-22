@@ -28,6 +28,7 @@
 }
 
 .thread-row-shell:hover .thread-menu-trigger,
+.thread-row-shell:focus-within .thread-menu-trigger,
 .thread-row-shell.is-active .thread-menu-trigger,
 .thread-row-shell.has-open-menu .thread-menu-trigger,
 .thread-menu-trigger:focus-visible {

@@ -1,0 +1,136 @@
+/* Decision and administration surfaces use the same quiet working canvas. */
+.operator-decision {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-inline-start: 3px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  box-shadow: var(--workbench-panel-shadow);
+}
+
+.operator-decision::after {
+  display: none;
+}
+
+.operator-decision-heading {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border-subtle);
+}
+
+.operator-decision-glyph {
+  color: var(--color-warning);
+  background: var(--color-warning-surface);
+  border-color: transparent;
+}
+
+.operator-decision-heading span,
+.operator-decision-mode,
+.operator-decision-custom > summary,
+.operator-decision legend > span,
+.operator-decision-context > span {
+  font-family: var(--font-sans);
+  color: var(--color-fg-subtle);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.operator-decision-options {
+  gap: var(--space-2);
+}
+
+.operator-decision-options label {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.operator-decision-options label:hover {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-focus-ring);
+  transform: none;
+}
+
+.operator-decision-options label.is-selected {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+}
+
+.is-selected .operator-option-index {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.operator-decision-primary,
+.operator-decision-cancel {
+  min-height: var(--control-target);
+  border-radius: var(--radius-sm);
+}
+
+.operator-decision-primary {
+  color: var(--color-fg-on-accent);
+  border-color: var(--color-accent);
+}
+
+.operator-decision-custom textarea {
+  font-size: var(--text-sm);
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.settings-content
+  :is(
+    .fixture-docket,
+    .calibration-ledger,
+    .extension-package-desk,
+    .receipt-baseline-workbench
+  ) {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--workbench-panel-shadow);
+}
+
+.settings-content .fixture-docket {
+  padding: var(--space-4);
+}
+
+.settings-content .fixture-docket::before,
+.settings-content .extension-package-desk::after {
+  display: none;
+}
+
+.settings-content .fixture-docket > header span {
+  font-family: var(--font-sans);
+  color: var(--color-fg-subtle);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.settings-content .fixture-docket > header > svg {
+  border: 0;
+  border-radius: var(--radius-sm);
+  transform: none;
+}
+
+.settings-content .fixture-actions button {
+  min-height: var(--control-target);
+  border-radius: var(--radius-sm);
+}
+
+@container (max-width: 400px) {
+  .conversation-workspace-view .composer-footer {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .composer-submit-hint {
+    flex-basis: 100%;
+    margin-inline: var(--space-2);
+  }
+
+  .operator-decision-context,
+  .operator-decision footer {
+    flex-wrap: wrap;
+  }
+}

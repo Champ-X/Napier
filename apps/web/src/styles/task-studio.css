@@ -1,0 +1,466 @@
+/* Task studio: semantic tokens keep the shell and deferred panels in sync. */
+.workspace-navigation-shell {
+  display: contents;
+}
+
+.workspace-skip-link {
+  position: fixed;
+  z-index: 100;
+  top: var(--space-3);
+  left: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent);
+  border-radius: var(--radius-md);
+  transform: translateY(-180%);
+}
+
+.workspace-skip-link:focus {
+  transform: translateY(0);
+}
+
+.ledger-nav {
+  padding-inline: var(--space-4);
+}
+
+.brand-lockup {
+  margin-block: var(--space-2) var(--space-4);
+}
+
+.new-ledger-button {
+  gap: var(--space-3);
+  min-height: 44px;
+  margin-bottom: var(--space-2);
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  box-shadow: var(--workbench-panel-shadow);
+}
+
+.new-ledger-button:hover {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.ledger-search label {
+  background: var(--color-navigation-surface);
+  border-color: var(--color-navigation-border);
+}
+
+.ledger-search label:focus-within {
+  border-color: var(--color-focus-ring);
+  box-shadow: 0 0 0 2px var(--color-accent-subtle);
+}
+
+.workspace-tree-folder.is-active {
+  background: var(--color-navigation-surface-hover);
+}
+
+.thread-row-shell.is-active {
+  background: var(--color-surface);
+  box-shadow:
+    inset 3px 0 var(--color-accent),
+    var(--workbench-panel-shadow);
+}
+
+.thread-row-shell.is-active .thread-title-line strong,
+.thread-row-shell.is-active .thread-icon {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+.thread-row {
+  min-height: 40px;
+  padding-block: var(--space-2);
+}
+
+.workspace-settings-button {
+  min-height: 40px;
+}
+
+.workbench-header {
+  padding-inline: var(--space-6);
+}
+
+.workspace-view-navigation {
+  width: calc(100% + var(--space-12));
+  margin-inline: calc(var(--space-6) * -1);
+  padding-inline: var(--space-4);
+  background: var(--color-surface-raised);
+}
+
+.workspace-view-tabs > button {
+  gap: var(--space-2);
+  padding-inline: var(--space-4);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.workspace-view-tabs > button > svg {
+  display: block;
+}
+
+.workspace-view-tabs > button:hover {
+  background: var(--color-bg-subtle);
+}
+
+.workspace-view-tabs > button.is-active {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+.workspace-view-tabs > button::after {
+  right: 0;
+  left: 0;
+}
+
+.conversation-workspace-view {
+  container-type: inline-size;
+}
+
+.welcome-panel {
+  align-items: flex-start;
+  text-align: start;
+}
+
+.welcome-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg-muted);
+}
+
+.welcome-ledger-mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: inset 3px 0 var(--color-accent);
+  place-items: center;
+}
+
+.welcome-panel h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4cqi, 2.5rem);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+}
+
+.welcome-panel > p {
+  margin-inline: 0;
+  color: var(--color-fg-subtle);
+  text-wrap: pretty;
+}
+
+.welcome-starters > h3 {
+  margin-block: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.welcome-starter {
+  position: relative;
+  min-height: 88px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-raised);
+  border-color: transparent;
+}
+
+.welcome-starter:hover {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
+.welcome-starter-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--color-accent);
+  background: transparent;
+}
+
+.welcome-starter-copy {
+  gap: var(--space-1);
+}
+
+.welcome-starter-arrow {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  color: var(--color-accent);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.welcome-starter:hover .welcome-starter-arrow,
+.welcome-starter:focus-visible .welcome-starter-arrow {
+  opacity: 1;
+}
+
+.conversation-workspace-view .composer {
+  border-color: var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--color-accent) 7%, transparent);
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.conversation-workspace-view .composer:focus-within {
+  border-color: var(--color-focus-ring);
+  box-shadow:
+    0 0 0 3px var(--color-accent-subtle),
+    0 8px 28px color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.conversation-workspace-view .composer textarea {
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+}
+
+.conversation-workspace-view .composer-footer {
+  justify-content: space-between;
+}
+
+.composer-submit-hint {
+  order: 1;
+  align-self: center;
+  margin-inline: auto var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-fg-subtle);
+}
+
+.conversation-workspace-view .composer-readiness-warning {
+  position: static;
+  width: fit-content;
+  margin: var(--space-1) var(--space-2);
+}
+
+.conversation-workspace-view .run-button {
+  border-radius: var(--radius-md);
+}
+
+.role-user .message-content {
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-end-end-radius: var(--radius-sm);
+}
+
+.message-ledger .conversation-artifact {
+  border-inline-start: 3px solid var(--color-accent);
+  background: var(--color-surface-raised);
+}
+
+.settings-surface-heading h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+.settings-navigation button {
+  margin-bottom: var(--space-1);
+}
+
+.settings-navigation button.is-active {
+  background: var(--color-surface);
+}
+
+.fatal-retry-button {
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-6);
+  color: var(--color-fg-on-accent);
+  cursor: pointer;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.fatal-retry-button:hover {
+  background: var(--color-accent-hover);
+}
+
+@container (max-width: 680px) {
+  .welcome-starter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 400px) {
+  .welcome-panel h2 {
+    font-size: 1.5rem;
+  }
+
+  .welcome-starter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .welcome-starter {
+    min-height: 68px;
+  }
+  .welcome-identity {
+    margin-bottom: var(--space-4);
+  }
+  .composer-submit-hint {
+    font-size: var(--text-xs);
+  }
+}
+
+@media (max-width: 680px) {
+  .workbench-header {
+    padding-inline: var(--space-3);
+  }
+  .workspace-view-navigation {
+    width: calc(100% + var(--space-6));
+    margin-inline: calc(var(--space-3) * -1);
+    padding-inline: var(--space-1);
+  }
+  .workspace-view-tabs > button {
+    gap: var(--space-1);
+    padding-inline: var(--space-1);
+  }
+  .workspace-view-tabs > button > svg {
+    display: none;
+  }
+  .conversation-workspace-view:has(.welcome-panel) {
+    padding-inline: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-starter,
+  .welcome-starter-arrow,
+  .workspace-view-tabs > button,
+  .conversation-workspace-view .composer {
+    transition: none;
+  }
+  .welcome-starter:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .new-ledger-button,
+  .welcome-starter,
+  .welcome-ledger-mark,
+  .fatal-retry-button {
+    border: 1px solid ButtonText;
+  }
+  .thread-row-shell.is-active,
+  .workspace-view-tabs > button.is-active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+/* Reflow overlays as a full-width sheet before their navigation crowds content. */
+@media (max-width: 960px) {
+  .app-shell .workspace-settings-surface,
+  .app-shell:has(.ledger-nav.is-collapsed) .workspace-settings-surface {
+    inset: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .settings-surface-heading {
+    min-height: 0;
+    padding: var(--space-4);
+  }
+
+  .settings-navigation {
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    overflow: auto hidden;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .settings-navigation button {
+    width: auto;
+    min-width: max-content;
+    min-height: 44px;
+    flex: 1 0 auto;
+    margin: 0;
+  }
+
+  .settings-navigation small {
+    display: none;
+  }
+
+  .settings-content
+    > :is(
+      .panel-section,
+      .context-panel,
+      .language-panel,
+      .developer-tools,
+      .developer-publishing-section,
+      .design-showcase,
+      .settings-empty-state
+    ) {
+    padding: var(--space-4) var(--space-4) var(--space-8);
+  }
+
+  .design-color-grid,
+  .design-state-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell .workspace-settings-surface,
+  .app-shell:has(.ledger-nav.is-collapsed) .workspace-settings-surface {
+    inset: var(--space-2);
+  }
+
+  .settings-navigation button {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: var(--space-3);
+  }
+
+  .settings-navigation button > svg {
+    display: none;
+  }
+
+  .settings-navigation strong {
+    font-size: var(--text-xs);
+  }
+
+  .settings-content > .context-panel {
+    padding-inline: var(--space-3);
+  }
+
+  .settings-content .panel-header {
+    flex-wrap: wrap;
+  }
+}
+
+.trajectory-workspace-view .trace-trajectory-empty {
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--color-surface-raised);
+}
+
+.trace-trajectory-empty > svg {
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+
+.trace-trajectory-empty span,
+.settings-content .panel-heading > div > span {
+  color: var(--color-fg-subtle);
+}
+
+.task-empty-state > p {
+  margin: 0 0 var(--space-4);
+}
+
+.task-empty-state .task-primary-action {
+  margin-inline: auto;
+}

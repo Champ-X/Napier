@@ -19,37 +19,37 @@
           "x": 252,
           "y": 0,
           "width": 1028,
-          "height": 52
+          "height": 88
         },
         "status": {
-          "x": 961,
-          "y": 10,
-          "width": 157,
+          "x": 906,
+          "y": 8,
+          "width": 178,
           "height": 32
         },
         "conversation": {
           "x": 252,
-          "y": 52,
+          "y": 88,
           "width": 756,
-          "height": 329
+          "height": 250
         },
         "composer": {
           "x": 276,
-          "y": 776,
+          "y": 741,
           "width": 708,
-          "height": 108
+          "height": 143
         },
         "views": {
-          "x": 614,
-          "y": 0,
-          "width": 303,
-          "height": 51
+          "x": 252,
+          "y": 48,
+          "width": 1028,
+          "height": 40
         },
         "primary": {
           "x": 252,
-          "y": 52,
+          "y": 88,
           "width": 1028,
-          "height": 848
+          "height": 812
         }
       }
     },
@@ -68,37 +68,37 @@
           "x": 252,
           "y": 0,
           "width": 1188,
-          "height": 52
+          "height": 88
         },
         "status": {
-          "x": 1105,
-          "y": 10,
-          "width": 158,
+          "x": 1057,
+          "y": 8,
+          "width": 180,
           "height": 32
         },
         "conversation": {
           "x": 252,
-          "y": 52,
+          "y": 88,
           "width": 916,
-          "height": 329
+          "height": 250
         },
         "composer": {
           "x": 330,
-          "y": 776,
+          "y": 741,
           "width": 760,
-          "height": 108
+          "height": 143
         },
         "views": {
-          "x": 694,
-          "y": 0,
-          "width": 303,
-          "height": 51
+          "x": 252,
+          "y": 48,
+          "width": 1188,
+          "height": 40
         },
         "primary": {
           "x": 252,
-          "y": 52,
+          "y": 88,
           "width": 1188,
-          "height": 848
+          "height": 812
         }
       }
     },
@@ -117,37 +117,37 @@
           "x": 252,
           "y": 0,
           "width": 1668,
-          "height": 52
+          "height": 88
         },
         "status": {
-          "x": 1567,
-          "y": 10,
-          "width": 166,
+          "x": 1523,
+          "y": 8,
+          "width": 188,
           "height": 32
         },
         "conversation": {
           "x": 252,
-          "y": 52,
+          "y": 88,
           "width": 1396,
-          "height": 509
+          "height": 430
         },
         "composer": {
           "x": 570,
-          "y": 956,
+          "y": 921,
           "width": 760,
-          "height": 108
+          "height": 143
         },
         "views": {
-          "x": 934,
-          "y": 0,
-          "width": 303,
-          "height": 51
+          "x": 252,
+          "y": 48,
+          "width": 1668,
+          "height": 40
         },
         "primary": {
           "x": 252,
-          "y": 52,
+          "y": 88,
           "width": 1668,
-          "height": 1028
+          "height": 992
         }
       }
     }

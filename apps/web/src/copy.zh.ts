@@ -88,6 +88,7 @@ export const zh: LocaleOverride<typeof en> = {
         cancelled: "已取消",
       },
       noPlan: "当前任务尚未记录执行计划。",
+      startInConversation: "回到对话，描述目标",
       noGoal: "如果任务需要跨多次运行持续推进，可添加长期目标。",
       addGoal: "添加长期目标",
       saveGoal: "保存目标",

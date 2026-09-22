@@ -24,6 +24,7 @@ export const desktopWorkbenchCopy = {
         cancelled: "Cancelled",
       },
       noPlan: "No execution plan has been recorded for this task yet.",
+      startInConversation: "Describe a task in conversation",
       noGoal: "Add a durable goal when this task should continue across runs.",
       addGoal: "Add durable goal",
       saveGoal: "Save goal",

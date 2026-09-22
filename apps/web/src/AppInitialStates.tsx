@@ -26,6 +26,13 @@ export function FatalState({ message }: FatalStateProps) {
       <AlertCircle size={26} aria-hidden="true" />
       <h1>{copy.notices.disconnected}</h1>
       <p>{message}</p>
+      <button
+        className="fatal-retry-button"
+        type="button"
+        onClick={() => window.location.reload()}
+      >
+        {shellCopy.initialStates.retry}
+      </button>
     </main>
   );
 }

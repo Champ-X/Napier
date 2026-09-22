@@ -9,6 +9,8 @@ import "./styles/arena-shell.css";
 import "./styles/arena-conversation.css";
 import "./styles/thread-interactions.css";
 import "./styles/artifact-inspector.css";
+import "./styles/task-studio.css";
+import "./styles/task-studio-surfaces.css";
 
 applyDocumentLocale();
 

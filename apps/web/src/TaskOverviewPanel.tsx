@@ -139,7 +139,17 @@ export function TaskOverviewPanel({
       ) : null}
 
       {model.hasPlan ? null : (
-        <p className="task-empty-state">{overview.noPlan}</p>
+        <div className="task-empty-state">
+          <p>{overview.noPlan}</p>
+          <button
+            className="task-primary-action"
+            type="button"
+            onClick={onReviewDecision}
+          >
+            {overview.startInConversation}
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+        </div>
       )}
 
       <section className="task-goal" aria-label={copy.goal.title}>

@@ -9,6 +9,8 @@ import { AppWorkspaceViews } from "./AppWorkspaceViews";
 import { ThreadUndoToast } from "./ThreadUndoToast";
 import { composerCanStartRun } from "./composer-run-availability";
 import { copy } from "./copy";
+import { shellCopy } from "./shell-copy";
+import { useWorkbenchOverlay } from "./use-workbench-overlay";
 import { useTaskControlNavigation } from "./use-task-control-navigation";
 import {
   WORKSPACE_NAVIGATION_WIDTH,
@@ -22,6 +24,7 @@ export function App() {
   const vm = useWorkspaceViewModel(),
     shell = useWorkspaceShell(vm.setInspectorTab),
     layout = useWorkspaceLayout();
+  useWorkbenchOverlay(shell.settingsOpen || shell.developerWorkbenchOpen);
   const taskControls = useTaskControlNavigation({
     activeRunId: vm.activeRunId,
     events: vm.detail?.events ?? [],
@@ -50,25 +53,30 @@ export function App() {
         } as CSSProperties
       }
     >
-      <AppLedgerNavigation vm={vm} shell={shell} layout={layout} />
-      {!layout.collapsed ? (
-        <WorkspaceResizeHandle
-          side="navigation"
-          label="调整会话导航宽度"
-          value={layout.navigationWidth}
-          min={WORKSPACE_NAVIGATION_WIDTH.min}
-          max={layout.navigationMax}
-          onChange={layout.setNavigationWidth}
-          onReset={layout.resetNavigationWidth}
+      <div className="workspace-navigation-shell">
+        <a className="workspace-skip-link" href="#main-workspace">
+          {shellCopy.initialStates.skipToWorkspace}
+        </a>
+        <AppLedgerNavigation vm={vm} shell={shell} layout={layout} />
+        {!layout.collapsed ? (
+          <WorkspaceResizeHandle
+            side="navigation"
+            label="调整会话导航宽度"
+            value={layout.navigationWidth}
+            min={WORKSPACE_NAVIGATION_WIDTH.min}
+            max={layout.navigationMax}
+            onChange={layout.setNavigationWidth}
+            onReset={layout.resetNavigationWidth}
+          />
+        ) : null}
+        <ThreadUndoToast
+          title={vm.trashedThreadReceipt?.title}
+          busy={vm.threadLifecycleBusyId === vm.trashedThreadReceipt?.threadId}
+          labels={copy.trash}
+          onRestore={() => void vm.restoreTrashedThread()}
         />
-      ) : null}
-      <ThreadUndoToast
-        title={vm.trashedThreadReceipt?.title}
-        busy={vm.threadLifecycleBusyId === vm.trashedThreadReceipt?.threadId}
-        labels={copy.trash}
-        onRestore={() => void vm.restoreTrashedThread()}
-      />
-      <main className="workbench">
+      </div>
+      <main id="main-workspace" tabIndex={-1} className="workbench">
         <AppWorkbenchHeader
           vm={vm}
           shell={shell}

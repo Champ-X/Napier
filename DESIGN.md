@@ -9,7 +9,7 @@ released versions remain stable.
 ## 0. Meta
 
 ```yaml
-version: 2.2.0
+version: 2.3.0
 contract_status: evolving
 framework:
   css: plain-css
@@ -32,9 +32,10 @@ verification at the sizes in Section 9.
 ## 1. Brand
 
 Napier is a restrained, trustworthy, precise working tool. Its workbench follows
-the calm, warm-paper character of a focused editorial workspace: dark ink carries
-primary actions, warm gray separates structure, and color appears only when it
-communicates state. Green means success, amber means running/waiting/warning, and
+a precise task studio: mist-blue navigation frames a white working canvas,
+navy identifies primary actions, and slate ink carries the content. The active
+ledger has a narrow blue spine, tying navigation to the recorded work. Status
+colors remain distinct from the blue interaction accent. Green means success, amber means running/waiting/warning, and
 red means failure, danger, or destructive action. Purple and orange are restricted
 to Running Trajectory data classes.
 
@@ -69,32 +70,32 @@ Principles:
   "color": {
     "neutral": {
       "0": { "$type": "color", "$value": "#FFFFFF" },
-      "50": { "$type": "color", "$value": "#FBFAF7" },
-      "100": { "$type": "color", "$value": "#F6F4F0" },
-      "150": { "$type": "color", "$value": "#F0EEE9" },
-      "200": { "$type": "color", "$value": "#E8E5DF" },
-      "300": { "$type": "color", "$value": "#D7D3CB" },
-      "400": { "$type": "color", "$value": "#AAA69E" },
-      "500": { "$type": "color", "$value": "#858078" },
-      "600": { "$type": "color", "$value": "#6F6A63" },
-      "700": { "$type": "color", "$value": "#514D47" },
-      "900": { "$type": "color", "$value": "#1F1E1B" }
+      "50": { "$type": "color", "$value": "#F8FAFC" },
+      "100": { "$type": "color", "$value": "#F1F5F8" },
+      "150": { "$type": "color", "$value": "#EAF0F5" },
+      "200": { "$type": "color", "$value": "#DFE7EE" },
+      "300": { "$type": "color", "$value": "#C9D5E0" },
+      "400": { "$type": "color", "$value": "#96A7B7" },
+      "500": { "$type": "color", "$value": "#778B9E" },
+      "600": { "$type": "color", "$value": "#5D7185" },
+      "700": { "$type": "color", "$value": "#43576B" },
+      "900": { "$type": "color", "$value": "#1C2D3F" }
     },
     "brand": {
-      "50": { "$type": "color", "$value": "#F3F1ED" },
-      "400": { "$type": "color", "$value": "#77736C" },
-      "500": { "$type": "color", "$value": "#5B5852" },
-      "600": { "$type": "color", "$value": "#34332F" },
-      "700": { "$type": "color", "$value": "#292824" },
-      "800": { "$type": "color", "$value": "#1F1E1B" }
+      "50": { "$type": "color", "$value": "#EAF2F9" },
+      "400": { "$type": "color", "$value": "#6487AA" },
+      "500": { "$type": "color", "$value": "#426D98" },
+      "600": { "$type": "color", "$value": "#2F567D" },
+      "700": { "$type": "color", "$value": "#254767" },
+      "800": { "$type": "color", "$value": "#1C2D3F" }
     },
     "ink": {
-      "100": { "$type": "color", "$value": "#EEECE7" },
-      "300": { "$type": "color", "$value": "#625E57" },
-      "700": { "$type": "color", "$value": "#4A4741" },
-      "800": { "$type": "color", "$value": "#35332F" },
-      "900": { "$type": "color", "$value": "#272622" },
-      "950": { "$type": "color", "$value": "#1F1E1B" }
+      "100": { "$type": "color", "$value": "#E8EFF5" },
+      "300": { "$type": "color", "$value": "#52687D" },
+      "700": { "$type": "color", "$value": "#415B73" },
+      "800": { "$type": "color", "$value": "#324D65" },
+      "900": { "$type": "color", "$value": "#263D52" },
+      "950": { "$type": "color", "$value": "#1C2D3F" }
     },
     "success": {
       "100": { "$type": "color", "$value": "#DFE9E0" },
@@ -283,6 +284,10 @@ Principles:
   },
   "font": {
     "family": {
+      "display": {
+        "$type": "fontFamily",
+        "$value": ["Avenir Next", "Segoe UI", "PingFang SC", "Microsoft YaHei", "sans-serif"]
+      },
       "sans": {
         "$type": "fontFamily",
         "$value": [
@@ -546,34 +551,34 @@ contrast. `check:web-design` rejects any drift between the two representations.
 
 ```tokens color.neutral
 - 0 (color): #FFFFFF
-- 50 (color): #FBFAF7
-- 100 (color): #F6F4F0
-- 150 (color): #F0EEE9
-- 200 (color): #E8E5DF
-- 300 (color): #D7D3CB
-- 400 (color): #AAA69E
-- 500 (color): #858078
-- 600 (color): #6F6A63
-- 700 (color): #514D47
-- 900 (color): #1F1E1B
+- 50 (color): #F8FAFC
+- 100 (color): #F1F5F8
+- 150 (color): #EAF0F5
+- 200 (color): #DFE7EE
+- 300 (color): #C9D5E0
+- 400 (color): #96A7B7
+- 500 (color): #778B9E
+- 600 (color): #5D7185
+- 700 (color): #43576B
+- 900 (color): #1C2D3F
 ```
 
 ```tokens color.brand
-- 50 (color): #F3F1ED
-- 400 (color): #77736C
-- 500 (color): #5B5852
-- 600 (color): #34332F
-- 700 (color): #292824
-- 800 (color): #1F1E1B
+- 50 (color): #EAF2F9
+- 400 (color): #6487AA
+- 500 (color): #426D98
+- 600 (color): #2F567D
+- 700 (color): #254767
+- 800 (color): #1C2D3F
 ```
 
 ```tokens color.ink
-- 100 (color): #EEECE7
-- 300 (color): #625E57
-- 700 (color): #4A4741
-- 800 (color): #35332F
-- 900 (color): #272622
-- 950 (color): #1F1E1B
+- 100 (color): #E8EFF5
+- 300 (color): #52687D
+- 700 (color): #415B73
+- 800 (color): #324D65
+- 900 (color): #263D52
+- 950 (color): #1C2D3F
 ```
 
 ```tokens color.status
@@ -628,17 +633,21 @@ auditors deterministic without implying a supported dark product theme.
 
 ### 2.4 Contrast and color boundaries
 
-- White on primary `#34332F` is greater than 12:1.
-- Default text `#1F1E1B` on white is greater than 16:1.
-- Muted text `#514D47` on white is greater than 8:1.
-- Focus `#5B5852` against white exceeds 6:1.
-- Decorative `#AAA69E` and `#D7D3CB` never carry text or sole control boundaries.
+- White on primary `#2F567D` is greater than 7:1.
+- Default text `#1C2D3F` on white is greater than 13:1.
+- Muted text `#43576B` on white is greater than 7:1.
+- Focus `#426D98` against white exceeds 5:1.
+- Decorative `#96A7B7` and `#C9D5E0` never carry text or sole control boundaries.
 - Trajectory input/model/tool pairs pass 4.5:1 and are allowlisted only inside
   Running Trajectory, its legend, filters, and this design-system showcase.
 
 ## 3. Typography
 
-Generated variables include `--font-sans`, `--font-mono`, `--text-xs`,
+Display headings use `--font-display` with a local Avenir Next / Chinese system
+font stack. Body copy uses system sans; paths and technical values use mono.
+The existing Napier serif wordmark stays confined to the brand lockup.
+
+Generated variables include `--font-display`, `--font-sans`, `--font-mono`, `--text-xs`,
 `--text-sm`, `--text-base`, `--text-lg`, `--text-xl`, `--text-2xl`,
 `--text-3xl`, and `--text-4xl`.
 
@@ -757,14 +766,14 @@ application shell may not.
 
 ### 9.1 Arena workbench shell tokens
 
-The shell uses a warm-white navigator, a white conversation canvas, and an
+The shell uses a mist-blue navigator, a white conversation canvas, and an
 optional bordered evidence inspector. Shared tokens cover Conversation, Task,
 and Trajectory:
 
 - `--color-navigation-bg`, `--color-navigation-surface`,
   `--color-navigation-surface-hover`, `--color-navigation-border`,
   `--color-navigation-fg`, and `--color-navigation-fg-muted` now describe the
-  persistent warm-white project navigator.
+  persistent mist-blue project navigator.
 - `--color-execution-spine` and `--color-execution-spine-subtle` express causal
   continuity in legacy Task and Trajectory surfaces. Conversation renders this
   continuity as quiet disclosure rows rather than a visible blue rail.
@@ -812,3 +821,15 @@ behavior, and consolidates code-size rules under the architecture budget.
 The v2.1-to-v2.2 token map is an identity mapping: every token name and value
 remains unchanged, so regeneration produces identical CSS. Earlier visual
 migration maps are retained in the [Git history index](docs/archive/README.md).
+
+### Task studio refinement (2.3)
+
+The welcome title, composer, and task starters share a left content axis. A
+ledger glyph introduces the task starting point without decorative statistics.
+Primary actions use navy; secondary tools use quiet surfaces with explicit
+hover and focus-visible states. Composer hints describe the actual
+Ctrl/Command + Enter shortcut. Narrow layouts reflow starter cards and preserve scrolling.
+Settings and developer overlays make the underlying workbench inert; closing
+restores focus. A skip link bypasses navigation. Connection failure offers an
+explicit retry. Motion honors prefers-reduced-motion and high-contrast controls
+retain visible boundaries in forced-colors mode.
