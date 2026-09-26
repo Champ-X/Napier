@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./file-preview": {
+      "types": "./dist/file-preview.d.ts",
+      "import": "./dist/file-preview.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"

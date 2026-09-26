@@ -29,6 +29,14 @@ const ARTIFACT_PREVIEWED_KEYS = [
   "textSha256",
 ];
 
+const ARTIFACT_FILE_PREVIEWED_KEYS = [
+  ...ARTIFACT_EXPORTED_KEYS,
+  "previewKind",
+  "contentType",
+];
+const FILE_PREVIEW_CONTENT_TYPE =
+  /^[a-z][a-z0-9.+-]{0,31}\/[a-z][a-z0-9.+-]{0,63}(?:; charset=utf-8)?$/u;
+
 const ARTIFACT_DATA_PROFILED_KEYS = [
   ...ARTIFACT_EXPORTED_KEYS,
   "format",
@@ -183,8 +191,11 @@ export function assertArtifactReceiptEventBoundary(
     assertArtifactFileVerifiedPayload(payload, label);
     return;
   }
-  const allowedKeys =
-    event["type"] === "artifact.previewed"
+  const isFilePreview =
+    event["type"] === "artifact.previewed" && payload["previewKind"] === "file";
+  const allowedKeys = isFilePreview
+    ? ARTIFACT_FILE_PREVIEWED_KEYS
+    : event["type"] === "artifact.previewed"
       ? ARTIFACT_PREVIEWED_KEYS
       : ARTIFACT_EXPORTED_KEYS;
   assertExactKeys(payload, allowedKeys, label);
@@ -200,7 +211,14 @@ export function assertArtifactReceiptEventBoundary(
   if (payload["status"] !== "produced" && payload["status"] !== "verified") {
     throw new Error(`${label} hash-only artifact receipt is invalid`);
   }
-  if (event["type"] === "artifact.previewed") {
+  if (isFilePreview) {
+    if (
+      typeof payload["contentType"] !== "string" ||
+      !FILE_PREVIEW_CONTENT_TYPE.test(payload["contentType"])
+    ) {
+      throw new Error(`${label} hash-only artifact receipt is invalid`);
+    }
+  } else if (event["type"] === "artifact.previewed") {
     assertNonNegativeInteger(payload["lineCount"], label);
     assertSha256(payload["textSha256"], label);
   }

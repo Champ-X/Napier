@@ -1,5 +1,13 @@
+import {
+  decodeFilePreviewText,
+  isTextPreviewContentType,
+  MAX_TEXT_FILE_PREVIEW_BYTES,
+  MAX_WORKSPACE_FILE_PREVIEW_BYTES,
+} from "@napier/contracts/file-preview";
+
 import { throwNapierApiError } from "./api-error";
 import { requestJson } from "./api-client";
+import { artifactInspectorCopy as copy } from "./artifact-inspector-copy";
 
 /**
  * A single browsable subdirectory returned by the directory browser.
@@ -37,6 +45,8 @@ export interface WorkspaceFilePreview {
   sizeBytes: number;
   sha256: string;
   text?: string;
+  textError?: string;
+  textTruncated?: boolean;
   previewUrl?: string;
 }
 
@@ -92,6 +102,11 @@ export async function readFilePreviewResponse(
   if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
     throw new Error(`Response file size invalid for ${endpoint}`);
   }
+  if (sizeBytes > MAX_WORKSPACE_FILE_PREVIEW_BYTES) {
+    throw new Error(
+      `File exceeds the ${MAX_WORKSPACE_FILE_PREVIEW_BYTES / 1024 / 1024} MiB preview limit`,
+    );
+  }
   const bytes = await response.arrayBuffer();
   if (bytes.byteLength !== sizeBytes) {
     throw new Error(`Response file size mismatch for ${endpoint}`);
@@ -119,19 +134,29 @@ export async function readFilePreviewResponse(
     ...(response.headers.get("X-Napier-Workspace-Preview-Url")
       ? { previewUrl: response.headers.get("X-Napier-Workspace-Preview-Url")! }
       : {}),
-    ...(workspaceFileIsText(contentType)
-      ? { text: new TextDecoder().decode(bytes) }
-      : {}),
+    ...decodePreviewText(bytes, contentType),
   };
 }
 
-function workspaceFileIsText(contentType: string): boolean {
-  const mediaType = contentType.split(";", 1)[0]?.trim().toLowerCase();
-  return (
-    mediaType?.startsWith("text/") === true ||
-    mediaType === "application/json" ||
-    mediaType === "application/xml"
-  );
+function decodePreviewText(
+  bytes: ArrayBuffer,
+  contentType: string,
+): Pick<WorkspaceFilePreview, "text" | "textError" | "textTruncated"> {
+  if (!isTextPreviewContentType(contentType)) return {};
+  const truncated = bytes.byteLength > MAX_TEXT_FILE_PREVIEW_BYTES;
+  try {
+    const text = decodeFilePreviewText(
+      new Uint8Array(
+        bytes,
+        0,
+        Math.min(bytes.byteLength, MAX_TEXT_FILE_PREVIEW_BYTES),
+      ),
+      { allowIncompleteTail: truncated },
+    );
+    return { text, ...(truncated ? { textTruncated: true } : {}) };
+  } catch {
+    return { textError: copy.textEncodingUnavailable };
+  }
 }
 
 async function sha256ArrayBuffer(value: ArrayBuffer): Promise<string> {

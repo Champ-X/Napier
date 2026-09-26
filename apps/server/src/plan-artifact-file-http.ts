@@ -1,4 +1,5 @@
 import type { ExecutionPlan } from "@napier/contracts";
+import { MAX_WORKSPACE_FILE_PREVIEW_BYTES } from "@napier/contracts/file-preview";
 import { createId } from "@napier/runtime/core";
 import { exportWorkspaceFileArtifact } from "@napier/runtime/workflow";
 import { Hono } from "hono";
@@ -23,6 +24,7 @@ import {
   getThreadPlan,
   type PlanArtifactHttpStore,
 } from "./plan-artifact-http-store.js";
+import { registerPlanArtifactFilePreviewHttp } from "./plan-artifact-file-preview-http.js";
 
 const MAX_PLAN_ARTIFACT_FILE_VERIFY_REQUEST_BYTES = 32 * 1024 * 1024;
 
@@ -31,6 +33,7 @@ export function registerPlanArtifactFileHttp(
   store: PlanArtifactHttpStore,
 ): void {
   registerPlanArtifactFileExportHttp(app, store);
+  registerPlanArtifactFilePreviewHttp(app, store);
   registerPlanArtifactFileVerificationHttp(app, store);
 }
 
@@ -53,6 +56,7 @@ function registerPlanArtifactFileExportHttp(
         const exported = await exportWorkspaceFileArtifact(
           store.workspaceRoot,
           artifact,
+          { maxBytes: MAX_WORKSPACE_FILE_PREVIEW_BYTES },
         );
         const ledgerEvent = await store.appendEvent({
           threadId,

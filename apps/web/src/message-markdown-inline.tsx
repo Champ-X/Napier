@@ -1,3 +1,4 @@
+import { filePreviewContentType } from "@napier/contracts/file-preview";
 import type { MouseEvent, ReactNode } from "react";
 import { FileCode2 } from "lucide-react";
 
@@ -470,16 +471,15 @@ export function messageImageSource(
   return `/api/workspace/file?${query.toString()}`;
 }
 
-const WORKSPACE_IMAGE_EXTENSION = /\.(?:avif|bmp|gif|ico|jpe?g|png|webp)$/iu;
-
 export function isWorkspaceImageReference(value: string): boolean {
   return (
-    isWorkspaceFileReference(value) && WORKSPACE_IMAGE_EXTENSION.test(value)
+    isWorkspaceFileReference(value) &&
+    filePreviewContentType(value).startsWith("image/")
   );
 }
 
 const WORKSPACE_FILE_EXTENSION =
-  /\.(?:avif|bmp|c|cc|cjs|cpp|css|csv|docx?|gif|go|h|hpp|html?|ico|java|jpe?g|js|jsx|json|kt|kts|less|markdown|md|mdx|mjs|pdf|php|png|pptx?|py|rb|rs|s?css|sh|sql|svg|toml|ts|tsx|txt|webp|xlsx?|xml|ya?ml|zsh)$/iu;
+  /\.(?:avif|bash|bmp|c|cc|cfg|cjs|cpp|css|csv|docx?|gif|go|h|hpp|html?|ico|ini|java|jpe?g|js|jsx|json|jsonl|kt|kts|less|log|markdown|md|mdx|mjs|ndjson|pdf|php|png|pptx?|py|rb|rs|sass|s?css|sh|sql|svg|tab|toml|ts|tsx|tsv|txt|webp|xlsx?|xml|ya?ml|zsh)$/iu;
 
 export function isWorkspaceFileReference(value: string): boolean {
   const normalized = normalizeWorkspaceReference(value);

@@ -8,6 +8,24 @@ const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const defaultSourceDirectory = "apps/server/src";
 const defaultArtifactPath = "docs/artifacts/management-openapi-0.1.0.json";
 const PROMOTED_OPERATION_SCHEMAS = {
+  "GET /api/workspace/file": {
+    binaryResponse: true,
+    responseContentTypes: { 200: "*/*" },
+  },
+  "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/preview-file":
+    {
+      binaryResponse: true,
+      responseContentTypes: { 200: "*/*" },
+    },
+  "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/preview-file/peek":
+    {
+      binaryResponse: true,
+      responseContentTypes: { 200: "*/*" },
+    },
+  "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/file": {
+    binaryResponse: true,
+    responseContentTypes: { 200: "application/octet-stream" },
+  },
   "GET /api/health": {
     responses: {
       200: "#/components/schemas/HealthResponse",
@@ -2290,10 +2308,15 @@ function applyPromotedOperationSchemas(route, operation) {
   )) {
     const response = operation.responses[status];
     if (!response) continue;
-    response.description = "Successful no-store event stream";
+    response.description = overlay.binaryResponse
+      ? "Verified file bytes; Content-Type reflects the file format"
+      : "Successful no-store event stream";
     response.content = {
       [contentType]: {
-        schema: { type: "string" },
+        schema: {
+          type: "string",
+          ...(overlay.binaryResponse ? { format: "binary" } : {}),
+        },
       },
     };
   }

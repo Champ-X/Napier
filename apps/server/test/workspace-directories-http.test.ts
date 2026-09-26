@@ -1,6 +1,7 @@
 import {
   mkdir,
   mkdtemp,
+  open,
   realpath,
   rm,
   symlink,
@@ -9,6 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { MAX_WORKSPACE_FILE_PREVIEW_BYTES } from "@napier/contracts/file-preview";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -262,6 +264,84 @@ describe("workspace directory listing", () => {
       /^[a-f0-9]{64}$/u,
     );
     expect(Buffer.from(await response.arrayBuffer())).toEqual(contents);
+  });
+
+  it.each([
+    ["README.markdown", "text/markdown"],
+    ["records.jsonl", "application/x-ndjson"],
+    ["records.ndjson", "application/x-ndjson"],
+    ["table.tsv", "text/tab-separated-values"],
+    ["script.py", "text/plain"],
+    ["main.go", "text/plain"],
+    ["script.sh", "text/plain"],
+    ["component.tsx", "text/plain"],
+  ])("serves %s with a previewable text MIME type", async (filename, mime) => {
+    const contents = "# preview 中文\n";
+    await writeFile(path.join(base, filename), contents);
+    const app = new Hono();
+    registerWorkspaceDirectoriesHttp(app, undefined, () => base);
+
+    const response = await app.request(`/api/workspace/file?path=${filename}`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe(`${mime}; charset=utf-8`);
+    expect(await response.text()).toBe(contents);
+  });
+
+  it("sandboxes SVG navigation while preserving the original image bytes", async () => {
+    const contents =
+      '<svg xmlns="http://www.w3.org/2000/svg"><script>throw 1</script></svg>';
+    await writeFile(path.join(base, "drawing.svg"), contents);
+    const app = new Hono();
+    registerWorkspaceDirectoriesHttp(app, undefined, () => base);
+    const response = await app.request("/api/workspace/file?path=drawing.svg");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/svg+xml");
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+    expect(response.headers.get("Content-Security-Policy")).toBe(
+      "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+    );
+    expect(await response.text()).toBe(contents);
+  });
+
+  it.each(["constructor", "__proto__"])(
+    "serves an unknown .%s extension without using inherited MIME properties",
+    async (extension) => {
+      const filename = `file.${extension}`;
+      const contents = Buffer.from([0xff, 0xfe, 0]);
+      await writeFile(path.join(base, filename), contents);
+      const app = new Hono();
+      registerWorkspaceDirectoriesHttp(app, undefined, () => base);
+      const response = await app.request(
+        `/api/workspace/file?path=${filename}`,
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Content-Type")).toBe(
+        "application/octet-stream",
+      );
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(contents);
+    },
+  );
+
+  it("accepts the workspace preview byte limit and rejects one byte beyond it", async () => {
+    const filename = path.join(base, "large.bin");
+    const file = await open(filename, "w");
+    try {
+      await file.truncate(MAX_WORKSPACE_FILE_PREVIEW_BYTES);
+      const preview = await readWorkspaceFilePreview(filename, base);
+      expect(preview.sizeBytes).toBe(MAX_WORKSPACE_FILE_PREVIEW_BYTES);
+      await file.truncate(MAX_WORKSPACE_FILE_PREVIEW_BYTES + 1);
+      const app = new Hono();
+      registerWorkspaceDirectoriesHttp(app, undefined, () => base);
+      const response = await app.request("/api/workspace/file?path=large.bin");
+      expect(response.status).toBe(413);
+      expect(await response.json()).toEqual({
+        error: "File is too large to preview",
+      });
+    } finally {
+      await file.close();
+    }
   });
 
   it("rejects workspace file previews outside the active root", async () => {

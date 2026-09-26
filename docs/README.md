@@ -1,7 +1,7 @@
 # Napier Documentation
 
-Index updated on **2026-09-21**. The latest working-tree review starts from
-`c454a155`; individual guides and evidence retain their own dates and baselines.
+Index updated on **2026-09-26**. Individual guides and evidence retain their own
+dates and baselines.
 
 ## Current guides and contracts
 
@@ -9,6 +9,7 @@ Index updated on **2026-09-21**. The latest working-tree review starts from
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | [Project README](../README.md)                                             | Product overview, prerequisites and quick start                       |
 | [Local development](local-development.md)                                  | Setup, ports, models, workspaces, previews and recovery               |
+| [File previews](file-preview.md)                                           | Supported file types, size limits, decoding and artifact receipts     |
 | [Architecture](architecture.md)                                            | Current layers, execution, persistence, tools and recovery boundaries |
 | [Design system](../DESIGN.md)                                              | Web visual rules and canonical generated-token JSON                   |
 | [Current gaps](next-stage-gap-matrix.md)                                   | Dated check failures, verification limits and closure criteria        |

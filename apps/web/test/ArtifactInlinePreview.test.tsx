@@ -18,6 +18,63 @@ afterEach(async () => {
 });
 
 describe("ArtifactInlinePreview", () => {
+  it.each([true, false])(
+    "previews large HTML through a read-only file peek when size is known: %s",
+    async (knownSize) => {
+      const container = installDom();
+      const item = artifact();
+      if (knownSize) item.artifact.sizeBytes = 3 * 1024 * 1024;
+      const file = {
+        kind: "napier.plan-artifact-file-preview" as const,
+        planId: "plan_1",
+        artifactId: "report",
+        planRevision: 2,
+        status: "produced",
+        artifactKind: "file",
+        pathSha256: "a".repeat(64),
+        path: item.artifact.path,
+        filename: "report.html",
+        contentType: "text/html",
+        blob: new Blob(["<main>HTML</main>"]),
+        sizeBytes: 3 * 1024 * 1024,
+        sha256: "b".repeat(64),
+      };
+      const peekArtifact = vi.fn(async () => {
+        throw new Error("Artifact preview exceeds the 2 MiB text limit");
+      });
+      const peekArtifactFile = vi.fn(async () => file);
+      const previewFile = vi.fn(async () => ({
+        ...file,
+        previewUrl: "/api/workspace/preview/site/report.html",
+      }));
+      await act(async () => {
+        render(
+          <ArtifactInlinePreview
+            item={item}
+            peekArtifact={peekArtifact}
+            peekArtifactFile={peekArtifactFile}
+            previewFile={previewFile}
+          />,
+          container,
+        );
+      });
+      await waitFor(() => elements(container, "iframe").length === 1);
+      expect(peekArtifact).toHaveBeenCalledTimes(knownSize ? 0 : 1);
+      expect(peekArtifactFile).toHaveBeenCalledWith(
+        "thread_1",
+        "plan_1",
+        "report",
+      );
+      expect(previewFile).toHaveBeenCalledWith(
+        item.artifact.path,
+        expect.any(AbortSignal),
+      );
+      expect(
+        elements(container, "iframe")[0]?.getAttribute("srcdoc"),
+      ).toBeNull();
+    },
+  );
+
   it("renders a directory-scoped sandboxed thumbnail that opens the full inspector", async () => {
     const container = installDom();
     const onInspect = vi.fn();

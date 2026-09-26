@@ -30,7 +30,7 @@ describe("ConversationArtifactCard", () => {
     await renderCard(container, { previewArtifact, onLedgerChanged });
 
     await click(button(container, "Preview"));
-    await waitFor(() => findElementsByLocalName(container, "pre").length > 0);
+    await waitFor(() => findElementsByLocalName(container, "h3").length > 0);
 
     expect(previewArtifact).toHaveBeenCalledWith(
       "thread_1",
@@ -38,14 +38,17 @@ describe("ConversationArtifactCard", () => {
       "artifact_report",
     );
     expect(onLedgerChanged).toHaveBeenCalledTimes(1);
-    expect(findElementsByLocalName(container, "pre")[0]?.textContent).toBe(
-      "# Delivery\nDone.",
+    expect(findElementsByLocalName(container, "h3")[0]?.textContent).toBe(
+      "Delivery",
     );
+    expect(container.textContent).toContain("Done.");
     expect(container.textContent).not.toContain("ledger_event_secret");
     expect(container.textContent).not.toContain("c".repeat(64));
 
-    await click(button(container, "Close artifact inspection artifacts/report.md"));
-    expect(findElementsByLocalName(container, "pre")).toHaveLength(0);
+    await click(
+      button(container, "Close artifact inspection artifacts/report.md"),
+    );
+    expect(findElementsByLocalName(container, "h3")).toHaveLength(0);
   });
 
   it("downloads verified bytes and recovers from a failed preview", async () => {

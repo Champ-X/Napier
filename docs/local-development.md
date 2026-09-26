@@ -86,6 +86,9 @@ Source: [thread output ownership](../packages/runtime/src/workspace-thread-outpu
 
 ## HTML previews
 
+See [File previews](file-preview.md) for supported formats, the 128 MiB file
+limit, bounded text rendering, and artifact preview receipts.
+
 Open the generated HTML from the conversation link or workspace file tree.
 The inspector serves it in a directory-scoped preview, so relative CSS, images,
 scripts, modules, and fonts can load alongside the document. Relative message

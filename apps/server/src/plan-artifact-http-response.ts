@@ -29,11 +29,26 @@ export function setPlanArtifactDiffHeaders(
 ): void {
   setPlanArtifactHeaders(context, plan, artifact, preview);
   context.header("X-Napier-Plan-Artifact-Diff-SHA256", preview.outputSha256);
-  context.header("X-Napier-Plan-Artifact-Diff-Bytes", String(preview.outputBytes));
-  context.header("X-Napier-Plan-Artifact-Diff-Files", String(preview.fileCount));
-  context.header("X-Napier-Plan-Artifact-Diff-Hunks", String(preview.hunkCount));
-  context.header("X-Napier-Plan-Artifact-Diff-Added", String(preview.addedLineCount));
-  context.header("X-Napier-Plan-Artifact-Diff-Deleted", String(preview.deletedLineCount));
+  context.header(
+    "X-Napier-Plan-Artifact-Diff-Bytes",
+    String(preview.outputBytes),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Diff-Files",
+    String(preview.fileCount),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Diff-Hunks",
+    String(preview.hunkCount),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Diff-Added",
+    String(preview.addedLineCount),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Diff-Deleted",
+    String(preview.deletedLineCount),
+  );
 }
 
 export function setPlanArtifactDriftCheckHeaders(
@@ -100,11 +115,44 @@ export function setPlanArtifactFileExportHeaders(
     sizeBytes: number;
   } & Partial<LedgerEventReceiptProjection>,
 ): void {
-  context.header("Cache-Control", "no-store");
   context.header(
     "Content-Disposition",
     `attachment; filename="${planArtifactDownloadFilename(artifact, exported.sha256)}"`,
   );
+  setPlanArtifactFileHeaders(context, plan, artifact, exported);
+}
+
+export function setPlanArtifactFilePreviewHeaders(
+  context: Context,
+  plan: ExecutionPlan,
+  artifact: PlanArtifact,
+  preview: {
+    sha256: string;
+    sizeBytes: number;
+  } & Partial<LedgerEventReceiptProjection>,
+): void {
+  context.header(
+    "Content-Disposition",
+    `inline; filename="${safePlanArtifactFilenameSegment(path.basename(artifact.path), artifact.id)}"`,
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Path",
+    encodeURIComponent(artifact.path),
+  );
+  context.header("X-Napier-Plan-Artifact-Kind", artifact.kind);
+  setPlanArtifactFileHeaders(context, plan, artifact, preview);
+}
+
+function setPlanArtifactFileHeaders(
+  context: Context,
+  plan: ExecutionPlan,
+  artifact: PlanArtifact,
+  exported: {
+    sha256: string;
+    sizeBytes: number;
+  } & Partial<LedgerEventReceiptProjection>,
+): void {
+  context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, exported.sha256);
   setPlanArtifactIdentityHeaders(context, plan, artifact);
   context.header("X-Napier-Plan-Artifact-SHA256", exported.sha256);

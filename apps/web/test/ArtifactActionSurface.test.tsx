@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ArtifactManifestEntry } from "@napier/contracts";
 import type {
   PlanArtifactDiffPreviewReceipt,
+  PlanArtifactFilePreviewReceipt,
   PlanArtifactTextPreviewReceipt,
 } from "../src/artifact-file-api";
 import { ArtifactActionSurface } from "../src/ArtifactActionSurface";
@@ -24,6 +25,74 @@ afterEach(async () => {
 });
 
 describe("ArtifactActionSurface", () => {
+  it.each(["Open", "Preview"])(
+    "uses verified binary bytes for %s and hides the text diff action",
+    async (action) => {
+      const { container } = installDom();
+      const file = binaryPreview();
+      const onInspect = vi.fn();
+      const previewArtifact = vi.fn();
+      const previewArtifactFile = vi.fn(async () => file);
+      await renderSurface(container, {
+        artifact: artifact({ path: file.path }),
+        previewArtifact,
+        previewArtifactFile,
+        onInspect,
+      });
+      expect(buttonLabels(container)).toEqual(["Open", "Preview", "Copy path"]);
+      await click(button(container, action));
+      await waitFor(() => onInspect.mock.calls.length === 1);
+      expect(previewArtifact).not.toHaveBeenCalled();
+      expect(previewArtifactFile).toHaveBeenCalledWith(
+        "thread_1",
+        "plan_1",
+        "artifact_report",
+      );
+      expect(onInspect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          receipt: file,
+          mode: "preview",
+          planId: "plan_1",
+          threadId: "thread_1",
+        }),
+      );
+    },
+  );
+
+  it("renders binary preview inline when there is no host inspector", async () => {
+    const { container } = installDom();
+    const file = binaryPreview();
+    const previewArtifact = vi.fn();
+    await renderSurface(container, {
+      artifact: artifact({ path: file.path }),
+      previewArtifact,
+      previewArtifactFile: async () => file,
+    });
+    await click(button(container, "Preview"));
+    await waitFor(() => elements(container, "img").length === 1);
+    expect(elements(container, "img")[0]?.getAttribute("alt")).toBe(
+      "drawing.png",
+    );
+    expect(previewArtifact).not.toHaveBeenCalled();
+  });
+
+  it("renders SVG text receipts inline instead of exposing their XML as the preview", async () => {
+    const { container } = installDom();
+    await renderSurface(container, {
+      artifact: artifact({ path: "artifacts/drawing.svg" }),
+      previewArtifact: async () => ({
+        ...preview(),
+        text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle r="2"/></svg>',
+      }),
+    });
+    await click(button(container, "Preview"));
+    await waitFor(() => elements(container, "img").length === 1);
+    expect(elements(container, "img")[0]?.getAttribute("alt")).toBe(
+      "drawing.svg",
+    );
+    expect(container.textContent).not.toContain("<svg");
+  });
+
   it("previews, diffs, and copies a file through consistent actions", async () => {
     const { container } = installDom();
     const previewArtifact = vi.fn(async () => preview());
@@ -47,7 +116,9 @@ describe("ArtifactActionSurface", () => {
       "Copy path",
     ]);
     await click(button(container, "Open"));
-    await waitFor(() => container.textContent?.includes("# Delivery") === true);
+    await waitFor(
+      () => elements(container, "h3")[0]?.textContent === "Delivery",
+    );
     expect(previewArtifact).toHaveBeenCalledWith(
       "thread_1",
       "plan_1",
@@ -61,7 +132,7 @@ describe("ArtifactActionSurface", () => {
       "plan_1",
       "artifact_report",
     );
-    expect(container.textContent).not.toContain("# Delivery");
+    expect(elements(container, "h3")).toHaveLength(0);
     expect(onLedgerChanged).toHaveBeenCalledTimes(2);
 
     await click(button(container, "Copy path"));
@@ -180,6 +251,7 @@ async function renderSurface(
   options: {
     artifact?: ArtifactManifestEntry;
     previewArtifact?: () => Promise<PlanArtifactTextPreviewReceipt>;
+    previewArtifactFile?: () => Promise<PlanArtifactFilePreviewReceipt>;
     previewDiff?: () => Promise<PlanArtifactDiffPreviewReceipt>;
     onLedgerChanged?: () => Promise<void>;
     onOpen?: () => void | Promise<void>;
@@ -197,6 +269,9 @@ async function renderSurface(
         planId="plan_1"
         {...(options.previewArtifact
           ? { previewArtifact: options.previewArtifact }
+          : {})}
+        {...(options.previewArtifactFile
+          ? { previewArtifactFile: options.previewArtifactFile }
           : {})}
         {...(options.previewDiff ? { previewDiff: options.previewDiff } : {})}
         {...(options.onLedgerChanged
@@ -244,6 +319,25 @@ function preview(): PlanArtifactTextPreviewReceipt {
     lineCount: 2,
     textSha256: "c".repeat(64),
     text: "# Delivery\nDone.",
+    ...receipt(),
+  };
+}
+
+function binaryPreview(): PlanArtifactFilePreviewReceipt {
+  return {
+    kind: "napier.plan-artifact-file-preview",
+    planId: "plan_1",
+    artifactId: "artifact_report",
+    planRevision: 1,
+    status: "verified",
+    artifactKind: "file",
+    pathSha256: "a".repeat(64),
+    path: "artifacts/drawing.png",
+    filename: "drawing.png",
+    contentType: "image/png",
+    blob: new Blob(["pixels"], { type: "image/png" }),
+    sha256: "b".repeat(64),
+    sizeBytes: 6,
     ...receipt(),
   };
 }

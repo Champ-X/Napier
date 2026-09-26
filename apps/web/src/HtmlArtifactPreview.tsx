@@ -6,10 +6,12 @@ import { previewWorkspaceFile } from "./workspace-directory-api";
 
 export function HtmlArtifactPreview({
   path,
+  refreshKey,
   sha256,
   previewFile = previewWorkspaceFile,
 }: {
   path: string;
+  refreshKey?: object;
   sha256: string;
   previewFile?: typeof previewWorkspaceFile;
 }) {
@@ -30,7 +32,7 @@ export function HtmlArtifactPreview({
         if (!controller.signal.aborted) setError(formatApiErrorMessage(reason));
       });
     return () => controller.abort();
-  }, [path, sha256, previewFile]);
+  }, [path, sha256, previewFile, refreshKey]);
   if (error)
     return (
       <p className="artifact-inspector-error" role="alert">

@@ -2,13 +2,14 @@ import { randomBytes } from "node:crypto";
 import { lstat, realpath } from "node:fs/promises";
 import path from "node:path";
 
+import { MAX_WORKSPACE_FILE_PREVIEW_BYTES } from "@napier/contracts/file-preview";
 import type { Hono } from "hono";
 
 import type { WorkspaceFilePreview } from "./workspace-file-preview.js";
 
 const PREFIX = "/api/workspace/preview/";
 const MAX_SESSIONS = 256;
-const MAX_RETAINED_BYTES = 64 * 1024 * 1024;
+const MAX_RETAINED_BYTES = MAX_WORKSPACE_FILE_PREVIEW_BYTES;
 const SESSION_LIFETIME_MS = 60 * 60 * 1000;
 
 interface PreviewSession {

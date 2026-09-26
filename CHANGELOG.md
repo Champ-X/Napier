@@ -25,6 +25,10 @@ source baselines preserved.
 
 ### Workbench
 
+- Unify workspace and artifact previews for SVG, images, PDF, HTML, Markdown
+  and recognized text files. Raise preview and HTTP download limits to 128 MiB,
+  bound text rendering, and retain complete downloads. See
+  [file previews](docs/file-preview.md) for formats and limits.
 - Add the browser-tab favicon and correct logo clipping, panel backgrounds,
   and collapsed workspace navigation. Commit: `9cab7176`.
 - Preserve healthy browser sessions after target-action timeouts and keep

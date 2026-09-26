@@ -1,6 +1,10 @@
 import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
+import {
+  filePreviewContentType,
+  MAX_WORKSPACE_FILE_PREVIEW_BYTES,
+} from "@napier/contracts/file-preview";
 import { Hono } from "hono";
 
 import { registerWorkspaceHtmlPreviewHttp } from "./workspace-html-preview-http.js";
@@ -47,7 +51,6 @@ export interface WorkspaceDirectoryListing {
 const MAX_DIRECTORY_PATH_LENGTH = 500;
 const MAX_DIRECTORY_CURSOR_LENGTH = 2_048;
 const MAX_DIRECTORY_ENTRIES = 200;
-const MAX_WORKSPACE_FILE_PREVIEW_BYTES = 16 * 1024 * 1024;
 const DEVELOPMENT_WEB_ORIGINS = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173",
@@ -248,7 +251,7 @@ export async function readWorkspaceFilePreview(
   return {
     path: target,
     filename: path.basename(target),
-    contentType: workspaceFileContentType(target),
+    contentType: filePreviewContentType(target),
     contents,
     sizeBytes: contents.byteLength,
     sha256: sha256Bytes(contents),
@@ -370,6 +373,8 @@ export function registerWorkspaceDirectoriesHttp(
     }
     context.header("Cache-Control", "no-store");
     context.header("Content-Type", preview.contentType);
+    context.header("X-Content-Type-Options", "nosniff");
+    context.header("Referrer-Policy", "no-referrer");
     context.header(
       "X-Napier-Workspace-File-Path",
       encodeURIComponent(preview.path),
@@ -380,6 +385,11 @@ export function registerWorkspaceDirectoriesHttp(
         createHtmlPreview(activeRoot, preview),
       );
       context.header("Content-Security-Policy", "sandbox allow-scripts");
+    } else if (preview.contentType.startsWith("image/svg+xml")) {
+      context.header(
+        "Content-Security-Policy",
+        "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+      );
     }
     context.header(
       "Content-Disposition",
@@ -428,44 +438,6 @@ export function registerWorkspaceDirectoriesHttp(
     return context.json(result, 200);
   });
 }
-
-function workspaceFileContentType(filePath: string): string {
-  const extension = path.extname(filePath).toLowerCase();
-  return WORKSPACE_FILE_CONTENT_TYPES[extension] ?? "application/octet-stream";
-}
-
-const WORKSPACE_FILE_CONTENT_TYPES: Readonly<Record<string, string>> = {
-  ".avif": "image/avif",
-  ".bmp": "image/bmp",
-  ".css": "text/css; charset=utf-8",
-  ".csv": "text/csv; charset=utf-8",
-  ".gif": "image/gif",
-  ".htm": "text/html; charset=utf-8",
-  ".html": "text/html; charset=utf-8",
-  ".ico": "image/x-icon",
-  ".jpeg": "image/jpeg",
-  ".jpg": "image/jpeg",
-  ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".jsx": "text/plain; charset=utf-8",
-  ".md": "text/markdown; charset=utf-8",
-  ".mdx": "text/markdown; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".pdf": "application/pdf",
-  ".png": "image/png",
-  ".svg": "image/svg+xml",
-  ".toml": "text/plain; charset=utf-8",
-  ".ts": "text/plain; charset=utf-8",
-  ".tsx": "text/plain; charset=utf-8",
-  ".txt": "text/plain; charset=utf-8",
-  ".webp": "image/webp",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".ttf": "font/ttf",
-  ".xml": "application/xml; charset=utf-8",
-  ".yaml": "text/yaml; charset=utf-8",
-  ".yml": "text/yaml; charset=utf-8",
-};
 
 function trustedLocalOrigin(origin: string, requestHost?: string): boolean {
   if (DEVELOPMENT_WEB_ORIGINS.has(origin)) return true;

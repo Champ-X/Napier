@@ -7824,6 +7824,38 @@
         "x-napier-source-route": "POST /api/skills/packages/verify"
       }
     },
+    "/api/skills/resource": {
+      "get": {
+        "operationId": "get-skills-resource",
+        "tags": [
+          "skills"
+        ],
+        "summary": "GET /api/skills/resource",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/skills/resource"
+      }
+    },
     "/api/threads": {
       "post": {
         "operationId": "post-threads",
@@ -9411,6 +9443,90 @@
         "x-napier-source-route": "PUT /api/threads/:threadId/goal"
       }
     },
+    "/api/threads/{threadId}/local-model-displays": {
+      "get": {
+        "operationId": "get-threads-by-threadId-local-model-displays",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/local-model-displays",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/local-model-displays"
+      }
+    },
+    "/api/threads/{threadId}/local-tool-displays": {
+      "get": {
+        "operationId": "get-threads-by-threadId-local-tool-displays",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/local-tool-displays",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/local-tool-displays"
+      }
+    },
     "/api/threads/{threadId}/messages": {
       "post": {
         "operationId": "post-threads-by-threadId-messages",
@@ -10442,10 +10558,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful no-store JSON response",
+            "description": "Verified file bytes; Content-Type reflects the file format",
             "content": {
-              "application/json": {
-                "schema": true
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
@@ -10462,7 +10581,8 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         },
-        "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/file"
+        "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/file",
+        "x-napier-promoted-response-schema-refs": {}
       }
     },
     "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/file/verify": {
@@ -10659,6 +10779,64 @@
         "x-napier-source-route": "POST /api/threads/:threadId/plans/:planId/artifacts/:artifactId/manifest/verify"
       }
     },
+    "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/peek": {
+      "get": {
+        "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-peek",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/peek",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/peek"
+      }
+    },
     "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/preview": {
       "get": {
         "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-preview",
@@ -10715,6 +10893,130 @@
           }
         },
         "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/preview"
+      }
+    },
+    "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/preview-file": {
+      "get": {
+        "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-preview-file",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/preview-file",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified file bytes; Content-Type reflects the file format",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/preview-file",
+        "x-napier-promoted-response-schema-refs": {}
+      }
+    },
+    "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/preview-file/peek": {
+      "get": {
+        "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-preview-file-peek",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/preview-file/peek",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified file bytes; Content-Type reflects the file format",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/preview-file/peek",
+        "x-napier-promoted-response-schema-refs": {}
       }
     },
     "/api/threads/{threadId}/plans/{planId}/blueprint": {
@@ -13581,6 +13883,82 @@
           }
         },
         "x-napier-source-route": "GET /api/workspace/directories"
+      }
+    },
+    "/api/workspace/directory-picker": {
+      "post": {
+        "operationId": "post-workspace-directory-picker",
+        "tags": [
+          "workspace"
+        ],
+        "summary": "POST /api/workspace/directory-picker",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/workspace/directory-picker"
+      }
+    },
+    "/api/workspace/file": {
+      "get": {
+        "operationId": "get-workspace-file",
+        "tags": [
+          "workspace"
+        ],
+        "summary": "GET /api/workspace/file",
+        "responses": {
+          "200": {
+            "description": "Verified file bytes; Content-Type reflects the file format",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/workspace/file",
+        "x-napier-promoted-response-schema-refs": {}
       }
     },
     "/api/workspace/recent": {
@@ -16590,9 +16968,11 @@
     "apps/server/src/inbound-channel-delivery-http.ts",
     "apps/server/src/inbound-channel-ingress-http.ts",
     "apps/server/src/memory-http.ts",
+    "apps/server/src/model-display-http.ts",
     "apps/server/src/plan-artifact-data-http.ts",
     "apps/server/src/plan-artifact-directory-http.ts",
     "apps/server/src/plan-artifact-file-http.ts",
+    "apps/server/src/plan-artifact-file-preview-http.ts",
     "apps/server/src/plan-artifact-inspection-http.ts",
     "apps/server/src/plan-blueprint-instantiation-http.ts",
     "apps/server/src/plan-blueprint-library-http.ts",
@@ -16606,6 +16986,7 @@
     "apps/server/src/run-evaluation-http.ts",
     "apps/server/src/sandbox-setup-http.ts",
     "apps/server/src/schedule-http.ts",
+    "apps/server/src/skill-resource-preview-http.ts",
     "apps/server/src/thread-control-http.ts",
     "apps/server/src/thread-evaluation-http.ts",
     "apps/server/src/thread-evidence-http.ts",
@@ -16613,11 +16994,12 @@
     "apps/server/src/thread-lifecycle-http.ts",
     "apps/server/src/thread-operations-http.ts",
     "apps/server/src/thread-workflow-http.ts",
+    "apps/server/src/tool-display-http.ts",
     "apps/server/src/workspace-directories-http.ts",
     "apps/server/src/workspace-process-http.ts",
     "apps/server/src/workspace-root-http.ts"
   ],
-  "x-napier-source-sha256": "5057af966726fe3c10a631a0ccb321db1d882575e7fb45c1fd45b2e7c71db0b2",
-  "x-napier-route-count": 297,
-  "x-napier-route-set-sha256": "2acf796e86354233fc9b7b549d28f9a63bfd6694607dae6ecabb0eac7028f206"
+  "x-napier-source-sha256": "2a2bcc23a91d9160fb1297535ed3c878a45690e7dc22d308416637c3cafc826d",
+  "x-napier-route-count": 305,
+  "x-napier-route-set-sha256": "1ceb6838e1e99579692013088da8e4cfd226d9b32a83b313f68c4e00cf191fb2"
 }

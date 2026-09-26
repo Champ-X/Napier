@@ -13,26 +13,25 @@ import { formatApiErrorMessage } from "./api-error";
 import {
   downloadPlanArtifactFile,
   previewPlanArtifactDiff,
+  previewPlanArtifactFile,
   previewPlanArtifactText,
   type PlanArtifactDiffPreviewReceipt,
-  type PlanArtifactTextPreview,
-  type PlanArtifactTextPreviewReceipt,
 } from "./artifact-file-api";
-import type { ArtifactInspection } from "./artifact-inspection";
+import type {
+  ArtifactInspection,
+  ArtifactPreviewReceipt,
+} from "./artifact-inspection";
 import { artifactInspectorCopy as copy } from "./artifact-inspector-copy";
-import { MessageMarkdown } from "./message-markdown";
-import { HtmlArtifactPreview } from "./HtmlArtifactPreview";
+import { ArtifactInspectionContent } from "./ArtifactInspectionContent";
 import { previewWorkspaceFile } from "./workspace-directory-api";
-import {
-  type ArtifactInspectorView,
-  useArtifactInspectorView,
-} from "./use-artifact-inspector-view";
+import { useArtifactInspectorView } from "./use-artifact-inspector-view";
 
 export interface ArtifactInspectorProps {
   inspection: ArtifactInspection;
   onClose(): void;
   onLedgerChanged?(): void | Promise<void>;
   previewArtifact?: typeof previewPlanArtifactText;
+  previewArtifactFile?: typeof previewPlanArtifactFile;
   previewDiff?: typeof previewPlanArtifactDiff;
   previewFile?: typeof previewWorkspaceFile;
 }
@@ -42,6 +41,7 @@ export function ArtifactInspector({
   onClose,
   onLedgerChanged,
   previewArtifact = previewPlanArtifactText,
+  previewArtifactFile = previewPlanArtifactFile,
   previewDiff = previewPlanArtifactDiff,
   previewFile = previewWorkspaceFile,
 }: ArtifactInspectorProps) {
@@ -49,10 +49,11 @@ export function ArtifactInspector({
   const closeRef = useRef<HTMLButtonElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string>();
-  const { diff, error, load, loadingView, preview, view } =
+  const { diff, error, load, loadingView, preview, supportsText, view } =
     useArtifactInspectorView({
       inspection,
       previewArtifact,
+      previewArtifactFile,
       previewDiff,
       ...(onLedgerChanged ? { onLedgerChanged } : {}),
     });
@@ -92,11 +93,14 @@ export function ArtifactInspector({
     setDownloading(true);
     setDownloadError(undefined);
     try {
-      const result = await downloadPlanArtifactFile(
-        inspection.threadId,
-        inspection.planId,
-        inspection.artifact.id,
-      );
+      const result =
+        preview?.kind === "napier.plan-artifact-file-preview"
+          ? preview
+          : await downloadPlanArtifactFile(
+              inspection.threadId,
+              inspection.planId,
+              inspection.artifact.id,
+            );
       downloadBlob(result.blob, result.filename);
     } catch (reason) {
       setDownloadError(formatApiErrorMessage(reason));
@@ -122,14 +126,14 @@ export function ArtifactInspector({
           />
           <InspectorViewButton
             active={view === "source"}
-            disabled={Boolean(loadingView)}
+            disabled={Boolean(loadingView) || !supportsText}
             icon={Code2}
             label={copy.source}
             onClick={() => void load("source")}
           />
           <InspectorViewButton
             active={view === "diff"}
-            disabled={Boolean(loadingView)}
+            disabled={Boolean(loadingView) || !supportsText}
             icon={GitCompare}
             label={copy.diff}
             onClick={() => void load("diff")}
@@ -191,7 +195,6 @@ export function ArtifactInspector({
           path={inspection.artifact.path}
           threadId={inspection.threadId}
           previewFile={previewFile}
-          extension={fileExtension(inspection.artifact.path)}
           view={view}
           preview={preview}
           diff={diff}
@@ -201,95 +204,13 @@ export function ArtifactInspector({
   );
 }
 
-function ArtifactInspectionContent({
-  path,
-  threadId,
-  previewFile,
-  extension,
-  view,
-  preview,
-  diff,
-}: {
-  path: string;
-  threadId: string;
-  previewFile: typeof previewWorkspaceFile;
-  extension: string;
-  view: ArtifactInspectorView;
-  preview: PlanArtifactTextPreview | PlanArtifactTextPreviewReceipt | undefined;
-  diff: PlanArtifactDiffPreviewReceipt | undefined;
-}) {
-  if (view === "diff") {
-    return <SourcePreview text={diff?.text || copy.noDiff} diff />;
-  }
-  const text = preview?.text ?? "";
-  if (
-    preview &&
-    view === "preview" &&
-    (extension === "html" || extension === "htm")
-  ) {
-    return (
-      <HtmlArtifactPreview
-        key={preview.textSha256}
-        path={path}
-        sha256={preview.sha256}
-        previewFile={previewFile}
-      />
-    );
-  }
-  if (
-    view === "preview" &&
-    (extension === "md" || extension === "mdx" || extension === "markdown")
-  ) {
-    return (
-      <article className="artifact-inspector-markdown">
-        <MessageMarkdown text={text} workspaceDocument={{ path, threadId }} />
-      </article>
-    );
-  }
-  return <SourcePreview text={text} />;
-}
-
-function SourcePreview({
-  text,
-  diff = false,
-}: {
-  text: string;
-  diff?: boolean;
-}) {
-  return (
-    <ol className={`artifact-source-preview${diff ? " is-diff" : ""}`}>
-      {text.split("\n").map((line, index) => (
-        <li
-          className={
-            diff
-              ? line.startsWith("+")
-                ? "is-added"
-                : line.startsWith("-")
-                  ? "is-removed"
-                  : undefined
-              : undefined
-          }
-          key={`${String(index)}-${line.slice(0, 20)}`}
-        >
-          <code>{line || " "}</code>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-function fileExtension(path: string): string {
-  return path.split(".").pop()?.toLowerCase() ?? "";
-}
-
 function inspectionMeta(
-  receipt:
-    | PlanArtifactTextPreviewReceipt
-    | PlanArtifactTextPreview
-    | PlanArtifactDiffPreviewReceipt
-    | undefined,
+  receipt: ArtifactPreviewReceipt | PlanArtifactDiffPreviewReceipt | undefined,
 ): string {
   if (!receipt) return "—";
+  if (receipt.kind === "napier.plan-artifact-file-preview") {
+    return `${receipt.sizeBytes} ${copy.bytes}`;
+  }
   if (receipt.kind !== "napier.plan-artifact-diff-preview") {
     return `${receipt.lineCount} ${copy.lines} · ${receipt.sizeBytes} ${copy.bytes}`;
   }

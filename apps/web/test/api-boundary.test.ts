@@ -13,6 +13,7 @@ const allowedFetchCallers = new Set([
   "src/agent-message-experiment-api.ts",
   "src/api-client.ts",
   "src/artifact-file-api.ts",
+  "src/artifact-preview-file-api.ts",
   "src/browser-live-view-api.ts",
   "src/browser-live-view-stream-api.ts",
   "src/browser-task-api.ts",

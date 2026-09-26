@@ -1,21 +1,29 @@
 import type { ArtifactManifestEntry } from "@napier/contracts";
-import { X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { useState } from "react";
 
 import { ArtifactActionBar } from "./ArtifactActionBar";
-import type { ArtifactInspection } from "./artifact-inspection";
+import {
+  artifactUsesTextPreview,
+  requestArtifactPreview,
+  type ArtifactInspection,
+  type ArtifactPreviewReceipt,
+} from "./artifact-inspection";
 import { formatApiErrorMessage } from "./api-error";
 import {
   previewPlanArtifactDiff,
+  previewPlanArtifactFile,
   previewPlanArtifactText,
   type PlanArtifactDiffPreviewReceipt,
-  type PlanArtifactTextPreviewReceipt,
 } from "./artifact-file-api";
 import {
   artifactActionAvailability,
   type ArtifactActionId,
 } from "./artifact-action-model";
 import { artifactActionCopy as copy } from "./artifact-action-copy";
+import { artifactInspectorCopy } from "./artifact-inspector-copy";
+import { FileSourcePreview } from "./FileSourcePreview";
+import { ArtifactInspectionContent } from "./ArtifactInspectionContent";
 
 export function ArtifactActionSurface({
   artifact,
@@ -29,6 +37,7 @@ export function ArtifactActionSurface({
   onInspect,
   displayActions,
   previewArtifact = previewPlanArtifactText,
+  previewArtifactFile = previewPlanArtifactFile,
   previewDiff = previewPlanArtifactDiff,
 }: {
   artifact: ArtifactManifestEntry;
@@ -42,6 +51,7 @@ export function ArtifactActionSurface({
   onInspect?(inspection: ArtifactInspection): void;
   displayActions?: readonly ArtifactActionId[];
   previewArtifact?: typeof previewPlanArtifactText;
+  previewArtifactFile?: typeof previewPlanArtifactFile;
   previewDiff?: typeof previewPlanArtifactDiff;
 }) {
   const availability = artifactActionAvailability(artifact, {
@@ -52,18 +62,24 @@ export function ArtifactActionSurface({
   const [busy, setBusy] = useState<
     "open" | "preview" | "diff" | "reveal" | "restore" | "apply"
   >();
-  const [preview, setPreview] = useState<PlanArtifactTextPreviewReceipt>();
+  const [preview, setPreview] = useState<ArtifactPreviewReceipt>();
   const [diff, setDiff] = useState<PlanArtifactDiffPreviewReceipt>();
   const [error, setError] = useState<string>();
   const [copied, setCopied] = useState(false);
+  const supportsText = artifactUsesTextPreview(artifact.path);
 
   const inspect = async (mode: "preview" | "diff") => {
     if (busy) return;
+    if (mode === "diff" && !supportsText) return;
     setBusy(mode);
     setError(undefined);
     try {
       if (mode === "preview") {
-        const receipt = await previewArtifact(threadId, planId, artifact.id);
+        const receipt = await requestArtifactPreview(
+          { artifact, threadId, planId },
+          previewArtifact,
+          previewArtifactFile,
+        );
         if (onInspect) {
           onInspect({ artifact, mode, planId, threadId, receipt });
           setPreview(undefined);
@@ -126,9 +142,11 @@ export function ArtifactActionSurface({
       setBusy(undefined);
     }
   };
-  const actions = displayActions
-    ? availability.actions.filter((action) => displayActions.includes(action))
-    : availability.actions;
+  const actions = availability.actions.filter(
+    (action) =>
+      (action !== "diff" || supportsText) &&
+      (!displayActions || displayActions.includes(action)),
+  );
   const controls = actions.map((action) => ({
     action,
     busy: busy === action,
@@ -162,10 +180,25 @@ export function ArtifactActionSurface({
         <ArtifactInspection
           title={copy.previewTitle}
           path={artifact.path}
-          meta={`${preview.lineCount} ${copy.lines} · ${preview.sizeBytes} ${copy.bytes}`}
+          meta={
+            preview.kind === "napier.plan-artifact-file-preview"
+              ? `${preview.sizeBytes} ${copy.bytes}`
+              : `${preview.lineCount} ${copy.lines} · ${preview.sizeBytes} ${copy.bytes}`
+          }
           onClose={() => setPreview(undefined)}
+          {...(preview.kind === "napier.plan-artifact-file-preview"
+            ? {
+                onDownload: () => downloadBlob(preview.blob, preview.filename),
+              }
+            : {})}
         >
-          <pre>{preview.text}</pre>
+          <ArtifactInspectionContent
+            path={artifact.path}
+            threadId={threadId}
+            preview={preview}
+            view="preview"
+            diff={undefined}
+          />
         </ArtifactInspection>
       ) : null}
       {diff ? (
@@ -175,7 +208,7 @@ export function ArtifactActionSurface({
           meta={`${diff.hunkCount} ${copy.hunks} · +${diff.addedLineCount} / −${diff.deletedLineCount}`}
           onClose={() => setDiff(undefined)}
         >
-          <pre>{diff.text || copy.noDiff}</pre>
+          <FileSourcePreview text={diff.text || copy.noDiff} diff />
         </ArtifactInspection>
       ) : null}
     </div>
@@ -187,12 +220,14 @@ function ArtifactInspection({
   path,
   meta,
   onClose,
+  onDownload,
   children,
 }: {
   title: string;
   path: string;
   meta: string;
   onClose(): void;
+  onDownload?(): void;
   children: React.ReactNode;
 }) {
   return (
@@ -202,6 +237,15 @@ function ArtifactInspection({
           <strong>{title}</strong>
           <span>{meta}</span>
         </div>
+        {onDownload ? (
+          <button
+            type="button"
+            aria-label={artifactInspectorCopy.download}
+            onClick={onDownload}
+          >
+            <Download size={12} aria-hidden="true" />
+          </button>
+        ) : null}
         <button
           type="button"
           aria-label={`${copy.close} ${path}`}
@@ -213,4 +257,13 @@ function ArtifactInspection({
       {children}
     </section>
   );
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }

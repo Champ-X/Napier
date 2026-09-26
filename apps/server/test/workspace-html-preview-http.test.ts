@@ -1,6 +1,7 @@
 import {
   mkdir,
   mkdtemp,
+  open,
   readFile,
   realpath,
   rm,
@@ -68,6 +69,28 @@ async function fixture() {
 }
 
 describe("workspace HTML site preview", () => {
+  it("retains an HTML entry larger than the previous 64 MiB session budget", async () => {
+    const { app, root } = await fixture();
+    const entry = await open(path.join(root, "slides/large.html"), "w");
+    try {
+      await entry.write("<main>Large preview</main>");
+      await entry.truncate(64 * 1024 * 1024 + 1);
+    } finally {
+      await entry.close();
+    }
+    const response = await app.request(
+      "/api/workspace/file?path=slides/large.html",
+    );
+    expect(response.status).toBe(200);
+    const previewUrl = response.headers.get("X-Napier-Workspace-Preview-Url");
+    expect(previewUrl).toBeTruthy();
+    const preview = await app.request(previewUrl!);
+    expect(preview.status).toBe(200);
+    expect(preview.headers.get("Content-Type")).toBe(
+      "text/html; charset=utf-8",
+    );
+  });
+
   it("serves unchanged HTML and nested relative CSS, module, and image resources", async () => {
     const { app, root, url } = await fixture();
     const html = await app.request(url);

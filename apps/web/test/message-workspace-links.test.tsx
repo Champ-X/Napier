@@ -18,6 +18,45 @@ afterEach(async () => {
 });
 
 describe("Message workspace links", () => {
+  it("renders local SVG images relative to their document and thread", async () => {
+    const container = installDom();
+    await act(async () =>
+      render(
+        <MessageMarkdown
+          text="![Chart](assets/chart.svg)"
+          workspaceDocument={{
+            path: "outputs/report.md",
+            threadId: "thread_fixture",
+          }}
+        />,
+        container,
+      ),
+    );
+    const images = findElementsByLocalName(container, "img");
+    expect(images).toHaveLength(1);
+    expect(images[0]?.getAttribute("src")).toBe(
+      "/api/workspace/file?path=outputs%2Fassets%2Fchart.svg&threadId=thread_fixture",
+    );
+  });
+
+  it("makes structured text file references openable", async () => {
+    const container = installDom();
+    const open = vi.fn();
+    await act(async () =>
+      render(
+        <MessageMarkdown
+          text="`outputs/data.jsonl` and `outputs/table.tsv`"
+          onOpenWorkspaceFile={open}
+        />,
+        container,
+      ),
+    );
+    const links = findElementsByLocalName(container, "button");
+    expect(links).toHaveLength(2);
+    await act(async () => (links[0] as HTMLButtonElement).click());
+    expect(open).toHaveBeenCalledWith("outputs/data.jsonl");
+  });
+
   it("links only exact authoritative artifact paths", async () => {
     const container = installDom();
     await act(async () => {

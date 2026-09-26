@@ -11,10 +11,15 @@ import type {
   TransitionPlanStepRequest,
   UpdateArtifactManifestRequest,
 } from "@napier/contracts";
+import {
+  decodeFilePreviewText,
+  MAX_TEXT_FILE_PREVIEW_BYTES,
+} from "@napier/contracts/file-preview";
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createPlanArtifactEventPayload } from "./plans.js";
+import { readPlanArtifactFile } from "./plan-artifact-file-read.js";
 import { definePlanToolProgress } from "./plan-tool-progress.js";
 import { planToolResult } from "./plan-tool-result.js";
 import {
@@ -33,7 +38,6 @@ import {
 } from "./structured-data.js";
 
 const MAX_ARTIFACT_HASH_BYTES = 32 * 1024 * 1024;
-const MAX_ARTIFACT_PREVIEW_BYTES = 64 * 1024;
 const MAX_ARTIFACT_DATA_PROFILE_BYTES = 2 * 1024 * 1024;
 const MAX_ARTIFACT_DIRECTORY_MANIFEST_ENTRIES = 5_000;
 const MAX_ARTIFACT_DATA_PROFILE_ROWS = 10;
@@ -362,7 +366,8 @@ export function createPlanTools(
       );
     },
   };
-  return [createPlan, transitionStep, updateArtifact, replanPlan].map(definePlanToolProgress);
+  const tools = [createPlan, transitionStep, updateArtifact, replanPlan];
+  return tools.map(definePlanToolProgress);
 }
 
 async function buildArtifactUpdate(
@@ -605,7 +610,9 @@ export async function inspectWorkspaceArtifactDrift(
 export async function exportWorkspaceFileArtifact(
   workspaceRoot: string,
   artifact: ExecutionPlan["artifacts"][number],
+  options: { maxBytes?: number } = {},
 ): Promise<WorkspaceFileArtifactExport> {
+  const maxBytes = options.maxBytes ?? MAX_ARTIFACT_HASH_BYTES;
   if (artifact.kind !== "file") {
     throw new Error("Only file artifacts can be exported");
   }
@@ -615,22 +622,21 @@ export async function exportWorkspaceFileArtifact(
   if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
     throw new Error("Artifact path escapes the configured workspace");
   }
-  const { target, info } = await inspectWorkspaceArtifactTarget(
+  const inspected = await inspectWorkspaceArtifactTarget(
     workspaceRoot,
     artifact,
   );
-  if (info.size > MAX_ARTIFACT_HASH_BYTES) {
-    throw new Error(
-      `Artifact exceeds the ${MAX_ARTIFACT_HASH_BYTES / 1024 / 1024} MB verification limit`,
-    );
-  }
-  const contents = await readFile(target);
+  const contents = await readPlanArtifactFile(
+    inspected,
+    maxBytes,
+    `Artifact exceeds the ${maxBytes / 1024 / 1024} MiB file limit`,
+  );
   const observedSha256 = sha256(contents);
   assertVerifiedArtifactDigestMatches(artifact, observedSha256);
   return {
     contents,
     sha256: observedSha256,
-    sizeBytes: info.size,
+    sizeBytes: contents.byteLength,
   };
 }
 
@@ -647,28 +653,22 @@ export async function previewWorkspaceTextArtifact(
   if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
     throw new Error("Artifact path escapes the configured workspace");
   }
-  const { target, info } = await inspectWorkspaceArtifactTarget(
+  const inspected = await inspectWorkspaceArtifactTarget(
     workspaceRoot,
     artifact,
   );
-  if (info.size > MAX_ARTIFACT_PREVIEW_BYTES) {
-    throw new Error(
-      `Artifact preview exceeds the ${MAX_ARTIFACT_PREVIEW_BYTES / 1024} KiB limit`,
-    );
-  }
-  const contents = await readFile(target);
+  const contents = await readPlanArtifactFile(
+    inspected,
+    MAX_TEXT_FILE_PREVIEW_BYTES,
+    `Artifact preview exceeds the ${MAX_TEXT_FILE_PREVIEW_BYTES / 1024 / 1024} MiB text limit`,
+  );
   const observedSha256 = sha256(contents);
   assertVerifiedArtifactDigestMatches(artifact, observedSha256);
-  let text: string;
-  try {
-    text = new TextDecoder("utf-8", { fatal: true }).decode(contents);
-  } catch {
-    throw new Error("Artifact preview requires valid UTF-8 text");
-  }
+  const text = decodeFilePreviewText(contents);
   return {
     text,
     sha256: observedSha256,
-    sizeBytes: info.size,
+    sizeBytes: contents.byteLength,
     lineCount: text.length === 0 ? 0 : text.split(/\r\n|\r|\n/u).length,
   };
 }

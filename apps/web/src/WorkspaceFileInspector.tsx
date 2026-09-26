@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { formatApiErrorMessage } from "./api-error";
 import { artifactInspectorCopy as copy } from "./artifact-inspector-copy";
-import { MessageMarkdown } from "./message-markdown";
+import { FilePreviewContent } from "./FilePreviewContent";
 import {
   previewWorkspaceFile,
   type WorkspaceFilePreview,
@@ -34,7 +34,15 @@ export function WorkspaceFileInspector({
   previewFile = previewWorkspaceFile,
 }: WorkspaceFileInspectorProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
-  const [preview, setPreview] = useState<WorkspaceFilePreview>();
+  const [loadedPreview, setLoadedPreview] = useState<{
+    requestedPath: string;
+    threadId: string | undefined;
+    file: WorkspaceFilePreview;
+  }>();
+  const preview =
+    loadedPreview?.requestedPath === path && loadedPreview.threadId === threadId
+      ? loadedPreview.file
+      : undefined;
   const [view, setView] = useState<WorkspaceFileView>("preview");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -44,13 +52,15 @@ export function WorkspaceFileInspector({
     const controller = new AbortController();
     setLoading(true);
     setError(undefined);
-    setPreview(undefined);
+    setLoadedPreview(undefined);
     const request = threadId
       ? previewFile(path, controller.signal, threadId)
       : previewFile(path, controller.signal);
     void request
       .then((result) => {
-        if (!controller.signal.aborted) setPreview(result);
+        if (!controller.signal.aborted) {
+          setLoadedPreview({ requestedPath: path, threadId, file: result });
+        }
       })
       .catch((reason: unknown) => {
         if (!controller.signal.aborted) {
@@ -203,7 +213,7 @@ export function WorkspaceFileInspector({
       ) : null}
       <div className="artifact-inspector-content" key={activeView}>
         {preview ? (
-          <WorkspaceFileContent
+          <FilePreviewContent
             preview={preview}
             view={activeView}
             {...(threadId ? { threadId } : {})}
@@ -214,105 +224,8 @@ export function WorkspaceFileInspector({
   );
 }
 
-function WorkspaceFileContent({
-  preview,
-  view,
-  threadId,
-}: {
-  threadId?: string;
-  preview: WorkspaceFilePreview;
-  view: WorkspaceFileView;
-}) {
-  const [objectUrl, setObjectUrl] = useState<string>();
-  const type = mediaType(preview.contentType);
-  const extension = fileExtension(preview.path);
-  useEffect(() => {
-    if (preview.text !== undefined) {
-      setObjectUrl(undefined);
-      return;
-    }
-    const url = URL.createObjectURL(preview.blob);
-    setObjectUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [preview]);
-
-  if (view === "source" && preview.text !== undefined) {
-    return <SourcePreview text={preview.text} />;
-  }
-  if (type === "text/html") {
-    return (
-      <iframe
-        className="artifact-inspector-frame"
-        sandbox="allow-scripts"
-        referrerPolicy="no-referrer"
-        src={preview.previewUrl}
-        srcDoc={preview.previewUrl ? undefined : (preview.text ?? "")}
-        title={copy.htmlTitle}
-      />
-    );
-  }
-  if (
-    preview.text !== undefined &&
-    (extension === "md" || extension === "mdx" || extension === "markdown")
-  ) {
-    return (
-      <article className="artifact-inspector-markdown">
-        <MessageMarkdown
-          text={preview.text}
-          workspaceDocument={{
-            path: preview.path,
-            ...(threadId ? { threadId } : {}),
-          }}
-        />
-      </article>
-    );
-  }
-  if (type.startsWith("image/") && objectUrl) {
-    return (
-      <div className="workspace-file-image-preview">
-        <img src={objectUrl} alt={preview.filename} />
-      </div>
-    );
-  }
-  if (type === "application/pdf" && objectUrl) {
-    return (
-      <iframe
-        className="artifact-inspector-frame"
-        src={objectUrl}
-        title={preview.filename}
-      />
-    );
-  }
-  if (preview.text !== undefined) {
-    return <SourcePreview text={preview.text} />;
-  }
-  return (
-    <div className="workspace-file-preview-unavailable">
-      <FileCode2 size={28} aria-hidden="true" />
-      <strong>{preview.filename}</strong>
-      <span>{workspaceCopy.previewUnavailable}</span>
-    </div>
-  );
-}
-
-function SourcePreview({ text }: { text: string }) {
-  return (
-    <ol className="artifact-source-preview">
-      {text.split("\n").map((line, index) => (
-        <li key={`${String(index)}-${line.slice(0, 20)}`}>
-          <code>{line || " "}</code>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 function mediaType(contentType: string): string {
   return contentType.split(";", 1)[0]?.trim().toLowerCase() ?? contentType;
-}
-
-function fileExtension(path: string): string {
-  return path.split(".").pop()?.toLowerCase() ?? "";
 }
 
 function fileName(path: string): string {

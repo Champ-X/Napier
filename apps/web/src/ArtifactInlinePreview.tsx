@@ -1,10 +1,16 @@
 import { FileCode2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import type { ArtifactInspection } from "./artifact-inspection";
+import {
+  artifactNeedsFilePreview,
+  artifactTextPreviewNeedsFileFallback,
+  type ArtifactInspection,
+} from "./artifact-inspection";
 import { formatApiErrorMessage } from "./api-error";
 import {
   peekPlanArtifactText,
+  peekPlanArtifactFile,
+  type PlanArtifactFilePreview,
   type PlanArtifactTextPeek,
 } from "./artifact-file-api";
 import type { ConversationArtifact } from "./conversation-artifact-view-model";
@@ -16,14 +22,18 @@ export function ArtifactInlinePreview({
   item,
   onInspect,
   peekArtifact = peekPlanArtifactText,
+  peekArtifactFile = peekPlanArtifactFile,
   previewFile = previewWorkspaceFile,
 }: {
   item: ConversationArtifact;
   onInspect?(inspection: ArtifactInspection): void;
   peekArtifact?: typeof peekPlanArtifactText;
+  peekArtifactFile?: typeof peekPlanArtifactFile;
   previewFile?: typeof previewWorkspaceFile;
 }) {
-  const [preview, setPreview] = useState<PlanArtifactTextPeek>();
+  const [preview, setPreview] = useState<
+    PlanArtifactTextPeek | PlanArtifactFilePreview
+  >();
   const [error, setError] = useState<string>();
   const isHtml = /\.html?$/iu.test(item.artifact.path);
 
@@ -32,7 +42,18 @@ export function ArtifactInlinePreview({
     let active = true;
     setPreview(undefined);
     setError(undefined);
-    void peekArtifact(item.threadId, item.planId, item.artifact.id)
+    const peek = async () => {
+      if (artifactNeedsFilePreview(item.artifact)) {
+        return peekArtifactFile(item.threadId, item.planId, item.artifact.id);
+      }
+      try {
+        return await peekArtifact(item.threadId, item.planId, item.artifact.id);
+      } catch (reason) {
+        if (!artifactTextPreviewNeedsFileFallback(reason)) throw reason;
+        return peekArtifactFile(item.threadId, item.planId, item.artifact.id);
+      }
+    };
+    void peek()
       .then((receipt) => {
         if (active) setPreview(receipt);
       })
@@ -45,11 +66,14 @@ export function ArtifactInlinePreview({
   }, [
     isHtml,
     item.artifact.id,
+    item.artifact.path,
+    item.artifact.sizeBytes,
     item.artifact.status,
     item.artifact.updatedAt,
     item.planId,
     item.threadId,
     peekArtifact,
+    peekArtifactFile,
   ]);
 
   if (!isHtml || !isAvailable(item)) return null;
@@ -83,6 +107,7 @@ export function ArtifactInlinePreview({
       {preview ? (
         <HtmlArtifactPreview
           path={item.artifact.path}
+          refreshKey={preview}
           sha256={preview.sha256}
           previewFile={previewFile}
         />
