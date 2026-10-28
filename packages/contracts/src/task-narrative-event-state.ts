@@ -20,12 +20,18 @@ export interface TaskNarrativeEventState {
   callsByRun: Record<string, Record<string, ToolCallProgress>>;
   decisions: Record<string, DecisionProgress>;
   outputReferencesByRun: Record<string, string[]>;
+  outputMessageByRun: Record<string, { id: string; createdAt: string }>;
 }
 
 const TOOL_EVENT = /^tool\.(started|completed|failed|blocked)$/u;
 
 export function createTaskNarrativeEventState(): TaskNarrativeEventState {
-  return { callsByRun: {}, decisions: {}, outputReferencesByRun: {} };
+  return {
+    callsByRun: {},
+    decisions: {},
+    outputReferencesByRun: {},
+    outputMessageByRun: {},
+  };
 }
 
 export function applyTaskNarrativeEvent(
@@ -36,6 +42,10 @@ export function applyTaskNarrativeEvent(
   applyToolProgress(next, event);
   applyDecisionProgress(next, event);
   if (event.type === "message.assistant" && event.visibility === "user") {
+    next.outputMessageByRun[event.runId] = {
+      id: event.id,
+      createdAt: event.createdAt,
+    };
     next.outputReferencesByRun[event.runId] = taskDeliverableReferences(
       payloadString(event, "text") ?? "",
     );

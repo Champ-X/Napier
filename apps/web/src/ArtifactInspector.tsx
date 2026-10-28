@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { ArtifactReviewActions } from "./ArtifactReviewActions";
 import { formatApiErrorMessage } from "./api-error";
 import {
   downloadPlanArtifactFile,
@@ -29,6 +30,7 @@ import { useArtifactInspectorView } from "./use-artifact-inspector-view";
 export interface ArtifactInspectorProps {
   inspection: ArtifactInspection;
   onClose(): void;
+  onContinueEditing?(path: string): void;
   onLedgerChanged?(): void | Promise<void>;
   previewArtifact?: typeof previewPlanArtifactText;
   previewArtifactFile?: typeof previewPlanArtifactFile;
@@ -39,6 +41,7 @@ export interface ArtifactInspectorProps {
 export function ArtifactInspector({
   inspection,
   onClose,
+  onContinueEditing,
   onLedgerChanged,
   previewArtifact = previewPlanArtifactText,
   previewArtifactFile = previewPlanArtifactFile,
@@ -112,7 +115,7 @@ export function ArtifactInspector({
   return (
     <aside
       ref={inspectorRef}
-      className="artifact-inspector"
+      className={`artifact-inspector${onContinueEditing ? " has-review-actions" : ""}`}
       aria-label={`${copy.preview}: ${inspection.artifact.path}`}
     >
       <header className="artifact-inspector-header">
@@ -184,6 +187,14 @@ export function ArtifactInspector({
               ? copy.downloading
               : inspectionMeta(view === "diff" ? diff : preview)}
         </span>
+        {onContinueEditing ? (
+          <ArtifactReviewActions
+            integrityRecorded={inspection.artifact.status === "verified"}
+            onContinueEditing={() =>
+              onContinueEditing(inspection.artifact.path)
+            }
+          />
+        ) : null}
       </div>
       {error || downloadError ? (
         <p className="artifact-inspector-error" role="alert">

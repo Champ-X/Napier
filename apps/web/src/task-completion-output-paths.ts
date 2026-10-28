@@ -9,6 +9,7 @@ export interface TaskArtifactTarget {
   path: string;
   planId?: string;
   artifact?: ArtifactManifestEntry;
+  expectedSha256?: string;
 }
 
 type ActivePlanOutputs = Pick<
@@ -28,9 +29,19 @@ export function taskArtifactTargets(
     .filter(
       (entry) =>
         entry.artifact.status === "produced" ||
-        entry.artifact.status === "verified",
+        entry.artifact.status === "verified" ||
+        (entry.source === "final_reference" &&
+          entry.accessibility === "available" &&
+          Boolean(entry.artifact.sha256)),
     )
-    .map(({ path, planId, artifact }) => ({ path, planId, artifact }));
+    .map(({ path, planId, artifact, source }) => ({
+      path,
+      artifact,
+      ...(planId ? { planId } : {}),
+      ...(source === "final_reference" && artifact.sha256
+        ? { expectedSha256: artifact.sha256 }
+        : {}),
+    }));
   // Historical snapshots may contain only outputPaths. An empty list never
   // hides declared artifacts, and a known missing/replaced version stays closed.
   for (const path of activePlan?.outputPaths ?? []) {

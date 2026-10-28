@@ -63,6 +63,14 @@
 - 当前构建的隔离服务 / Chromium 检查：1440px 下点结果卡一次、320px 下开成果栏后点结果卡共两次，均打开 `interactive-report.html` 正确主产物；完整正文与 bound preview 请求确认，0 横向溢出、0 page error、未显示目标 accepted。HTML 脚本采用既有 fixture helper 同类的程序化 DOM click 验证，不声称物理指针在 iframe 内点击已验收。收据：[task-outcome-ui-2026-10-29.json](docs/artifacts/task-outcome-ui-2026-10-29.json)；复现脚本：[check-task-outcome-ui.mjs](scripts/check-task-outcome-ui.mjs)。该证据包含保留的原有 Web 工作区改动，不能当作干净 commit 的发布验收。
 - 边界与后续：这是 G01 局部切片。无计划的工具/最终回答产物仍需真实路径、存在性、来源校验；跨绝对/相对路径和同 manifest 覆写的版本关系仍需补齐；accepted/rejected 尚无独立验收生产者；继续修改入口未接通。实现说明：[task-outcome-projection.md](docs/task-outcome-projection.md)。G01 全体验收及 G03–G07 保持未完成。
 
+### 后续推进：G01 无计划候选与继续修改
+
+- 上一切片已提交 `ad4337c5`，未 push。继续复用同一投影，缓存版本升至 3，绑定显式引用所在的 assistant message / Run。Runtime 检查工作区词法及真实路径、文件存在性与类型、符号链接、descriptor/inode/size/mtime 一致性，并读取有界内容摘要。单文件 8 MiB、总量 32 MiB、最多 30 个引用；不扫描全工作区。候选仍为 candidate/unverified，不把文件存在或摘要当作目标验收。
+- 无计划、计划工具失败时的显式文件引用可以进入结果栏。绝对引用匹配已登记路径时保留正式 Artifact 绑定；缺失、越界、外部 URL、符号链接和未引用工作区文件不会被提升为成果。Web 打开候选前校验 Runtime 观察到的摘要，漂移时拒绝显示旧版本。真实文件系统变化在 warm/cold 投影均重新观察。
+- 两类预览均新增“继续修改”：追加文件引用并保留已有草稿，关闭预览后将焦点放回当前线程输入框，不自动发送。原用户新 `WorkspaceEvidenceResults.tsx` 保留，只增补一行共享 narrative 属性；该文件原本未跟踪，未连带收进实现提交。
+- 验证：Runtime 2 文件 17 测试、Web 7 文件 53 测试通过，Runtime/Web typecheck 及 Contracts/Runtime/Server/Web 构建通过。当前构建的正式产物、无计划/计划工具失败候选两个场景各在 1440/320px 下完成 1/2 次点击打开、正文与摘要链验证、草稿保留和焦点恢复；0 page error、0 横向溢出、0 模型请求。新收据：[task-deliverable-review-ui-2026-10-29.json](docs/artifacts/task-deliverable-review-ui-2026-10-29.json)，旧收据未覆盖。Web design contract 为 84 CSS 文件，0 色值/小字债；架构仍为原 11 项失败。
+- G01 仍未整体通过：工具账本对部分路径作了隐私裁剪，尚未新增 tool-only 成果源；独立目标验收生产者、manifest 覆写的完整版本历史、超出候选发现限额的明确处理仍待补齐。G02 分区与 G03–G07 全部保留，未宣称全目标完成。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -130,7 +138,7 @@
 - [x] 梳理 Runtime 与前端已有状态投影，统一优先级和语义，覆盖无计划任务。（共享事实切片已验证；独立验收生产者仍是 G01 待办。）
 - [ ] 统一成果来源、去重、版本关系和主次排序，修复空 outputPaths 屏蔽已有产物的问题。
 - [ ] 让顶部、计划、Task 页和结果栏消费一致投影，移除重复推断。
-- [ ] 主成果提供打开预览、下载或复制路径、验证状态、继续修改入口；辅助证据渐进展开。
+- [x] 主成果提供打开预览、下载或复制路径、验证状态、继续修改入口；辅助证据渐进展开。（已登记产物与通过边界/摘要检查的显式引用候选均完成浏览器验收；候选发现范围限制另列待办。）
 - [x] 将本轮发现的状态和成果反例纳入回归用例。（含真实 SQLite、Web/CLI 与隔离浏览器检查；不代表全部 G01 验收通过。）
 
 **验收**

@@ -3,7 +3,7 @@ import type { ThreadDetail } from "./workspace-bootstrap-v1.js";
 
 type Deliverable = NonNullable<
   NonNullable<ThreadDetail["taskNarrative"]>["deliverables"]
->[number];
+>[number] & { source: "plan"; planId: string; planRevision: number };
 
 /** All declared versions remain in the ledger; the task surface picks the latest
  * version per resource, including unavailable versions so it cannot resurrect an

@@ -146,10 +146,11 @@ export interface ThreadDetail {
     processItems?: string[];
     deliverables?: Array<{
       path: string;
-      planId: string;
-      planRevision: number;
+      planId?: string;
+      planRevision?: number;
       artifact: ArtifactManifestEntry;
-      source: "plan";
+      source: "plan" | "final_reference";
+      sourceEventId?: string;
       accessibility: "unchecked" | "available" | "missing" | "drifted";
       verification: "unverified" | "integrity_recorded";
       previousVersions: Array<{ planId: string; artifactId: string; runId?: string; sha256?: string }>;

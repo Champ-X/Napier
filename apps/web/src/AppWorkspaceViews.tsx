@@ -9,6 +9,7 @@ import {
 
 import type { AgentProfile, BootstrapResponse } from "@napier/contracts";
 import { Composer } from "./Composer";
+import { artifactInspectorCopy } from "./artifact-inspector-copy";
 import { ArtifactInspector } from "./ArtifactInspector";
 import { WorkbenchBrowserRail } from "./WorkbenchBrowserRail";
 import { WorkspaceEvidenceRail } from "./WorkspaceEvidenceRail";
@@ -81,6 +82,7 @@ export function AppWorkspaceViews({
   const [artifactInspection, setArtifactInspection] =
     useState<ArtifactInspection>();
   const [workspaceFilePath, setWorkspaceFilePath] = useState<string>();
+  const [workspaceFileSha256, setWorkspaceFileSha256] = useState<string>();
   const [skillResourceInspection, setSkillResourceInspection] =
     useState<MessageSkillResourceLink>();
   const [dismissedBrowserRunId, setDismissedBrowserRunId] = useState<string>();
@@ -120,6 +122,19 @@ export function AppWorkspaceViews({
         return;
       }
       setArtifactInspection(undefined);
+      setWorkspaceFileSha256(
+        vm.detail
+          ? taskArtifactTargets(
+              vm.detail.plans,
+              vm.detail.activePlan,
+              vm.detail.taskNarrative?.deliverables,
+            ).find(
+              (target) =>
+                absoluteWorkspacePath(bootstrap.workspace.root, target.path) ===
+                absoluteWorkspacePath(bootstrap.workspace.root, path),
+            )?.expectedSha256
+          : undefined,
+      );
       setWorkspaceFilePath(path);
     },
     [bootstrap.workspace.root, vm.detail],
@@ -247,6 +262,7 @@ export function AppWorkspaceViews({
         layout={layout}
         artifactInspection={artifactInspection}
         workspaceFilePath={workspaceFilePath}
+        workspaceFileSha256={workspaceFileSha256}
         skillResourceInspection={skillResourceInspection}
         showBrowserRail={showBrowserRail}
         showWorkspaceRail={showWorkspaceRail}
@@ -267,6 +283,7 @@ interface AppWorkspaceEvidenceSurfacesProps {
   layout: WorkspaceLayoutControls;
   artifactInspection: ArtifactInspection | undefined;
   workspaceFilePath: string | undefined;
+  workspaceFileSha256: string | undefined;
   skillResourceInspection: MessageSkillResourceLink | undefined;
   showBrowserRail: boolean;
   showWorkspaceRail: boolean;
@@ -284,6 +301,7 @@ function AppWorkspaceEvidenceSurfaces({
   layout,
   artifactInspection,
   workspaceFilePath,
+  workspaceFileSha256,
   skillResourceInspection,
   showBrowserRail,
   showWorkspaceRail,
@@ -294,6 +312,22 @@ function AppWorkspaceEvidenceSurfaces({
   onCloseBrowser,
   onCloseWorkspaceRail,
 }: AppWorkspaceEvidenceSurfacesProps) {
+  const continueEditing = (path: string) => {
+    vm.setComposer((draft) =>
+      [draft, `${artifactInspectorCopy.continueEditingPrompt} ${path}\n`]
+        .filter(Boolean)
+        .join("\n\n"),
+    );
+    onCloseArtifact();
+    onCloseWorkspaceFile();
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLTextAreaElement>(".composer textarea")
+          ?.focus(),
+      ),
+    );
+  };
   const showResizableRail =
     layout.workspaceRailAvailable &&
     (Boolean(artifactInspection) ||
@@ -317,6 +351,7 @@ function AppWorkspaceEvidenceSurfaces({
       {artifactInspection ? (
         <ArtifactInspector
           inspection={artifactInspection}
+          onContinueEditing={continueEditing}
           onLedgerChanged={vm.refreshActiveThread}
           onClose={onCloseArtifact}
         />
@@ -324,6 +359,10 @@ function AppWorkspaceEvidenceSurfaces({
       {workspaceFilePath ? (
         <WorkspaceFileInspector
           path={workspaceFilePath}
+          onContinueEditing={continueEditing}
+          {...(workspaceFileSha256
+            ? { expectedSha256: workspaceFileSha256 }
+            : {})}
           {...(vm.detail ? { threadId: vm.detail.thread.id } : {})}
           onClose={onCloseWorkspaceFile}
         />

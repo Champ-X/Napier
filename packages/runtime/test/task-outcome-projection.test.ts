@@ -1,4 +1,5 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, mkdir, symlink } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -148,6 +149,150 @@ describe("Shared task facts", () => {
         expect(facts.metricRunId).toBe(next.id);
         expect(facts.objective?.status).not.toBe("accepted");
       }
+    } finally {
+      store.close();
+    }
+  });
+  it("checks no-plan output references against the filesystem without promoting or exposing escaped files", async () => {
+    const { store, thread, run } = await setup();
+    const registry = new KernelProjectionRegistry();
+    const service = new TaskNarrativeProjectionService(registry, store);
+    try {
+      await mkdir(path.join(store.workspaceRoot, "outputs"), {
+        recursive: true,
+      });
+      await writeFile(
+        path.join(store.workspaceRoot, "outputs/report.html"),
+        "<h1>Candidate</h1>",
+      );
+      await writeFile(
+        path.join(path.dirname(store.workspaceRoot), "outside.txt"),
+        "outside",
+      );
+      await symlink(
+        path.join(path.dirname(store.workspaceRoot), "outside.txt"),
+        path.join(store.workspaceRoot, "escaped.txt"),
+      );
+      await service.project(thread.id);
+      const reference = await store.appendEvent({
+        threadId: thread.id,
+        runId: run.id,
+        type: "message.assistant",
+        category: "message",
+        visibility: "user",
+        payload: {
+          role: "assistant",
+          text: "Open [report](outputs/report.html). `outputs/./report.html` `../outside.txt` `escaped.txt` `missing.txt` [external](https://example.test/a.html)",
+        },
+      });
+      await store.finishRun(run.id, "completed");
+      const detail = await store.getDetail(thread.id);
+      expect(detail.taskNarrative?.deliverables).toHaveLength(1);
+      expect(detail.taskNarrative?.deliverables?.[0]).toMatchObject({
+        path: "outputs/report.html",
+        source: "final_reference",
+        sourceEventId: reference.id,
+        accessibility: "available",
+        verification: "unverified",
+        artifact: {
+          status: "candidate",
+          sourceRunId: run.id,
+          sha256: createHash("sha256")
+            .update("<h1>Candidate</h1>")
+            .digest("hex"),
+        },
+      });
+      expect((await service.project(thread.id)).view).toEqual(
+        detail.taskNarrative,
+      );
+      await writeFile(
+        path.join(store.workspaceRoot, "outputs/report.html"),
+        "<h1>Changed</h1>",
+      );
+      const changed = await service.project(thread.id);
+      expect(changed.view.deliverables?.[0]?.artifact.sha256).not.toBe(
+        detail.taskNarrative?.deliverables?.[0]?.artifact.sha256,
+      );
+      expect(changed.view.objective?.status).toBe("unverified");
+      expect(changed.view).toEqual(
+        (await store.getDetail(thread.id)).taskNarrative,
+      );
+      await rm(path.join(store.workspaceRoot, "outputs/report.html"));
+      expect((await service.project(thread.id)).view.deliverables).toEqual([]);
+    } finally {
+      registry.shutdown();
+      store.close();
+    }
+  });
+
+  it("keeps formal bindings for absolute aliases and ignores unreferenced workspace files", async () => {
+    const { store, thread, run } = await setup();
+    try {
+      await mkdir(store.workspaceRoot, { recursive: true });
+      const report = path.join(store.workspaceRoot, "report.md");
+      await writeFile(report, "Report");
+      await writeFile(
+        path.join(store.workspaceRoot, "unreferenced.md"),
+        "Not a deliverable",
+      );
+      const plan = await store.createPlan(thread.id, {
+        objective: "Report",
+        steps: [
+          {
+            id: "write",
+            title: "Write",
+            description: "Write report",
+            verification: "Report checked",
+          },
+        ],
+        artifacts: [
+          {
+            id: "report",
+            path: "report.md",
+            kind: "file",
+            description: "Report",
+          },
+        ],
+      });
+      await store.updatePlanArtifact(plan.id, "report", {
+        status: "produced",
+        sourceRunId: run.id,
+        evidence: "File produced",
+      });
+      await store.appendEvent({
+        threadId: thread.id,
+        runId: run.id,
+        type: "message.assistant",
+        category: "message",
+        visibility: "user",
+        payload: { role: "assistant", text: `[Report](${report})` },
+      });
+      await store.finishRun(run.id, "completed");
+      const targets = (await store.getDetail(thread.id)).taskNarrative
+        ?.deliverables;
+      expect(targets).toHaveLength(1);
+      expect(targets?.[0]).toMatchObject({
+        source: "plan",
+        planId: plan.id,
+        path: "report.md",
+      });
+      const next = await store.createRun({
+        threadId: thread.id,
+        agentId: run.agentId,
+      });
+      await store.appendEvent({
+        threadId: thread.id,
+        runId: next.id,
+        type: "message.assistant",
+        category: "message",
+        visibility: "user",
+        payload: { role: "assistant", text: "No new file was delivered." },
+      });
+      expect(
+        (await store.getDetail(thread.id)).taskNarrative?.deliverables?.every(
+          (entry) => entry.source === "plan",
+        ),
+      ).toBe(true);
     } finally {
       store.close();
     }

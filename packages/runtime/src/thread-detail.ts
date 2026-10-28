@@ -16,6 +16,7 @@ import type {
   ThreadRecord,
 } from "@napier/contracts";
 
+import { inspectTaskDeliverables } from "./task-deliverable-inspection.js";
 import { createContextCheckpointCalibrationReport } from "./checkpoint-calibration.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import { projectRunControlMessages } from "./run-control-messages.js";
@@ -50,6 +51,7 @@ import {
 } from "./conversation-plans-projection.js";
 
 interface ThreadDetailSource {
+  workspaceRoot?: string;
   getThread(threadId: string): ThreadRecord;
   getAgent(agentId: string): AgentProfile;
   listRuns(threadId: string): RunRecord[];
@@ -77,7 +79,7 @@ export async function loadThreadDetail(
 ): Promise<ThreadDetail> {
   const thread = source.getThread(threadId);
   const events = await source.listEvents(threadId);
-  return createThreadDetail(
+  const detail = createThreadDetail(
     {
       thread,
       agent: source.getAgent(thread.agentId),
@@ -98,6 +100,12 @@ export async function loadThreadDetail(
     },
     options,
   );
+  if (detail.taskNarrative)
+    detail.taskNarrative = await inspectTaskDeliverables(
+      detail.taskNarrative,
+      source.workspaceRoot,
+    );
+  return detail;
 }
 
 export function createThreadDetail(

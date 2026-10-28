@@ -1,3 +1,4 @@
+import { inspectTaskDeliverables } from "./task-deliverable-inspection.js";
 import type { RunEvent, ThreadRecord, ThreadSummary } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -299,7 +300,7 @@ export const TASK_NARRATIVE_PROJECTION: KernelProjectionDefinition<
   TaskNarrativeEventState
 > = {
   id: "task.narrative",
-  version: 2,
+  version: 3,
   init: () => createTaskNarrativeEventState(),
   apply: applyTaskNarrativeEvent,
   view: (state) => structuredClone(state),
@@ -309,6 +310,7 @@ export class TaskNarrativeProjectionService {
   constructor(
     private readonly registry: KernelProjectionRegistry,
     private readonly store: {
+      workspaceRoot?: string;
       getThread(threadId: string): ThreadRecord;
       listAutomaticRecoveryAssessments(
         threadId: string,
@@ -350,7 +352,10 @@ export class TaskNarrativeProjectionService {
     });
     return {
       ...receipt,
-      view: taskNarrativeView(source, receipt.view),
+      view: await inspectTaskDeliverables(
+        taskNarrativeView(source, receipt.view),
+        this.store.workspaceRoot,
+      ),
     };
   }
 }

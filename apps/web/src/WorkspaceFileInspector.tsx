@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ArtifactReviewActions } from "./ArtifactReviewActions";
 import { formatApiErrorMessage } from "./api-error";
 import { artifactInspectorCopy as copy } from "./artifact-inspector-copy";
 import { FilePreviewContent } from "./FilePreviewContent";
@@ -21,7 +22,9 @@ import { workspaceEvidenceCopy as workspaceCopy } from "./workspace-evidence-cop
 export interface WorkspaceFileInspectorProps {
   path: string;
   threadId?: string;
+  expectedSha256?: string;
   onClose(): void;
+  onContinueEditing?(path: string): void;
   previewFile?: typeof previewWorkspaceFile;
 }
 
@@ -30,17 +33,22 @@ type WorkspaceFileView = "preview" | "source";
 export function WorkspaceFileInspector({
   path,
   threadId,
+  expectedSha256,
   onClose,
+  onContinueEditing,
   previewFile = previewWorkspaceFile,
 }: WorkspaceFileInspectorProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [loadedPreview, setLoadedPreview] = useState<{
     requestedPath: string;
     threadId: string | undefined;
+    expectedSha256: string | undefined;
     file: WorkspaceFilePreview;
   }>();
   const preview =
-    loadedPreview?.requestedPath === path && loadedPreview.threadId === threadId
+    loadedPreview?.requestedPath === path &&
+    loadedPreview.threadId === threadId &&
+    loadedPreview.expectedSha256 === expectedSha256
       ? loadedPreview.file
       : undefined;
   const [view, setView] = useState<WorkspaceFileView>("preview");
@@ -58,8 +66,15 @@ export function WorkspaceFileInspector({
       : previewFile(path, controller.signal);
     void request
       .then((result) => {
+        if (expectedSha256 && result.sha256 !== expectedSha256)
+          throw new Error(copy.fileChanged);
         if (!controller.signal.aborted) {
-          setLoadedPreview({ requestedPath: path, threadId, file: result });
+          setLoadedPreview({
+            requestedPath: path,
+            threadId,
+            expectedSha256,
+            file: result,
+          });
         }
       })
       .catch((reason: unknown) => {
@@ -71,7 +86,7 @@ export function WorkspaceFileInspector({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [path, threadId, previewFile, reload]);
+  }, [path, threadId, expectedSha256, previewFile, reload]);
 
   useEffect(() => {
     const restoreFocus =
@@ -118,7 +133,7 @@ export function WorkspaceFileInspector({
 
   return (
     <aside
-      className="artifact-inspector workspace-file-inspector"
+      className={`artifact-inspector workspace-file-inspector${onContinueEditing ? " has-review-actions" : ""}`}
       aria-label={`${workspaceCopy.previewFile}: ${path}`}
     >
       <header className="artifact-inspector-header">
@@ -205,6 +220,12 @@ export function WorkspaceFileInspector({
               ? `${preview.sizeBytes} ${copy.bytes} · ${mediaType(preview.contentType)}`
               : "—"}
         </span>
+        {onContinueEditing ? (
+          <ArtifactReviewActions
+            integrityRecorded={false}
+            onContinueEditing={() => onContinueEditing(path)}
+          />
+        ) : null}
       </div>
       {error ? (
         <p className="artifact-inspector-error" role="alert">

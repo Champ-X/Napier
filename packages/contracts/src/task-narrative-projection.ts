@@ -41,15 +41,42 @@ export function taskNarrativeView(
 ): TaskNarrativeProjection {
   const narrative = narrativeView(source, eventState);
   const facts = taskOutcomeFacts(source, narrative);
+  const runId = source.thread.currentRunId ?? source.runs.at(-1)?.id ?? "";
+  const references = eventState.outputReferencesByRun[runId] ?? [];
+  const declared = projectTaskDeliverables(source.plans, {
+    preferredPaths: references,
+  });
+  const message = eventState.outputMessageByRun[runId];
+  const candidates: NonNullable<TaskNarrativeProjection["deliverables"]> =
+    message
+      ? references
+          .filter((path) => !declared.some((entry) => entry.path === path))
+          .map((path, index) => ({
+            path,
+            source: "final_reference",
+            sourceEventId: message.id,
+            accessibility: "unchecked",
+            verification: "unverified",
+            previousVersions: [],
+            artifact: {
+              id: `${message.id}:reference:${index}`,
+              path,
+              kind: "file",
+              status: "candidate",
+              description:
+                "Explicit output reference; not yet verified as a deliverable.",
+              evidence:
+                "Reference in the recorded assistant response; creation by this Run is not established.",
+              sourceRunId: runId,
+              createdAt: message.createdAt,
+              updatedAt: message.createdAt,
+            },
+          }))
+      : [];
   return {
     ...narrative,
     ...facts,
-    deliverables: projectTaskDeliverables(source.plans, {
-      preferredPaths:
-        eventState.outputReferencesByRun[
-          source.thread.currentRunId ?? source.runs.at(-1)?.id ?? ""
-        ] ?? [],
-    }),
+    deliverables: [...declared, ...candidates],
     processItems: taskRunProgress(eventState, narrative.metricRunId)
       .completedItems,
   };

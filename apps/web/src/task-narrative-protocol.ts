@@ -85,9 +85,7 @@ function deliverables(value: unknown): boolean {
       (item) =>
         record(item) &&
         typeof item["path"] === "string" &&
-        typeof item["planId"] === "string" &&
-        Number.isSafeInteger(item["planRevision"]) &&
-        item["source"] === "plan" &&
+        deliverableSource(item) &&
         isArtifactManifestEntry(item["artifact"]) &&
         member(item["accessibility"], [
           "unchecked",
@@ -106,5 +104,21 @@ function deliverables(value: unknown): boolean {
             optionalString(version["sha256"]),
         ),
     )
+  );
+}
+
+function deliverableSource(item: Record<string, unknown>): boolean {
+  if (item["source"] === "plan")
+    return (
+      typeof item["planId"] === "string" &&
+      Number.isSafeInteger(item["planRevision"])
+    );
+  return (
+    item["source"] === "final_reference" &&
+    typeof item["sourceEventId"] === "string" &&
+    item["verification"] === "unverified" &&
+    record(item["artifact"]) &&
+    item["artifact"]["status"] === "candidate" &&
+    typeof item["artifact"]["sourceRunId"] === "string"
   );
 }

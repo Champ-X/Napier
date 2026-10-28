@@ -133,6 +133,35 @@ describe("WorkspaceFileInspector", () => {
       "preview.png",
     );
   });
+  it("refuses a candidate whose file changed after Runtime inspection", async () => {
+    const { container } = installDom();
+    const root = createRoot(container);
+    roots.push(root);
+    const previewFile = vi.fn(async (path: string) => ({
+      path,
+      filename: "report.md",
+      contentType: "text/markdown",
+      blob: new Blob(["Changed content"]),
+      text: "Changed content",
+      sizeBytes: 15,
+      sha256: "b".repeat(64),
+    }));
+    await act(async () =>
+      root.render(
+        <WorkspaceFileInspector
+          path="report.md"
+          expectedSha256={"a".repeat(64)}
+          onClose={() => undefined}
+          previewFile={previewFile}
+        />,
+      ),
+    );
+    await waitFor(() => Boolean(container.querySelector("[role=alert]")));
+    expect(container.textContent).toContain(
+      "The file changed since inspection",
+    );
+    expect(container.textContent).not.toContain("Changed content");
+  });
 });
 
 function installDom() {
