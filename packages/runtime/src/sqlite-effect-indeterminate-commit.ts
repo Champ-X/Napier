@@ -2,6 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent, RunLeaseSummary } from "@napier/contracts";
 
+import { reconciledPatchForBoundary } from "./workspace-patch-reconciled-evidence.js";
 import { lostRunLeaseDisposition } from "./run-lease-loss.js";
 import { listRunLeases } from "./sqlite-run-leases.js";
 import { liveToolEffectAuthoritiesFromEvents } from "./sqlite-tool-effect-authority.js";
@@ -43,6 +44,11 @@ export function assertEffectIndeterminateTerminalCommit(
     (event) => event.type === "tool.operation.effect_indeterminate",
   );
   if (markers.length === 0) {
+    if (events.some((event) => event.type === "workspace.patch.reconciled"))
+      throw new EffectIndeterminateCommitError(
+        events[0]!.runId,
+        "patch reconciliation requires an atomic authority fence and Run transition",
+      );
     assertToolOperationEventIntegrity(events);
     return;
   }
@@ -76,6 +82,23 @@ export function assertNoContinuationAfterEffectIndeterminate(
 ): void {
   for (const event of events) {
     if (event.type === "tool.operation.effect_indeterminate") continue;
+    if (event.type === "workspace.patch.reconciled") {
+      const proof = record(event.payload);
+      if (
+        !events.some(
+          (candidate) =>
+            candidate.type === "tool.operation.effect_indeterminate" &&
+            candidate.runId === event.runId &&
+            candidate.threadId === event.threadId &&
+            record(candidate.payload)?.["operationId"] ===
+              proof?.["operationId"],
+        )
+      )
+        throw new EffectIndeterminateCommitError(
+          event.runId,
+          "patch reconciliation requires an atomic authority fence",
+        );
+    }
     const attribution = toolExecutionEventAttribution(event);
     if (!attribution.operationId && attribution.callIds.length === 0) continue;
     const marker = indeterminateMarkers(database, event).find((candidate) => {
@@ -87,6 +110,13 @@ export function assertNoContinuationAfterEffectIndeterminate(
       );
     });
     if (!marker) continue;
+    // The journal fence and its read-only reconciliation proof are one
+    // atomic recovery transition. A later executor cannot append this proof.
+    if (
+      event.type === "workspace.patch.reconciled" &&
+      events.some((candidate) => candidate.id === marker.id)
+    )
+      continue;
     throw new EffectIndeterminateCommitError(
       event.runId,
       `event ${event.type} is attributed to an effect-indeterminate execution`,
@@ -147,31 +177,21 @@ function assertMarkerCommit(
     );
   }
   markerKeys.add(markerKey);
-  const terminal = pairedBlockedSafetyTerminal(events, marker);
+  const terminal = pairedRecoveryTerminal(events, marker);
+  const reconciled = terminal?.type === "run.interrupted";
   if (!terminal) {
     throw markerError(
       marker,
-      "a later paired run.failed/blocked_safety is required",
+      "a later paired blocked_safety or reconciled interrupted terminal is required",
     );
   }
   assertTerminalOperationSet(terminal, markersForRun(events, marker), marker);
-  const stateKey = `${marker.threadId}\u0000${marker.runId}`;
-  const previous = previousRuns.get(stateKey);
-  const next = nextRuns.get(stateKey);
-  if (
-    !previous ||
-    (previous.status !== "queued" && previous.status !== "running") ||
-    !next ||
-    next.status !== "failed" ||
-    next.outcome !== "blocked_safety" ||
-    next.lease !== undefined ||
-    next.leaseTokenSha256 !== undefined
-  ) {
-    throw markerError(
-      marker,
-      "the snapshot must atomically transition active to failed/blocked_safety and revoke its Run lease",
-    );
-  }
+  const previous = assertRecoverySnapshot(
+    marker,
+    previousRuns,
+    nextRuns,
+    reconciled,
+  );
   assertRunLeaseEvidence(database, marker, previous, payload, commitNowMs);
   const priorEvents = runEventsBefore(database, marker);
   const boundary = liveToolEffectAuthoritiesFromEvents(priorEvents).find(
@@ -194,6 +214,23 @@ function assertMarkerCommit(
       "the marker is not bound to the current unresolved effect boundary",
     );
   }
+  if (reconciled) {
+    const proof =
+      boundary.boundaryEvent &&
+      reconciledPatchForBoundary(
+        [...priorEvents, ...events],
+        boundary.boundaryEvent,
+      );
+    if (
+      !proof ||
+      proof.completedSeq <= marker.seq ||
+      proof.completedSeq >= terminal.seq
+    )
+      throw markerError(
+        marker,
+        "interrupted recovery requires bound patch reconciliation for every abandoned operation",
+      );
+  }
   if (
     priorEvents.some(
       (event) =>
@@ -208,6 +245,32 @@ function assertMarkerCommit(
       "the execution already published a terminal outcome",
     );
   }
+}
+
+function assertRecoverySnapshot(
+  marker: RunEvent,
+  previousRuns: ReadonlyMap<string, SnapshotRun>,
+  nextRuns: ReadonlyMap<string, SnapshotRun>,
+  reconciled: boolean,
+): SnapshotRun {
+  const stateKey = `${marker.threadId}\u0000${marker.runId}`;
+  const previous = previousRuns.get(stateKey);
+  const next = nextRuns.get(stateKey);
+  if (
+    !previous ||
+    (previous.status !== "queued" && previous.status !== "running") ||
+    !next ||
+    next.status !== (reconciled ? "interrupted" : "failed") ||
+    (!reconciled && next.outcome !== "blocked_safety") ||
+    next.lease !== undefined ||
+    next.leaseTokenSha256 !== undefined
+  ) {
+    throw markerError(
+      marker,
+      "the snapshot must atomically transition the active Run to its paired terminal and revoke its Run lease",
+    );
+  }
+  return previous;
 }
 
 function assertRunLeaseEvidence(
@@ -301,7 +364,7 @@ function sameOperationIdentity(
   );
 }
 
-function pairedBlockedSafetyTerminal(
+function pairedRecoveryTerminal(
   events: readonly RunEvent[],
   marker: RunEvent,
 ): RunEvent | undefined {
@@ -311,10 +374,13 @@ function pairedBlockedSafetyTerminal(
       event.threadId === marker.threadId &&
       event.runId === marker.runId &&
       event.seq > marker.seq &&
-      event.type === "run.failed" &&
-      payload?.["status"] === "failed" &&
-      payload["outcome"] === "blocked_safety" &&
-      payload["reason"] === "effect_indeterminate"
+      ((event.type === "run.failed" &&
+        payload?.["status"] === "failed" &&
+        payload["outcome"] === "blocked_safety" &&
+        payload["reason"] === "effect_indeterminate") ||
+        (event.type === "run.interrupted" &&
+          payload?.["status"] === "interrupted" &&
+          payload["reason"] === "patch_postcondition_reconciled"))
     );
   });
 }

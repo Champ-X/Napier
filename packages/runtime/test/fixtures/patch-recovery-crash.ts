@@ -1,4 +1,6 @@
 import path from "node:path";
+import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
 import { mkdir } from "node:fs/promises";
 import {
   fauxAssistantMessage,
@@ -7,9 +9,11 @@ import {
 } from "@earendil-works/pi-ai";
 import { AgentRuntime } from "../../src/agent-runtime.js";
 import { ModelRegistry } from "../../src/models.js";
+import { sha256 } from "../../src/ed25519.js";
 import { LocalStore } from "../../src/store.js";
 
-const [root, checkpoint = "after-terminal"] = process.argv.slice(2);
+const [root, checkpoint = "after-terminal", operation = "create"] =
+  process.argv.slice(2);
 if (!root) throw new Error("Fixture root is required");
 const store = new LocalStore({
   dataRoot: path.join(root, "data"),
@@ -17,15 +21,51 @@ const store = new LocalStore({
 });
 await mkdir(path.join(root, "workspace"), { recursive: true });
 await store.initialize();
+if (operation === "replace")
+  await fs.promises.writeFile(
+    path.join(root, "workspace/retained.txt"),
+    "before\n",
+  );
+if (checkpoint === "after-file") {
+  const link = fs.promises.link;
+  fs.promises.link = async (...args) => {
+    await link(...args);
+    if (String(args[1]) === path.join(root, "workspace/retained.txt"))
+      process.exit(73);
+  };
+  const rename = fs.promises.rename;
+  fs.promises.rename = async (...args) => {
+    await rename(...args);
+    if (String(args[1]) === path.join(root, "workspace/retained.txt"))
+      process.exit(73);
+  };
+  syncBuiltinESMExports();
+}
+if (checkpoint === "preparation-storage-failure") {
+  await fs.promises.writeFile(
+    path.join(root, "data/workspace-patch-intents"),
+    "unavailable directory",
+  );
+}
 const provider = fauxProvider({ provider: "faux-patch-recovery" });
 provider.setResponses([
   fauxAssistantMessage(
-    fauxToolCall("apply_patch", {
-      operation: "create",
-      path: "retained.txt",
-      expectedSha256: null,
-      content: "written once\n",
-    }),
+    fauxToolCall(
+      "apply_patch",
+      operation === "replace"
+        ? {
+            operation: "replace",
+            path: "retained.txt",
+            expectedSha256: sha256("before\n"),
+            edits: [{ oldText: "before", newText: "written once" }],
+          }
+        : {
+            operation: "create",
+            path: "retained.txt",
+            expectedSha256: null,
+            content: "written once\n",
+          },
+    ),
     { stopReason: "toolUse" },
   ),
   fauxAssistantMessage("Unexpected continuation before interruption"),
@@ -50,6 +90,14 @@ const thread = await store.createThread({
 const append = store.appendEventOnceAtRunHead.bind(store);
 store.appendEventOnceAtRunHead = async (input, options) => {
   if (
+    checkpoint === "live-after-effect" &&
+    input.type === "tool.operation.settled"
+  ) {
+    setInterval(() => undefined, 1000);
+    process.stdout.write("patch-ready\n");
+    await new Promise(() => undefined);
+  }
+  if (
     (checkpoint === "before-effect" &&
       input.payload["executionEffectBoundary"] === true) ||
     (checkpoint === "after-effect" &&
@@ -57,12 +105,23 @@ store.appendEventOnceAtRunHead = async (input, options) => {
     (checkpoint === "after-settlement" && input.type === "tool.completed")
   )
     process.exit(73);
-  return append(input, options);
+  const receipt = await append(input, options);
+  if (
+    checkpoint === "after-prepared" &&
+    input.type === "workspace.patch.prepared"
+  )
+    process.exit(73);
+  return receipt;
 };
 await new AgentRuntime(store, registry).runPrompt({
   threadId: thread.id,
   text: "Create retained.txt, then inspect it.",
   onEvent(event) {
+    if (
+      checkpoint === "preparation-storage-failure" &&
+      event.type === "tool.failed"
+    )
+      process.exit(73);
     if (checkpoint === "after-terminal" && event.type === "tool.completed")
       process.exit(73);
   },

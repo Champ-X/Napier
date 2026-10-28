@@ -299,6 +299,45 @@ describe("effect-indeterminate crash recovery", () => {
     ).toThrow(/Invalid durable tool operation event/u);
   });
 
+  it("rejects an interrupted outcome without a bound patch proof, and event-only proofs", async () => {
+    const fixture = await boundaryFixture("forged-patch-reconciliation");
+    const context = await terminalCommitContext(fixture);
+    const state = JSON.parse(context.nextStateJson);
+    const run = state.runs.find(
+      (candidate: { id: string }) => candidate.id === fixture.owner.runId,
+    );
+    run.status = "interrupted";
+    delete run.outcome;
+    const terminal = {
+      ...context.terminal,
+      type: "run.interrupted",
+      payload: {
+        status: "interrupted",
+        reason: "patch_postcondition_reconciled",
+        operationIds: context.terminal.payload["operationIds"],
+      },
+    };
+    expect(() =>
+      ledger(fixture.store).commit(context.revision, JSON.stringify(state), [
+        context.marker,
+        terminal,
+      ]),
+    ).toThrow(/requires bound patch reconciliation/);
+    await expect(
+      fixture.store.appendEvent({
+        threadId: fixture.owner.threadId,
+        runId: fixture.owner.runId,
+        type: "workspace.patch.reconciled",
+        category: "tool",
+        visibility: "debug",
+        payload: { operationId: context.marker.payload["operationId"] },
+      }),
+    ).rejects.toThrow(/atomic authority fence/);
+    expect(ledger(fixture.store).readSnapshot()!.revision).toBe(
+      context.revision,
+    );
+  });
+
   it("rejects recovery that would contradict an already-published outcome", async () => {
     const fixture = await boundaryFixture("prior-outcome");
     const payload = await markerPayload(fixture);

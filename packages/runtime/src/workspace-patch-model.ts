@@ -52,6 +52,19 @@ export interface WorkspacePatchResult {
   createdParentDirectorySetSha256?: string;
 }
 
+/** Runs under the path lock, after syncing the temporary file, before commit. */
+export type PrepareWorkspacePatch = (
+  result: WorkspacePatchResult,
+  identity: { dev: number; ino: number },
+) => Promise<void>;
+
+export type RecordWorkspacePatchPreparation = (
+  callId: string,
+  args: unknown,
+  result: WorkspacePatchResult,
+  identity: { dev: number; ino: number },
+) => Promise<void>;
+
 export interface WorkspacePatchObservationState {
   fileSha256: string;
   opaque: unknown;

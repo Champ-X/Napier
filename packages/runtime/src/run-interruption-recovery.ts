@@ -1,15 +1,12 @@
 import type { RunEvent } from "@napier/contracts";
 
+import type { PatchInterruptionReconciliation } from "./workspace-patch-interruption-reconciliation.js";
+export { RUN_EFFECT_INDETERMINATE_REASON } from "./run-lost-owner-recovery.js";
+import { recoverLostRuns } from "./run-lost-owner-recovery.js";
 import { nowIso } from "./ids.js";
-import { lostRunLeaseDisposition } from "./run-lease-loss.js";
 import { interruptPlanRun } from "./plans.js";
 import type { TerminalRunStatus } from "./run-event-admission.js";
-import type { AppendEventInput } from "./run-event-registry.js";
-import { applyOutcome } from "./run-outcomes.js";
 import { runPlanProgressEventPayload } from "./run-progress-plan-state.js";
-import { transitionRunStatus } from "./run-state-machine.js";
-import { liveToolEffectAuthoritiesFromEvents } from "./sqlite-tool-effect-authority.js";
-import { effectIndeterminateEventPayload } from "./tool-effect-indeterminate-event.js";
 import {
   cancelTerminalRunInteractions,
   repairRunsFromTerminalEvidence,
@@ -37,15 +34,6 @@ interface InterruptedStateResult {
   planSteps: InterruptedPlanStep[];
 }
 
-interface LostRunRecovery {
-  interruptedRunIds: Set<string>;
-  blockedSafetyRunIds: Set<string>;
-  terminalEvents: RunEvent[];
-}
-
-export const RUN_EFFECT_INDETERMINATE_REASON =
-  "The runtime owner became unavailable after a tool crossed its durable effect boundary; the external effect cannot be safely replayed or asserted complete.";
-
 export async function reconcileInterruptedRuns(
   host: StoreRepositoryHost,
   interruptActiveLeases = false,
@@ -53,30 +41,43 @@ export async function reconcileInterruptedRuns(
   const timestamp = nowIso();
   let planSteps: InterruptedPlanStep[] = [];
   await host.stateQueue.run(async () => {
-    const result = reconcileInterruptedState(
-      host,
-      timestamp,
-      interruptActiveLeases,
-    );
-    planSteps = result.planSteps;
-    if (result.changed) {
-      await host.persistState([
-        ...result.terminalEvents,
-        ...result.cancellationEvents,
-      ]);
+    const reconciliations: PatchInterruptionReconciliation[] = [];
+    try {
+      const result = await reconcileInterruptedState(
+        host,
+        timestamp,
+        interruptActiveLeases,
+        reconciliations,
+      );
+      planSteps = result.planSteps;
+      if (result.changed) {
+        await host.persistState([
+          ...result.terminalEvents,
+          ...result.cancellationEvents,
+        ]);
+      }
+    } finally {
+      for (const reconciliation of reconciliations)
+        await reconciliation.release();
     }
   });
   await appendOrphanedSubagentRecoveryEvidence(host);
   await appendInterruptedPlanEvidence(host, planSteps);
 }
 
-function reconcileInterruptedState(
+async function reconcileInterruptedState(
   host: StoreRepositoryHost,
   timestamp: string,
   interruptActiveLeases: boolean,
-): InterruptedStateResult {
+  reconciliations: PatchInterruptionReconciliation[],
+): Promise<InterruptedStateResult> {
   const durableTerminalRepairs = repairRunsFromTerminalEvidence(host);
-  const recovery = recoverLostRuns(host, timestamp, interruptActiveLeases);
+  const recovery = await recoverLostRuns(
+    host,
+    timestamp,
+    interruptActiveLeases,
+    reconciliations,
+  );
   const interruptedRunIds = new Set(recovery.interruptedRunIds);
   const restartedRunIds = new Set([
     ...recovery.interruptedRunIds,
@@ -130,117 +131,6 @@ function reconcileInterruptedState(
     terminalEvents: recovery.terminalEvents,
     cancellationEvents,
     planSteps: interruptedPlans.steps,
-  };
-}
-
-function recoverLostRuns(
-  host: StoreRepositoryHost,
-  timestamp: string,
-  interruptActiveLeases: boolean,
-): LostRunRecovery {
-  const timestampMs = Date.parse(timestamp);
-  const interrupted = new Set<string>();
-  const blockedSafety = new Set<string>();
-  const terminalEvents: RunEvent[] = [];
-  for (const run of host.state.runs) {
-    if (run.status !== "queued" && run.status !== "running") continue;
-    const disposition = lostRunLeaseDisposition(
-      run.lease,
-      Boolean(run.leaseTokenSha256),
-      timestampMs,
-      interruptActiveLeases,
-    );
-    if (!disposition) continue;
-    const liveAuthorities = liveToolEffectAuthoritiesFromEvents(
-      host.requireLedger().listRunEvents(run.id),
-    );
-    if (liveAuthorities.length > 0) {
-      const recoverable = liveAuthorities.filter(
-        (authority) => authority.current && authority.boundaryEvent,
-      );
-      // Corrupt or legacy histories with multiple live generations stay
-      // fenced; recovery never invents authority for a non-current token.
-      if (recoverable.length !== liveAuthorities.length) continue;
-      const operationIds = [
-        ...new Set(recoverable.map((authority) => authority.operationId)),
-      ].sort();
-      const markerInputs: AppendEventInput[] = recoverable.map((authority) => ({
-        threadId: run.threadId,
-        runId: run.id,
-        type: "tool.operation.effect_indeterminate",
-        category: "tool",
-        visibility: "debug",
-        payload: effectIndeterminateEventPayload({
-          boundary: authority.boundaryEvent!,
-          run,
-          disposition,
-          recoveredAt: timestamp,
-        }),
-      }));
-      terminalEvents.push(
-        ...host.appendEventsToThread(
-          host.mutableThread(run.threadId),
-          [
-            ...markerInputs,
-            {
-              threadId: run.threadId,
-              runId: run.id,
-              type: "run.failed",
-              category: "lifecycle",
-              visibility: "user",
-              payload: {
-                status: "failed",
-                outcome: "blocked_safety",
-                reason: "effect_indeterminate",
-                message: RUN_EFFECT_INDETERMINATE_REASON,
-                operationIds,
-              },
-            },
-          ],
-          { createdAt: timestamp },
-        ),
-      );
-      applyOutcome(run, "failed", "blocked_safety");
-      run.finishedAt = timestamp;
-      run.error = RUN_EFFECT_INDETERMINATE_REASON;
-      delete run.lease;
-      delete run.leaseTokenSha256;
-      blockedSafety.add(run.id);
-      continue;
-    }
-    terminalEvents.push(
-      ...host.appendEventsToThread(
-        host.mutableThread(run.threadId),
-        [
-          {
-            threadId: run.threadId,
-            runId: run.id,
-            type: "run.interrupted",
-            category: "lifecycle",
-            visibility: "user",
-            payload: {
-              status: "interrupted",
-              reason: RUN_INTERRUPTION_REASON,
-              interruptedAt: timestamp,
-            },
-          },
-        ],
-        { createdAt: timestamp },
-      ),
-    );
-    transitionRunStatus(run, "interrupted");
-    run.interruptedAt = timestamp;
-    run.interruptionReason = RUN_INTERRUPTION_REASON;
-    run.finishedAt = timestamp;
-    run.error = RUN_INTERRUPTION_REASON;
-    delete run.lease;
-    delete run.leaseTokenSha256;
-    interrupted.add(run.id);
-  }
-  return {
-    interruptedRunIds: interrupted,
-    blockedSafetyRunIds: blockedSafety,
-    terminalEvents,
   };
 }
 

@@ -156,6 +156,11 @@ export function createStatelessAgentTools(
     includeWriteTools: processAllowed,
     dataRoot: options.store.dataRoot,
     beforeWorkspaceWrite: options.beforeWorkspaceWrite,
+    patchJournal: {
+      store: options.store,
+      threadId: options.threadId,
+      runId: options.runId,
+    },
     authorizePatch: (path, beforeSha256) =>
       assertWorkspaceOutputReplacement(
         options.store,

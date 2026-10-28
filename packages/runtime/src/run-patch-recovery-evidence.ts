@@ -15,6 +15,7 @@ export interface SettledPatchRecoveryEvidence {
   pathSha256: string;
   beforeSha256: string | null;
   afterSha256: string;
+  preparedCapsuleSha256?: string;
 }
 
 export interface SettledPatchRecoveryCandidate {

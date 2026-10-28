@@ -1,5 +1,7 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { JsonValue } from "@napier/contracts";
+import { recordWorkspacePatchPreparation } from "./workspace-patch-preparation.js";
+import type { PatchPreparationJournal } from "./workspace-patch-preparation.js";
 import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -14,6 +16,8 @@ import type {
   WorkspacePatchObservation,
   WorkspacePatchObserver,
   WorkspacePatchToolDetails,
+  PrepareWorkspacePatch,
+  RecordWorkspacePatchPreparation,
 } from "./workspace-patch-model.js";
 export type {
   WorkspacePatchObservationState,
@@ -83,7 +87,16 @@ export interface WorkspacePatchToolOptions {
     workspaceRoot: string,
     dataRoot: string,
     input: WorkspacePatchInput,
+    prepare?: PrepareWorkspacePatch,
   ): Promise<WorkspacePatchResult>;
+  recordPreparation?: RecordWorkspacePatchPreparation | undefined;
+  patchJournal?:
+    | {
+        store: PatchPreparationJournal;
+        threadId: string;
+        runId: string;
+      }
+    | undefined;
   observer?: WorkspacePatchObserver;
 }
 
@@ -92,6 +105,7 @@ export interface CreateWorkspaceToolsOptions {
   dataRoot?: string;
   patchObserver?: WorkspacePatchObserver;
   beforeWorkspaceWrite?: (() => Promise<void>) | undefined;
+  patchJournal?: WorkspacePatchToolOptions["patchJournal"];
   authorizePatch?:
     | ((path: string, beforeSha256: string | null) => Promise<void>)
     | undefined;
@@ -102,6 +116,15 @@ export function createWorkspacePatchTool(
 ): AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> {
   const recoveryCapsules = new WorkspacePatchRecoveryCapsules(options.dataRoot);
   const resultCapsules = new WorkspacePatchResultCapsules(options.dataRoot);
+  const recordPreparation =
+    options.recordPreparation ??
+    (options.patchJournal
+      ? recordWorkspacePatchPreparation(
+          options.patchJournal.store,
+          options.patchJournal.threadId,
+          options.patchJournal.runId,
+        )
+      : undefined);
   const tool: AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> = {
     name: "apply_patch",
     label: "Apply patch",
@@ -136,6 +159,10 @@ export function createWorkspacePatchTool(
         options.workspaceRoot,
         options.dataRoot,
         input,
+        recordPreparation
+          ? (result, identity) =>
+              recordPreparation(toolCallId, rawInput, result, identity)
+          : undefined,
       );
       let observation: WorkspacePatchObservation | undefined;
       if (observed) {

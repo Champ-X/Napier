@@ -15,6 +15,16 @@ const output = path.resolve(
 );
 const files = [
   "packages/runtime/src/agent-run-recovery.ts",
+  "packages/runtime/src/run-lost-owner-recovery.ts",
+  "packages/runtime/src/run-interruption-recovery.ts",
+  "packages/runtime/src/sqlite-effect-indeterminate-commit.ts",
+  "packages/runtime/src/workspace-patch-commit.ts",
+  "packages/runtime/src/workspace-patch-preparation.ts",
+  "packages/runtime/src/workspace-patch-interruption-reconciliation.ts",
+  "packages/runtime/src/workspace-patch-reconciled-evidence.ts",
+  "packages/runtime/src/stateless-agent-tools.ts",
+  "packages/runtime/src/tools.ts",
+  "packages/contracts/src/run-event-tool-definitions-v1.ts",
   "packages/runtime/src/automatic-recovery.ts",
   "packages/runtime/src/run-tool-effect-observations.ts",
   "packages/runtime/src/run-patch-recovery-evidence.ts",
@@ -92,7 +102,7 @@ try {
     sourceDigests,
     limitations: [
       "Settled apply_patch may retain its terminal receipt or an exact effect-bound private result; postconditions are checked before continuation.",
-      "Before-effect and effect-before-settlement remain stopped; full G04 recovery is not accepted.",
+      "Before-effect remains stopped. Effect-before-settlement can retain a write only with a bound intent, dead writer and matching file identity/postcondition; full G04 recovery is not accepted.",
       "Continuation retains the existing safe_read_only policy; no new write authority.",
       "Single deterministic observations are timing baselines, not live-model recovery-rate claims.",
       "No saved-answer/approval continuation or UI acceptance in this receipt.",

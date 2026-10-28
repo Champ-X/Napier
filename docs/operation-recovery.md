@@ -1,12 +1,36 @@
-# 操作级恢复：已结算补丁与用户答案
+# 操作级恢复：补丁对账与用户答案
 
-2026-10-29。当前实现覆盖已结算的 `apply_patch`：可继承 `tool.completed` 收据，或在响应丢失时读取与结算摘要一致的私有精确结果，G04 整体验收仍未完成。
+2026-10-29。当前实现覆盖已结算的 `apply_patch`，以及有写前意图的未结算文件提交。前者继承终态或精确结果，后者独立核对当前文件后只读续跑。G04 整体验收仍未完成。
+
+## 未结算补丁的写前意图与对账
+
+主 Agent 的补丁工具现在在路径锁内完成临时文件写入和 fsync，保存私有意图并追加 `workspace.patch.prepared`，随后重新检查目标前置条件，再执行原来的原子 link/rename。意图绑定 thread/run/call、原输入摘要、私有路径绑定、临时文件 dev/ino 和实际执行进程 PID。账本只保留摘要和执行边界身份，不公开路径、正文或 PID。存储或账本写入失败时不提交目标文件；临时文件按既有 finally 清理。新 intent store 仍限制 512 个对象、16 KiB/对象、8 MiB 总量，容量不足会明确拒绝这次写入，不删除证据腾空间。直接调用低层补丁 API 的现有消费者没有自动获得此恢复资格。
+
+重启对账要求原进程已退出，唯一合法调用和完整 execution authority 绑定仍在，且私有意图完整。恢复取得所有已知目标的路径锁，同时检查当前文件的摘要和 dev/ino，锁保持到 SQLite 恢复事务结束。只有内容相同、文件身份也相同才接受；其他进程写入的同内容替代文件、活跃写锁、仍存活的原执行进程均不通过。证据缺失、路径/工作区漂移、符号链接和多条未结算写入争用同一路径也停止。
+
+事务将 `tool.operation.effect_indeterminate`、`workspace.patch.reconciled` 和 `run.interrupted` 一同保存，撤销原 Run 租约。effect_indeterminate 继续永久禁止旧调用追加结算、响应、结果复用或续租；reconciled 只描述独立文件观察，不将旧工具结算为成功。SQLite 要求每个被封锁的操作都有绑定写前记录的证明，拒绝单独追加证明、没有证明却改成 interrupted、错误代次或已经发布终态的操作。事务失败时三类记录和 Run 状态一起回滚，路径锁释放后可再次核对。
+
+当前评估器识别完整对账链，调度资格仍不等于成功。新 Run/模型调用前再次读取私有意图和文件，检查最新版本链及身份；claim 后被替换为同内容新文件也会停止。续跑提示分别列出已结算和独立对账的操作数量，并说明写后诊断可能缺失，不补造原工具结果。权限保持 `safe_read_only`，不会重放补丁，也不扩展通用 exact-result replay 权限。
+
+验收收据：[unsettled-patch-recovery-current-2026-10-29.json](artifacts/unsettled-patch-recovery-current-2026-10-29.json)。复现：`node scripts/check-unsettled-patch-recovery.mjs /tmp/napier-unsettled-patch-new.json`，独占创建，保留旧收据。26 个独立进程场景使用真实 Runtime、SQLite 和文件系统，显式 faux provider，0 外部模型请求。覆盖原有 10 场景和新增 16 场景：
+
+- create/link 与 replace/rename 之后、返回/结果胶囊之前立即退出；原文件内容、inode、mtime 不变，只读 continuation 完成，0 次重写。
+- 写前意图已保存、目标尚未提交时停止；不凭意图推断成功。这个窗口留下的临时文件或新父目录不被当作正式成果。
+- 摘要变化、文件缺失、同内容新 inode、符号链接、意图丢失/损坏、写前账本损坏、活跃路径锁均停止。写前存储失败没有目标写入。
+- 原写入进程释放路径锁后仍运行时拒绝对账；SIGKILL 后才允许核对。重复启动不重复证明；旧 executor 的迟到结果被拦住。
+- claim 后同内容替换在模型调用前拒绝；SQLite snapshot 故障回滚后可重新对账。
+
+固定旧 `caf37eaf` 自动恢复评估器在相同实际事件流上仍拒绝恢复。该对照仅替换评估器，不是完整历史发行版；单次耗时仅为本机 fixture 采样。进程退出测试不证明断电持久性、跨主机 fencing 或真实模型质量提升。对账只确认文件后置条件，写后诊断和整体目标仍需后续验证。无写前记录的历史未结算操作、before-effect / before-target-commit 自动继续、Workflow 审批故障矩阵和统一恢复操作区仍未完成。
+
+相关 11 文件共 104 个不同用例通过；最终工具配置职责收敛后，进程矩阵及受影响的工具/Workflow/SQLite guard 用例再次通过。Contracts build、Runtime typecheck / build:compile 和 diff check 通过。架构维持原 11 项失败，公开 API 仍为 root 1897/1896 和 compatibility digest 两类失败；未提高预算、未更新历史 release source manifest，也不把 build:compile 称为完整发布验收。失联 Run 处理提取为独立模块；tools.ts 预算由 1776 降至 1766。初次 26 场景收据 [unsettled-patch-recovery-2026-10-29.json](artifacts/unsettled-patch-recovery-2026-10-29.json) 保留其源码快照；随后仅调整工具配置职责并重新生成当前收据，没有覆盖历史文件。
+
+以下已结算补丁和答案章节保留之前切片的历史证据与边界；其中旧表的未结算行已由上面的新切片部分推进。
 
 ## 行为与证据链
 
 旧评估器把本轮出现的任何写工具都列为自动恢复阻断原因。当前评估器保留历史写调用统计，但对满足以下条件的补丁允许进入恢复前检查：唯一调用身份、合法 execution authority 各阶段、已越过 effect boundary、成功结算，以及匹配的终态或可按结算 effectSha256 读取的精确结果。恢复前还必须验证结果完整性和私有路径绑定。`eligible` 是调度资格，不等于文件已经重新检查或目标已验收。
 
-补丁工具使用已有 `LocalPrivateCapsuleStore` 保存最小路径绑定。胶囊包含调用/input 身份、真实工作区根摘要、规范化路径及前后文件摘要；账本只保留胶囊摘要，不公开私有路径或补丁内容。存储限制为 512 个对象、16 KiB/对象、8 MiB 总量。路径绑定存储不可用时，写入仍按真实结果返回，但不能通过恢复检查；不删除既有胶囊腾空间。
+补丁工具使用已有 `LocalPrivateCapsuleStore` 保存最小路径绑定。胶囊包含调用/input 身份、真实工作区根摘要、规范化路径及前后文件摘要；账本只保留胶囊摘要，不公开私有路径或补丁内容。存储限制为 512 个对象、16 KiB/对象、8 MiB 总量。此前的写后路径绑定采用 best-effort；新主 Agent 写前意图路径要求存储成功才提交目标。旧终态和直接低层调用仍按原规则检查；不删除既有胶囊腾空间。
 
 补丁返回前还保存完整结果（文本与 details），以既有 `toolExecutionResultEffectSha256` 为地址，限制为 512 个对象、512 KiB/对象、32 MiB 总量。该摘要覆盖 callId、成功/失败、输出文本及完整结果，恢复时必须与日志中的成功结算完全一致。无需反查路径或扫描文件。结果缺失、调用身份不匹配或篡改时停止。旧终态证据仍可使用原路径绑定，不强制要求新结果格式。
 
@@ -16,11 +40,11 @@
 
 恢复沿用原有 `safe_read_only` 策略：保留已完成写入的证据，继续后续只读工作，没有新增写权限。提示明确保留了哪些操作，文件后置条件只在恢复前观察，不表示整个目标通过验收。历史统计字段 `toolCalls.unsafe` / `unsafeToolNames` 仍表示曾执行过的写工具，不被改写为 readOnly；是否阻断由 operation 证据决定。
 
-## 进程故障验收
+## 已结算切片的历史进程故障验收
 
-复现：`node scripts/check-settled-patch-recovery.mjs /tmp/napier-patch-recovery-new.json`。输出以独占创建写入，不覆盖历史收据。当前 10 场景收据为 [settled-patch-result-recovery-current-2026-10-29.json](artifacts/settled-patch-result-recovery-current-2026-10-29.json)，绑定 16 个相关源码与复现文件。首切片的 [8 场景收据](artifacts/settled-patch-recovery-2026-10-29.json) 保持原样。测试使用真实 Runtime、SQLite、文件写入和独立子进程；在指定检查点 `process.exit(73)`，不执行正常清理。模型为显式 faux provider，外部模型请求为 0。
+复现：`node scripts/check-settled-patch-recovery.mjs /tmp/napier-patch-recovery-new.json`。输出以独占创建写入，不覆盖历史收据。此前 10 场景收据为 [settled-patch-result-recovery-current-2026-10-29.json](artifacts/settled-patch-result-recovery-current-2026-10-29.json)，绑定 16 个相关源码与复现文件。首切片的 [8 场景收据](artifacts/settled-patch-recovery-2026-10-29.json) 保持原样。测试使用真实 Runtime、SQLite、文件写入和独立子进程；在指定检查点 `process.exit(73)`，不执行正常清理。模型为显式 faux provider，外部模型请求为 0。
 
-| 断点或变化 | 当前结果 | 后续缺口 |
+| 断点或变化 | 当时结果 | 当时的后续缺口 |
 | --- | --- | --- |
 | 写入、操作结算与 tool.completed 均已落账，下一步未启动 | 新 Run 继续；文件内容、inode、mtime 均未变化，0 次重写 | 后续需要写操作的任务仍受现有只读策略限制 |
 | claim 后文件内容变化、文件消失、符号链接替换、路径绑定缺失、结果缺失或篡改 | 新 Run 和模型请求前停止 | 用户操作区的统一说明仍待接通 |

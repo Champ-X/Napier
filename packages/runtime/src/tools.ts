@@ -1,17 +1,14 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
 import {
-  link,
   lstat,
   mkdir,
   open,
   readdir,
   readFile,
   realpath,
-  rename,
   rmdir,
   stat,
-  unlink,
 } from "node:fs/promises";
 import path from "node:path";
 
@@ -33,7 +30,12 @@ export type { CreateWorkspaceToolsOptions } from "./workspace-patch-tool.js";
 import type {
   WorkspacePatchInput,
   WorkspacePatchResult,
+  PrepareWorkspacePatch,
 } from "./workspace-patch-model.js";
+import {
+  commitWorkspacePatch,
+  syncWorkspacePatchDirectory as syncDirectory,
+} from "./workspace-patch-commit.js";
 import { assertWorkspacePatchRangeSha256 } from "./workspace-patch-range.js";
 import { withWorkspacePathLock } from "./workspace-write-lock.js";
 import { defineWorkspaceReadToolProtocol } from "./workspace-read-tool-protocol.js";
@@ -960,13 +962,29 @@ function applyHashRangeEdits(
   return lines.join("\n");
 }
 
-async function syncDirectory(directory: string): Promise<void> {
-  const handle = await open(directory, "r");
-  try {
-    await handle.sync();
-  } finally {
-    await handle.close();
+async function inspectPatchCommitTarget(
+  workspaceRoot: string,
+  relativePath: string,
+  input: WorkspacePatchInput,
+) {
+  const latest = await inspectWritableTarget(workspaceRoot, relativePath);
+  if (input.operation === "create") {
+    if (latest.exists) {
+      throw new Error("apply_patch create target already exists");
+    }
+  } else {
+    if (!latest.exists) {
+      throw new Error("apply_patch target disappeared before commit");
+    }
+    const latestSource = await readPatchSource(latest.target);
+    if (latestSource.sha256 !== input.expectedSha256) {
+      throw new Error(
+        `apply_patch precondition changed before commit; current SHA-256 is ${latestSource.sha256}`,
+      );
+    }
   }
+
+  return latest;
 }
 
 export async function applyWorkspacePatch(
@@ -974,6 +992,7 @@ export async function applyWorkspacePatch(
   dataRoot: string,
   input: WorkspacePatchInput,
   authorize?: (path: string, beforeSha256: string | null) => Promise<void>,
+  prepare?: PrepareWorkspacePatch,
 ): Promise<WorkspacePatchResult> {
   const relativePath = normalizeWritablePath(input.path);
   const canonicalTarget = path.join(
@@ -988,13 +1007,12 @@ export async function applyWorkspacePatch(
     let beforeBytes = 0;
     let beforeSha256: string | null = null;
     try {
-      let initial: Awaited<ReturnType<typeof inspectWritableTarget>>;
       if (input.operation === "create") {
         if (input.expectedSha256 !== null) {
           throw new Error("apply_patch create requires expectedSha256 null");
         }
       } else {
-        initial = await inspectWritableTarget(workspaceRoot, relativePath);
+        const initial = await inspectWritableTarget(workspaceRoot, relativePath);
         if (!initial.exists) {
           throw new Error("apply_patch replace target does not exist");
         }
@@ -1039,62 +1057,13 @@ export async function applyWorkspacePatch(
         );
       }
 
-      initial = await inspectWritableTarget(workspaceRoot, relativePath);
-      if (input.operation === "create") {
-        if (initial.exists) {
-          throw new Error("apply_patch create target already exists");
-        }
-      }
-
-      const latest = await inspectWritableTarget(workspaceRoot, relativePath);
-      if (input.operation === "create") {
-        if (latest.exists) {
-          throw new Error(
-            "apply_patch create precondition changed before commit",
-          );
-        }
-      } else {
-        if (!latest.exists) {
-          throw new Error("apply_patch target disappeared before commit");
-        }
-        const latestSource = await readPatchSource(latest.target);
-        if (latestSource.sha256 !== input.expectedSha256) {
-          throw new Error(
-            `apply_patch precondition changed before commit; current SHA-256 is ${latestSource.sha256}`,
-          );
-        }
-      }
-
-      const temporaryPath = path.join(
-        latest.parent,
-        `.${path.basename(latest.target)}.napier-${randomBytes(8).toString("hex")}.tmp`,
+      const latest = await inspectPatchCommitTarget(
+        workspaceRoot,
+        relativePath,
+        input,
       );
-      let temporaryExists = false;
-      try {
-        const temporary = await open(temporaryPath, "wx", latest.mode);
-        temporaryExists = true;
-        try {
-          await temporary.writeFile(output);
-          await temporary.sync();
-        } finally {
-          await temporary.close();
-        }
-        if (input.operation === "create") {
-          await link(temporaryPath, latest.target);
-          await unlink(temporaryPath);
-        } else {
-          await rename(temporaryPath, latest.target);
-        }
-        temporaryExists = false;
-        committed = true;
-        await syncDirectory(latest.parent);
-      } finally {
-        if (temporaryExists) {
-          await unlink(temporaryPath).catch(() => undefined);
-        }
-      }
 
-      return {
+      const result: WorkspacePatchResult = {
         path: relativePath,
         pathSha256: sha256(relativePath),
         operation: input.operation,
@@ -1112,6 +1081,20 @@ export async function applyWorkspacePatch(
             }
           : {}),
       };
+      await commitWorkspacePatch({
+        target: latest.target,
+        mode: latest.mode,
+        output,
+        result,
+        prepare,
+        committed: () => {
+          committed = true;
+        },
+        beforeCommit: async () => {
+          await inspectPatchCommitTarget(workspaceRoot, relativePath, input);
+        },
+      });
+      return result;
     } finally {
       if (!committed && createdParentDirectories.length > 0) {
         await cleanupCreatedParentDirectories(
@@ -1755,8 +1738,15 @@ export function createWorkspaceTools(
       createWorkspacePatchTool({
         workspaceRoot,
         dataRoot: options.dataRoot,
-        applyPatch: (root, dataRoot, input) =>
-          applyWorkspacePatch(root, dataRoot, input, options.authorizePatch),
+        applyPatch: (root, dataRoot, input, prepare) =>
+          applyWorkspacePatch(
+            root,
+            dataRoot,
+            input,
+            options.authorizePatch,
+            prepare,
+          ),
+        patchJournal: options.patchJournal,
         beforeWrite: options.beforeWorkspaceWrite,
         ...(options.patchObserver ? { observer: options.patchObserver } : {}),
       }),

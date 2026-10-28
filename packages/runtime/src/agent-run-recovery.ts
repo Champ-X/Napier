@@ -149,7 +149,7 @@ export async function resumeInterruptedAgentRunAutomatically(
       "\n" +
       (await operatorDecisionRecoveryContext(host.store, interrupted)) +
       (patches.length
-        ? `\n${patches.length} settled patch operation(s) were retained. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify({ patches, retainedResults })}</retained-patch-evidence>`
+        ? `\n${patches.filter((patch) => !patch.preparedCapsuleSha256).length} settled patch operation(s) were retained; ${patches.filter((patch) => patch.preparedCapsuleSha256).length} prepared patch operation(s) were independently reconciled. Reconciled operations have no fabricated tool result; diagnostics after the write may be unavailable. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify({ patches, retainedResults })}</retained-patch-evidence>`
         : ""),
     model: interrupted.configuration.model,
     agentRevision: interrupted.configuration.agentRevision,

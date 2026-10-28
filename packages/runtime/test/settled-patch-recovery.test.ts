@@ -50,7 +50,7 @@ afterEach(async () => {
 });
 
 describe("settled patch automatic recovery across process death", () => {
-  it.each(["after-terminal", "after-settlement"])(
+  it.each(["after-terminal", "after-settlement", "after-effect"])(
     "retains a committed file at %s and continues without rewriting it",
     async (checkpoint) => {
       const fixture = await crashed(checkpoint);
@@ -233,7 +233,7 @@ describe("settled patch automatic recovery across process death", () => {
     30000,
   );
 
-  it.each(["before-effect", "after-effect"])(
+  it.each(["before-effect"])(
     "does not infer success or replay at %s without complete evidence",
     async (checkpoint) => {
       const fixture = await crashed(checkpoint);

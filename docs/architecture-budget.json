@@ -48,7 +48,7 @@
     "packages/runtime/src/skill-packages.ts": 754,
     "packages/runtime/src/store.ts": 3766,
     "packages/runtime/src/thread-bundles.ts": 2418,
-    "packages/runtime/src/tools.ts": 1776,
+    "packages/runtime/src/tools.ts": 1766,
     "packages/runtime/src/workflow-experiment-comparison-protocol.ts": 720,
     "packages/runtime/src/workflow-ledger.ts": 1069,
     "packages/runtime/src/workflow-manifests.ts": 1088,

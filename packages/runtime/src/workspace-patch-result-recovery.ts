@@ -1,3 +1,4 @@
+import { reconciledPatchRecoveryEvidence } from "./workspace-patch-reconciled-evidence.js";
 import type { RunEvent } from "@napier/contracts";
 
 import {
@@ -29,7 +30,8 @@ export async function loadSettledPatchRecoveryEvidence(
   if (candidates.length > 128)
     throw new Error("Patch recovery inspection limit exceeded");
   const results = new WorkspacePatchResultCapsules(dataRoot);
-  const patches: SettledPatchRecoveryEvidence[] = [];
+  const patches: SettledPatchRecoveryEvidence[] =
+    reconciledPatchRecoveryEvidence(events);
   const retainedResults: RetainedPatchResult[] = [];
   for (const candidate of candidates) {
     if (candidate.terminal) {

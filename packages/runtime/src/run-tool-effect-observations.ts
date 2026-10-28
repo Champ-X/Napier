@@ -1,5 +1,6 @@
 import type { JsonValue, RunEvent } from "@napier/contracts";
 import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
+import { reconciledPatchRecoveryEvidence } from "./workspace-patch-reconciled-evidence.js";
 import { settledPatchRecoveryCandidates } from "./run-patch-recovery-evidence.js";
 
 const SAFE_READ_ONLY_TOOLS = new Set([
@@ -46,7 +47,10 @@ export function collectRunToolEffectObservations(
   events: RunEvent[],
 ): RunToolEffectObservation[] {
   const recoverablePatches = new Set(
-    settledPatchRecoveryCandidates(events).map((patch) => patch.startedSeq),
+    [
+      ...settledPatchRecoveryCandidates(events),
+      ...reconciledPatchRecoveryEvidence(events),
+    ].map((patch) => patch.startedSeq),
   );
   const terminals = new Map<string, RunEvent[]>();
   for (const event of events) {

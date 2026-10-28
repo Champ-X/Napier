@@ -171,7 +171,13 @@ export const RUN_EVENT_TOOL_DEFINITION_GROUPS_V1 = [
     projectionOwner: "trace-index",
   }),
   defineEventGroup({
-    activeRunTypes: ["code_bridge.authorized", "tool.admitted", "tool.started"],
+    activeRunTypes: [
+      "code_bridge.authorized",
+      "tool.admitted",
+      "tool.started",
+      "workspace.patch.prepared",
+      "workspace.patch.reconciled",
+    ],
     runAnyTypes: [],
     terminalTransitionTypes: [],
     category: "tool",

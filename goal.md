@@ -135,6 +135,15 @@
 - 证据：[control-outbox-ui-2026-10-29.json](docs/artifacts/control-outbox-ui-2026-10-29.json)、[composer-drafts-prompt-ui-2026-10-29.json](docs/artifacts/composer-drafts-prompt-ui-2026-10-29.json)；说明与复现：[control-outbox.md](docs/control-outbox.md)。Web typecheck/build、设计契约、diff check 通过；架构仍为原 11 项，主 ViewModel 2226→2175 行，API 行数预算因职责提取下调 1180→1155。历史收据与发布 manifest 未改写。
 - G06-A 实施项及上述验收已覆盖；workspace generation 隔离来自 Hook 测试，不替代 G05-B 多工作区后台运行验收。G01/G02 剩余项、G03/G04/G05、G06-B 与 G07 继续保持原范围，总目标 active。
 
+### 后续推进：G04 未结算文件提交的独立对账
+
+- 启动核对 `main @ f6dc602d`，原有 Web/文档/启动脚本改动保持原样，未 push。当前补齐了“文件已经提交、操作尚未结算”的窗口，包括 atomic link/rename 后、任何返回或结果胶囊保存之前的真实进程退出。
+- 主 Agent 的 apply_patch 在路径锁内先保存写前意图及账本绑定，再重新检查前置条件并提交目标。意图包含原 Run/call/input、私有路径摘要、临时文件 dev/ino 和实际执行 PID；存储失败不提交文件。重启要求原执行进程已退出，取得目标锁，核对内容及文件身份。仅同内容的新文件、证据缺失/损坏、符号链接、工作区漂移和活跃锁均不能冒充已提交操作。
+- 原 executor 的 effect_indeterminate 封锁记录、独立文件对账证明和 Run interrupted 状态在一个 SQLite 事务中提交；后续旧结算/结果/续租仍被拒绝，不补造 tool.completed。恢复创建新 Run 前再次检查意图、最新文件及版本链，保持 safe_read_only 权限，明确写后诊断可能缺失。
+- 真实 Runtime/SQLite/文件系统 26 个进程场景通过（原 10 + 新 16，0 外部模型请求）：create/replace 原子提交后可继续且文件 inode/mtime 不变、0 重写；写前未提交仍停止；活跃 writer 释放文件锁后仍不能对账，进程退出后才通过；事务回滚及重复启动、claim 后同内容替换均有覆盖。收据：[unsettled-patch-recovery-current-2026-10-29.json](docs/artifacts/unsettled-patch-recovery-current-2026-10-29.json)，复现与具体边界见 [operation-recovery.md](docs/operation-recovery.md)。旧收据未覆盖，固定旧评估器对照不声称完整历史版本或 live-model 改善。
+- 相关 11 文件 104 个不同用例通过；最终工具配置收敛后重跑进程矩阵和受影响兼容检查。Contracts build、Runtime typecheck/build:compile、diff check 通过；架构仍为原 11 项，公开 API 仍为 1897/1896 与 compatibility digest 两类失败。tools.ts 预算从 1776 下调为 1766；未提高预算或重写旧发布 manifest，编译不等于发布验收。
+- G04 仍需确认未执行操作的自动继续、Workflow 审批进程矩阵、统一恢复说明与操作区；其他工具没有获得自动写重放权。G01–G07 总目标保持 active，未降低或删减验收标准。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -278,8 +287,8 @@
 **实施任务**
 
 - [ ] 基于现有 operation 记录区分：尚未执行、已确认完成、结果待对账、不可自动重放。
-- [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态或精确结算结果与私有绑定齐备时，重查后置条件并继续原有只读恢复；当前 10 场景进程故障证据已留存，未执行/未结算等断点仍待完成。）
-- [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。
+- [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态或精确结算结果与私有绑定齐备时，重查后置条件并继续原有只读恢复；当前 26 场景进程故障证据已留存；有写前意图的未结算提交也可独立对账，未执行操作自动继续仍待完成。）
+- [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。（有写前意图的 apply_patch 已实现文件身份/摘要对账；尚未完成全 G04 操作分类与恢复矩阵。）
 - [ ] 对环境漂移、权限变化、证据缺失和不可对账操作保留明确停止原因。
 - [ ] 将恢复建议与用户操作区接通，说明保留了什么、从哪里继续、哪些结果仍不确定。
 

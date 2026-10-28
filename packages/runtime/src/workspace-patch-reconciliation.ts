@@ -2,6 +2,7 @@ import { constants } from "node:fs";
 import { lstat, open, realpath } from "node:fs/promises";
 import path from "node:path";
 
+import { workspacePatchIntents } from "./workspace-patch-preparation.js";
 import { sha256 } from "./ed25519.js";
 import type { SettledPatchRecoveryEvidence } from "./run-patch-recovery-evidence.js";
 import { WorkspacePatchRecoveryCapsules } from "./workspace-patch-recovery-capsule.js";
@@ -17,7 +18,14 @@ export async function reconcileSettledWorkspacePatches(
     throw new Error("Patch recovery inspection limit exceeded");
   const root = await realpath(workspaceRoot);
   const capsules = new WorkspacePatchRecoveryCapsules(dataRoot);
-  const latest = new Map<string, { path: string; afterSha256: string }>();
+  const latest = new Map<
+    string,
+    {
+      path: string;
+      afterSha256: string;
+      identity?: { dev: number; ino: number };
+    }
+  >();
   for (const patch of [...patches].sort(
     (a, b) => a.completedSeq - b.completedSeq,
   )) {
@@ -38,10 +46,34 @@ export async function reconcileSettledWorkspacePatches(
     if (previous && previous.afterSha256 !== capsule.beforeSha256) {
       throw new Error("Patch recovery version chain changed");
     }
-    latest.set(capsule.pathSha256, capsule);
+    const identity = patch.preparedCapsuleSha256
+      ? await workspacePatchIntents(dataRoot)
+          .read(patch.preparedCapsuleSha256)
+          .catch(() => {
+            throw new Error("Patch recovery intent is missing or invalid");
+          })
+      : undefined;
+    if (
+      identity &&
+      (identity.callId !== patch.callId ||
+        identity.inputSha256 !== patch.inputSha256 ||
+        identity.recoveryCapsuleSha256 !== patch.capsuleSha256)
+    )
+      throw new Error("Patch recovery intent binding changed");
+    latest.set(capsule.pathSha256, {
+      ...capsule,
+      ...(identity ? { identity } : {}),
+    });
   }
   for (const target of latest.values()) {
-    if (!(await matchesPostcondition(root, target.path, target.afterSha256))) {
+    if (
+      !(await matchesWorkspacePatchPostcondition(
+        root,
+        target.path,
+        target.afterSha256,
+        target.identity,
+      ))
+    ) {
       throw new Error(
         "Patch recovery postcondition changed or is inaccessible; inspect the current workspace before continuing",
       );
@@ -49,10 +81,11 @@ export async function reconcileSettledWorkspacePatches(
   }
 }
 
-async function matchesPostcondition(
+export async function matchesWorkspacePatchPostcondition(
   root: string,
   relative: string,
   expected: string,
+  identity?: { dev: number; ino: number },
 ): Promise<boolean> {
   let handle;
   try {
@@ -81,6 +114,8 @@ async function matchesPostcondition(
     const after = await handle.stat();
     const current = await lstat(target);
     return (
+      (!identity ||
+        (before.dev === identity.dev && before.ino === identity.ino)) &&
       before.size === bytesRead &&
       after.size === before.size &&
       before.mtimeMs === after.mtimeMs &&
