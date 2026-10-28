@@ -133,7 +133,27 @@ export interface ThreadDetail {
   contextCheckpointCalibration: ContextCheckpointCalibrationReport;
   events: RunEvent[];
   taskNarrative?: {
-    phase: "ready" | "working" | "waiting" | "blocked" | "completed" | "failed";
+    phase: "ready" | "working" | "waiting" | "blocked" | "completed" | "ended" | "failed";
+    /** Execution termination is distinct from objective acceptance. */
+    execution?: "queued" | "running" | "waiting" | "paused" | "ended" | "failed";
+    objective?: {
+      status: "unverified" | "partial" | "accepted" | "rejected" | "indeterminate";
+      reason: string;
+      evidence: string[];
+    };
+    remainingItems?: string[];
+    /** Tool activity is process evidence, never a task deliverable. */
+    processItems?: string[];
+    deliverables?: Array<{
+      path: string;
+      planId: string;
+      planRevision: number;
+      artifact: ArtifactManifestEntry;
+      source: "plan";
+      accessibility: "unchecked" | "available" | "missing" | "drifted";
+      verification: "unverified" | "integrity_recorded";
+      previousVersions: Array<{ planId: string; artifactId: string; runId?: string; sha256?: string }>;
+    }>;
     phaseLabel: string;
     currentAction: string;
     completedItems: string[];

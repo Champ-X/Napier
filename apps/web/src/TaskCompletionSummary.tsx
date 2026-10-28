@@ -1,5 +1,6 @@
+import type { ThreadDetail } from "@napier/contracts";
 import { useId, useState } from "react";
-import { CheckCircle2, ChevronDown, FolderOpen } from "lucide-react";
+import { FileText, ChevronDown, FolderOpen } from "lucide-react";
 
 import { ArtifactActionSurface } from "./ArtifactActionSurface";
 import { artifactActionAvailability } from "./artifact-action-model";
@@ -8,6 +9,7 @@ import { taskArtifactTargets } from "./task-completion-output-paths";
 
 export interface TaskCompletionSummaryProps {
   completedItems: string[];
+  narrative?: ThreadDetail["taskNarrative"];
   plans: Parameters<typeof taskArtifactTargets>[0];
   activePlan?: Parameters<typeof taskArtifactTargets>[1];
   threadId?: string;
@@ -17,30 +19,36 @@ export interface TaskCompletionSummaryProps {
 
 export default function TaskCompletionSummary({
   completedItems,
+  narrative,
   plans,
   activePlan,
   threadId,
   onLedgerChanged,
   onOpenArtifact,
 }: TaskCompletionSummaryProps) {
-  const targets = taskArtifactTargets(plans, activePlan);
+  const targets = taskArtifactTargets(
+    plans,
+    activePlan,
+    narrative?.deliverables,
+  );
   const paths = targets.map((target) => target.path);
   const [expanded, setExpanded] = useState(false);
   const detailsId = useId();
   if (completedItems.length === 0 && paths.length === 0) return null;
-  const primaryResult =
-    completedItems[0] ??
-    (paths[0]
-      ? `${taskSurfaceCopy.completion.output} · ${fileName(paths[0])}`
-      : taskSurfaceCopy.completion.title);
+  const primaryResult = paths[0]
+    ? `${taskSurfaceCopy.completion.output} · ${fileName(paths[0])}`
+    : taskSurfaceCopy.completion.title;
   return (
     <div className="task-narrative-completed">
       <div className="task-completion-strip">
-        <CheckCircle2 size={18} aria-hidden="true" />
+        <FileText size={18} aria-hidden="true" />
         <div className="task-completion-copy">
           <span>
-            {taskSurfaceCopy.completion.eyebrow} ·{" "}
-            {taskSurfaceCopy.completion.title}
+            {
+              taskSurfaceCopy.objective[
+                narrative?.objective?.status ?? "unverified"
+              ]
+            }
           </span>
           <strong title={primaryResult}>{primaryResult}</strong>
         </div>
@@ -108,6 +116,11 @@ export default function TaskCompletionSummary({
                 {targets.map((target) => (
                   <div className="task-completion-output" key={target.path}>
                     <code title={target.path}>{fileName(target.path)}</code>
+                    <span>
+                      {target.artifact?.status === "verified"
+                        ? taskSurfaceCopy.completion.integrityRecorded
+                        : taskSurfaceCopy.completion.fileUnverified}
+                    </span>
                     {target.artifact && target.planId && threadId ? (
                       <ArtifactActionSurface
                         artifact={target.artifact}

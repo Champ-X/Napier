@@ -16,13 +16,17 @@ import type {
   ThreadDetail,
 } from "@napier/contracts";
 import { copy } from "./copy";
+import { taskSurfaceCopy } from "./task-surface-copy";
 import {
   deriveTaskOverview,
   type TaskOverviewStep,
 } from "./task-overview-view-model";
 import { DisclosureRow } from "./ui/primitives/DisclosureRow";
 
-type OverviewDetail = Pick<ThreadDetail, "thread" | "plans" | "activePlan">;
+type OverviewDetail = Pick<
+  ThreadDetail,
+  "thread" | "plans" | "activePlan" | "taskNarrative"
+>;
 
 export function TaskOverviewPanel({
   detail,
@@ -62,6 +66,18 @@ export function TaskOverviewPanel({
         <h2 id="task-overview-objective">
           {model.hasObjective ? model.objective : overview.noPlan}
         </h2>
+        {detail?.taskNarrative?.objective ? (
+          <p className="task-overview-progress">
+            {detail.taskNarrative.execution ? (
+              <span>
+                {taskSurfaceCopy.execution[detail.taskNarrative.execution]}
+              </span>
+            ) : null}
+            <span>
+              {taskSurfaceCopy.objective[detail.taskNarrative.objective.status]}
+            </span>
+          </p>
+        ) : null}
         {model.hasPlan ? (
           <p className="task-overview-progress">
             <span>
@@ -69,7 +85,7 @@ export function TaskOverviewPanel({
             </span>
             {model.status ? (
               <span className={`task-overview-status is-${model.status}`}>
-                {planStatusLabel(model.status)}
+                {taskSurfaceCopy.plan.label} · {planStatusLabel(model.status)}
               </span>
             ) : null}
             {model.artifactCount > 0 ? (

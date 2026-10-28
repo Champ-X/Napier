@@ -119,7 +119,7 @@ export async function executeCliInvocation(
       if (assistant) await writeLine(io.stdout, assistant);
       await writeLine(
         io.stderr,
-        `Napier run ${run.id} ${run.status} (thread ${threadId})`,
+        `Napier run ${run.id} ${run.status} (thread ${threadId}); execution=${detail.taskNarrative?.execution ?? run.status}; objective=${detail.taskNarrative?.objective?.status ?? "unverified"}`,
       );
     }
     return run.status === "completed" ? 0 : 1;

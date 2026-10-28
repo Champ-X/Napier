@@ -578,7 +578,7 @@ describe("Napier CLI interrupted Run resume", () => {
     expect(stdout.text()).toBe("CLI_RESUME_HUMAN_RESULT\n");
     expect(stderr.text()).toMatch(
       new RegExp(
-        `^Napier run run_[a-z0-9]+ completed \\(thread ${fixture.threadId}\\)\\n$`,
+        `^Napier run run_[a-z0-9]+ completed \\(thread ${fixture.threadId}\\); execution=ended; objective=unverified\\n$`,
         "u",
       ),
     );

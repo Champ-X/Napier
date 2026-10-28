@@ -164,7 +164,7 @@ describe("Task narrative", () => {
     completed.thread.status = "idle";
     expect(taskNarrative(completed)).toEqual(
       expect.objectContaining({
-        phase: "completed",
+        phase: "ended",
         phaseLabel: "Recovered",
         currentAction: "Interrupted work recovered",
       }),
@@ -184,9 +184,9 @@ describe("Task narrative", () => {
 
     expect(taskNarrative(detail)).toEqual(
       expect.objectContaining({
-        phase: "completed",
-        phaseLabel: "Settled",
-        currentAction: "Latest run completed",
+        phase: "ended",
+        phaseLabel: "Run ended",
+        currentAction: "Run ended; objective acceptance is unverified",
       }),
     );
   });
@@ -257,7 +257,8 @@ describe("Task narrative", () => {
     expect(taskNarrative(detail)).toEqual(
       expect.objectContaining({
         currentAction: "Running web search",
-        completedItems: ["Read 2 files"],
+        processItems: ["Read 2 files"],
+        completedItems: [],
       }),
     );
   });
@@ -278,7 +279,8 @@ describe("Task narrative", () => {
     expect(taskNarrative(detail)).toEqual(
       expect.objectContaining({
         phaseLabel: "Recovering",
-        completedItems: ["Fetched 1 source"],
+        processItems: ["Fetched 1 source"],
+        completedItems: [],
       }),
     );
   });
@@ -321,8 +323,8 @@ describe("Task narrative", () => {
     const narrative = taskNarrative(detail);
     expect(narrative).toEqual(
       expect.objectContaining({
-        phase: "completed",
-        currentAction: "Latest run completed",
+        phase: "ended",
+        currentAction: "Run ended; objective acceptance is unverified",
         metrics: "1m 5s / 2m 0s · 1,500 / 10,000 tokens · $0.1250 / $2.00",
       }),
     );
@@ -339,7 +341,8 @@ describe("Task narrative", () => {
       phase: "working",
       phaseLabel: "Working",
       currentAction: "Projected by Kernel",
-      completedItems: ["Read 2 files"],
+      processItems: ["Read 2 files"],
+      completedItems: [],
       metricRunId: running.id,
     };
     detail.events.push(toolStarted(running.id, "web_search"));
@@ -350,7 +353,8 @@ describe("Task narrative", () => {
       expect.objectContaining({
         phase: "working",
         currentAction: "Projected by Kernel",
-        completedItems: ["Read 2 files"],
+        processItems: ["Read 2 files"],
+        completedItems: [],
         metrics: expect.stringContaining("5s"),
       }),
     );
@@ -362,17 +366,17 @@ describe("Task narrative", () => {
     });
     const detail = fixture();
     detail.taskNarrative = {
-      phase: "completed",
-      phaseLabel: "Settled",
-      currentAction: "Latest run completed",
+      phase: "ended",
+      phaseLabel: "Run ended",
+      currentAction: "Run ended; objective acceptance is unverified",
       completedItems: ["Run verification"],
       nextStep: "Start a follow-up task or inspect the evidence.",
     };
 
     expect(taskNarrative(detail)).toEqual(
       expect.objectContaining({
-        phaseLabel: "已结算",
-        currentAction: "最近一次运行已完成",
+        phaseLabel: "本轮结束",
+        currentAction: "本轮结束，目标尚未验收",
         completedItems: ["Run verification"],
         nextStep: "发起后续任务，或查看相关证据。",
       }),

@@ -1,0 +1,17 @@
+# Task outcomes and declared deliverables
+
+Runtime publishes `ThreadDetail.taskNarrative` for Web, streaming snapshots and CLI. The pure projection lives in the browser-safe `@napier/contracts/task-narrative` entrypoint, so clients replaying historical snapshots use the same rules without importing the execution engine. Legacy server snapshots with a `completed` phase are rendered as execution ended, with unverified acceptance.
+
+Execution and acceptance are separate facts. A completed Run, successful recovery, completed plan, model goal assessment or verified file digest cannot accept the whole objective. Unfinished plan requirements remain visible after a Run ends. Tool counts are `processItems`; they do not become result titles. The goal evaluator's prose remains in its original goal record, not in independent acceptance evidence.
+
+The acceptance vocabulary includes `unverified`, `partial`, `accepted`, `rejected` and `indeterminate`. This implementation does not yet produce `accepted` or `rejected`: the existing goal evaluator reads conversation text and is not an independent acceptance adapter. This is an explicit unfinished part of G01, not an implied successful verification.
+
+Declared deliverables cover all plans and retain their original artifact/plan/run bindings. Resources are deduplicated by normalized path; newer declarations take precedence even when an older declaration was verified later. Missing/superseded current versions cannot resurrect an older available version. Current final-answer references may rank matching formal artifacts first, but cannot create or verify artifacts. The projector preserves previous declaration identities and hashes where those records exist; it does not invent a version history for an overwritten manifest entry.
+
+`accessibility: unchecked` means current filesystem accessibility has not been checked. `integrity_recorded` describes the manifest receipt, not objective acceptance or a fresh drift check. Opening formal artifacts continues through the existing bound preview/export verification. Empty legacy `activePlan.outputPaths` no longer suppresses declared outputs; old snapshots with only paths remain compatible.
+
+The task narrative event cache advances to version 2 because it now retains explicit final-answer references per Run. Old cached reducers rebuild rather than mixing reducer shapes. Full replay and incremental projection use the same implementation, and current run/plan facts are read on every view even without new events.
+
+Validation in this slice includes real SQLite lifecycle/plan records, shared Web rendering, CLI invocation/resume, and an isolated production build in Chromium at 1440 and 320 CSS pixels. `node scripts/check-task-outcome-ui.mjs OUTPUT_DIRECTORY` reproduces the fixture UI check and retains screenshots plus a JSON receipt. It requires existing Contracts, Runtime, Server and Web builds; it makes no model requests. Preview navigation uses real pointer clicks; the HTML script check uses a programmatic DOM click, consistent with the existing preview fixture helper, and does not claim physical pointer interaction inside the sandboxed frame.
+
+Still required for G01: independently checked no-plan candidates from tools/final responses, broader version history and resource identity (including absolute/relative aliases), an independent objective acceptance producer, and the continue-editing action. The new fixture evidence is not a live-model quality result and does not accept all G01–G07 goals.

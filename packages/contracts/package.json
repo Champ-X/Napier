@@ -119,6 +119,10 @@
     "./skill-lifecycle": {
       "types": "./dist/skill-lifecycle.d.ts",
       "import": "./dist/skill-lifecycle.js"
+    },
+    "./task-narrative": {
+      "types": "./dist/task-narrative.d.ts",
+      "import": "./dist/task-narrative.js"
     }
   },
   "files": [

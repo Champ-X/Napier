@@ -50,7 +50,7 @@ export function TaskNarrativeBar({
   }, [running]);
   const narrative = taskNarrative(detail, now);
   const Icon =
-    narrative.phase === "completed"
+    narrative.objective?.status === "accepted"
       ? CheckCircle2
       : narrative.phase === "blocked" || narrative.phase === "failed"
         ? AlertTriangle
@@ -60,7 +60,7 @@ export function TaskNarrativeBar({
 
   return (
     <section
-      className={`task-narrative phase-${narrative.phase}`}
+      className={`task-narrative phase-${narrative.phase} objective-${narrative.objective?.status ?? "unverified"}`}
       aria-label={shellCopy.taskNarrative.status}
     >
       <div className="task-status-bar">
@@ -73,7 +73,7 @@ export function TaskNarrativeBar({
             <Icon size={16} aria-hidden="true" />
             {narrative.phaseLabel}
           </span>
-          {narrative.phase !== "completed" ? (
+          {narrative.objective?.status !== "accepted" ? (
             <strong title={narrative.currentAction}>
               {narrative.currentAction}
             </strong>
@@ -113,6 +113,16 @@ export function TaskNarrativeBar({
                 <section className="task-narrative-next">
                   <span>{copy.narrative.next}</span>
                   <p>{narrative.nextStep}</p>
+                </section>
+              ) : null}
+              {narrative.processItems?.length ? (
+                <section>
+                  <span>{copy.narrative.runMetrics}</span>
+                  <ul>
+                    {narrative.processItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
                 </section>
               ) : null}
               {narrative.metrics ? (

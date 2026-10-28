@@ -91,9 +91,9 @@ describe("ordinary task surface Chinese copy", () => {
       ".task-completion-primary-output",
     ) as HTMLButtonElement;
 
-    expect(collapsedMarkup).toContain("任务结果");
-    expect(collapsedMarkup).toContain("已验证交付");
-    expect(collapsedMarkup).toContain("2 项结果");
+    expect(collapsedMarkup).toContain("目标尚未验收");
+    expect(collapsedMarkup).not.toContain("已验证交付");
+    expect(collapsedMarkup).toContain("2 项已记录步骤");
     expect(collapsedMarkup).toContain("report.md");
     expect(container.querySelector(".task-completion-details")).toBeNull();
     expect(collapsedMarkup).not.toContain("已生成预览");

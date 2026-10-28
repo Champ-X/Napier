@@ -54,6 +54,15 @@
 - 验证：8 文件 79 测试通过，包括实际 suite CLI / 文件系统 / 子进程协议的 30 case × 3 trial × 2 arm（180 个显式模拟子运行，0 模型请求）；包含绑定篡改、评测器漂移、旧报告、不平衡顺序、缺失数据、真实失败形状、tuning 分区与 fixture 冒充的回归。Harness Eval build、3 个相关 release 测试、旧收据当前 CLI 校验、`git diff --check` 通过。架构检查仍为原 11 项，无新增超限。
 - 预声明规则示例：[harness-analysis-protocol-v1.json](benchmarks/harness-analysis-protocol-v1.json)。这是未执行的规则模板，不是 live-quality 改进证据。G02 仍需与 G07 一起固定真实任务族的 tuning/regression/未参与调参划分；当前不能把已有调参任务重新命名为 holdout。继续推进 G01 共享任务事实投影。
 
+### 后续推进：G01 共享任务事实切片
+
+- 将既有任务叙述投影收敛到浏览器安全的 `@napier/contracts/task-narrative`：Runtime 发布、Web 兼容回放和 CLI 使用同一语义。移除 Web 约 300 行重复状态推断；新增 execution / objective / remainingItems / processItems。completed Run、恢复结束、计划完成和模型 goal 自评均不自动验收整个目标；工具次数只进入过程详情。
+- 修复 completed Run 掩盖 pending plan、旧 completed Run 掩盖较新的取消/失败、空 outputPaths 屏蔽产物及仅保留两件产物的问题。正式交付物跨计划去重并保留已有版本身份；当前回答明确引用的已登记产物优先。新版缺失时不回退旧 verified 文件；模型链接只影响匹配正式产物的排序，不成为新产物或验收证据。
+- task.narrative 缓存版本升为 2，保存每个 Run 的显式输出引用。真实 SQLite 测试覆盖 warm/cold 与完整 detail 一致，以及无新叙述事件时 run/plan 事实变化。Web 顶部、Task 概览和结果摘要区分执行结束与目标验收；CLI 人类输出显式打印 execution/objective。文件完整性记录与目标验收分开表述，保留原预览/导出校验链。
+- 验证：Runtime 2 文件 15 测试、CLI invocation/resume 2 文件 20 测试、Web 7 文件 47 测试通过；最终摘要文案调整后相关 3 文件 19 测试再次通过。Contracts/Runtime/Server/Web 构建、Web design contract、Impeccable detector、diff check 通过。架构仍为基线 11 项失败，公开 API 仍为 1897/1896 与原 compatibility digest 不匹配。
+- 当前构建的隔离服务 / Chromium 检查：1440px 下点结果卡一次、320px 下开成果栏后点结果卡共两次，均打开 `interactive-report.html` 正确主产物；完整正文与 bound preview 请求确认，0 横向溢出、0 page error、未显示目标 accepted。HTML 脚本采用既有 fixture helper 同类的程序化 DOM click 验证，不声称物理指针在 iframe 内点击已验收。收据：[task-outcome-ui-2026-10-29.json](docs/artifacts/task-outcome-ui-2026-10-29.json)；复现脚本：[check-task-outcome-ui.mjs](scripts/check-task-outcome-ui.mjs)。该证据包含保留的原有 Web 工作区改动，不能当作干净 commit 的发布验收。
+- 边界与后续：这是 G01 局部切片。无计划的工具/最终回答产物仍需真实路径、存在性、来源校验；跨绝对/相对路径和同 manifest 覆写的版本关系仍需补齐；accepted/rejected 尚无独立验收生产者；继续修改入口未接通。实现说明：[task-outcome-projection.md](docs/task-outcome-projection.md)。G01 全体验收及 G03–G07 保持未完成。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -118,11 +127,11 @@
 
 **实施任务**
 
-- [ ] 梳理 Runtime 与前端已有状态投影，统一优先级和语义，覆盖无计划任务。
+- [x] 梳理 Runtime 与前端已有状态投影，统一优先级和语义，覆盖无计划任务。（共享事实切片已验证；独立验收生产者仍是 G01 待办。）
 - [ ] 统一成果来源、去重、版本关系和主次排序，修复空 outputPaths 屏蔽已有产物的问题。
 - [ ] 让顶部、计划、Task 页和结果栏消费一致投影，移除重复推断。
 - [ ] 主成果提供打开预览、下载或复制路径、验证状态、继续修改入口；辅助证据渐进展开。
-- [ ] 将本轮发现的状态和成果反例纳入回归用例。
+- [x] 将本轮发现的状态和成果反例纳入回归用例。（含真实 SQLite、Web/CLI 与隔离浏览器检查；不代表全部 G01 验收通过。）
 
 **验收**
 

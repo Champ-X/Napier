@@ -5,7 +5,7 @@ import {
   latestModelHarnessView,
   type ModelHarnessFamily,
 } from "./model-harness-view";
-import { taskRunProgress } from "./task-run-progress";
+import { projectTaskNarrative } from "@napier/contracts/task-narrative";
 
 type TaskNarrativeProjection = NonNullable<ThreadDetail["taskNarrative"]>;
 type TaskNarrativePhase = TaskNarrativeProjection["phase"];
@@ -41,8 +41,33 @@ export function taskNarrative(
     return localizeNarrative(
       baseNarrative("ready", "Ready", copy.narrative.emptyAction),
     );
-  const projected = projectedNarrative(detail, now);
-  const narrative = projected ?? legacyTaskNarrative(detail, now);
+  // Old snapshots replay the same Runtime projection. A legacy completed label
+  // has no acceptance semantics and must be recomputed, not painted green.
+  const legacy = detail.taskNarrative;
+  const projection = legacy
+    ? legacy.objective
+      ? legacy
+      : {
+          ...legacy,
+          ...(legacy.phase === "completed"
+            ? {
+                phase: "ended" as const,
+                phaseLabel: "Run ended",
+                currentAction: "Run ended; objective acceptance is unverified",
+                execution: "ended" as const,
+              }
+            : {}),
+          objective: {
+            status: "unverified" as const,
+            reason: "Legacy snapshot has no independent acceptance evidence.",
+            evidence: [],
+          },
+        }
+    : projectTaskNarrative(detail, detail.events);
+  const narrative = projectedNarrative(
+    { ...detail, taskNarrative: projection },
+    now,
+  )!;
   const runId = detail.thread.currentRunId ?? detail.runs.at(-1)?.id;
   const harness = latestModelHarnessView(detail.events, runId);
   return localizeNarrative({
@@ -72,6 +97,8 @@ const PHASE_LABEL_ZH: Record<string, string> = {
   Blocked: "受阻",
   "Needs review": "待复核",
   Settled: "已结算",
+  "Run ended": "本轮结束",
+  "Work remains": "仍有待办",
   Recovering: "恢复中",
   Recovered: "已恢复",
   "Recovery blocked": "恢复受阻",
@@ -79,6 +106,9 @@ const PHASE_LABEL_ZH: Record<string, string> = {
 };
 
 const NARRATIVE_TEXT_ZH: Record<string, string> = {
+  "Run ended; objective acceptance is unverified": "本轮结束，目标尚未验收",
+  "This run ended; unfinished work remains": "本轮结束，仍有待完成事项",
+  "Inspect the result and its verification evidence.": "查看成果及其验证证据。",
   "Review the failed run": "查看失败的运行",
   "Model is preparing the next action": "模型正在准备下一步动作",
   "Plan completed with recorded evidence": "计划已完成，证据已记录",
@@ -125,122 +155,6 @@ function localizeNarrativeText(value: string): string {
   return value;
 }
 
-function legacyTaskNarrative(
-  detail: Pick<
-    ThreadDetail,
-    | "thread"
-    | "runs"
-    | "plans"
-    | "events"
-    | "operatorDecisions"
-    | "automaticRecoveryAssessments"
-    | "automaticRecoveryAttempts"
-  >,
-  now: number,
-): TaskNarrative {
-  const openDecision = detail.operatorDecisions.findLast(
-    (decision) =>
-      decision.status === "pending" || decision.status === "answered",
-  );
-  const plan = detail.plans.findLast(
-    (candidate) =>
-      candidate.status === "active" || candidate.status === "blocked",
-  );
-  const runningStep = plan?.steps.find((step) => step.status === "running");
-  const blockedStep = plan?.steps.find((step) => step.status === "blocked");
-  const nextStep = plan?.steps.find((step) => step.status === "ready");
-  const planCompletedItems =
-    plan?.steps
-      .filter((step) => step.status === "completed")
-      .slice(-3)
-      .map((step) => step.title) ?? [];
-  const narrativeRunId = detail.thread.currentRunId ?? detail.runs.at(-1)?.id;
-  const runProgress = taskRunProgress(detail.events, narrativeRunId);
-  const completedItems = completedNarrativeItems(
-    planCompletedItems,
-    runProgress.completedItems,
-  );
-  if (openDecision)
-    return operatorDecisionNarrative(
-      detail.runs,
-      openDecision,
-      completedItems,
-      nextStep?.title,
-      now,
-    );
-  const recovery = settlementNarrative(
-    detail,
-    completedItems,
-    planCompletedItems.length > 0,
-    now,
-  );
-  if (recovery) return recovery;
-  if (blockedStep || detail.thread.status === "failed") {
-    const failedRun = detail.runs.findLast((run) => run.status === "failed");
-    const blocker =
-      blockedStep?.blocker ||
-      failedRun?.error ||
-      "The latest run needs review.";
-    return {
-      phase: detail.thread.status === "failed" ? "failed" : "blocked",
-      phaseLabel:
-        detail.thread.status === "failed" ? "Needs review" : "Blocked",
-      currentAction: blockedStep?.title ?? "Review the failed run",
-      completedItems,
-      ...(failedRun ? runMetrics(failedRun, now) : {}),
-      blocker,
-      ...(nextStep ? { nextStep: nextStep.title } : {}),
-    };
-  }
-
-  const running = detail.runs.find(
-    (run) => run.id === detail.thread.currentRunId && run.status === "running",
-  );
-  if (running) {
-    return {
-      phase: "working",
-      phaseLabel: "Working",
-      currentAction:
-        runningStep?.title ??
-        runProgress.currentAction ??
-        "Model is preparing the next action",
-      completedItems,
-      ...runMetrics(running, now),
-      ...(nextStep ? { nextStep: nextStep.title } : {}),
-    };
-  }
-
-  const completedPlan = detail.plans.findLast(
-    (candidate) => candidate.status === "completed",
-  );
-  const completedRun = detail.runs.findLast(
-    (run) => run.status === "completed",
-  );
-  if (completedPlan || completedRun) {
-    return {
-      phase: "completed",
-      phaseLabel: "Settled",
-      currentAction: completedPlan
-        ? "Plan completed with recorded evidence"
-        : "Latest run completed",
-      completedItems:
-        completedPlan?.steps
-          .filter((step) => step.status === "completed")
-          .slice(-3)
-          .map((step) => step.title) ?? completedItems,
-      ...(completedRun ? runMetrics(completedRun, now) : {}),
-      nextStep: "Start a follow-up task or inspect the evidence.",
-    };
-  }
-  return baseNarrative(
-    "ready",
-    "Ready",
-    nextStep
-      ? `Ready to start: ${nextStep.title}`
-      : "Describe the task to begin",
-  );
-}
-
 function projectedNarrative(
   detail: Pick<ThreadDetail, "runs" | "taskNarrative">,
   now: number,
@@ -256,198 +170,12 @@ function projectedNarrative(
   };
 }
 
-function operatorDecisionNarrative(
-  runs: ThreadDetail["runs"],
-  decision: ThreadDetail["operatorDecisions"][number],
-  completedItems: string[],
-  nextStep: string | undefined,
-  now: number,
-): TaskNarrative {
-  const run = runs.find((candidate) => candidate.id === decision.runId);
-  return {
-    phase: "waiting",
-    phaseLabel: "Waiting",
-    currentAction: decision.header,
-    completedItems,
-    ...(run ? runMetrics(run, now) : {}),
-    blocker:
-      "The run has ended. Record an answer to unlock a linked continuation.",
-    ...(nextStep ? { nextStep } : {}),
-  };
-}
-
-function recoveryNarrative(
-  detail: Pick<
-    ThreadDetail,
-    | "thread"
-    | "runs"
-    | "automaticRecoveryAssessments"
-    | "automaticRecoveryAttempts"
-    | "events"
-  >,
-  completedItems: string[],
-  planItemsAreAuthoritative: boolean,
-  now: number,
-): TaskNarrative | undefined {
-  const interrupted = detail.runs.findLast(
-    (run) => run.status === "interrupted",
-  );
-  if (!interrupted) return undefined;
-  const assessment = detail.automaticRecoveryAssessments.findLast(
-    (candidate) => candidate.runId === interrupted.id,
-  );
-  const attempt = assessment
-    ? detail.automaticRecoveryAttempts.findLast(
-        (candidate) => candidate.assessmentSha256 === assessment.contentSha256,
-      )
-    : undefined;
-  const recoveredItems = planItemsAreAuthoritative
-    ? completedItems
-    : mergeCompletedItems(
-        taskRunProgress(detail.events, interrupted.id).completedItems,
-        completedItems,
-      );
-  const latestRunId = detail.runs.at(-1)?.id;
-  if (
-    attempt?.recoveryRunId
-      ? latestRunId !== attempt.recoveryRunId
-      : latestRunId !== interrupted.id
-  ) {
-    return undefined;
-  }
-  if (!assessment && detail.thread.status === "waiting") {
-    return {
-      phase: "waiting",
-      phaseLabel: "Recovering",
-      currentAction: "Assessing the interrupted run",
-      completedItems: recoveredItems,
-      ...runMetrics(interrupted, now),
-      blocker: "Recovery safety evidence is being evaluated.",
-    };
-  }
-  if (assessment && !assessment.eligible) {
-    return {
-      phase: "blocked",
-      phaseLabel: "Recovery blocked",
-      currentAction: "Automatic recovery stopped safely",
-      completedItems: recoveredItems,
-      ...runMetrics(interrupted, now),
-      blocker: `${assessment.blockReasons.length} safety condition${
-        assessment.blockReasons.length === 1 ? "" : "s"
-      } ${assessment.blockReasons.length === 1 ? "requires" : "require"} review.`,
-      nextStep: "Review the Retry card or resume manually.",
-    };
-  }
-  if (assessment?.eligible && !attempt && detail.thread.status === "waiting") {
-    return {
-      phase: "waiting",
-      phaseLabel: "Recovering",
-      currentAction: "Waiting for a recovery claim",
-      completedItems: recoveredItems,
-      ...runMetrics(interrupted, now),
-      blocker: "The verified retry is waiting for its recovery worker.",
-    };
-  }
-  if (attempt?.status === "claimed" || attempt?.status === "running") {
-    const recoveryRun = attempt.recoveryRunId
-      ? detail.runs.find((run) => run.id === attempt.recoveryRunId)
-      : undefined;
-    return {
-      phase: "working",
-      phaseLabel: "Recovering",
-      currentAction:
-        attempt.status === "claimed"
-          ? "Claiming the interrupted run"
-          : "Restoring from verified read-only evidence",
-      completedItems: recoveredItems,
-      ...runMetrics(recoveryRun ?? interrupted, now),
-      nextStep: `Attempt ${attempt.attempt}/${attempt.maxAttempts} is in progress.`,
-    };
-  }
-  if (attempt?.status === "completed") {
-    const recoveryRun = attempt.recoveryRunId
-      ? detail.runs.find((run) => run.id === attempt.recoveryRunId)
-      : undefined;
-    return {
-      phase: "completed",
-      phaseLabel: "Recovered",
-      currentAction: "Interrupted work recovered",
-      completedItems: recoveredItems,
-      ...runMetrics(recoveryRun ?? interrupted, now),
-      nextStep: "Inspect the recovered output or start a follow-up task.",
-    };
-  }
-  if (
-    attempt &&
-    ["failed", "cancelled", "interrupted", "abandoned"].includes(attempt.status)
-  ) {
-    return {
-      phase: "failed",
-      phaseLabel: "Recovery failed",
-      currentAction: "Review the recovery attempt",
-      completedItems: recoveredItems,
-      ...runMetrics(interrupted, now),
-      blocker: `Attempt ${attempt.attempt}/${attempt.maxAttempts} ${attempt.status}.`,
-      nextStep: "Review the Retry card or resume manually.",
-    };
-  }
-  return undefined;
-}
-
-function settlementNarrative(
-  detail: Parameters<typeof recoveryNarrative>[0],
-  completedItems: string[],
-  planItemsAreAuthoritative: boolean,
-  now: number,
-): TaskNarrative | undefined {
-  return (
-    pausedBudgetNarrative(detail.runs, completedItems, now) ??
-    recoveryNarrative(detail, completedItems, planItemsAreAuthoritative, now)
-  );
-}
-
-function pausedBudgetNarrative(
-  runs: ThreadDetail["runs"],
-  completedItems: string[],
-  now: number,
-): TaskNarrative | undefined {
-  const run = runs.at(-1);
-  if (run?.outcome !== "paused_budget" && run?.outcome !== "partial") {
-    return undefined;
-  }
-  const partial = run.outcome === "partial";
-  return {
-    phase: "waiting",
-    phaseLabel: partial ? "Partial" : "Paused",
-    ...(partial && run.error ? { blocker: run.error } : {}),
-    currentAction: partial
-      ? "Partial result preserved after the run stopped"
-      : "Run paused at its budget boundary",
-    completedItems,
-    ...runMetrics(run, now),
-    nextStep: partial
-      ? "Continue from preserved artifacts and open work."
-      : "Continue from the recorded progress.",
-  };
-}
-
 function baseNarrative(
   phase: TaskNarrativePhase,
   phaseLabel: string,
   currentAction: string,
 ): TaskNarrative {
   return { phase, phaseLabel, currentAction, completedItems: [] };
-}
-
-function mergeCompletedItems(...sets: string[][]): string[] {
-  return [...new Set(sets.flat())].slice(-3);
-}
-
-function completedNarrativeItems(
-  planItems: string[],
-  runItems: string[],
-): string[] {
-  return planItems.length > 0 ? planItems : runItems;
 }
 
 function runMetrics(

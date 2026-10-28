@@ -1,5 +1,7 @@
 import type { ThreadDetail } from "@napier/contracts";
 
+import { isArtifactManifestEntry } from "./conversation-artifacts-protocol";
+
 type TaskNarrativeProjection = NonNullable<ThreadDetail["taskNarrative"]>;
 
 const PHASES = new Set([
@@ -8,6 +10,7 @@ const PHASES = new Set([
   "waiting",
   "blocked",
   "completed",
+  "ended",
   "failed",
 ]);
 
@@ -24,7 +27,21 @@ export function isTaskNarrativeProjection(
     value["completedItems"].every((item) => typeof item === "string") &&
     optionalString(value["metricRunId"]) &&
     optionalString(value["nextStep"]) &&
-    optionalString(value["blocker"])
+    optionalString(value["blocker"]) &&
+    (value["execution"] === undefined ||
+      member(value["execution"], [
+        "queued",
+        "running",
+        "waiting",
+        "paused",
+        "ended",
+        "failed",
+      ])) &&
+    (value["objective"] === undefined || objective(value["objective"])) &&
+    (value["processItems"] === undefined || strings(value["processItems"])) &&
+    (value["remainingItems"] === undefined ||
+      strings(value["remainingItems"])) &&
+    (value["deliverables"] === undefined || deliverables(value["deliverables"]))
   );
 }
 
@@ -34,4 +51,60 @@ function optionalString(value: unknown): boolean {
 
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function member(value: unknown, values: string[]): boolean {
+  return typeof value === "string" && values.includes(value);
+}
+
+function strings(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
+}
+
+function objective(value: unknown): boolean {
+  return (
+    record(value) &&
+    member(value["status"], [
+      "unverified",
+      "partial",
+      "accepted",
+      "rejected",
+      "indeterminate",
+    ]) &&
+    typeof value["reason"] === "string" &&
+    strings(value["evidence"])
+  );
+}
+
+function deliverables(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        record(item) &&
+        typeof item["path"] === "string" &&
+        typeof item["planId"] === "string" &&
+        Number.isSafeInteger(item["planRevision"]) &&
+        item["source"] === "plan" &&
+        isArtifactManifestEntry(item["artifact"]) &&
+        member(item["accessibility"], [
+          "unchecked",
+          "available",
+          "missing",
+          "drifted",
+        ]) &&
+        member(item["verification"], ["unverified", "integrity_recorded"]) &&
+        Array.isArray(item["previousVersions"]) &&
+        item["previousVersions"].every(
+          (version) =>
+            record(version) &&
+            typeof version["planId"] === "string" &&
+            typeof version["artifactId"] === "string" &&
+            optionalString(version["runId"]) &&
+            optionalString(version["sha256"]),
+        ),
+    )
+  );
 }

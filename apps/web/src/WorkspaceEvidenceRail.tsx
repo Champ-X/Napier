@@ -33,9 +33,9 @@ export function WorkspaceEvidenceRail({
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const narrative = detail ? taskNarrative(detail) : undefined;
   const targets = detail
-    ? taskArtifactTargets(detail.plans, detail.activePlan)
+    ? taskArtifactTargets(detail.plans, detail.activePlan, narrative?.deliverables)
     : [];
-  const completed = narrative?.phase === "completed";
+  const completed = narrative?.execution === "ended" || narrative?.phase === "completed";
 
   useEffect(() => {
     if (!open || !overlay || !railRef.current) return;
@@ -124,6 +124,7 @@ export function WorkspaceEvidenceRail({
             <Suspense fallback={null}>
               <LazyTaskCompletionSummary
                 completedItems={narrative.completedItems}
+                narrative={narrative}
                 plans={detail.plans}
                 activePlan={detail.activePlan}
                 threadId={detail.thread.id}

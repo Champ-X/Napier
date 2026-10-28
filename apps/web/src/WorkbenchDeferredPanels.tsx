@@ -46,8 +46,13 @@ export function WorkbenchDeferredCompactTaskResult({
   if (suppressed) return null;
   if (!vm.detail) return null;
   const narrative = taskNarrative(vm.detail);
-  if (narrative.phase !== "completed") return null;
-  const outputPaths = taskArtifactPaths(vm.detail.plans, vm.detail.activePlan);
+  if (narrative.execution !== "ended" && narrative.phase !== "completed")
+    return null;
+  const outputPaths = taskArtifactPaths(
+    vm.detail.plans,
+    vm.detail.activePlan,
+    narrative.deliverables,
+  );
   if (narrative.completedItems.length === 0 && outputPaths.length === 0)
     return null;
   return (
@@ -55,6 +60,7 @@ export function WorkbenchDeferredCompactTaskResult({
       <Suspense fallback={null}>
         <LazyTaskCompletionSummary
           completedItems={narrative.completedItems}
+          narrative={narrative}
           plans={vm.detail.plans}
           activePlan={vm.detail.activePlan}
           threadId={vm.detail.thread.id}

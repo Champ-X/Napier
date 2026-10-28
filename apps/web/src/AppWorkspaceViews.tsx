@@ -384,7 +384,11 @@ function artifactInspectionForPath(
   path: string,
 ): ArtifactInspection | undefined {
   if (!detail) return undefined;
-  const target = taskArtifactTargets(detail.plans, detail.activePlan).find(
+  const target = taskArtifactTargets(
+    detail.plans,
+    detail.activePlan,
+    detail.taskNarrative?.deliverables,
+  ).find(
     (candidate) =>
       absoluteWorkspacePath(workspaceRoot, candidate.path) ===
       absoluteWorkspacePath(workspaceRoot, path),

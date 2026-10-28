@@ -444,7 +444,7 @@ describe("Napier one-shot CLI", () => {
     expect(stdout.text()).toBe("CLI_HUMAN_RESULT\n");
     expect(stderr.text()).toMatch(
       new RegExp(
-        `^Napier run run_[a-z0-9]+ completed \\(thread ${thread.id}\\)\\n$`,
+        `^Napier run run_[a-z0-9]+ completed \\(thread ${thread.id}\\); execution=ended; objective=unverified\\n$`,
         "u",
       ),
     );

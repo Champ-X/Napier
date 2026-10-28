@@ -1,0 +1,53 @@
+{
+  "evidenceKind": "deterministic_integration",
+  "modelRequests": 0,
+  "viewports": [
+    {
+      "programmaticHtmlInteraction": "Step 2",
+      "width": 1440,
+      "clicks": 1,
+      "selectedPath": "artifacts/interactive-report.html",
+      "overflowPx": 0,
+      "status": "Run endedRun ended; objective acceptance is unverified",
+      "inspector": "artifacts/interactive-report.html2 lines · 223 bytes",
+      "accepted": false,
+      "previews": [
+        {
+          "status": 200,
+          "path": "/api/threads/thread_6f1b316d7bf1473fba2a/plans/plan_be7eaf88e21f415289e7/artifacts/report/preview"
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "programmaticHtmlInteraction": "Step 2",
+      "width": 320,
+      "clicks": 2,
+      "selectedPath": "artifacts/interactive-report.html",
+      "overflowPx": 0,
+      "status": "Run endedRun ended; objective acceptance is unverified",
+      "inspector": "artifacts/interactive-report.html2 lines · 223 bytes",
+      "accepted": false,
+      "previews": [
+        {
+          "status": 200,
+          "path": "/api/threads/thread_6f1b316d7bf1473fba2a/plans/plan_be7eaf88e21f415289e7/artifacts/report/preview"
+        }
+      ],
+      "pageErrors": []
+    }
+  ],
+  "build": {
+    "serverBuilt": true,
+    "webBuilt": true,
+    "serverSha256": "79f8aac8270ed1ffa1e4bdf23a6f060ae77b6965f07cb535afcbcd2cb25bc880",
+    "webIndexSha256": "305f725079542f6fbec554e3f6616bca1dc8bbcf2f76103a479b856ecee88980"
+  },
+  "status": "passed",
+  "sourceState": "main after 4640fd28 plus this G01 slice and preserved pre-existing Web worktree changes; not a clean-commit deployment",
+  "limitations": [
+    "Deterministic integration fixture, no live-model quality claim",
+    "HTML script execution checked through a programmatic DOM click; preview navigation uses pointer clicks",
+    "No-plan candidate discovery and independent objective acceptance remain unfinished"
+  ]
+}

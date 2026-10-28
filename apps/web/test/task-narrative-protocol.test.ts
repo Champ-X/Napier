@@ -22,4 +22,36 @@ describe("Task Narrative protocol", () => {
       }),
     ).toBe(false);
   });
+  it("validates the execution, acceptance and deliverable facts independently", () => {
+    const projection = {
+      phase: "ended",
+      phaseLabel: "Run ended",
+      currentAction: "Inspect",
+      completedItems: [],
+      execution: "ended",
+      objective: { status: "unverified", reason: "No grader", evidence: [] },
+      remainingItems: [],
+      processItems: [],
+      deliverables: [],
+    };
+    expect(isTaskNarrativeProjection(projection)).toBe(true);
+    expect(
+      isTaskNarrativeProjection({
+        ...projection,
+        objective: { status: "accepted" },
+      }),
+    ).toBe(false);
+    expect(
+      isTaskNarrativeProjection({ ...projection, execution: "success" }),
+    ).toBe(false);
+    expect(
+      isTaskNarrativeProjection({
+        ...projection,
+        deliverables: [{ path: "fake" }],
+      }),
+    ).toBe(false);
+    expect(
+      isTaskNarrativeProjection({ ...projection, processItems: [2] }),
+    ).toBe(false);
+  });
 });

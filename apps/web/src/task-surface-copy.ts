@@ -1,6 +1,21 @@
 import { deepMergeCopy, getLocale, type LocaleOverride } from "./locale";
 
 export const taskSurfaceCopyEn = {
+  execution: {
+    queued: "Queued",
+    running: "Running",
+    waiting: "Waiting for input",
+    paused: "Paused",
+    ended: "Run ended",
+    failed: "Run failed",
+  },
+  objective: {
+    unverified: "Objective acceptance unverified",
+    partial: "Unfinished work remains",
+    accepted: "Objective accepted",
+    rejected: "Objective acceptance failed",
+    indeterminate: "Insufficient acceptance evidence",
+  },
   plan: {
     current: "Current",
     previous: "Previous",
@@ -67,9 +82,12 @@ export const taskSurfaceCopyEn = {
     },
   },
   completion: {
-    eyebrow: "Completed",
+    eyebrow: "Run ended",
+    unverified: "Objective acceptance unverified",
+    integrityRecorded: "File integrity recorded",
+    fileUnverified: "File verification pending",
     title: "Task result",
-    items: "results",
+    items: "recorded steps",
     outputCount: "outputs",
     outputs: "Task outputs",
     completedLabel: "Completed steps",
@@ -82,6 +100,21 @@ export const taskSurfaceCopyEn = {
 } as const;
 
 export const taskSurfaceZh: LocaleOverride<typeof taskSurfaceCopyEn> = {
+  execution: {
+    queued: "待运行",
+    running: "运行中",
+    waiting: "等待输入",
+    paused: "已暂停",
+    ended: "本轮结束",
+    failed: "运行失败",
+  },
+  objective: {
+    unverified: "目标尚未验收",
+    partial: "仍有待完成事项",
+    accepted: "目标验收通过",
+    rejected: "目标验收失败",
+    indeterminate: "验收证据不足",
+  },
   plan: {
     current: "当前",
     previous: "先前",
@@ -147,9 +180,12 @@ export const taskSurfaceZh: LocaleOverride<typeof taskSurfaceCopyEn> = {
     },
   },
   completion: {
-    eyebrow: "已完成",
+    eyebrow: "本轮结束",
+    unverified: "目标尚未验收",
+    integrityRecorded: "文件完整性已记录",
+    fileUnverified: "文件待验证",
     title: "任务结果",
-    items: "项结果",
+    items: "项已记录步骤",
     outputCount: "个产物",
     outputs: "任务输出",
     completedLabel: "完成事项",

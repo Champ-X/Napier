@@ -1,4 +1,9 @@
-import type { ArtifactManifestEntry, ExecutionPlan } from "@napier/contracts";
+import type {
+  ArtifactManifestEntry,
+  ExecutionPlan,
+  ThreadDetail,
+} from "@napier/contracts";
+import { projectTaskDeliverables } from "@napier/contracts/task-narrative";
 
 export interface TaskArtifactTarget {
   path: string;
@@ -7,58 +12,40 @@ export interface TaskArtifactTarget {
 }
 
 type ActivePlanOutputs = Pick<
-  NonNullable<import("@napier/contracts").ThreadDetail["activePlan"]>,
+  NonNullable<ThreadDetail["activePlan"]>,
   "outputPaths"
 > &
-  Partial<
-    Pick<
-      NonNullable<import("@napier/contracts").ThreadDetail["activePlan"]>,
-      "planId"
-    >
-  >;
+  Partial<Pick<NonNullable<ThreadDetail["activePlan"]>, "planId">>;
+type Deliverables = NonNullable<ThreadDetail["taskNarrative"]>["deliverables"];
 
 export function taskArtifactTargets(
   plans: readonly ExecutionPlan[],
   activePlan?: ActivePlanOutputs,
+  deliverables?: Deliverables,
 ): TaskArtifactTarget[] {
-  if (activePlan) {
-    const plan = activePlan.planId
-      ? plans.find((candidate) => candidate.id === activePlan.planId)
-      : undefined;
-    return activePlan.outputPaths.map((path) => {
-      const artifact = plan?.artifacts.find(
-        (candidate) => candidate.path === path,
-      );
-      return {
-        path,
-        ...(plan && artifact ? { planId: plan.id, artifact } : {}),
-      };
-    });
+  const projected = deliverables ?? projectTaskDeliverables(plans);
+  const targets: TaskArtifactTarget[] = projected
+    .filter(
+      (entry) =>
+        entry.artifact.status === "produced" ||
+        entry.artifact.status === "verified",
+    )
+    .map(({ path, planId, artifact }) => ({ path, planId, artifact }));
+  // Historical snapshots may contain only outputPaths. An empty list never
+  // hides declared artifacts, and a known missing/replaced version stays closed.
+  for (const path of activePlan?.outputPaths ?? []) {
+    if (projected.some((entry) => entry.path === path)) continue;
+    targets.push({ path });
   }
-  const plan = selectTaskOutputPlan(plans);
-  return (plan?.artifacts ?? [])
-    .filter(isAvailableArtifact)
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-    .slice(0, 2)
-    .map((artifact) => ({ path: artifact.path, planId: plan!.id, artifact }));
+  return targets;
 }
 
 export function taskArtifactPaths(
   plans: readonly ExecutionPlan[],
   activePlan?: ActivePlanOutputs,
+  deliverables?: Deliverables,
 ): string[] {
-  return taskArtifactTargets(plans, activePlan).map((target) => target.path);
-}
-
-function selectTaskOutputPlan(plans: readonly ExecutionPlan[]) {
-  return (
-    plans.findLast(
-      (candidate) =>
-        candidate.status === "active" || candidate.status === "blocked",
-    ) ?? plans.findLast((candidate) => candidate.status === "completed")
+  return taskArtifactTargets(plans, activePlan, deliverables).map(
+    (target) => target.path,
   );
-}
-
-function isAvailableArtifact(artifact: ArtifactManifestEntry): boolean {
-  return artifact.status === "produced" || artifact.status === "verified";
 }

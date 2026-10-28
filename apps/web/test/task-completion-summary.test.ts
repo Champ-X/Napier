@@ -52,6 +52,38 @@ describe("Task completion summary", () => {
       { path: "legacy/output.txt" },
     ]);
   });
+  it("an empty active projection does not hide artifacts across plans or truncate the third output", () => {
+    const previous = plan("completed");
+    previous.id = "previous";
+    previous.artifacts = [artifact("report", "verified", "report.md", 1)];
+    const current = plan("active");
+    current.artifacts = [
+      artifact("preview", "produced", "preview.html", 2),
+      artifact("data", "produced", "data.csv", 3),
+    ];
+    expect(
+      taskArtifactPaths([previous, current], {
+        planId: current.id,
+        outputPaths: [],
+      }),
+    ).toEqual(["data.csv", "preview.html", "report.md"]);
+  });
+
+  it("selects a continuation's current version, then refuses to resurrect an unavailable one", () => {
+    const previous = plan("completed");
+    previous.id = "previous";
+    previous.artifacts = [artifact("v1", "verified", "report.md", 5)];
+    const current = plan("active");
+    const v2 = artifact("v2", "produced", "./report.md", 3);
+    v2.createdAt = timestamp(2);
+    v2.sourceRunId = "run_2";
+    current.artifacts = [v2];
+    expect(taskArtifactTargets([previous, current])).toMatchObject([
+      { artifact: { id: "v2", sourceRunId: "run_2" } },
+    ]);
+    v2.status = "missing";
+    expect(taskArtifactTargets([previous, current])).toEqual([]);
+  });
 });
 
 function plan(status: ExecutionPlan["status"]): ExecutionPlan {

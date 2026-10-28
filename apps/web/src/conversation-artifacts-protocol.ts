@@ -17,12 +17,12 @@ export function isConversationArtifacts(
         typeof item["runId"] === "string" &&
         typeof item["planId"] === "string" &&
         integer(item["planRevision"], 1) &&
-        artifact(item["artifact"]),
+        isArtifactManifestEntry(item["artifact"]),
     )
   );
 }
 
-function artifact(value: unknown): boolean {
+export function isArtifactManifestEntry(value: unknown): boolean {
   return (
     record(value) &&
     typeof value["id"] === "string" &&

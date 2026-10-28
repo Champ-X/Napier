@@ -222,10 +222,8 @@
   min-width: 0;
   overflow: hidden;
   background: var(--color-paper);
-  border: 1px solid var(--color-success-border);
-  border-left-width: 3px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-raised);
 }
 
 .task-completion-strip {
@@ -234,10 +232,10 @@
   align-items: center;
   gap: var(--inline-sm);
   padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
-  color: var(--color-success);
+  color: var(--color-fg-muted);
   background: color-mix(
     in srgb,
-    var(--color-success-surface) 34%,
+    var(--color-surface) 34%,
     var(--color-paper)
   );
 }
@@ -275,7 +273,7 @@
   max-height: min(260px, 34vh);
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-8);
   overflow: auto;
-  border-top: 1px solid var(--color-success-border);
+  border-top: 1px solid var(--color-border-subtle);
 }
 
 .task-completion-section {
@@ -317,7 +315,7 @@
   width: 5px;
   height: 5px;
   margin-top: 0.45em;
-  background: var(--color-success);
+  background: var(--color-fg-muted);
   border-radius: var(--radius-full);
 }
 
@@ -333,7 +331,7 @@
   min-width: 0;
   gap: var(--stack-xs);
   padding: var(--space-2);
-  border: 1px solid var(--color-success-border);
+  border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-sm);
 }
 
@@ -363,7 +361,7 @@
   white-space: nowrap;
   cursor: pointer;
   background: var(--color-surface);
-  border: 1px solid var(--color-success-border);
+  border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-sm);
 }
 
@@ -444,7 +442,7 @@ div.task-completion-primary-output > code {
   color: var(--color-danger-fg);
 }
 
-.task-narrative.phase-completed .task-narrative-current > span {
+.task-narrative.objective-accepted .task-narrative-current > span {
   color: var(--color-success);
 }
 
