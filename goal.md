@@ -162,6 +162,15 @@
 - 相关 13 个 Runtime 文件共 125 个不同用例通过；Server 8 个、Web 10 个配置/投影用例通过。Contracts、Runtime 编译/typecheck、Web/SDK/Server typecheck、Web build/design contract 通过。架构现为 10 项既有失败，原 run-config 超限随职责收敛消除，预算仅下调；公开 API 仍为 1897/1896 与原 digest 不匹配，未重写历史发布 manifest。
 - G04 尚需统一恢复操作区和全分类验收；此能力限于精确捕获的主 Agent apply_patch，模型后续仍只读，Workflow 待执行写入、自定义 lifecycle 扩展和其他写工具尚未完成。G01/G02 剩余项及 G03/G05–G07 全部保留，总目标仍为 active。
 
+### 后续推进：G04 恢复操作记录与受限核查入口
+
+- 从 `c0671ae1` 继续，保留用户已有 Web/文档/启动脚本改动。本轮 Runtime 发布 `recoveryCheckpoint`，使用已有严格补丁证明区分已结算、确认未提交、需要对账和不可自动重放。历史账本事实与当前文件验证分开；不返回私有补丁正文/路径。最多展示 128 条、统计覆盖完整检查范围；超过 10,000 事件或事件身份冲突停止分类。
+- Web 恢复区展示分类、停止原因和检查点收据，连接执行轨迹、已有决策区与计划概览。含副作用或证据不足时提供“只读核查”；新增可选 `readOnly: true` 请求在 Runtime 使用受限工具表，待执行写入不会自动执行。原手动 API 默认行为及 `verified_patches` 自动恢复策略保持独立。
+- 核查结束以既有 `failed / partial` 协议保存，保留原操作父链，不把核查结束当作任务完成；不触发原目标评估/自动续跑，核查失败也不改写原目标。手动入口及创建 Run 事务均拒绝被后续运行取代的检查点。Web 抑制即时重复点击，失败后刷新原会话账目，延迟错误不转移到当前会话。
+- 共 14 文件、101 个不同测试通过，包含原有自动/已验证补丁/未结算补丁/决策恢复回归、新投影的 5 个真实进程退出场景、只读工具拒绝、重复创建与目标状态保护。真实 HTTP/SQLite/Chromium 验证提交后退出的补丁保留、无目标重写、旧检查点重试拒绝、部分状态与父记录保留、键盘 disclosure 和 7 种窗口尺寸的实际按钮命中。当前收据：[recovery-operations-ui-current-2026-10-29.json](docs/artifacts/recovery-operations-ui-current-2026-10-29.json)，复现与边界见 [operation-recovery.md](docs/operation-recovery.md)。2 次 faux 模型调用，0 外部模型请求。
+- Contracts/Runtime/Server/Web 编译或 typecheck、SDK typecheck、Web design contract 通过；OpenAPI 当前生成物及 292/292 历史 operation 兼容通过。主 ViewModel 2175→2148 行，架构仍为 10 项既有失败；公开 API 仍为 1897/1896 与既有 digest 不匹配。未提高预算、未改写历史 release manifest，构建不等同发布验收。
+- 边界：尚未在此区接通完整 Workflow 恢复变更操作、通用写工具、自定义 lifecycle、SDK/CLI 新只读开关和历史活动卡终态统一；完整分类验收与 G04 总体验收未勾选。G01/G02 剩余项及 G03/G05–G07 原范围继续保留，整体仍为 active。本轮属于 **progress**。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：

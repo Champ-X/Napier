@@ -61,6 +61,7 @@ export interface RunPromptOptions {
   [SKILL_CONTINUATION_SNAPSHOT]?: SkillContinuationSnapshot;
   recovery?: {
     mode: "manual" | "automatic";
+    inspection?: true;
     intentId?: string;
     attemptId?: string;
     assessmentSha256?: string;
@@ -71,6 +72,7 @@ export interface ResumeInterruptedRunOptions {
   threadId: string;
   runId?: string;
   model?: ModelRef;
+  readOnly?: boolean;
   signal?: AbortSignal;
   onEvent?: EventSink;
 }

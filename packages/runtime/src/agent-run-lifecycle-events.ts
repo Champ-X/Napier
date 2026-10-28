@@ -6,6 +6,11 @@ import type { LocalStore } from "./store.js";
 import { createAgentRunStartedPayload } from "./agent-run-started-event.js";
 import { captureRunInputs } from "./run-input-capture.js";
 
+/** Inspection has its own limited scope; it cannot settle or block the task goal. */
+export function mayUpdateRunGoal(requested: boolean, inspection: true | undefined): boolean {
+  return requested && !inspection;
+}
+
 export async function recordAgentRunStarted(input: {
   store: LocalStore;
   run: RunRecord;
@@ -59,6 +64,7 @@ export async function recordAgentRunRecoveryStarted(input: {
         parentRunId: input.parentRunId,
         status: "running",
         mode: input.recovery?.mode ?? "manual",
+        ...(input.recovery?.inspection ? { purpose: "inspection" } : {}),
         ...(input.recovery?.attemptId
           ? { attemptId: input.recovery.attemptId }
           : {}),
@@ -81,6 +87,16 @@ export async function finishSuccessfulAgentRun(input: {
   leaseToken: string;
   onEvent?: EventSink;
 }): Promise<RunRecord> {
+  if (input.recovery?.inspection) {
+    return input.store.finishRun(input.run.id, "failed", {
+      outcome: "partial",
+      error: "Read-only inspection finished. The original task still requires continuation or reconciliation.",
+      usage: input.usage,
+      leaseToken: input.leaseToken,
+      terminalEvent: { visibility: "user", payload: { status: "failed", outcome: "partial", purpose: "inspection" } },
+      onTerminalEvent: input.onEvent,
+    });
+  }
   if (input.invocationSource === "recovery" && input.parentRunId) {
     await record(
       input.store,

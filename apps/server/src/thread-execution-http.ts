@@ -144,11 +144,12 @@ function registerResumeHttp(
         return jsonError(context, errorMessage(error), 400);
       }
     }
-    setThreadResumeStreamHeaders(context, threadId, body.runId, body.model);
+    setThreadResumeStreamHeaders(context, threadId, body.runId, body.model, body.readOnly);
     return streamAgentRun(context, services, threadId, (onEvent) =>
       services.kernel.resumeInterruptedRun({
         threadId,
         ...(body.runId ? { runId: body.runId } : {}),
+        ...(body.readOnly !== undefined ? { readOnly: body.readOnly } : {}),
         ...(body.model ? { model: body.model } : {}),
         onEvent,
       }),

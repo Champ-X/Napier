@@ -21,8 +21,10 @@ export function parseResumeRunRequest(
   input: unknown,
 ): ResumeRunRequest | undefined {
   if (input === undefined) return {};
-  const record = requestRecord(input, ["runId", "model"]);
+  const record = requestRecord(input, ["runId", "model", "readOnly"]);
   if (!record) return undefined;
+  if (record["readOnly"] !== undefined && typeof record["readOnly"] !== "boolean")
+    return undefined;
   const runId = parseRunId(record["runId"]);
   if (record["runId"] !== undefined && !runId) return undefined;
   const model =
@@ -31,6 +33,7 @@ export function parseResumeRunRequest(
   return {
     ...(runId ? { runId } : {}),
     ...(model ? { model } : {}),
+    ...(typeof record["readOnly"] === "boolean" ? { readOnly: record["readOnly"] } : {}),
   };
 }
 

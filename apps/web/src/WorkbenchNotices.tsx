@@ -1,20 +1,13 @@
 import { AlertCircle } from "lucide-react";
 
-import type { RunRecord } from "@napier/contracts";
-import { RecoveryBanner } from "./RecoveryBanner";
+import { RecoveryBanner, type RecoveryBannerProps } from "./RecoveryBanner";
 
 export function WorkbenchNotices({
   error,
-  resumableRun,
-  running,
-  modelConfigured,
-  onResume,
+  recovery,
 }: {
   error: string | undefined;
-  resumableRun: RunRecord | undefined;
-  running: boolean;
-  modelConfigured: boolean;
-  onResume: () => void;
+  recovery: RecoveryBannerProps | undefined;
 }) {
   return (
     <div className="workbench-notices">
@@ -24,14 +17,7 @@ export function WorkbenchNotices({
           <span>{error}</span>
         </div>
       ) : null}
-      {resumableRun ? (
-        <RecoveryBanner
-          run={resumableRun}
-          running={running}
-          modelConfigured={modelConfigured}
-          onResume={onResume}
-        />
-      ) : null}
+      {recovery ? <RecoveryBanner {...recovery} /> : null}
     </div>
   );
 }

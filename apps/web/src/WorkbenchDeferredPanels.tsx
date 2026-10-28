@@ -18,16 +18,29 @@ const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
 
 type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 
-export function WorkbenchDeferredNotices({ vm }: { vm: WorkspaceViewModel }) {
-  const showNotices = Boolean(vm.error || vm.resumableRun);
+export function WorkbenchDeferredNotices({ vm, onInspect, onOpenWorkflow }: {
+  vm: WorkspaceViewModel;
+  onInspect: () => void;
+  onOpenWorkflow: () => void;
+}) {
+  const checkpoint = vm.detail?.recoveryCheckpoint;
+  const latest = vm.detail?.runs.at(-1);
+  const run = !vm.isRunning && latest &&
+    (latest.id === checkpoint?.runId || latest.id === vm.resumableRun?.id) ? latest : undefined;
+  const showNotices = Boolean(vm.error || run);
   return showNotices ? (
     <Suspense fallback={null}>
       <LazyWorkbenchNotices
         error={vm.error}
-        resumableRun={vm.resumableRun}
-        running={vm.isRunning}
-        modelConfigured={vm.selectedModel.configured}
-        onResume={() => void vm.resume()}
+        recovery={run ? {
+          run, checkpoint,
+          canResume: run.id === vm.resumableRun?.id,
+          decisionId: vm.openOperatorDecision?.id,
+          running: vm.isRunning,
+          modelConfigured: vm.selectedModel.configured,
+          onResume: (readOnly) => void vm.resume(readOnly),
+          onInspect, onOpenWorkflow,
+        } : undefined}
       />
     </Suspense>
   ) : null;

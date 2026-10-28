@@ -72,7 +72,7 @@ import { validateAgentRunPrompt } from "./agent-run-prompt-preflight.js";
 import { createAgentRunModelRoute } from "./agent-run-model-route.js";
 import { executeAgentRunCompletionLifecycle } from "./agent-run-completion-lifecycle.js";
 import {
-  finishSuccessfulAgentRun,
+  finishSuccessfulAgentRun, mayUpdateRunGoal,
   recordAgentRunStarted,
   recordAgentRunRecoveryStarted,
 } from "./agent-run-lifecycle-events.js";
@@ -779,7 +779,7 @@ export class AgentRuntime {
       let assistantText = await runTurn(prompt, invocationSource);
       toolResultReplay?.assertComplete();
       budget.throwIfExhausted();
-      let goal = workflowInvocation
+      let goal = !mayUpdateRunGoal(!workflowInvocation, options.recovery?.inspection)
         ? undefined
         : await this.evaluateActiveGoal(
             thread.id,
@@ -928,7 +928,7 @@ export class AgentRuntime {
         budget.exhaustion,
         error,
       );
-      if (failure.blocksGoal) {
+      if (mayUpdateRunGoal(failure.blocksGoal, options.recovery?.inspection)) {
         await this.blockGoalForRunFailure(
           thread.id,
           run.id,

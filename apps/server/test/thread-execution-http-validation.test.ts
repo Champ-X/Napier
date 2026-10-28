@@ -34,6 +34,9 @@ describe("Thread execution HTTP validation", () => {
     ).toBeUndefined();
   });
   it("accepts only exact optional Resume fields", () => {
+    expect(parseResumeRunRequest({ readOnly: true })).toEqual({ readOnly: true });
+    expect(parseResumeRunRequest({ readOnly: false })).toEqual({ readOnly: false });
+    expect(parseResumeRunRequest({ readOnly: "true" })).toBeUndefined();
     expect(parseResumeRunRequest(undefined)).toEqual({});
     expect(
       parseResumeRunRequest({

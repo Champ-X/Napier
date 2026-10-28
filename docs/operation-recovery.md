@@ -154,3 +154,15 @@ Run 已创建但提示尚未保存时退出，重启后仍返回该 Run 的 inte
 相关检查共 12 文件 150 个不同测试通过，包括原 Store/线程导入导出、Agent Runtime/Kernel/能力边界、Workflow、补丁进程断点和新增 HTTP 路径。Runtime typecheck、build:compile、diff check 通过。提取决策 gate 职责后 Store 行数预算从 3773 下调到 3766，复杂度从 101 下调到 96；没有提高预算。架构仍为原 11 项，公开 API 仍为 1897/1896 和 compatibility digest 不匹配；完整 release build 的历史 source manifest 门槛未重写，编译通过不代表发布通过。
 
 剩余边界：本切片没有验证完整的 Workflow 审批进程故障矩阵，未交付浏览器“回答并继续”和统一恢复操作区，也没有扩展未执行/未结算写操作的恢复。G04 与 G01–G07 总目标保持未完成。
+
+## 2026-10-29：恢复操作区与只读核查
+
+本轮增加共享 `ThreadDetail.recoveryCheckpoint`，由 Runtime 从最近停止的 Run 及完整账本生成。Web 不再从工具名称或文件存在推断补丁已经提交；复用补丁结算、独立对账和未提交证明的绑定检查。分类为已结算、确认未提交、需要对账、不可自动重放，最多显示 128 项，统计保留全部调用；超出 10,000 个事件或事件身份冲突时不作分类。投影不读取私有正文和路径，也不宣称当前文件仍有效。
+
+恢复区连接执行轨迹、已有决策区和计划概览。未知效果、补丁或不完整证据使用新增的 `POST /api/threads/:threadId/resume` 可选 `readOnly: true`：沿用原 Agent 能力边界，但 Runtime 进一步限制为本地只读工具，绝不执行待写补丁。普通 API 请求不传此字段时保持原手动续跑行为；它仍是模型续跑，不等同于 `verified_patches` 的确定性恢复。
+
+只读核查结束按既有协议保存为 `failed / partial`，原因明确为核查结束、原任务仍需继续或对账；不记录原任务恢复完成，也不评估或自动续跑原目标；核查出错不改写原目标状态。后续投影沿只读恢复父链（上限 16）保留原操作事实，避免核查后隐藏尚未解决的副作用。父链缺失或循环会停止分类。Runtime 入口和创建 Run 的事务内都拒绝已被后续 Run 取代的检查点；Web 抑制同一会话的即时重复点击，网络错误后重新加载原会话账目。
+
+验证与复现见 `docs/artifacts/recovery-operations-ui-current-2026-10-29.json` 和 `scripts/check-recovery-operations-ui.mjs`。脚本要求先构建 Contracts、Runtime（`build:compile`）、Server、Web，然后使用独立临时目录与真实 HTTP/SQLite/Chromium。故障由真实子进程在目标文件提交后退出；只有模型是 faux provider，禁止浏览器访问外网。证据覆盖 7 种尺寸、键盘 disclosure、按钮实际命中检查、只读权限、恶意写调用被拒、原文件 inode/mtime 不变、部分状态和父检查点保留、旧请求重试不新建 Run。首轮 320px 截图被现有证据抽屉遮挡，已修改脚本关闭抽屉并检查按钮可点击；该首轮不算窄屏验收。
+
+范围：Workflow 在本区只能查看计划概览或转到已有审批区，尚未接通所有 Workflow 恢复变更操作；保存审批答案仍走既有决策服务。未增加通用写工具自动重放，也未完成完整恢复分类验收、历史活动卡终态统一或 SDK/CLI 的新只读开关。Hook 测试覆盖响应不确定后的刷新与原会话错误归属，不等同于真实 TCP 响应丢失故障注入。本轮保持 G04 与总目标 active。

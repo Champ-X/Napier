@@ -45,6 +45,7 @@ export function resumeInterruptedRun(
     {
       kind: "resume",
       threadId,
+      ...(body.readOnly !== undefined ? { readOnly: body.readOnly } : {}),
       ...(body.runId ? { runId: body.runId } : {}),
       ...(body.model ? { model: body.model } : {}),
     },

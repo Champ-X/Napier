@@ -28,4 +28,6 @@ export interface PromptRequest {
 export interface ResumeRunRequest {
   runId?: string;
   model?: ModelRef;
+  /** Continue inspection using only local read-only tools. Never replay writes. */
+  readOnly?: boolean;
 }

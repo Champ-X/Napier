@@ -3247,7 +3247,7 @@ export class LocalStore {
     });
     const executionMode = input.executionMode ?? "standard";
     const patchRecoveryPlan = assertWorkspacePatchRecoveryGrant({
-      source: input.source, executionMode,
+      source: input.source, executionMode, latestRunId: thread.runIds.at(-1), operatorDecisionId: input.operatorDecisionId,
       parent: this.state.runs.find((candidate) => candidate.id === input.parentRunId),
       agentId: input.agentId, agentRevision: effectiveRunAgent.revision, threadId: thread.id,
       carrier: input, events: input.parentRunId ? this.requireLedger().listRunEvents(input.parentRunId) : [],

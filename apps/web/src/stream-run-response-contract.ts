@@ -21,6 +21,7 @@ export type StreamRunExpectation =
       kind: "resume";
       threadId: string;
       runId?: string;
+      readOnly?: boolean;
       model?: ResumeRunRequest["model"];
     }
   | {
@@ -49,6 +50,8 @@ export async function verifyStreamRunResponseContract(
   );
   if (expectation.kind === "resume") {
     expectOptionalHeader(path, response, "x-napier-run-id", expectation.runId);
+    expectOptionalHeader(path, response, "x-napier-resume-read-only",
+      expectation.readOnly === undefined ? undefined : String(expectation.readOnly));
   }
   const expectedModel =
     expectation.kind === "operator_decision" ? undefined : expectation.model;

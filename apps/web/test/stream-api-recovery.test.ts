@@ -7,6 +7,15 @@ import { resumeInterruptedRun } from "../src/api";
 import { latestManuallyResumableRun } from "../src/manual-run-recovery";
 
 describe("recovery Run stream identity", () => {
+  it("requires an explicit read-only response binding for inspection requests", async () => {
+    const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      expect(JSON.parse(String(init?.body))).toMatchObject({ readOnly: true });
+      return sseResponse("");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(resumeInterruptedRun("thread_1", { runId: "run_interrupted", readOnly: true }, () => {}))
+      .rejects.toMatchObject({ name: "NapierStreamResponseContractError", header: "x-napier-resume-read-only" });
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
   });

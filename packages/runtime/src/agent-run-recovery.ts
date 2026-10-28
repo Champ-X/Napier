@@ -60,11 +60,11 @@ export async function resumeInterruptedAgentRun(
   options: ResumeInterruptedRunOptions,
 ): Promise<RunRecord> {
   const thread = host.store.getThread(options.threadId);
-  const interrupted = host.store
-    .listRuns(thread.id)
-    .filter((run) => manualRunRecoverySettlementMatches(thread.status, run))
-    .findLast((run) => !options.runId || run.id === options.runId);
-  if (!interrupted) throw new Error("Manually resumable run not found");
+  const interrupted = host.store.listRuns(thread.id).at(-1);
+  if (!interrupted ||
+      !manualRunRecoverySettlementMatches(thread.status, interrupted) ||
+      (options.runId && options.runId !== interrupted.id))
+    throw new Error("Manually resumable run not found or checkpoint superseded");
   assertManualRecoveryAllowed(interrupted);
 
   const events = await host.store.listRunEvents(interrupted.id);
@@ -75,15 +75,19 @@ export async function resumeInterruptedAgentRun(
       buildRunRecoveryPrompt(
         interrupted,
         thread.goal?.status === "active" ? thread.goal.objective : undefined,
-        { events, plans: host.store.listPlans(thread.id) },
+        { events, plans: options.readOnly ? [] : host.store.listPlans(thread.id) },
       ),
       await operatorDecisionRecoveryContext(host.store, interrupted),
+      options.readOnly
+        ? "The operator requested read-only inspection. Only local read-only tools are available. Inspect preserved results and report unresolved effects and the next required action. Do not execute pending patches or repeat writes; this inspection does not complete the original task."
+        : "",
     ]
       .filter(Boolean)
       .join("\n\n"),
     parentRunId: interrupted.id,
     source: "recovery",
-    recovery: { mode: "manual" },
+    recovery: { mode: "manual", ...(options.readOnly ? { inspection: true as const } : {}) },
+    ...(options.readOnly ? { executionMode: "safe_read_only_recovery" as const } : {}),
     ...(options.model ? { model: options.model } : {}),
     ...(options.signal ? { signal: options.signal } : {}),
     ...(options.onEvent ? { onEvent: options.onEvent } : {}),

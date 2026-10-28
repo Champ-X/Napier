@@ -188,7 +188,9 @@ export function AppWorkspaceViews({
           role="tabpanel"
           aria-labelledby="workspace-view-conversation"
         >
-          <WorkbenchDeferredNotices vm={vm} />
+          <WorkbenchDeferredNotices vm={vm}
+            onInspect={() => shell.setWorkspaceView("trajectory")}
+            onOpenWorkflow={() => shell.routeInspector("plan")} />
           <ConversationWorkspace
             vm={vm}
             endRef={conversationEnd}

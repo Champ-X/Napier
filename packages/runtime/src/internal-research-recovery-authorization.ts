@@ -157,6 +157,8 @@ export function resolveStoredRunCapabilityProfile(input: {
 export function assertWorkspacePatchRecoveryGrant(input: {
   source?: string | undefined;
   executionMode: string;
+  latestRunId?: string | undefined;
+  operatorDecisionId?: string | undefined;
   parent: RunRecord | undefined;
   agentId: string;
   agentRevision: number;
@@ -164,16 +166,21 @@ export function assertWorkspacePatchRecoveryGrant(input: {
   carrier: { [VERIFIED_PATCH_RECOVERY]?: PatchRecoveryPlan };
   events: RunEvent[];
 }): PatchRecoveryPlan | undefined {
+  if (input.source === "recovery" && input.parent && !input.operatorDecisionId &&
+      input.latestRunId !== undefined && input.latestRunId !== input.parent.id)
+    throw new Error("Recovery checkpoint superseded by a later Run");
   if (
     input.executionMode === "safe_read_only_recovery" &&
     (input.source !== "recovery" ||
       !input.parent ||
-      input.parent.status !== "interrupted" ||
+      !(input.parent.status === "interrupted" ||
+        (input.parent.status === "failed" &&
+         (input.parent.outcome === "partial" || input.parent.outcome === "paused_budget"))) ||
       input.parent.threadId !== input.threadId ||
       input.parent.agentId !== input.agentId)
   )
     throw new Error(
-      "Safe read-only recovery requires an interrupted parent Run",
+      "Safe read-only recovery requires an interrupted or partial parent Run",
     );
   const grant = input.carrier[VERIFIED_PATCH_RECOVERY];
   if (input.executionMode !== "verified_patch_recovery") {

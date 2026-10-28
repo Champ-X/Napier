@@ -1,5 +1,40 @@
 import type { RunRecord } from "./execution-runs.js";
 
+/** Historical ledger facts, never a fresh filesystem verification or replay grant. */
+export interface RunRecoveryCheckpoint {
+  runId: string;
+  sourceRunId: string;
+  throughSeq: number;
+  evidenceLimited: boolean;
+  total: number;
+  omitted: number;
+  counts: Record<RecoveryOperationStatus, number>;
+  operations: Array<{
+    callId: string;
+    toolName: string;
+    startedSeq: number;
+    evidenceSeq: number;
+    status: RecoveryOperationStatus;
+    reason: RecoveryOperationReason;
+  }>;
+}
+
+export type RecoveryOperationStatus =
+  | "completed"
+  | "not_executed"
+  | "needs_reconciliation"
+  | "not_replayable";
+
+export type RecoveryOperationReason =
+  | "patch_settled"
+  | "patch_reconciled"
+  | "patch_not_committed"
+  | "read_completed"
+  | "read_stopped"
+  | "effect_unresolved"
+  | "effect_not_replayable"
+  | "evidence_missing";
+
 export type ManualRunRecoveryThreadStatus =
   | "idle"
   | "running"

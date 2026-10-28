@@ -14,6 +14,7 @@ import type { SkillPackageInstallation, SkillSummary } from "./skill-package-v1.
 import type { SubagentOutcomeItemKind, SubagentOutcomeSeverity, SubagentStopReason, SubagentTask, SubagentTaskStatus } from "./subagent-supervisor.js";
 import type { SubagentHubProjectionV1 } from "./subagent-hub-v1.js";
 import type { AutomationSchedule, ContextCheckpointCalibrationReport } from "./workspace-control-v1.js";
+import type { RunRecoveryCheckpoint } from "./manual-run-recovery.js";
 
 export interface WorkspaceSummary {
   root: string;
@@ -115,6 +116,7 @@ export interface BootstrapResponse {
 }
 
 export interface ThreadDetail {
+  recoveryCheckpoint?: RunRecoveryCheckpoint;
   thread: ThreadRecord;
   agent: AgentProfile;
   runs: RunRecord[];

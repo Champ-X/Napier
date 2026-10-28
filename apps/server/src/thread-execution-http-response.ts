@@ -38,9 +38,11 @@ export function setThreadResumeStreamHeaders(
   threadId: string,
   runId: string | undefined,
   model: ResumeRunRequest["model"] | undefined,
+  readOnly?: boolean,
 ): void {
   context.header("X-Napier-Thread-Id", threadId);
   context.header("X-Napier-Resume-Requested", "true");
+  if (readOnly !== undefined) context.header("X-Napier-Resume-Read-Only", String(readOnly));
   setThreadRunStreamErrorHeaders(context);
   if (runId) context.header("X-Napier-Run-Id", runId);
   setThreadRunStreamModelHeaders(context, model);

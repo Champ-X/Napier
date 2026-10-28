@@ -1,4 +1,4 @@
-import { useThreadSubmission } from "./use-thread-submission";
+import { useThreadSubmission, useThreadRecovery } from "./use-thread-submission";
 import { useThreadDecisionActions } from "./use-thread-decision-actions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -56,7 +56,6 @@ import {
   reviewExtension,
   reviewMcpTool,
   revokeExtensionPublisherTrustAnchor as revokeExtensionPublisherTrustAnchorApi,
-  resumeInterruptedRun as resumeRunApi,
   setExtensionEnabled,
   setGoal,
   signExtensionPackageChannelIndex as signExtensionPackageChannelIndexApi,
@@ -589,41 +588,15 @@ export function useWorkspaceViewModel() {
     setError,
   });
 
-  const resume = useCallback(async () => {
-    if (!detail || !resumableRun || isRunning) return;
-    if (!selectedModel.configured) {
-      setError(copy.modelUnavailableHint);
-      return;
-    }
-    const threadId = detail.thread.id;
-    startRunUi(threadId, detail);
-    try {
-      await resumeRunApi(
-        threadId,
-        {
-          runId: resumableRun.id,
-          model: parseModelKey(selectedModelKey),
-        },
-        streamFrameHandler(threadId),
-      );
-      await refreshBootstrap(threadId);
-    } catch (runError) {
-      setRunError(threadId, runError);
-    } finally {
-      finishRunUi(threadId);
-    }
-  }, [
-    detail,
-    finishRunUi,
-    isRunning,
-    refreshBootstrap,
-    resumableRun,
-    selectedModel.configured,
-    selectedModelKey,
-    setRunError,
-    startRunUi,
-    streamFrameHandler,
-  ]);
+  const resume = useThreadRecovery({
+    detail, run: resumableRun, running: isRunning,
+    modelConfigured: selectedModel.configured,
+    model: parseModelKey(selectedModelKey),
+    onStart: startRunUi, onFinish: finishRunUi,
+    onRefresh: refreshBootstrap, onError: setRunError,
+    onFrame: streamFrameHandler,
+    onUnavailable: () => setError(copy.modelUnavailableHint),
+  });
 
   const stop = useCallback(async () => {
     if (!detail) return;
