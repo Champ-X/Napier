@@ -17,16 +17,27 @@ export interface SettledPatchRecoveryEvidence {
   afterSha256: string;
 }
 
+export interface SettledPatchRecoveryCandidate {
+  callId: string;
+  startedSeq: number;
+  settledSeq: number;
+  operationId: string;
+  inputSha256: string;
+  effectSha256: string;
+  terminal?: SettledPatchRecoveryEvidence;
+}
+
 /** Eligibility to inspect postconditions, not a claim about current files. */
-export function settledPatchRecoveryEvidence(
+export function settledPatchRecoveryCandidates(
   events: RunEvent[],
-): SettledPatchRecoveryEvidence[] {
+): SettledPatchRecoveryCandidate[] {
   if (events.length > 10_000) return [];
-  const authorities = toolExecutionAuthorityOperationIds(events);
-  const operations = [...authorities].map((id) => ({
-    id,
-    state: toolOperationLedgerState(events, id),
-  }));
+  const operations = [...toolExecutionAuthorityOperationIds(events)].map(
+    (id) => ({
+      id,
+      state: toolOperationLedgerState(events, id),
+    }),
+  );
   return events.flatMap((started) => {
     const start = record(started.payload);
     if (
@@ -48,70 +59,95 @@ export function settledPatchRecoveryEvidence(
       (event) =>
         event.type === "tool.completed" || event.type === "tool.failed",
     );
-    const terminal = terminals.length === 1 ? terminals[0] : undefined;
-    const payload = record(terminal?.payload);
-    const details = record(payload?.["details"]);
-    if (
-      !terminal ||
-      terminal.type !== "tool.completed" ||
-      terminal.seq <= started.seq ||
-      payload?.["toolName"] !== "apply_patch" ||
-      !validDetails(details)
-    )
-      return [];
-    const matchingOperations = operations.filter(
+    if (terminals.length > 1) return [];
+    const matching = operations.filter(
       ({ state }) =>
         state.proposed?.runId === started.runId &&
         record(state.proposed?.payload)?.["parentCallId"] === callId,
     );
-    if (matchingOperations.length !== 1) return [];
-    const operation = matchingOperations[0]!;
-    const state = operation.state;
+    if (matching.length !== 1) return [];
+    const operation = matching[0]!;
+    if (!validSettledPatchOperation(operation.state)) return [];
+    const settled = operation.state.settled!;
+    if (settled.seq <= started.seq) return [];
+    const candidate: SettledPatchRecoveryCandidate = {
+      callId,
+      startedSeq: started.seq,
+      settledSeq: settled.seq,
+      operationId: operation.id,
+      inputSha256: start["inputSha256"],
+      effectSha256: String(record(settled.payload)?.["effectSha256"]),
+    };
+    const terminal = terminals[0];
+    if (!terminal) return [candidate];
+    const payload = record(terminal.payload);
     if (
-      !state.started ||
-      !state.effectBoundary ||
-      !state.settled ||
-      state.effectIndeterminate ||
-      state.admission !== "admitted" ||
-      record(state.settled.payload)?.["outcome"] !== "succeeded" ||
-      state.settled.seq <= state.effectBoundary.seq ||
-      state.settled.seq >= terminal.seq
+      terminal.type !== "tool.completed" ||
+      terminal.seq <= settled.seq ||
+      payload?.["toolName"] !== "apply_patch"
     )
       return [];
-    const phases = [
-      state.proposed!,
-      state.admitted!,
-      state.started,
-      state.effectBoundary,
-      state.settled,
-    ];
-    if (
-      phases.some(
-        (event) =>
-          record(event.payload)?.["route"] !== "apply_patch" ||
-          record(event.payload)?.["descriptorSha256"] !==
-            record(state.proposed?.payload)?.["descriptorSha256"] ||
-          !validToolOperationEventPayload(
-            event.type as "tool.operation.started",
-            event.payload,
-          ),
-      )
-    )
-      return [];
-    return [
-      {
-        callId,
-        startedSeq: started.seq,
-        completedSeq: terminal.seq,
-        operationId: operation.id,
-        inputSha256: start["inputSha256"],
-        capsuleSha256: details.recoveryCapsuleSha256,
-        pathSha256: details.pathSha256,
-        beforeSha256: details.beforeSha256,
-        afterSha256: details.afterSha256,
-      },
-    ];
+    const evidence = patchRecoveryEvidenceFromDetails(
+      candidate,
+      payload["details"],
+      terminal.seq,
+    );
+    return evidence ? [{ ...candidate, terminal: evidence }] : [];
   });
+}
+
+function validSettledPatchOperation(
+  state: ReturnType<typeof toolOperationLedgerState>,
+): boolean {
+  if (
+    !state.proposed ||
+    !state.admitted ||
+    !state.started ||
+    !state.effectBoundary ||
+    !state.settled ||
+    state.effectIndeterminate ||
+    state.admission !== "admitted" ||
+    record(state.settled.payload)?.["outcome"] !== "succeeded" ||
+    state.settled.seq <= state.effectBoundary.seq
+  )
+    return false;
+  const phases = [
+    state.proposed,
+    state.admitted,
+    state.started,
+    state.effectBoundary,
+    state.settled,
+  ];
+  return phases.every(
+    (event) =>
+      record(event.payload)?.["route"] === "apply_patch" &&
+      record(event.payload)?.["descriptorSha256"] ===
+        record(state.proposed?.payload)?.["descriptorSha256"] &&
+      validToolOperationEventPayload(
+        event.type as "tool.operation.started",
+        event.payload,
+      ),
+  );
+}
+
+export function patchRecoveryEvidenceFromDetails(
+  candidate: SettledPatchRecoveryCandidate,
+  value: unknown,
+  completedSeq = candidate.settledSeq,
+): SettledPatchRecoveryEvidence | undefined {
+  const details = record(value);
+  if (!validDetails(details)) return undefined;
+  return {
+    callId: candidate.callId,
+    startedSeq: candidate.startedSeq,
+    completedSeq,
+    operationId: candidate.operationId,
+    inputSha256: candidate.inputSha256,
+    capsuleSha256: details.recoveryCapsuleSha256,
+    pathSha256: details.pathSha256,
+    beforeSha256: details.beforeSha256,
+    afterSha256: details.afterSha256,
+  };
 }
 
 interface PatchDetails extends Record<string, unknown> {

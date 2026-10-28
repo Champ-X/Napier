@@ -1,17 +1,25 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type {
-  JsonValue,
-  WorkspacePatchDiagnosticsDetails,
-  WriteLinkedTestVerificationDetails,
-} from "@napier/contracts";
+import type { JsonValue } from "@napier/contracts";
 import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { WorkspacePatchInputError } from "./workspace-patch-input-error.js";
 import { WorkspacePatchRecoveryCapsules } from "./workspace-patch-recovery-capsule.js";
+import { formatWorkspacePatchResult } from "./workspace-patch-result.js";
+import { WorkspacePatchResultCapsules } from "./workspace-patch-result-capsule.js";
 import type {
   WorkspacePatchInput,
   WorkspacePatchResult,
+  WorkspacePatchObservationState,
+  WorkspacePatchObservation,
+  WorkspacePatchObserver,
+  WorkspacePatchToolDetails,
+} from "./workspace-patch-model.js";
+export type {
+  WorkspacePatchObservationState,
+  WorkspacePatchObservation,
+  WorkspacePatchObserver,
+  WorkspacePatchToolDetails,
 } from "./workspace-patch-model.js";
 import {
   defineToolProgress,
@@ -67,44 +75,6 @@ const applyPatchSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export interface WorkspacePatchObservationState {
-  fileSha256: string;
-  opaque: unknown;
-}
-
-export interface WorkspacePatchObservation {
-  summary: string;
-  details?: WorkspacePatchDiagnosticsDetails;
-  tests?: WriteLinkedTestVerificationDetails;
-}
-
-export interface WorkspacePatchObserver {
-  supports(path: string): boolean;
-  observeBefore(input: {
-    path: string;
-    expectedSha256: string;
-    signal?: AbortSignal;
-  }): Promise<WorkspacePatchObservationState>;
-  observeAfter(input: {
-    path: string;
-    expectedSha256: string;
-    before?: WorkspacePatchObservationState;
-    signal?: AbortSignal;
-  }): Promise<WorkspacePatchObservation>;
-}
-
-export interface WorkspacePatchToolDetails extends Omit<
-  WorkspacePatchResult,
-  "path"
-> {
-  kind: "napier.workspace-patch";
-  schemaVersion: 1;
-  diagnostics?: WorkspacePatchDiagnosticsDetails;
-  tests?: WriteLinkedTestVerificationDetails;
-  resultSha256: string;
-  recoveryCapsuleSha256?: string;
-}
-
 export interface WorkspacePatchToolOptions {
   workspaceRoot: string;
   dataRoot: string;
@@ -131,6 +101,7 @@ export function createWorkspacePatchTool(
   options: WorkspacePatchToolOptions,
 ): AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> {
   const recoveryCapsules = new WorkspacePatchRecoveryCapsules(options.dataRoot);
+  const resultCapsules = new WorkspacePatchResultCapsules(options.dataRoot);
   const tool: AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> = {
     name: "apply_patch",
     label: "Apply patch",
@@ -185,37 +156,15 @@ export function createWorkspacePatchTool(
         }
       }
 
-      const details = workspacePatchToolDetails(
+      const response = formatWorkspacePatchResult(
         result,
-        observation?.details,
-        observation?.tests,
+        observation,
         await recoveryCapsules
           .put(options.workspaceRoot, toolCallId, rawInput, result)
           .catch(() => undefined),
       );
-      return {
-        content: [
-          {
-            type: "text",
-            text: [
-              `${result.operation === "create" ? "Created" : "Updated"} ${result.path} atomically.`,
-              `Before SHA-256: ${result.beforeSha256 ?? "absent"}`,
-              `After SHA-256: ${result.afterSha256}`,
-              `Bytes: ${result.beforeBytes} -> ${result.afterBytes}`,
-              `Edits: ${result.editCount}`,
-              ...(result.createdParentDirectoryCount !== undefined &&
-              result.createdParentDirectorySetSha256
-                ? [
-                    `Created parent directories: ${result.createdParentDirectoryCount}`,
-                    `Created parent directory set SHA-256: ${result.createdParentDirectorySetSha256}`,
-                  ]
-                : []),
-              ...(observation ? ["", observation.summary] : []),
-            ].join("\n"),
-          },
-        ],
-        details,
-      };
+      await resultCapsules.put(toolCallId, response).catch(() => undefined);
+      return response;
     },
   };
   return defineToolProgress(tool, {
@@ -295,43 +244,6 @@ export function workspacePatchToolOutputLedgerProjection(
     outputRedacted: true,
     ...(resultSha256 ? { resultSha256 } : {}),
     ...(afterSha256 ? { afterSha256 } : {}),
-  };
-}
-
-function workspacePatchToolDetails(
-  result: WorkspacePatchResult,
-  diagnostics?: WorkspacePatchDiagnosticsDetails,
-  tests?: WriteLinkedTestVerificationDetails,
-  recoveryCapsuleSha256?: string,
-): WorkspacePatchToolDetails {
-  const base = {
-    kind: "napier.workspace-patch" as const,
-    schemaVersion: 1 as const,
-    pathSha256: result.pathSha256,
-    operation: result.operation,
-    beforeSha256: result.beforeSha256,
-    afterSha256: result.afterSha256,
-    beforeBytes: result.beforeBytes,
-    afterBytes: result.afterBytes,
-    editCount: result.editCount,
-    ...(result.createdParentDirectoryCount !== undefined
-      ? {
-          createdParentDirectoryCount: result.createdParentDirectoryCount,
-        }
-      : {}),
-    ...(result.createdParentDirectorySetSha256
-      ? {
-          createdParentDirectorySetSha256:
-            result.createdParentDirectorySetSha256,
-        }
-      : {}),
-    ...(diagnostics ? { diagnostics } : {}),
-    ...(tests ? { tests } : {}),
-    ...(recoveryCapsuleSha256 ? { recoveryCapsuleSha256 } : {}),
-  };
-  return {
-    ...base,
-    resultSha256: sha256(canonicalJson(base)),
   };
 }
 

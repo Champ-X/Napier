@@ -80,6 +80,14 @@
 - 相关 6 文件合计 38 个不同测试通过；Runtime typecheck、build:compile、diff check 通过。操作观测独立职责提取后将 automatic-recovery 行数预算从 807 下调为 710，架构仍为原有 11 项；公开 API 仍为 1897/1896 与 compatibility digest 不匹配。完整 Runtime build 被 release source manifest 不匹配拦截，未重写旧 manifest，也不将编译通过称为发布验收。
 - G04 仍需：确认未执行的操作自动继续、未结算写操作的对账、结算后响应丢失的完整结果复用、答案/审批 continuation 幂等衔接，以及统一恢复操作区。该切片不代表 G04 或全目标完成。
 
+### 后续推进：G04 结算后的响应丢失
+
+- 上一轮为 **progress**：`b31d9d9a` 保存已落账补丁对账切片，本轮已现场核对，未 push。继续补齐同一 G04 矩阵，没有缩减其他目标。
+- 补丁返回前复用私有胶囊存储保存精确结果，用 operation journal 已有的 effectSha256 寻址。响应尚未落账时，校验调用、完整结果、路径/input 绑定及当前文件，再继承结果事实进入恢复上下文。不会补造旧 tool.completed，不扩大通用 resultReplay 权限，仍沿用原 safe_read_only 策略。
+- 当前 10 个真实进程故障场景通过：终态已落账与结算后响应丢失均能继续，文件内容/inode/mtime 保持不变、0 重写；原版本在相同事件流上仍拒绝恢复。新增结果缺失和篡改均在模型请求前停止。外部模型请求 0；当前收据：[settled-patch-result-recovery-current-2026-10-29.json](docs/artifacts/settled-patch-result-recovery-current-2026-10-29.json)。保留前两份中间收据及其类型/导入环失败边界，详见 [operation-recovery.md](docs/operation-recovery.md)。
+- 本轮 5 文件 32 个不同用例通过；Runtime typecheck、build:compile、diff check 通过。修正新增类型问题、文件职责与导入环后，架构检查回到原 11 项，公开 API 仍为原 1897/1896 与 compatibility digest 不匹配；未提高预算，未重写发布 manifest。
+- G04 下一步仍是未执行/未结算操作的对账、答案/审批 continuation 幂等及恢复操作区；写权限策略未扩展。G01–G07 总目标继续保持 active，不以该局部通过代替整体验收。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -223,7 +231,7 @@
 **实施任务**
 
 - [ ] 基于现有 operation 记录区分：尚未执行、已确认完成、结果待对账、不可自动重放。
-- [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态与私有绑定齐备时，重查后置条件并继续原有只读恢复；8 场景进程故障证据已留存，其他断点仍待完成。）
+- [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态或精确结算结果与私有绑定齐备时，重查后置条件并继续原有只读恢复；当前 10 场景进程故障证据已留存，未执行/未结算等断点仍待完成。）
 - [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。
 - [ ] 对环境漂移、权限变化、证据缺失和不可对账操作保留明确停止原因。
 - [ ] 将恢复建议与用户操作区接通，说明保留了什么、从哪里继续、哪些结果仍不确定。

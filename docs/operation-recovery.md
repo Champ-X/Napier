@@ -1,37 +1,43 @@
 # 操作级恢复：已结算补丁切片
 
-2026-10-29。当前实现只覆盖已结算且有 `tool.completed` 收据的 `apply_patch`，G04 整体验收仍未完成。
+2026-10-29。当前实现覆盖已结算的 `apply_patch`：可继承 `tool.completed` 收据，或在响应丢失时读取与结算摘要一致的私有精确结果，G04 整体验收仍未完成。
 
 ## 行为与证据链
 
-旧评估器把本轮出现的任何写工具都列为自动恢复阻断原因。当前评估器保留历史写调用统计，但对满足以下条件的补丁允许进入恢复前检查：唯一调用身份、合法 execution authority 各阶段、已越过 effect boundary、成功结算、匹配的终态、完整性正确的补丁结果及私有胶囊引用。`eligible` 是调度资格，不等于文件已经重新检查或目标已验收。
+旧评估器把本轮出现的任何写工具都列为自动恢复阻断原因。当前评估器保留历史写调用统计，但对满足以下条件的补丁允许进入恢复前检查：唯一调用身份、合法 execution authority 各阶段、已越过 effect boundary、成功结算，以及匹配的终态或可按结算 effectSha256 读取的精确结果。恢复前还必须验证结果完整性和私有路径绑定。`eligible` 是调度资格，不等于文件已经重新检查或目标已验收。
 
-补丁工具使用已有 `LocalPrivateCapsuleStore` 保存最小路径绑定。胶囊包含调用/input 身份、真实工作区根摘要、规范化路径及前后文件摘要；账本只保留胶囊摘要，不公开私有路径或补丁内容。存储限制为 512 个对象、16 KiB/对象、8 MiB 总量。存储不可用时，写入仍按真实结果返回，但不会获得此自动恢复资格；不删除既有胶囊腾空间。
+补丁工具使用已有 `LocalPrivateCapsuleStore` 保存最小路径绑定。胶囊包含调用/input 身份、真实工作区根摘要、规范化路径及前后文件摘要；账本只保留胶囊摘要，不公开私有路径或补丁内容。存储限制为 512 个对象、16 KiB/对象、8 MiB 总量。路径绑定存储不可用时，写入仍按真实结果返回，但不能通过恢复检查；不删除既有胶囊腾空间。
+
+补丁返回前还保存完整结果（文本与 details），以既有 `toolExecutionResultEffectSha256` 为地址，限制为 512 个对象、512 KiB/对象、32 MiB 总量。该摘要覆盖 callId、成功/失败、输出文本及完整结果，恢复时必须与日志中的成功结算完全一致。无需反查路径或扫描文件。结果缺失、调用身份不匹配或篡改时停止。旧终态证据仍可使用原路径绑定，不强制要求新结果格式。
 
 自动恢复在创建新 Run 和调用模型前重新检查当前操作记录及文件。它绑定胶囊与调用、输入、工作区、前后摘要，并对同路径的多次补丁核对前后版本链，只比较最后版本的当前文件。检查拒绝缺失、内容漂移、符号链接叶节点和父目录、工作区变化、证据缺失或篡改。descriptor 读取有界，并核对 inode/dev、size、mtime/ctime 和真实路径。最多检查 128 个补丁，每个当前文件最多 256 KiB；不扫描工作区。
+
+结算后丢失响应时，恢复只继承原结果中的补丁事实和结果摘要，并保留私有完整结果；不会向旧 Run 补造 `tool.completed`。通用工具的 resultReplay 权限没有扩展。这是恢复上下文的结果继承，不是给写工具重新发放执行权。
 
 恢复沿用原有 `safe_read_only` 策略：保留已完成写入的证据，继续后续只读工作，没有新增写权限。提示明确保留了哪些操作，文件后置条件只在恢复前观察，不表示整个目标通过验收。历史统计字段 `toolCalls.unsafe` / `unsafeToolNames` 仍表示曾执行过的写工具，不被改写为 readOnly；是否阻断由 operation 证据决定。
 
 ## 进程故障验收
 
-复现：`node scripts/check-settled-patch-recovery.mjs /tmp/napier-patch-recovery-new.json`。输出以独占创建写入，不覆盖历史收据。当前收据为 [settled-patch-recovery-2026-10-29.json](artifacts/settled-patch-recovery-2026-10-29.json)。测试使用真实 Runtime、SQLite、文件写入和独立子进程；在指定检查点 `process.exit(73)`，不执行正常清理。模型为显式 faux provider，外部模型请求为 0。
+复现：`node scripts/check-settled-patch-recovery.mjs /tmp/napier-patch-recovery-new.json`。输出以独占创建写入，不覆盖历史收据。当前 10 场景收据为 [settled-patch-result-recovery-current-2026-10-29.json](artifacts/settled-patch-result-recovery-current-2026-10-29.json)，绑定 16 个相关源码与复现文件。首切片的 [8 场景收据](artifacts/settled-patch-recovery-2026-10-29.json) 保持原样。测试使用真实 Runtime、SQLite、文件写入和独立子进程；在指定检查点 `process.exit(73)`，不执行正常清理。模型为显式 faux provider，外部模型请求为 0。
 
 | 断点或变化 | 当前结果 | 后续缺口 |
 | --- | --- | --- |
 | 写入、操作结算与 tool.completed 均已落账，下一步未启动 | 新 Run 继续；文件内容、inode、mtime 均未变化，0 次重写 | 后续需要写操作的任务仍受现有只读策略限制 |
-| claim 后文件内容变化、文件消失、符号链接替换、私有胶囊缺失 | 新 Run 和模型请求前停止 | 用户操作区的统一说明仍待接通 |
+| claim 后文件内容变化、文件消失、符号链接替换、路径绑定缺失、结果缺失或篡改 | 新 Run 和模型请求前停止 | 用户操作区的统一说明仍待接通 |
 | effect boundary 前退出 | 文件不存在，保持 interrupted，不自动重放 | 尚未实现确认未执行后自动继续 |
 | 文件已写入但操作尚未结算 | 文件保留，failed / blocked_safety，不自动重放 | 不确定操作的后置条件对账适配仍待实现 |
-| 操作已结算但 tool.completed 未落账 | 文件保留，保持 interrupted | 尚需接入可完整复用的结果捕获 |
+| 操作已结算但 tool.completed 未落账 | 按结算摘要继承精确结果，重查文件并继续；旧 Run 没有补造响应，0 次重写 | 仍沿用只读恢复权限 |
 
-固定 `caf37eaf5e5a1ab1fae55b4a644d2ee460ed54d1` 的旧评估器，对同一实际事件流返回 `eligible: false / unsafe_tool_effect`；当前实现成功续跑。保留场景单次观察的重启为 35.85 ms、continuation 为 160.37 ms（不含策略 backoff，使用 fixture 模型）；漂移检查为 2.17–7.26 ms。它们是本地确定性采样，不是生产恢复率或真实模型性能改善声明。
+固定 `caf37eaf5e5a1ab1fae55b4a644d2ee460ed54d1` 的旧评估器，对两个同一实际事件流分别返回 unsafe_tool_effect，以及 unresolved_tool_call + unsafe_tool_effect。当前两种已结算断点均成功续跑；文件内容、inode、mtime 均未变。当前单次重启/continuation 为 28.68/131.73 ms（终态已落账）和 59.72/105.34 ms（响应丢失）；不含策略 backoff，使用 fixture 模型。它们是本地确定性采样，不是生产恢复率或真实模型性能改善声明。
+
+本轮两份中间收据也保留：[初次运行](artifacts/settled-patch-result-recovery-2026-10-29.json) 的进程测试通过，但随后类型检查发现结果 usage 类型不兼容；[第二次运行](artifacts/settled-patch-result-recovery-verified-2026-10-29.json) 的进程测试和编译通过，但架构检查发现类型导入环。当前实现已限制补丁结果元数据并将相关类型归入 model，消除这些新增问题。中间收据仅证明其各自源码快照的进程测试，不是完整验收结论。
 
 故障注入还发现并修复了旧恢复代码漏传 `failureDefinitionSha256` 的问题：真实工具的 descriptor hash 因此不匹配，重启无法写入 effect_indeterminate 记录。现在保留该字段，并仍将不确定副作用明确停止；没有把它改为成功。
 
 ## 验证与剩余边界
 
-- 6 个相关测试文件合计 38 个不同用例通过（分次运行）；最终故障收据的 8 个场景独立通过。补充覆盖同文件连续版本、规范化别名、中途外部改动、胶囊绑定/篡改和父目录符号链接。
+- 首切片 6 文件 38 用例记录保留。本轮 5 文件共 32 个不同用例通过：10 个进程断点场景，以及补丁工具、版本链/路径对账、自动恢复和通用结果重放策略的 22 个回归；两个检查点均没有重复写入，结果缺失和篡改均在模型请求前停止。
 - Runtime typecheck、`build:compile`、`git diff --check` 通过。操作观测职责从自动恢复评估/校验中提取，行数预算随实际代码从 807 下调为 710；架构检查仍是原有 11 项失败，没有提高预算。
-- `npm run build -w @napier/runtime` 的 release source manifest 校验失败；未重写历史 manifest。编译成功不代表这个发布检查通过。
+- 前一切片执行 `npm run build -w @napier/runtime` 的 release source manifest 校验失败，本轮未重复该历史发布门槛；未重写历史 manifest。编译成功不代表这个发布检查通过。
 - 当前公开 API 检查仍为 Runtime root 1897/1896 及 compatibility digest 不匹配，与本轮开始前记录一致；没有新增 root exports。
 - saved answer / approval 与 continuation 的幂等衔接、写权限策略、未结算操作对账及恢复操作区仍未验收。没有宣称外部系统普遍 exactly-once。

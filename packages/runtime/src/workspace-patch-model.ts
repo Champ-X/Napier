@@ -1,3 +1,8 @@
+import type {
+  WorkspacePatchDiagnosticsDetails,
+  WriteLinkedTestVerificationDetails,
+} from "@napier/contracts";
+
 export type WorkspacePatchInput =
   | {
       operation: "create";
@@ -45,4 +50,42 @@ export interface WorkspacePatchResult {
   editCount: number;
   createdParentDirectoryCount?: number;
   createdParentDirectorySetSha256?: string;
+}
+
+export interface WorkspacePatchObservationState {
+  fileSha256: string;
+  opaque: unknown;
+}
+
+export interface WorkspacePatchObservation {
+  summary: string;
+  details?: WorkspacePatchDiagnosticsDetails;
+  tests?: WriteLinkedTestVerificationDetails;
+}
+
+export interface WorkspacePatchObserver {
+  supports(path: string): boolean;
+  observeBefore(input: {
+    path: string;
+    expectedSha256: string;
+    signal?: AbortSignal;
+  }): Promise<WorkspacePatchObservationState>;
+  observeAfter(input: {
+    path: string;
+    expectedSha256: string;
+    before?: WorkspacePatchObservationState;
+    signal?: AbortSignal;
+  }): Promise<WorkspacePatchObservation>;
+}
+
+export interface WorkspacePatchToolDetails extends Omit<
+  WorkspacePatchResult,
+  "path"
+> {
+  kind: "napier.workspace-patch";
+  schemaVersion: 1;
+  diagnostics?: WorkspacePatchDiagnosticsDetails;
+  tests?: WriteLinkedTestVerificationDetails;
+  resultSha256: string;
+  recoveryCapsuleSha256?: string;
 }

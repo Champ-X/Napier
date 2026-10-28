@@ -27,7 +27,7 @@ import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import { isWorkflowRunSource } from "./workflow-node-execution.js";
 import { inheritedHarnessPolicyOptions } from "./harness-run-policy.js";
 import { assessAutomaticRecovery } from "./automatic-recovery.js";
-import { settledPatchRecoveryEvidence } from "./run-patch-recovery-evidence.js";
+import { loadSettledPatchRecoveryEvidence } from "./workspace-patch-result-recovery.js";
 import { reconcileSettledWorkspacePatches } from "./workspace-patch-reconciliation.js";
 
 type RunPrompt = (options: RunPromptOptions) => Promise<RunRecord>;
@@ -173,7 +173,10 @@ export async function resumeInterruptedAgentRunAutomatically(
   });
   if (!fresh.eligible)
     throw new Error("Automatic recovery operation evidence changed");
-  const patches = settledPatchRecoveryEvidence(events);
+  const { patches, retainedResults } = await loadSettledPatchRecoveryEvidence(
+    host.store.dataRoot,
+    events,
+  );
   await reconcileSettledWorkspacePatches(
     host.store.workspaceRoot,
     host.store.dataRoot,
@@ -190,7 +193,7 @@ export async function resumeInterruptedAgentRunAutomatically(
         "automatic",
       ) +
       (patches.length
-        ? `\n${patches.length} settled patch operation(s) were retained. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify(patches)}</retained-patch-evidence>`
+        ? `\n${patches.length} settled patch operation(s) were retained. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify({ patches, retainedResults })}</retained-patch-evidence>`
         : ""),
     model: interrupted.configuration.model,
     agentRevision: interrupted.configuration.agentRevision,

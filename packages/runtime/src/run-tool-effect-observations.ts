@@ -1,6 +1,6 @@
 import type { JsonValue, RunEvent } from "@napier/contracts";
 import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
-import { settledPatchRecoveryEvidence } from "./run-patch-recovery-evidence.js";
+import { settledPatchRecoveryCandidates } from "./run-patch-recovery-evidence.js";
 
 const SAFE_READ_ONLY_TOOLS = new Set([
   ...CORE_STATELESS_READ_TOOL_NAMES,
@@ -46,7 +46,7 @@ export function collectRunToolEffectObservations(
   events: RunEvent[],
 ): RunToolEffectObservation[] {
   const recoverablePatches = new Set(
-    settledPatchRecoveryEvidence(events).map((patch) => patch.startedSeq),
+    settledPatchRecoveryCandidates(events).map((patch) => patch.startedSeq),
   );
   const terminals = new Map<string, RunEvent[]>();
   for (const event of events) {
@@ -80,7 +80,9 @@ export function collectRunToolEffectObservations(
       {
         toolName: normalizeToolName(toolName),
         effect,
-        unresolved: !callId || matches.length !== 1,
+        unresolved:
+          !callId ||
+          (matches.length !== 1 && !recoverablePatches.has(event.seq)),
         ...(recoverablePatches.has(event.seq)
           ? { requiresPostconditionCheck: true as const }
           : {}),
