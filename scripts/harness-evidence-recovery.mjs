@@ -95,8 +95,8 @@ export function evaluateRecoveredCampaignQuality(reports, protocol, originalJobs
   const unexpectedBlockers = rawQuality.evidenceBlockers.filter((reason) => reason !== evidenceReason(baseline));
   const newTrial = retained.filter((r) => r.caseId === protocol.caseId && r.trial === protocol.supplementalTrial);
   const supplementalQuality = evaluateCampaignQuality(newTrial, { minimumCases: 1, minimumTrials: 1 });
-  const supplementalRequired = !supplementalQuality.promotionReady;
-  const promotionReady = qualificationQuality.promotionReady && !supplementalRequired
+  const supplementalRequired = !supplementalQuality.qualityGatePassed;
+  const qualityGatePassed = qualificationQuality.qualityGatePassed && !supplementalRequired
     && rawQuality.regressions.length === 0 && unexpectedBlockers.length === 0;
   return { kind: "napier.recovered-campaign-quality", schemaVersion: 1,
     recoveryProtocolSha256: protocol.contentSha256, required,
@@ -105,6 +105,7 @@ export function evaluateRecoveredCampaignQuality(reports, protocol, originalJobs
       caseId: r.caseId, trial: r.trial, arm: r.arm, status: r.status, taskSuccess: r.taskSuccess,
       reportDigest: hash(r) })),
     supplementalTrialRequired: supplementalRequired, supplementalTrial: protocol.supplementalTrial,
-    originalCampaignPromotionReady: rawQuality.promotionReady, promotionReady,
+    originalCampaignPromotionReady: rawQuality.promotionReady, qualityGatePassed, promotionReady: false,
+    claimScope: "scoped_quality_gate_only",
     scope: protocol.scope };
 }

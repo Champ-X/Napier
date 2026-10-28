@@ -34,7 +34,7 @@ test("a failed baseline Run cannot hide regression of its passing code", () => {
   assert.ok(
     result.regressions.includes("case_one:0: external behavior regressed"),
   );
-  assert.equal(result.promotionReady, false);
+  assert.equal(result.qualityGatePassed, false);
 });
 test.each([1, null])(
   "failed or incomplete candidate grading cannot qualify when both Runs fail: %s",
@@ -54,7 +54,7 @@ test.each([1, null])(
       ],
       { minimumCases: 1, minimumTrials: 1 },
     );
-    assert.equal(result.promotionReady, false);
+    assert.equal(result.qualityGatePassed, false);
     assert.ok(
       result.evidenceBlockers.includes(
         "case_one:0: candidate external behavior did not pass",
@@ -84,7 +84,7 @@ test("component probes cannot qualify as independent campaign observations", () 
     evaluateCampaignQuality(
       [observation("baseline"), observation("candidate")],
       { minimumCases: 1, minimumTrials: 1 },
-    ).promotionReady,
+    ).qualityGatePassed,
     true,
   );
   const result = evaluateCampaignQuality(
@@ -94,7 +94,7 @@ test("component probes cannot qualify as independent campaign observations", () 
     ],
     { minimumCases: 1, minimumTrials: 1 },
   );
-  assert.equal(result.promotionReady, false);
+  assert.equal(result.qualityGatePassed, false);
 });
 
 test("paired spending policies must match even when neither arm exhausts its funds", () => {
@@ -149,7 +149,7 @@ test("paired spending policies must match even when neither arm exhausts its fun
     },
   );
   assert.equal(extended.comparablePairs, 2);
-  assert.equal(extended.promotionReady, true);
+  assert.equal(extended.qualityGatePassed, true);
 });
 
 test("edit format evidence uses invocation capsules and leaves uncaptured writes unknown", async () => {
@@ -252,7 +252,7 @@ test("does not pool different Kernel policy adapters behind the same Runtime sna
     minimumCases: 1,
     minimumTrials: 2,
   });
-  assert.equal(gate.promotionReady, false);
+  assert.equal(gate.qualityGatePassed, false);
   assert.ok(
     gate.blockers.some((reason) =>
       reason.includes("source or profile changed"),
@@ -261,7 +261,7 @@ test("does not pool different Kernel policy adapters behind the same Runtime sna
   reports[3].experimentalTurnPipeline = pipeline("first");
   assert.equal(
     evaluateCampaignQuality(reports, { minimumCases: 1, minimumTrials: 2 })
-      .promotionReady,
+      .qualityGatePassed,
     true,
   );
 });
@@ -306,7 +306,7 @@ test("cost improvements cannot conceal a task regression or changed runtime", ()
     observation("candidate", { sourceStable: false }),
   ]);
   assert.equal(invalid.comparablePairs, 0);
-  assert.equal(invalid.promotionReady, false);
+  assert.equal(invalid.qualityGatePassed, false);
   assert.equal(
     evaluateCampaignQuality([
       baseline,
@@ -366,7 +366,7 @@ test("API budget limits bind comparisons and exhaustion never hides adverse outc
       },
     ]);
     assert.equal(result.comparablePairs, 0);
-    assert.equal(result.promotionReady, false);
+    assert.equal(result.qualityGatePassed, false);
     assert.equal(result.verdict, "regressed");
     assert.ok(result.blockers.some((b) => b.includes("API request budget")));
     assert.ok(result.regressions.some((b) => b.includes("scope")));
@@ -384,14 +384,14 @@ test("API budget limits bind comparisons and exhaustion never hides adverse outc
     evaluateCampaignQuality([baseline, candidate, ...subsequentPair(2)], {
       minimumCases: 2,
       minimumTrials: 1,
-    }).promotionReady,
+    }).qualityGatePassed,
     true,
   );
   assert.equal(
     evaluateCampaignQuality([baseline, candidate, ...subsequentPair(3)], {
       minimumCases: 2,
       minimumTrials: 1,
-    }).promotionReady,
+    }).qualityGatePassed,
     false,
   );
 });
@@ -411,7 +411,7 @@ test("environment failures and unequal budgets cannot qualify or hide scope viol
       observation("candidate", patch),
     ]);
     assert.equal(result.comparablePairs, 0);
-    assert.equal(result.promotionReady, false);
+    assert.equal(result.qualityGatePassed, false);
   }
   const unavailable = observation("candidate", {
     environmentEvidence: undefined,

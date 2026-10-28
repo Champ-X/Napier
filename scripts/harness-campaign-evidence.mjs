@@ -194,7 +194,7 @@ export function evaluateCampaignQuality(
       );
   const content = {
     kind: "napier.harness-campaign-quality",
-    schemaVersion: 1,
+    schemaVersion: 2,
     required: { minimumCases, minimumTrials },
     comparablePairs,
     cases: counts.size,
@@ -206,7 +206,10 @@ export function evaluateCampaignQuality(
       : blockers.length
         ? "insufficient_evidence"
         : "passed_scoped_gate",
-    promotionReady: regressions.length === 0 && blockers.length === 0,
+    qualityGatePassed: regressions.length === 0 && blockers.length === 0,
+    claimScope: "scoped_quality_gate_only",
+    // Live promotion additionally requires the preregistered campaign analysis.
+    promotionReady: false,
   };
   return { ...content, contentSha256: hash(JSON.stringify(content)) };
 }

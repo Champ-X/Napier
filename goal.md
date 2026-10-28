@@ -30,9 +30,9 @@
 
 ### 实施进度（2026-10-29）
 
-- 当前基线仍为 `main @ 171e4752`；保留已有 Web、设计文档和启动脚本改动。服务端 `8788` 与 Web `5173` 均有监听进程，尚未作为功能验收证据。
+- 启动时基线为 `main @ 171e4752`；保留已有 Web、设计文档和启动脚本改动。启动核对时服务端 `8788` 与 Web `5173` 均有监听进程，尚未作为功能验收证据。
 - 重新执行架构和公开 API 检查，仍为上述 11 项架构失败及 Runtime root 1897/1896、compatibility digest 不匹配；不提高预算或重写旧证据消除失败。
-- 从 G02 开始：当前源码确认 `passed && delta !== 0` 仍存在。先修方向判断、预声明统计协议和证据分级，再让后续优化复用；G01、G03–G07 的全部目标保留。
+- 从 G02 开始：启动核对时源码确认 `passed && delta !== 0` 存在。先修方向判断、预声明统计协议和证据分级，再让后续优化复用；G01、G03–G07 的全部目标保留。
 - 验收记录将逐项补充当前命令、结果与适用边界；已有历史 fixture 不作为 live-model 质量提升证据。
 - G02 协议切片已实现：指标规则入实验摘要；按 case / task family 的 paired cluster bootstrap（多指标区间校正）；方向正确的 improved / non_inferior / regressed / inconclusive；AB/BA 执行与顺序校验；失败单元留存；任务族报告与证据分级。实现说明见 [harness-experiment-analysis.md](docs/harness-experiment-analysis.md)。
 - 验证：`npm run test -w @napier/harness-eval` 28/28 通过（含 180 个真实 Runtime 调用、fixture provider，非真实模型质量实验）；随后增加边界浮点用例并拆分协议校验职责，`npm exec -w @napier/harness-eval -- vitest run test/harness-experiment-analysis.test.ts --maxWorkers=1` 17/17 通过；Contracts/Harness Eval build、Runtime typecheck、`git diff --check` 通过。
@@ -44,6 +44,15 @@
 - 已通过现有 `buildFailureCase` 将真实失败 `run_cef83d950d1c416096e2` 导出到 `benchmarks/harness-failures/bounded-queue-false-completion-v1`，原始报告 SHA-256 与历史证据一致。保留初始 fixture 和历史失败 observed 两份不同快照，加入 `harness-failure-regression-suite-v1.json`，保留原 case ID，不充当新增独立任务或 holdout。
 - 当前离线重放确认：保留的模型输出被原 grader 判失败，现有 reference 被同一 grader 判通过。`harness-retained-failure`、`harness-suite`、`harness-paired-schedule`、`harness-paired-suite-cli`、`harness-campaign-evidence` 共 5 文件 41 测试通过；未调用付费模型，未把历史输出重放当作当前模型改进证据。
 - G02 下一步：将新分析协议/证据等级接入现有 `run-harness-optimization-suite.mjs` 和 `evaluateCampaignQuality`（目前后者仍只有原 scoped quality gate）；补齐预声明统计与实际 campaign 报告绑定。G01、G03–G07 尚未验收。
+
+### 后续推进：G02 campaign 接入
+
+- 上一轮归类为 **progress**：已提交 `32f295e4`、`93c1081e`，本轮开始时现场确认存在且未 push。
+- 现有 suite 新增 `--analysis-protocol`：在模型请求前冻结输入、模型/profile、分析规则、评测器源码摘要及既有 AB/BA 调度。真实 campaign 子进程在模型调用前校验调度位置与输入/profile/model，报告绑定原计划；保留缺失、失败和漂移，禁止把历史报告补贴标签当作预声明实验。
+- `evaluateCampaignQuality` 升为 schema v2，原门槛改名 `qualityGatePassed`，单独不再给出推广资格。只有现有质量门槛与新统计/证据/分区校验同时通过的 suite 才能 `promotionReady`；fixture、未声明协议和包含 tuning 分区的结果均不能用于 live-quality claim。原 convergence/recovery 继续使用样本门槛判断收集进度，不增加审批流程。
+- 新 report 使用 Runtime 共享投影记录 interventionCount；按任务族报告成功率、每成功任务的已对账模型 USD 用量成本、P95 时间、干预率和独立验收失败的 completed Run 比例。未知成本不填零，不将模型用量视为外部账单。
+- 验证：8 文件 79 测试通过，包括实际 suite CLI / 文件系统 / 子进程协议的 30 case × 3 trial × 2 arm（180 个显式模拟子运行，0 模型请求）；包含绑定篡改、评测器漂移、旧报告、不平衡顺序、缺失数据、真实失败形状、tuning 分区与 fixture 冒充的回归。Harness Eval build、3 个相关 release 测试、旧收据当前 CLI 校验、`git diff --check` 通过。架构检查仍为原 11 项，无新增超限。
+- 预声明规则示例：[harness-analysis-protocol-v1.json](benchmarks/harness-analysis-protocol-v1.json)。这是未执行的规则模板，不是 live-quality 改进证据。G02 仍需与 G07 一起固定真实任务族的 tuning/regression/未参与调参划分；当前不能把已有调参任务重新命名为 holdout。继续推进 G01 共享任务事实投影。
 
 ## 2. 保留的基础与实施原则
 
@@ -138,7 +147,7 @@
 - [x] 为主指标声明单位、方向、非劣边界和最小有效差异；在看结果前确定规则。
 - [x] 增加按 case / task family 聚类的 paired bootstrap 区间，避免把同任务重复运行视为独立任务。
 - [x] 将固定 baseline→candidate 顺序改为记录在案的平衡 AB/BA 顺序，控制环境与缓存影响。（通用 executor 已修复；真实 campaign 复用已存在的 paired schedule，并通过当前 CLI/调度测试。顺序平衡本身不证明缓存因果。）
-- [ ] 显式区分 contract_fixture、deterministic_integration、live_model、production_task，绑定可支持的结论范围。
+- [x] 显式区分 contract_fixture、deterministic_integration、live_model、production_task，绑定可支持的结论范围。（通用实验与现有真实 campaign 均接入；旧报告仅保留其历史/描述性范围。）
 - [ ] 保留失败与缺失结果，不以重试后的最佳结果替换；划分调参、回归与未参与调参的任务族。
 - [x] 将真实使用中的失败案例纳入现有 Casebook / campaign，而非另建重复系统。（保留异步队列真实失败，现有 exporter / suite 可加载，历史失败与 reference 均经当前 grader 重放。）
 

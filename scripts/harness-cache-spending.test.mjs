@@ -242,7 +242,7 @@ test("accounting precision may change between pairs, never between arms or insid
     evaluateCampaignQuality([...old, ...current], {
       minimumCases: 2,
       minimumTrials: 1,
-    }).promotionReady,
+    }).qualityGatePassed,
     true,
   );
   old[1].spendingBudget = spending(FLASH_CACHE_SPENDING_POLICY);
@@ -251,5 +251,5 @@ test("accounting precision may change between pairs, never between arms or insid
     minimumTrials: 1,
   });
   assert.equal(unequal.comparablePairs, 0);
-  assert.equal(unequal.promotionReady, false);
+  assert.equal(unequal.qualityGatePassed, false);
 });

@@ -65,6 +65,8 @@ function buildReleaseEvidence(
       blockers.push("evidence_does_not_support_live_quality");
     if (!experiment.cases.some((item) => item.partition === "holdout"))
       blockers.push("untuned_task_family_evidence_missing");
+    if (experiment.cases.some((item) => item.partition === "tuning"))
+      blockers.push("tuning_partition_is_not_qualification");
     if (
       bindings.some(
         (binding) =>

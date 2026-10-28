@@ -46,7 +46,7 @@ export function assessCampaignConvergence({ jobs, statuses, reports, required })
     // An unstarted counterpart can still complete a partial pair. Treat it
     // optimistically; the normal admission/evidence guards remain authoritative.
     const possible = pair.every((arm) => arm.status === "not_started" || arm.report)
-      && (completed.length < 2 || pairQuality.promotionReady);
+      && (completed.length < 2 || pairQuality.qualityGatePassed);
     if (possible) {
       optimisticComparablePairs++;
       cases.set(caseId, cases.get(caseId) + 1);
@@ -62,10 +62,10 @@ export function assessCampaignConvergence({ jobs, statuses, reports, required })
   const persistentBlockers = [...fixedQuality.evidenceBlockers, ...fixedQuality.regressions];
   const unreachable = persistentBlockers.length > 0 || irreparablePairs.length > 0
     || optimisticQualifiedCases < quality.required.minimumCases;
-  const decision = quality.promotionReady ? "gate_already_passed"
+  const decision = quality.qualityGatePassed ? "gate_already_passed"
     : unreachable ? "remediate_before_more_model_calls" : "remaining_schedule_can_still_qualify";
   return { kind: "napier.harness-campaign-convergence", schemaVersion: 1,
-    decision, allowQualificationDispatch: !unreachable && !quality.promotionReady,
+    decision, allowQualificationDispatch: !unreachable && !quality.qualityGatePassed,
     required: quality.required, currentQuality: quality, persistentBlockers, irreparablePairs,
     optimisticComparablePairs, optimisticQualifiedCases,
     schedulePositions: jobs.length, unstartedPositions: statuses.filter((s) => s.status === "not_started").length,
@@ -98,5 +98,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   await writeFile(output, JSON.stringify(assessment, null, 2) + "\n", { flag: "wx" });
   console.log(JSON.stringify({ decision: assessment.decision, optimisticComparablePairs: assessment.optimisticComparablePairs,
     optimisticQualifiedCases: assessment.optimisticQualifiedCases, unstartedPositions: assessment.unstartedPositions, modelRequests: 0 }));
-  if (!assessment.allowQualificationDispatch && !assessment.currentQuality.promotionReady) process.exitCode = 2;
+  if (!assessment.allowQualificationDispatch && !assessment.currentQuality.qualityGatePassed) process.exitCode = 2;
 }

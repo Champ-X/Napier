@@ -1,0 +1,58 @@
+{
+  "id": "napier-quality-cost-v1",
+  "modelRouteLock": {
+    "role": "default",
+    "servingModel": { "provider": "deepseek", "id": "deepseek-v4-flash" },
+    "fallbackSamples": "separate_stratum"
+  },
+  "primaryMetrics": ["task_success", "input_tokens"],
+  "guardrailMetrics": ["false_completion", "intervention_count", "duration_ms"],
+  "decisionRule": {
+    "minimumCases": 30,
+    "minimumSeedsPerCase": 3,
+    "primaryNonInferiorityMargin": 0,
+    "guardrailRegressionTolerance": 0
+  },
+  "analysis": {
+    "version": 1,
+    "evidenceKind": "live_model",
+    "order": "balanced_ab_ba",
+    "clusterBy": "task_family",
+    "confidenceLevel": 0.95,
+    "bootstrapSamples": 10000,
+    "bootstrapSeed": 20261029,
+    "minimumClusters": 10,
+    "metrics": {
+      "task_success": {
+        "unit": "fraction",
+        "direction": "higher",
+        "nonInferiorityMargin": 0,
+        "minimumEffectiveDifference": 0
+      },
+      "input_tokens": {
+        "unit": "tokens",
+        "direction": "lower",
+        "nonInferiorityMargin": 0,
+        "minimumEffectiveDifference": 100
+      },
+      "false_completion": {
+        "unit": "fraction",
+        "direction": "lower",
+        "nonInferiorityMargin": 0,
+        "minimumEffectiveDifference": 0
+      },
+      "intervention_count": {
+        "unit": "count",
+        "direction": "lower",
+        "nonInferiorityMargin": 0,
+        "minimumEffectiveDifference": 0
+      },
+      "duration_ms": {
+        "unit": "milliseconds",
+        "direction": "lower",
+        "nonInferiorityMargin": 0,
+        "minimumEffectiveDifference": 0
+      }
+    }
+  }
+}

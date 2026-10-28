@@ -86,10 +86,42 @@ retained `0.1.3` receipt untouched. To check that retained receipt:
 node scripts/create-harness-experiment-release-evidence.mjs --verify docs/artifacts/harness-experiment-release-evidence-0.1.3.json
 ```
 
-This protocol is part of G02. The existing real-model campaign already uses
-`harness-paired-schedule.mjs` for AB/BA dispatch and preserves stopped/missing
-cells. Its regression suite now includes a hash-verified historical false
-completion; see [retained failures](../benchmarks/harness-failures/README.md).
-Adapting campaign reports and claim eligibility to this statistical protocol
-remains an integration step. Passing contract tests or replaying historical
-output is not evidence of a current model-quality improvement.
+## Existing real-model campaign integration
+
+`run-harness-optimization-suite.mjs --analysis-protocol PATH` uses the same
+analysis engine, existing AB/BA scheduler, snapshot preparation, budget guards,
+independent grader and failure retention. The protocol file declares the model
+lock and metric rules; both arms must supply explicit profile files, and each
+suite case must declare `taskFamily` and `partition`. The suite freezes profiles,
+task inputs, rules, evaluator code digest and the complete schedule in `analysis-plan.json` before any
+child launches. Each child validates its address, input digests, model and profile
+before making model calls, then includes the plan binding in its report.
+
+The final `suite-result.json` includes the clustered analysis and original
+report/source/profile/environment/grader bindings. Every missing, failed or
+changed report remains visible. Recorded usage must reconcile before token/USD
+metrics are included; unreconciled data stays unknown. USD is observed model
+usage cost, not an independently verified external bill. Family reports include
+P95 time, intervention rate and completed-Run/failed-independent-outcome rate.
+
+`evaluateCampaignQuality` schema v2 names its existing 30-case/3-trial predicate
+`qualityGatePassed`. Its `promotionReady` is always false: the sample gate cannot
+replace predeclared statistics and evidence qualification. Convergence and
+missing-usage recovery still use the sample gate for collection decisions; they
+do not manufacture live-quality claims. The suite can promote only when both the
+old quality gate and the new bound analysis qualify. Tuning partitions may be
+reported but cannot qualify for promotion. Runs without a protocol
+remain useful descriptive evidence and cannot promote.
+
+[harness-analysis-protocol-v1.json](../benchmarks/harness-analysis-protocol-v1.json)
+is a conservative starting rule set: no quality/latency/intervention regression,
+more than 100 fewer input tokens, 30 cases × 3 trials, and at least 10 independent
+task families. It is not an executed experiment or a statement that any candidate
+passes. A new study must freeze its own suitable rules before observing results.
+Existing regression tasks cannot be relabelled as unseen holdout tasks merely to
+pass the gate.
+
+The regression suite includes a hash-verified historical false completion; see
+[retained failures](../benchmarks/harness-failures/README.md). Passing contract
+tests or replaying historical output is not evidence of a current model-quality
+improvement.

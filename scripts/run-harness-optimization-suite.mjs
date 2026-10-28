@@ -16,6 +16,8 @@ import {
   inventorySuiteTree,
 } from "./harness-suite.mjs";
 import { evaluateCampaignQuality } from "./harness-campaign-evidence.mjs";
+import { prepareCampaignAnalysis } from "./harness-campaign-analysis-plan.mjs";
+import { evaluateCampaignAnalysis } from "./harness-campaign-analysis.mjs";
 import {
   pairedSuiteJobs,
   executePairedSuiteJobs,
@@ -52,6 +54,7 @@ const { values } = parseArgs({
     "spending-budget": { type: "string" },
     "grader-mode": { type: "string", default: "host" },
     "grader-runtimes": { type: "string", default: "node" },
+    "analysis-protocol": { type: "string" },
   },
 });
 const limitOverrides = campaignLimitOverrides(values);
@@ -73,6 +76,15 @@ if (
 const trials = Number(values.trials),
   concurrency = Number(values.concurrency);
 const scheduleMode = values["schedule-mode"];
+if (
+  values["analysis-protocol"] &&
+  (scheduleMode !== "paired-stop" ||
+    !values["baseline-profile-file"] ||
+    !values["candidate-profile-file"])
+)
+  throw new Error(
+    "Analysis requires paired-stop and explicit baseline/candidate profile files",
+  );
 if (scheduleMode === "batch" && values["prioritize-case"].length)
   throw new Error("Case priority requires paired-stop scheduling");
 if (
@@ -156,6 +168,21 @@ const jobs =
           }),
         ),
       );
+const analysisPlan = values["analysis-protocol"]
+  ? await prepareCampaignAnalysis({
+      spec: JSON.parse(
+        await readFile(path.resolve(values["analysis-protocol"]), "utf8"),
+      ),
+      inputs,
+      jobs,
+      profiles,
+    })
+  : undefined;
+const analysisPlanPath = path.join(output, "analysis-plan.json");
+if (analysisPlan)
+  await writeFile(analysisPlanPath, JSON.stringify(analysisPlan, null, 2), {
+    flag: "wx",
+  });
 await writeFile(
   path.join(output, "schedule.json"),
   JSON.stringify(
@@ -175,6 +202,9 @@ await writeFile(
           }
         : {}),
       profiles,
+      ...(analysisPlan
+        ? { analysisPlanSha256: analysisPlan.contentSha256 }
+        : {}),
       apiRequestBudget: apiBudget.snapshot(),
       inputReceiptSha256: sha(JSON.stringify(inputs)),
       jobs,
@@ -236,6 +266,15 @@ const execute = async (job, signal) => {
     "--grader-runtimes",
     values["grader-runtimes"],
   ];
+  if (analysisPlan)
+    args.push(
+      "--analysis-plan",
+      analysisPlanPath,
+      "--analysis-plan-sha256",
+      analysisPlan.contentSha256,
+      "--schedule-position",
+      String(jobs.indexOf(job)),
+    );
   if (values["spending-budget"])
     args.push("--spending-budget", path.resolve(values["spending-budget"]));
   if (profiles[job.arm]) {
@@ -340,6 +379,9 @@ const inputsStable =
   JSON.stringify(originalInventory) ===
   JSON.stringify(await inventorySuiteTree(path.join(output, "cases")));
 const quality = evaluateCampaignQuality(reports);
+const analysis = analysisPlan
+  ? await evaluateCampaignAnalysis({ plan: analysisPlan, reports, statuses })
+  : undefined;
 const result = {
   kind: "napier.harness-suite-result",
   schemaVersion: 1,
@@ -354,6 +396,7 @@ const result = {
   statuses,
   missing,
   quality,
+  ...(analysis ? { analysis } : {}),
   collectionComplete:
     inputsStable &&
     !missing.length &&
@@ -372,7 +415,8 @@ const result = {
     usage: r.usage,
   })),
 };
-result.promotionReady = result.collectionComplete && quality.promotionReady;
+result.promotionReady =
+  result.collectionComplete && analysis?.promotionReady === true;
 await writeFile(
   path.join(output, "suite-result.json"),
   JSON.stringify(result, null, 2),

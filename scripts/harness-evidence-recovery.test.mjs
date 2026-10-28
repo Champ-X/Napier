@@ -34,7 +34,7 @@ test("recovery preserves the original failure and requires a genuinely unused tr
   assert.equal(protocol.originalSchedulePositions, 180);
   assert.deepEqual(protocol.required, { minimumCases: 30, minimumTrials: 3 });
   const result = evaluateRecoveredCampaignQuality([f.baseline, f.candidate], protocol, f.jobs);
-  assert.equal(result.promotionReady, false);
+  assert.equal(result.qualityGatePassed, false);
   assert.equal(result.supplementalTrialRequired, true);
   assert.equal(result.rawQuality.evidenceBlockers.length, 1);
   assert.equal(result.retiredIneligibleObservations[0].status, "failed");
@@ -46,12 +46,12 @@ test("only all thirty cases with three valid pairs can qualify the recovered coh
     ? job.arm === "baseline" ? f.baseline : f.candidate : report(job.arm, job.caseId, job.trial));
   const before = evaluateRecoveredCampaignQuality(reports, protocol, f.jobs);
   assert.equal(before.qualificationQuality.comparablePairs, 89);
-  assert.equal(before.promotionReady, false);
+  assert.equal(before.qualityGatePassed, false);
   reports.push(report("baseline", "case_one", 3), report("candidate", "case_one", 3));
   const result = evaluateRecoveredCampaignQuality(reports, protocol, f.jobs);
   assert.equal(result.qualificationQuality.comparablePairs, 90);
   assert.equal(result.qualificationQuality.cases, 30);
-  assert.equal(result.promotionReady, true);
+  assert.equal(result.qualityGatePassed, true);
   assert.equal(result.originalCampaignPromotionReady, false);
   assert.equal(result.rawQuality.evidenceBlockers.length, 1);
   assert.equal(result.retiredIneligibleObservations.length, 2);
@@ -88,7 +88,7 @@ test("a new candidate failure remains a regression under recovery", () => {
   const f = fixture(), protocol = createMissingUsageRecovery(f);
   const failed = { ...report("candidate", "case_one", 3), status: "failed", taskSuccess: false, graderExitCode: 1 };
   const result = evaluateRecoveredCampaignQuality([f.baseline, f.candidate, report("baseline", "case_one", 3), failed], protocol, f.jobs);
-  assert.equal(result.promotionReady, false);
+  assert.equal(result.qualityGatePassed, false);
   assert.ok(result.rawQuality.regressions.length > 0);
   assert.ok(result.unexpectedBlockers.length > 0);
 });

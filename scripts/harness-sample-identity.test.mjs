@@ -70,21 +70,21 @@ function campaign(inputFor = (id) => id) {
 
 test("thirty distinct captured tasks with three independent paired trials satisfy the default gate", () => {
   const result = evaluateCampaignQuality(campaign());
-  assert.equal(result.promotionReady, true);
+  assert.equal(result.qualityGatePassed, true);
   assert.equal(result.cases, 30);
   assert.equal(result.comparablePairs, 90);
 });
 
 test("renaming one task thirty times cannot satisfy distinct-case requirements", () => {
   const result = evaluateCampaignQuality(campaign(() => "same-task"));
-  assert.equal(result.promotionReady, false);
+  assert.equal(result.qualityGatePassed, false);
   assert.ok(result.cases < 30);
 });
 
 test("different graders do not turn the same task inputs into independent cases", () => {
   const reports = campaign(() => "same-task");
   for (const r of reports) r.outcomeSha256 = hash(r.caseId);
-  assert.equal(evaluateCampaignQuality(reports).promotionReady, false);
+  assert.equal(evaluateCampaignQuality(reports).qualityGatePassed, false);
 });
 
 test("reusing a Run under new trial labels cannot satisfy replication requirements", () => {
@@ -96,7 +96,7 @@ test("reusing a Run under new trial labels cannot satisfy replication requiremen
     r.runtimeDependencyEvidence = original.runtimeDependencyEvidence;
   }
   const result = evaluateCampaignQuality(reports);
-  assert.equal(result.promotionReady, false);
+  assert.equal(result.qualityGatePassed, false);
   assert.ok(result.comparablePairs < 90);
 });
 
@@ -105,7 +105,7 @@ test("changing a case contract between trials cannot count as repeated trials of
   for (const r of reports)
     if (r.caseId === "case_0" && r.trial === 2)
       r.promptSha256 = hash("changed contract");
-  assert.equal(evaluateCampaignQuality(reports).promotionReady, false);
+  assert.equal(evaluateCampaignQuality(reports).qualityGatePassed, false);
 });
 
 test("invalid trial identifiers and missing task hashes cannot inflate sample size", () => {
@@ -120,7 +120,7 @@ test("invalid trial identifiers and missing task hashes cannot inflate sample si
     const reports = campaign();
     for (const r of reports)
       if (r.caseId === "case_0" && r.trial === 0) change(r);
-    assert.equal(evaluateCampaignQuality(reports).promotionReady, false);
+    assert.equal(evaluateCampaignQuality(reports).qualityGatePassed, false);
   }
 });
 
@@ -137,7 +137,7 @@ test("Run reuse across arms or cases invalidates every affected pair", () => {
     const reports = campaign();
     reports[target].runId = reports[0].runId;
     const result = evaluateCampaignQuality(reports);
-    assert.equal(result.promotionReady, false);
+    assert.equal(result.qualityGatePassed, false);
     assert.ok(result.blockers.some((value) => value.includes("reused Run")));
     assert.equal(result.comparablePairs, target === 1 ? 89 : 88);
   }
@@ -159,7 +159,7 @@ test("malformed identifiers and supplied optional hashes fail qualification", ()
     Object.assign(reports[0], patch);
     Object.assign(reports[1], patch);
     const result = evaluateCampaignQuality(reports);
-    assert.equal(result.promotionReady, false);
+    assert.equal(result.qualityGatePassed, false);
     assert.ok(
       result.blockers.some((value) =>
         value.includes("invalid sample identity"),
@@ -184,5 +184,5 @@ test("captured memory seeds are task inputs and legacy absent optional hashes re
     r.memorySeedSha256 = hash(r.caseId);
     delete r.acceptanceSha256;
   }
-  assert.equal(evaluateCampaignQuality(reports).promotionReady, true);
+  assert.equal(evaluateCampaignQuality(reports).qualityGatePassed, true);
 });

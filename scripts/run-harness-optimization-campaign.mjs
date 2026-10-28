@@ -31,6 +31,10 @@ import { auditProcessExchanges } from "./harness-process-exchanges.mjs";
 import { collectEnvironmentEvidence } from "./harness-environment-evidence.mjs";
 import { collectUsageEvidence } from "./harness-usage-evidence.mjs";
 import {
+  bindCampaignAnalysisJob,
+  readCampaignAnalysisPlan,
+} from "./harness-campaign-analysis-plan.mjs";
+import {
   prepareSandboxGrader,
   runSandboxGrader,
 } from "./harness-sandbox-grader.mjs";
@@ -69,9 +73,24 @@ const { values } = parseArgs({
     "branch-history-fixture": { type: "string" },
     "grader-mode": { type: "string", default: "host" },
     "grader-runtimes": { type: "string", default: "node" },
+    "analysis-plan": { type: "string" },
+    "analysis-plan-sha256": { type: "string" },
+    "schedule-position": { type: "string" },
   },
 });
 const limitOverrides = campaignLimitOverrides(values);
+const analysisFlags = [
+  "analysis-plan",
+  "analysis-plan-sha256",
+  "schedule-position",
+];
+if (
+  analysisFlags.some((name) => values[name] !== undefined) &&
+  !analysisFlags.every((name) => values[name] !== undefined)
+)
+  throw new Error(
+    "Analysis plan, digest and schedule position must be supplied together",
+  );
 if (!["host", "sandbox"].includes(values["grader-mode"]))
   throw new Error("grader-mode must be host or sandbox");
 if (values["grader-mode"] === "host" && values["grader-runtimes"] !== "node")
@@ -150,6 +169,10 @@ const { ModelRegistry } = await load("models.js");
 const { CredentialReferenceStore } = await load("credentials.js");
 const { createPlatformSandboxAdapter } = await load("sandbox.js");
 const { WorkspaceProcessManager } = await load("workspace-processes.js");
+const { projectRunHarnessEffectMetrics } = await load(
+  "run-harness-effect-metrics.js",
+);
+const { hashEventStream } = await load("run-replay.js");
 const caseRoot = path.resolve(values["case-root"]);
 const campaignScriptSha256 = digest(
   await readFile(fileURLToPath(import.meta.url)),
@@ -385,6 +408,14 @@ if (values["calibration-catalog"]) {
   calibrationSelection = selected.receipt;
   profile = selected.profile ?? profile;
 }
+const analysisPlan = values["analysis-plan"]
+  ? await readCampaignAnalysisPlan(
+      values["analysis-plan"],
+      values["analysis-plan-sha256"],
+    )
+  : undefined;
+if (analysisPlan && trials !== 1)
+  throw new Error("Analysis dispatch must execute exactly one original cell");
 for (let trial = trialOffset; trial < trialOffset + trials; trial++) {
   const apiBudgetBefore = apiBudget.snapshot();
   const spendingBefore = spendingBudget?.snapshot();
@@ -399,6 +430,23 @@ for (let trial = trialOffset; trial < trialOffset + trials; trial++) {
     recursive: true,
   });
   const before = await inventory(workspaceRoot);
+  const analysisBinding = analysisPlan
+    ? bindCampaignAnalysisJob({
+        plan: analysisPlan,
+        position: Number(values["schedule-position"]),
+        caseId: manifest.id,
+        trial,
+        arm: values.arm,
+        model: servingModel,
+        profile,
+        inputs: {
+          fixtureSha256: digest(JSON.stringify(before)),
+          promptSha256: digest(prompt),
+          outcomeSha256: digest(outcome),
+          memorySeedSha256: memorySeedText ? digest(memorySeedText) : null,
+        },
+      })
+    : undefined;
   const store = new LocalStore({
     workspaceRoot,
     dataRoot: path.join(dir, "data"),
@@ -616,6 +664,8 @@ for (let trial = trialOffset; trial < trialOffset + trials; trial++) {
     const spendingAfter = spendingBudget?.snapshot();
     const report = {
       schemaVersion: spendingBudget ? 8 : 7,
+      evidenceKind: "live_model",
+      ...(analysisBinding ? { analysisBinding } : {}),
       arm: values.arm,
       caseId: manifest.id,
       caseManifest: manifest,
@@ -681,6 +731,11 @@ for (let trial = trialOffset; trial < trialOffset + trials; trial++) {
       status: run.status,
       error: run.error,
       durationMs: Date.now() - started,
+      interventionCount: projectRunHarnessEffectMetrics(
+        run,
+        events,
+        hashEventStream(events),
+      ).interventions.count,
       changed,
       observedWorkspace: createObservedWorkspaceReceipt(run.id, after),
       allowedChanges,
@@ -781,6 +836,7 @@ async function helperIdentity() {
         "harness-sample-identity.mjs",
         "harness-api-request-budget.mjs",
         "harness-campaign-profile.mjs",
+        "harness-campaign-analysis-plan.mjs",
         "harness-campaign-limits.mjs",
         "harness-spending-budget.mjs",
         "harness-spending-transport.mjs",
