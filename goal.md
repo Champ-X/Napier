@@ -195,6 +195,15 @@
 - Runtime compile/typecheck、Server／SDK typecheck、diff check 通过。架构仍为原 10 项失败，mutation 职责收敛后耦合预算仅从 140 下调至 126；公开 API 仍为原 1897/1896 与 compatibility digest 两项失败，历史 release manifest 未改。
 - 实施与复现见 [subagent-workspace-delivery.md](docs/subagent-workspace-delivery.md)。仍需后续处理缺失父目录的事务创建、待对账候选的自动核查、精细命令 read-set、候选管理界面与 G03 子代理执行续跑；本轮不以局部覆盖替代全部 G05／G01–G07 验收。G05-B 多工作区后台运行以及其余目标继续推进。
 
+### 后续推进：G05-B 持久注册表与按工作区寻址的基础
+
+- 上一轮为 **progress**，已现场核对 `659097d3`；本轮保留用户前端／文档改动，未 push。新增按规范化 workspaceRoot + dataRoot 生成的稳定身份、SQLite 注册表和无“当前选中工作区”状态的 Runtime Registry。自定义数据目录、符号链接别名、活跃进程 ownership 和清理失败隔离均有明确行为。
+- Runtime 请求租约覆盖准备、响应与 SSE；活跃／后台义务由显式策略保护，普通 LRU 不能淘汰。并发冷启动合并且计入容量；无空闲资源时背压，不停已有任务。POST 执行 SSE 在客户端断开后保留执行租约并有界丢弃后续输出，关闭“Run 尚未建账时断开”的回收窗口。
+- 新增 `/api/workspaces/<workspaceId>/…`／显式请求头路由适配器。地址与头不一致会拒绝；旧无绑定请求固定归属启动工作区，避免随 UI 选择漂移。响应保留原内容／证据摘要并带工作区身份。独立进程持有同一 catalog 的 runtime 时拒绝接管，SIGKILL 后可以重新领取。
+- 19 个不同测试／4 文件通过，包含实际 loopback HTTP、两套当前 Runtime/SQLite、真实定时器与重开账本。A 客户端断开后任务仍在运行，B 独立完成；A 定时任务继续，B 的停止请求不影响 A，同名文件分别返回 A/B 字节；空闲 B 可回收且活跃 A 保留。使用 demo 模型与既有 readiness-only sandbox fixture，外部模型请求 0，不作为浏览器验收或 OS Sandbox 证明。
+- Server typecheck、diff check 通过；架构仍为原有 10 项失败，无新增超限。实现与限制见 [workspace-runtime-registry.md](docs/workspace-runtime-registry.md)，源码绑定收据见 [workspace-runtime-registry-2026-10-29.json](docs/artifacts/workspace-runtime-registry-2026-10-29.json)。
+- **尚未接入生产 index.ts／Web 切换**；完整后台义务策略、全局执行／预算协调、预览与 HTML 子资源的归属、浏览器切换及进程恢复验收仍待完成。当前新增基础通过不等于 G05-B 交付，G01–G07 全范围继续保持 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
