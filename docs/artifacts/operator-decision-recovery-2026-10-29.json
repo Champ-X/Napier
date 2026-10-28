@@ -1,0 +1,164 @@
+{
+  "kind": "napier.operator-decision-recovery-evidence",
+  "schemaVersion": 1,
+  "evidenceClass": "deterministic_process_fault_injection_and_http_integration",
+  "capturedAt": "2026-10-28T18:32:23.482Z",
+  "sourceHead": "9ba6ed3d52f463a597c0750c7eeace762526c21b",
+  "sourceState": "dirty worktree with preserved user changes; relevant sources bound below",
+  "baselineCommit": "9ba6ed3d52f463a597c0750c7eeace762526c21b",
+  "baselineScope": "Pinned Store and ThreadInteractionRepository executed with current unchanged supporting dependencies; no full-release baseline claim.",
+  "faultMechanism": "process.exit(73) before/after the actual SQLite binding transaction; no graceful shutdown",
+  "externalModelRequests": 0,
+  "modelProvider": "explicit faux providers",
+  "tests": {
+    "runtime": {
+      "passed": 9,
+      "failed": 0
+    },
+    "http": {
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "observations": [
+    {
+      "checkpoint": "baseline-after-create",
+      "baselineCommit": "9ba6ed3d52f463a597c0750c7eeace762526c21b",
+      "savedAnswerRetryAccepted": false,
+      "unboundContinuationRuns": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-answer",
+      "restartMs": 1.9297080000001188,
+      "continuationMs": 240.3318749999994,
+      "status": "completed",
+      "retainedAnswer": true,
+      "continuationRuns": 1,
+      "patchCalls": 1,
+      "repeatedPatchCalls": 0,
+      "fixtureModelCalls": 3,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "before-bind-commit",
+      "restartMs": 2.0814170000003287,
+      "continuationMs": 189.51237500000025,
+      "status": "completed",
+      "retainedAnswer": true,
+      "continuationRuns": 1,
+      "patchCalls": 1,
+      "repeatedPatchCalls": 0,
+      "fixtureModelCalls": 3,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-bind-commit",
+      "restartMs": 16.515207999999802,
+      "status": "interrupted",
+      "retainedAnswer": true,
+      "continuationRuns": 1,
+      "fixtureModelCalls": 0,
+      "externalModelRequests": 0,
+      "repeatedPatchCalls": 0,
+      "requiresRunRecovery": true,
+      "explicitRecoveryStatus": "completed",
+      "explicitRecoveryFixtureModelCalls": 3,
+      "explicitRecoveryRetainedAnswer": true
+    },
+    {
+      "checkpoint": "concurrent-store-clients",
+      "continuationRuns": 1,
+      "createdCallbacks": 1,
+      "fixtureModelCalls": 3,
+      "repeatedPatchCalls": 0,
+      "terminalResponses": 2,
+      "externalModelRequests": 0
+    }
+  ],
+  "sourceDigests": [
+    {
+      "path": "packages/runtime/src/agent-run-recovery.ts",
+      "sha256": "b3f69fa533dad581447dc2449122937ebfd497f6089d74f34cfd08b592c2512d"
+    },
+    {
+      "path": "packages/runtime/src/agent-operator-decision-continuation.ts",
+      "sha256": "f212d4f24876dee48c48c066617f8a724c8a49b24a0a6fbc9ef2ca9810fd2d94"
+    },
+    {
+      "path": "packages/runtime/src/operator-decision-continuation.ts",
+      "sha256": "a774727d72f9eb8c4f809a7e3199783f383cb122675c60a972917cb6e1449f47"
+    },
+    {
+      "path": "packages/runtime/src/operator-decision-recovery-context.ts",
+      "sha256": "97dc5aeae82e3faef4d4573043c9e4c4c98ba582ed7481469dde5af171564a35"
+    },
+    {
+      "path": "packages/runtime/src/operator-decision-payloads.ts",
+      "sha256": "76b752dfa374a2b38f988ef8e7074f67fe87c9630015ec7c50f5ca974cc9b093"
+    },
+    {
+      "path": "packages/runtime/src/thread-interaction-repository.ts",
+      "sha256": "0df4bb64dcd84cd9b9f959932ca6f7422acb07589b6ab55e36c2069dedbe9d0f"
+    },
+    {
+      "path": "packages/runtime/src/store.ts",
+      "sha256": "4b70d2cff814e44ae90edead31c1856e2bce3d430a341e6190165b80c68fbf15"
+    },
+    {
+      "path": "packages/runtime/src/store-run-query-guards.ts",
+      "sha256": "5473bfc2c0d494de62096ecd032166366e37734122a00b08b3e2923c64bdf1b3"
+    },
+    {
+      "path": "packages/runtime/src/store-event-service.ts",
+      "sha256": "b13546e496337874444caccf39f3e499ff4e7d14fd7341ab40299aab704b64a8"
+    },
+    {
+      "path": "packages/runtime/src/store-persistence.ts",
+      "sha256": "dfe00db3649739c27af6dc0e2d62db4d9e44a681a668f687d8628a12ded75fd9"
+    },
+    {
+      "path": "packages/runtime/src/workflow-tool-runtime.ts",
+      "sha256": "2123a80a1895ad09dade5dfe37eb743e97dbf42a7cd39029304a3d3ff06024d0"
+    },
+    {
+      "path": "packages/runtime/src/workflow-tool-execution-evidence.ts",
+      "sha256": "ccc91e8481c94d1b3515fd9520897571999f2bbea084602ca83ebde72a4a01d4"
+    },
+    {
+      "path": "packages/runtime/test/operator-decision-recovery.test.ts",
+      "sha256": "bd67b2f1e6697a16191ff929d87d73283b6d4fc35a6d30d974a14b458402af27"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/operator-decision-crash.ts",
+      "sha256": "094f72f28b6cb2dc7d8aefbf20f94b2cec48d8e5454fa0cf3ba2f1c231720dd3"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/operator-decision-baseline.ts",
+      "sha256": "23dbe79d0558fe9dbf2568001ada608a5a186f12ddf52e592d27533d560a000b"
+    },
+    {
+      "path": "packages/runtime/test/workflow-patch-output.test.ts",
+      "sha256": "bbd71b995b930e48aa9f2b0b34a6e71009131e048e8cc0ac06bedcdcbac37296"
+    },
+    {
+      "path": "apps/server/test/operator-decision-retry-http.test.ts",
+      "sha256": "c319254f0dc2bbce1ff82ce851239fb479e1e99881d431f06b11fec25a25cf1f"
+    },
+    {
+      "path": "apps/server/src/thread-execution-http.ts",
+      "sha256": "fff3d0e0cb606684898284ca324e473de76c0ac0ab42ef55d92198a340059e71"
+    },
+    {
+      "path": "scripts/check-operator-decision-recovery.mjs",
+      "sha256": "db9abda3ef4a704022cb59c25dd0339d030d77a9d1bab49f162a8478c8bf86b0"
+    }
+  ],
+  "limitations": [
+    "A committed continuation interrupted before its prompt returns interrupted on retry; explicit Run recovery retains the saved answer and continues. No new recovery authorization.",
+    "Concurrent clients use independent stores/runtimes and HTTP requests; this is not a multiprocess race benchmark.",
+    "Workflow approval's existing regression suite passed separately; no approval-specific process fault matrix is claimed.",
+    "Single local timings are observations, not production latency or model-quality improvement claims.",
+    "No browser answer-and-continue UX acceptance or whole-G04 acceptance in this receipt."
+  ]
+}

@@ -14,6 +14,8 @@ import {
   projectAgentMilestones,
 } from "./agent-milestones.js";
 import { createId } from "./ids.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
+import { normalizeOperatorDecisionAnswer } from "./operator-decision-payloads.js";
 import {
   createOperatorDecisionAnsweredPayload,
   createOperatorDecisionCancelledPayload,
@@ -222,9 +224,6 @@ export class ThreadInteractionRepository {
     return this.host.threadQueue(threadId).run(() =>
       this.host.stateQueue.run(async () => {
         const thread = this.host.mutableThread(threadId);
-        if (thread.currentRunId || thread.status !== "waiting") {
-          throw new Error("Operator decision answer requires a waiting Thread");
-        }
         const currentEvents = this.host.requireLedger().listEvents(thread.id);
         const current = projectOperatorDecisions(currentEvents).find(
           (decision) => decision.id === decisionId,
@@ -232,13 +231,25 @@ export class ThreadInteractionRepository {
         if (!current) {
           throw new Error(`Operator decision not found: ${decisionId}`);
         }
-        if (current.status === "answered") {
-          throw new Error("Operator decision has already been answered");
+        if (current.status === "answered" || current.status === "continued") {
+          const content = normalizeOperatorDecisionAnswer({
+            decision: current,
+            answer,
+          });
+          if (sha256(canonicalJson(content)) !== current.answerSha256) {
+            throw new Error(
+              "Operator decision has already been answered differently",
+            );
+          }
+          return { decision: structuredClone(current), events: [] };
         }
         if (current.status !== "pending") {
           throw new Error(
             `Operator decision cannot be answered in ${current.status} state`,
           );
+        }
+        if (thread.currentRunId || thread.status !== "waiting") {
+          throw new Error("Operator decision answer requires a waiting Thread");
         }
         const originRun = this.host.mutableRun(current.runId);
         if (
@@ -291,58 +302,85 @@ export class ThreadInteractionRepository {
     this.host.validateResourceId(continuationRunId);
     return this.host.threadQueue(threadId).run(() =>
       this.host.stateQueue.run(async () => {
-        const thread = this.host.mutableThread(threadId);
-        const continuationRun = this.host.mutableRun(continuationRunId);
-        const currentEvents = this.host.requireLedger().listEvents(thread.id);
-        const current = projectOperatorDecisions(currentEvents).find(
-          (decision) => decision.id === decisionId,
+        const mutation = this.bindContinuation(
+          threadId,
+          decisionId,
+          continuationRunId,
         );
-        if (!current) {
-          throw new Error(`Operator decision not found: ${decisionId}`);
-        }
-        if (current.status !== "answered") {
-          throw new Error(
-            `Operator decision cannot continue in ${current.status} state`,
-          );
-        }
-        if (
-          thread.currentRunId !== continuationRun.id ||
-          continuationRun.threadId !== thread.id ||
-          continuationRun.status !== "running" ||
-          continuationRun.parentRunId !== current.runId
-        ) {
-          throw new Error(
-            "Operator decision continuation Run binding is invalid",
-          );
-        }
-        const payload = createOperatorDecisionContinuedPayload({
-          decision: current,
-          continuationRunId: continuationRun.id,
-        });
-        const events = this.host.appendEventsToThread(thread, [
-          {
-            threadId: thread.id,
-            runId: current.runId,
-            type: "operator.decision.continued",
-            category: "system",
-            visibility: "user",
-            payload,
-          },
-        ]);
-        await this.host.persistState(events);
-        const decision = projectOperatorDecisions([
-          ...currentEvents,
-          ...events,
-        ]).find((candidate) => candidate.id === decisionId);
-        if (!decision || decision.status !== "continued") {
-          throw new Error("Operator decision continuation receipt is invalid");
-        }
-        return {
-          decision: structuredClone(decision),
-          events: structuredClone(events),
-        };
+        if (mutation.events.length)
+          await this.host.persistState(mutation.events);
+        return mutation;
       }),
     );
+  }
+
+  /** Caller holds the state queue and persists this binding with Run creation. */
+  bindContinuation(
+    threadId: string,
+    decisionId: string,
+    continuationRunId: string,
+  ): OperatorDecisionMutation {
+    const thread = this.host.mutableThread(threadId);
+    const continuationRun = this.host.mutableRun(continuationRunId);
+    const currentEvents = this.host.requireLedger().listEvents(thread.id);
+    const current = projectOperatorDecisions(currentEvents).find(
+      (decision) => decision.id === decisionId,
+    );
+    if (!current) {
+      throw new Error(`Operator decision not found: ${decisionId}`);
+    }
+    if (
+      current.status === "continued" &&
+      current.continuationRunId === continuationRun.id
+    ) {
+      if (
+        continuationRun.threadId !== thread.id ||
+        continuationRun.parentRunId !== current.runId
+      ) {
+        throw new Error(
+          "Operator decision continuation Run binding is invalid",
+        );
+      }
+      return { decision: structuredClone(current), events: [] };
+    }
+    if (current.status !== "answered") {
+      throw new Error(
+        `Operator decision cannot continue in ${current.status} state`,
+      );
+    }
+    if (
+      thread.currentRunId !== continuationRun.id ||
+      continuationRun.threadId !== thread.id ||
+      continuationRun.status !== "running" ||
+      continuationRun.parentRunId !== current.runId
+    ) {
+      throw new Error("Operator decision continuation Run binding is invalid");
+    }
+    const payload = createOperatorDecisionContinuedPayload({
+      decision: current,
+      continuationRunId: continuationRun.id,
+    });
+    const events = this.host.appendEventsToThread(thread, [
+      {
+        threadId: thread.id,
+        runId: current.runId,
+        type: "operator.decision.continued",
+        category: "system",
+        visibility: "user",
+        payload,
+      },
+    ]);
+    const decision = projectOperatorDecisions([
+      ...currentEvents,
+      ...events,
+    ]).find((candidate) => candidate.id === decisionId);
+    if (!decision || decision.status !== "continued") {
+      throw new Error("Operator decision continuation receipt is invalid");
+    }
+    return {
+      decision: structuredClone(decision),
+      events: structuredClone(events),
+    };
   }
 
   async cancelOperatorDecision(

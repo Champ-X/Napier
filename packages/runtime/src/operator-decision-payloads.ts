@@ -92,6 +92,26 @@ export function createOperatorDecisionAnsweredPayload(input: {
   if (input.decision.status !== "pending") {
     throw new Error("Only a pending operator decision can be answered");
   }
+  const answerContent = normalizeOperatorDecisionAnswer(input);
+  const content = {
+    kind: "napier.operator-decision-answered" as const,
+    schemaVersion: 1 as const,
+    decisionId: input.decision.id,
+    requestedEventSeq: input.decision.requestedEventSeq,
+    ...answerContent,
+    answerSha256: sha256(canonicalJson(answerContent)),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+/** Canonical answer content, independent of the decision lifecycle. */
+export function normalizeOperatorDecisionAnswer(input: {
+  decision: OperatorDecision;
+  answer: AnswerOperatorDecisionRequest;
+}): { selectedOptionIds: string[]; customText: string } {
   const selectedOptionIds = normalizeSelectedOptionIds(
     input.answer.selectedOptionIds,
     input.decision,
@@ -107,22 +127,9 @@ export function createOperatorDecisionAnsweredPayload(input: {
   if (selectedOptionIds.length === 0 && !customText) {
     throw new Error("Operator decision answer is empty");
   }
-  const answerContent = {
-    selectedOptionIds,
-    customText,
-  };
-  const content = {
-    kind: "napier.operator-decision-answered" as const,
-    schemaVersion: 1 as const,
-    decisionId: input.decision.id,
-    requestedEventSeq: input.decision.requestedEventSeq,
-    selectedOptionIds,
-    customText,
-    answerSha256: sha256(canonicalJson(answerContent)),
-  };
   return {
-    ...content,
-    contentSha256: sha256(canonicalJson(content)),
+    selectedOptionIds,
+    customText,
   };
 }
 

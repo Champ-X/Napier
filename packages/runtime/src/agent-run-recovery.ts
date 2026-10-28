@@ -1,6 +1,5 @@
 import type {
   ExecutionPlan,
-  OperatorDecision,
   RunEvent,
   RunRecord,
   ThreadRecord,
@@ -10,15 +9,12 @@ import {
   manualRunRecoverySettlementMatches,
 } from "@napier/contracts/manual-run-recovery";
 
-import { resolveOperatorDecisionCapabilityContinuation } from "./agent-capability-override.js";
 import type {
-  ContinueOperatorDecisionOptions,
   ResumeInterruptedRunAutomaticallyOptions,
   ResumeInterruptedRunOptions,
   RunPromptOptions,
 } from "./agent-runtime-options.js";
 import { modernRunConfiguration } from "./effective-run-profile.js";
-import { formatOperatorDecisionContinuation } from "./operator-decisions.js";
 import {
   prepareAutomaticSkillRecoveryOptions,
   prepareManualSkillRecoveryOptions,
@@ -29,6 +25,9 @@ import { inheritedHarnessPolicyOptions } from "./harness-run-policy.js";
 import { assessAutomaticRecovery } from "./automatic-recovery.js";
 import { loadSettledPatchRecoveryEvidence } from "./workspace-patch-result-recovery.js";
 import { reconcileSettledWorkspacePatches } from "./workspace-patch-reconciliation.js";
+import { operatorDecisionRecoveryContext } from "./operator-decision-recovery-context.js";
+
+export { continueAnsweredOperatorDecision } from "./agent-operator-decision-continuation.js";
 
 type RunPrompt = (options: RunPromptOptions) => Promise<RunRecord>;
 
@@ -44,12 +43,6 @@ interface AgentRunRecoveryStore {
   listRuns(threadId: string): RunRecord[];
   listRunEvents(runId: string): Promise<RunEvent[]>;
   listPlans(threadId: string): ExecutionPlan[];
-  listOperatorDecisions(threadId: string): Promise<OperatorDecision[]>;
-  continueOperatorDecision(
-    threadId: string,
-    decisionId: string,
-    continuationRunId: string,
-  ): Promise<unknown>;
 }
 
 export async function resumeInterruptedAgentRun(
@@ -68,11 +61,16 @@ export async function resumeInterruptedAgentRun(
   const recoveryOptions: RunPromptOptions = {
     ...inheritedHarnessPolicyOptions(events, interrupted.id),
     threadId: thread.id,
-    text: buildRunRecoveryPrompt(
-      interrupted,
-      thread.goal?.status === "active" ? thread.goal.objective : undefined,
-      { events, plans: host.store.listPlans(thread.id) },
-    ),
+    text: [
+      buildRunRecoveryPrompt(
+        interrupted,
+        thread.goal?.status === "active" ? thread.goal.objective : undefined,
+        { events, plans: host.store.listPlans(thread.id) },
+      ),
+      await operatorDecisionRecoveryContext(host.store, interrupted),
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
     parentRunId: interrupted.id,
     source: "recovery",
     recovery: { mode: "manual" },
@@ -88,50 +86,6 @@ export async function resumeInterruptedAgentRun(
       recoveryOptions,
     ),
   );
-}
-
-export async function continueAnsweredOperatorDecision(
-  host: AgentRunRecoveryHost,
-  options: ContinueOperatorDecisionOptions,
-): Promise<RunRecord> {
-  const decision = (
-    await host.store.listOperatorDecisions(options.threadId)
-  ).find((candidate) => candidate.id === options.decisionId);
-  if (!decision) {
-    throw new Error(`Operator decision not found: ${options.decisionId}`);
-  }
-  if (decision.status !== "answered") {
-    throw new Error(
-      `Operator decision cannot continue in ${decision.status} state`,
-    );
-  }
-  const continuation = await resolveOperatorDecisionCapabilityContinuation(
-    host.store,
-    options.threadId,
-    decision.runId,
-  );
-  return host.runPrompt({
-    ...inheritedHarnessPolicyOptions(
-      await host.store.listRunEvents(continuation.originRun.id),
-      continuation.originRun.id,
-    ),
-    threadId: options.threadId,
-    text: formatOperatorDecisionContinuation(decision),
-    ...continuation.runOptions,
-    parentRunId: continuation.originRun.id,
-    operatorDecisionId: decision.id,
-    source: "user",
-    ...(options.signal ? { signal: options.signal } : {}),
-    ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-    onRunCreated: async (run) => {
-      await host.store.continueOperatorDecision(
-        options.threadId,
-        decision.id,
-        run.id,
-      );
-      await options.onRunCreated?.(run);
-    },
-  });
 }
 
 export async function resumeInterruptedAgentRunAutomatically(
@@ -192,6 +146,8 @@ export async function resumeInterruptedAgentRunAutomatically(
         events,
         "automatic",
       ) +
+      "\n" +
+      (await operatorDecisionRecoveryContext(host.store, interrupted)) +
       (patches.length
         ? `\n${patches.length} settled patch operation(s) were retained. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify({ patches, retainedResults })}</retained-patch-evidence>`
         : ""),

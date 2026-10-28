@@ -38,3 +38,26 @@ export function parentRunStartEvents(
 ): RunEvent[] {
   return runId ? ledger.listRunEvents(runId, 0, ["run.started"]) : [];
 }
+
+/** Validate the decision gate before mutating the new Run or Thread. */
+export function operatorDecisionForRun(
+  ledger: SqliteLedger,
+  thread: ThreadRecord,
+  input: { operatorDecisionId?: string; parentRunId?: string },
+): OperatorDecision | undefined {
+  const decision = findOpenOperatorDecision(ledger, thread);
+  if (
+    decision &&
+    (decision.status !== "answered" ||
+      input.operatorDecisionId !== decision.id ||
+      input.parentRunId !== decision.runId)
+  ) {
+    throw new Error(`Thread is waiting for operator decision: ${decision.id}`);
+  }
+  if (!decision && input.operatorDecisionId) {
+    throw new Error(
+      `Operator decision not found for continuation: ${input.operatorDecisionId}`,
+    );
+  }
+  return decision;
+}

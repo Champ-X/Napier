@@ -1,4 +1,4 @@
-# 操作级恢复：已结算补丁切片
+# 操作级恢复：已结算补丁与用户答案
 
 2026-10-29。当前实现覆盖已结算的 `apply_patch`：可继承 `tool.completed` 收据，或在响应丢失时读取与结算摘要一致的私有精确结果，G04 整体验收仍未完成。
 
@@ -41,3 +41,31 @@
 - 前一切片执行 `npm run build -w @napier/runtime` 的 release source manifest 校验失败，本轮未重复该历史发布门槛；未重写历史 manifest。编译成功不代表这个发布检查通过。
 - 当前公开 API 检查仍为 Runtime root 1897/1896 及 compatibility digest 不匹配，与本轮开始前记录一致；没有新增 root exports。
 - saved answer / approval 与 continuation 的幂等衔接、写权限策略、未结算操作对账及恢复操作区仍未验收。没有宣称外部系统普遍 exactly-once。
+
+
+## 已保存答案与 continuation 的事务边界
+
+2026-10-29 的后续切片将 `operator.decision.continued` 与新 Run/租约保存到同一次 SQLite 事务。Run 创建时仍检查原 Agent revision、模型与权限；串行状态队列和现有 revision CAS 负责并发竞争。原来 Run 已保存、决策仍为 answered 的可见间隙被消除。公开的 `continueOperatorDecision` Store 方法保留兼容性，相同绑定重复调用返回已有决策、空新增事件。
+
+保存答案使用现有规范化规则和 answerSha256：同一 decision 的同一答案重试返回已有记录，即使续跑已开始或结束也不重复追加事件；不同答案明确冲突，已取消决策不会被重新激活。继续请求读到已绑定的 Run 时只观察其状态，不获取租约、不重放模型/工具或再次调用 onRunCreated。并发竞争失败者重新读取持久化绑定；尚未结算时每 100 ms 检查状态，直到真实终态才返回，避免 SSE 提前发送 done。观察者取消不取消原执行者；尚未额外测量大量并发观察者的开销。
+
+Run 已创建但提示尚未保存时退出，重启后仍返回该 Run 的 interrupted 状态，普通重试不会暗自发起另一轮。用户随后使用现有 Run 恢复入口时，Runtime 从父 Run 的验证后决策投影中读取与这个 continuation 精确匹配的原答案，将其加入恢复提示；不能仅凭数据库保存成功声称模型已继承答案。进程测试确认恢复模型实际收到原 customText，并只写文件一次。自动只读恢复也复用该上下文函数，但本切片没有新增自动恢复权限。
+
+复现：`node scripts/check-operator-decision-recovery.mjs /tmp/napier-decision-recovery-new.json`，输出独占创建。收据：[operator-decision-recovery-2026-10-29.json](artifacts/operator-decision-recovery-2026-10-29.json)，绑定 19 个源文件/测试/复现文件。它覆盖 7 个 Runtime 决策用例、2 个 Workflow 输出兼容用例和 1 个真实服务 HTTP/SSE 集成用例；外部模型请求 0。
+
+| 断点 / 重试 | 观察结果 |
+| --- | --- |
+| 答案保存后退出 | 原答案仍为 answered；同答案重试无新事件；一个 continuation 完成，一次补丁写入 |
+| 关联事务提交前退出 | 数据库中没有新 Run，也没有 continued 事件；重启后一个 continuation 完成 |
+| 关联事务提交后、兼容 JSON 投影前退出 | Run 与 continued 事件同时存在；重复继续返回同一 interrupted Run；显式恢复收到原答案并完成 |
+| 两个独立 Store/Runtime 并发继续 | 同一 Run、一次 onRunCreated、一次补丁；两个调用均等待真实终态 |
+| 提交失败 / 观察者取消 | 失败事务回滚 Run 与关联；取消重试观察不取消原执行者 |
+| 并发 HTTP 保存与继续、完成后重试 | 保存返回同一答案；SSE snapshot/done 绑定同一已完成 Run；无额外模型调用 |
+
+固定基线 `9ba6ed3d52f463a597c0750c7eeace762526c21b` 的 Store 与 ThreadInteractionRepository 在子进程中实际运行，复现同答案重试被拒绝，以及 createLeasedRun 返回后退出留下 answered 决策和未关联 Run。只替换这两个固定模块，其余支持模块沿用当前实现；不声称进行了完整历史发行版的对照实验。当前并发检查是同进程中的独立 Store/Runtime 及 HTTP 请求，不是多进程竞争基准。收据中的耗时只是一组本地采样。
+
+兼容检查还发现前一补丁切片新增的私有 recoveryCapsuleSha256 会破坏 Workflow 的严格输出 schema。现在 Workflow 在验证原始完整结果摘要后，只将原公开补丁收据投影给 typed output，并重新计算公开收据摘要；原始 journal/tool.completed/私有结果仍保留恢复绑定。原有严格 schema 的真实写工具 Workflow 通过，篡改的结果不会被重算为合法输出。
+
+相关检查共 12 文件 150 个不同测试通过，包括原 Store/线程导入导出、Agent Runtime/Kernel/能力边界、Workflow、补丁进程断点和新增 HTTP 路径。Runtime typecheck、build:compile、diff check 通过。提取决策 gate 职责后 Store 行数预算从 3773 下调到 3766，复杂度从 101 下调到 96；没有提高预算。架构仍为原 11 项，公开 API 仍为 1897/1896 和 compatibility digest 不匹配；完整 release build 的历史 source manifest 门槛未重写，编译通过不代表发布通过。
+
+剩余边界：本切片没有验证完整的 Workflow 审批进程故障矩阵，未交付浏览器“回答并继续”和统一恢复操作区，也没有扩展未执行/未结算写操作的恢复。G04 与 G01–G07 总目标保持未完成。

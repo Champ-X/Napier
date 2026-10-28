@@ -3,7 +3,10 @@ import type { OperatorDecision } from "@napier/contracts";
 export function formatOperatorDecisionContinuation(
   decision: OperatorDecision,
 ): string {
-  if (decision.status !== "answered" || !decision.answerSha256) {
+  if (
+    (decision.status !== "answered" && decision.status !== "continued") ||
+    !decision.answerSha256
+  ) {
     throw new Error("Operator decision must be answered before continuation");
   }
   const selected = new Set(decision.selectedOptionIds ?? []);

@@ -88,6 +88,16 @@
 - 本轮 5 文件 32 个不同用例通过；Runtime typecheck、build:compile、diff check 通过。修正新增类型问题、文件职责与导入环后，架构检查回到原 11 项，公开 API 仍为原 1897/1896 与 compatibility digest 不匹配；未提高预算，未重写发布 manifest。
 - G04 下一步仍是未执行/未结算操作的对账、答案/审批 continuation 幂等及恢复操作区；写权限策略未扩展。G01–G07 总目标继续保持 active，不以该局部通过代替整体验收。
 
+### 后续推进：G04 已保存答案与幂等 continuation
+
+- 上一轮为 **progress**，现场确认 `9ba6ed3d` 和保留的用户改动，未 push。当前将新 Run/租约和 operator.decision.continued 放入同一次 SQLite 事务；保留原 Agent revision/模型/权限校验，复用状态队列与 revision CAS。
+- 同答案重试返回既有记录，不重复追加事件；不同答案仍冲突。继续请求的竞争失败者及完成后重试只观察已绑定的 Run，不重放模型/工具、不重发租约、不重复 onRunCreated。观察者等待真实终态，避免 SSE 提前 done；观察者取消不取消原执行。
+- 真实子进程断点覆盖答案保存后、关联事务提交前和提交后。提交前无孤立 Run，提交后 Run 与关联一同保留。后者重启时保持真实 interrupted，显式 Run 恢复会从匹配的父决策继承原答案，模型实际读取 customText 后完成；普通重试不暗自另起执行。
+- 固定旧 `9ba6ed3d` 的 Store/交互仓库在子进程中复现重复答案被拒绝和未关联 Run 间隙；不是完整历史发行版对照。两个独立 Store/Runtime 并发及真实 HTTP/SSE 请求均只产生一个 continuation 和一次补丁写入，0 外部模型请求。收据：[operator-decision-recovery-2026-10-29.json](docs/artifacts/operator-decision-recovery-2026-10-29.json)，复现：[check-operator-decision-recovery.mjs](scripts/check-operator-decision-recovery.mjs)。
+- 兼容检查发现并修复前一切片的 Workflow 严格输出 schema 回归：私有恢复字段保留在原完整结果，typed output 投影回公开补丁收据并验证摘要，不放宽 schema。原有 Workflow 写入测试及结果篡改回归通过。
+- 相关 12 文件 150 个不同测试通过，Runtime typecheck、build:compile、diff check 通过。决策 gate 提取后 Store 行数/复杂度预算降至 3766/96；架构仍为原 11 项，公开 API 仍为 1897/1896 与 compatibility digest 不匹配；不重写历史发布 manifest。
+- 此切片不等于 G04 全部验收：Workflow 审批进程故障矩阵、未执行/未结算写操作对账、统一恢复操作区及 G06-B 浏览器回答并继续仍待实现/验收；G01–G07 总目标保持 active。详细行为与限制见 [operation-recovery.md](docs/operation-recovery.md)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：

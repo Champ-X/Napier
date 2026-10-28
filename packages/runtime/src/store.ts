@@ -363,7 +363,7 @@ import {
 import { StorePersistenceMonitor } from "./store-observability.js";
 import { readLegacyEvents } from "./store-legacy-events.js";
 import {
-  findOpenOperatorDecision,
+  operatorDecisionForRun,
   parentRunStartEvents,
 } from "./store-run-query-guards.js";
 import type { ChannelDeliveryExecution } from "./store-port.js";
@@ -2917,8 +2917,8 @@ export class LocalStore {
   async createRun(input: CreateRunInput): Promise<RunRecord> {
     this.assertInitialized();
     return this.stateQueue.run(async () => {
-      const run = this.createRunRecord(input);
-      await this.persistState();
+      const { run, events } = this.createRunRecord(input);
+      await this.persistState(events);
       return structuredClone(stripRunSecrets(run));
     });
   }
@@ -2930,8 +2930,8 @@ export class LocalStore {
     this.assertInitialized();
     const lease = createRunLeaseBinding(leaseOptions);
     return this.stateQueue.run(async () => {
-      const run = this.createRunRecord(input, lease.binding);
-      await this.persistState();
+      const { run, events } = this.createRunRecord(input, lease.binding);
+      await this.persistState(events);
       return {
         run: structuredClone(stripRunSecrets(run)),
         token: lease.token,
@@ -3172,7 +3172,7 @@ export class LocalStore {
       tokenSha256: string;
       summary: NonNullable<RunRecord["lease"]>;
     },
-  ): PersistedRunRecord {
+  ): { run: PersistedRunRecord; events: RunEvent[] } {
     const thread = this.mutableThread(input.threadId);
     const workflowExecution = input[WORKFLOW_NODE_EXECUTION];
     const simulationExecution = validateWorkflowSimulationRunGate({
@@ -3222,25 +3222,11 @@ export class LocalStore {
         `Thread reached its concurrent Workflow Run limit (${MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD})`,
       );
     }
-    const openOperatorDecision = findOpenOperatorDecision(
+    const openOperatorDecision = operatorDecisionForRun(
       this.requireLedger(),
       thread,
+      input,
     );
-    if (
-      openOperatorDecision &&
-      (openOperatorDecision.status !== "answered" ||
-        input.operatorDecisionId !== openOperatorDecision.id ||
-        input.parentRunId !== openOperatorDecision.runId)
-    ) {
-      throw new Error(
-        `Thread is waiting for operator decision: ${openOperatorDecision.id}`,
-      );
-    }
-    if (!openOperatorDecision && input.operatorDecisionId) {
-      throw new Error(
-        `Operator decision not found for continuation: ${input.operatorDecisionId}`,
-      );
-    }
     if (thread.agentId !== input.agentId) {
       throw new Error("Run agent must match the thread agent");
     }
@@ -3519,7 +3505,14 @@ export class LocalStore {
     thread.currentRunId ??= run.id;
     thread.status = "running";
     thread.updatedAt = run.startedAt;
-    return run;
+    const events = input.operatorDecisionId
+      ? this.threadInteractionRepository.bindContinuation(
+          thread.id,
+          input.operatorDecisionId,
+          run.id,
+        ).events
+      : [];
+    return { run, events };
   }
 
   private mutableThread(threadId: string): ThreadRecord {
