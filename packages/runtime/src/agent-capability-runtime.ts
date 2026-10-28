@@ -48,6 +48,7 @@ interface AgentCapabilityOwner {
 
 export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner {
   profile: AgentProfile;
+  beforeWorkspaceWrite?: () => Promise<void>;
   projectSkillSnapshot?: SkillSnapshot;
   skillLoadAllowed?: boolean;
   browserInteractionConfirmationAllowed?: boolean;
@@ -145,18 +146,17 @@ export class AgentCapabilityRuntime {
     const tools = createStatelessAgentTools({
       store: this.store,
       profile: options.profile,
-      threadId: options.threadId,
-      runId: options.runId,
+      ...owner,
       sandbox: this.sandbox,
       lspSession: this.sessions.lspSession(owner),
       ...(this.workspaceFileMutations
         ? { workspaceFileMutations: this.workspaceFileMutations }
         : {}),
       gitStageMutations: gitStageMutationManagerFor(this.store, this.sandbox),
-      beforeWorkspaceWrite: this.sessions.debuggerWriteBarrier({
-        threadId: options.threadId,
-        id: options.runId,
-      }),
+      beforeWorkspaceWrite: async () => {
+        await this.sessions.debuggerWriteBarrier({ threadId: options.threadId, id: options.runId })();
+        await options.beforeWorkspaceWrite?.();
+      },
       ...(options.restrictedReadOnlyExecution !== undefined
         ? {
             restrictedReadOnlyExecution: options.restrictedReadOnlyExecution,

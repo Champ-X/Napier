@@ -16,7 +16,7 @@ export type PatchPreparationJournal = RunHeadEventClaimStore & {
 };
 
 export interface PatchPreparationReceipt extends JsonObject {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   callId: string;
   operationId: string;
   inputSha256: string;
@@ -117,7 +117,7 @@ export function recordWorkspacePatchPreparation(
       canonicalJson({ ...intent, contentSha256: capsuleSha256 }),
     );
     const content = {
-      schemaVersion: 1 as const,
+      schemaVersion: 2 as const,
       callId,
       operationId: String(patchEventPayload(boundary)["operationId"]),
       inputSha256,
@@ -128,7 +128,7 @@ export function recordWorkspacePatchPreparation(
       beforeSha256: result.beforeSha256,
       afterSha256: result.afterSha256,
     };
-    await claimRunHeadEvent(
+    const prepared = await claimRunHeadEvent(
       store,
       {
         threadId,
@@ -140,7 +140,40 @@ export function recordWorkspacePatchPreparation(
       },
       { namespace: "workspace-patch-prepared", key: `${runId}:${callId}` },
     );
+    // Version 2 preparation promises that commit cannot happen without this
+    // later durable gate. Run/operation fencing rejects a late original writer.
+    return async () => {
+      const commit = await claimRunHeadEvent(
+        store,
+        {
+          threadId,
+          runId,
+          type: "workspace.patch.commit_started",
+          category: "tool",
+          visibility: "debug",
+          payload: patchCommitStartedPayload(prepared.event),
+        },
+        { namespace: "workspace-patch-commit", key: `${runId}:${callId}` },
+      );
+      if (!commit.appended) throw new Error("Patch commit gate was already consumed");
+    };
   };
+}
+
+export function patchCommitStartedPayload(prepared: RunEvent): JsonObject {
+  if (
+    !validPatchPreparation(prepared.payload) ||
+    prepared.payload.schemaVersion !== 2
+  )
+    throw new Error("Patch commit requires version 2 preparation");
+  const content = {
+    schemaVersion: 1,
+    callId: prepared.payload.callId,
+    operationId: prepared.payload.operationId,
+    preparedEventSeq: prepared.seq,
+    preparedSha256: prepared.payload.contentSha256,
+  };
+  return { ...content, contentSha256: sha256(canonicalJson(content)) };
 }
 
 export function patchStartForBoundary(
@@ -230,7 +263,7 @@ export function validPatchPreparation(
   const { contentSha256, ...content } = value;
   return (
     Object.keys(value).length === 11 &&
-    value["schemaVersion"] === 1 &&
+    (value["schemaVersion"] === 1 || value["schemaVersion"] === 2) &&
     text(value["callId"]) &&
     text(value["operationId"]) &&
     Number.isSafeInteger(value["boundaryEventSeq"]) &&

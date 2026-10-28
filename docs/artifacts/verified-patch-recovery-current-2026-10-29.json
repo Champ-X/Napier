@@ -1,0 +1,645 @@
+{
+  "kind": "napier.verified-patch-recovery-evidence",
+  "schemaVersion": 1,
+  "evidenceClass": "deterministic_process_fault_injection",
+  "capturedAt": "2026-10-28T21:30:05.388Z",
+  "sourceHead": "1671a7159f0d6d079c499d7c09df3db02bd27469",
+  "sourceState": "worktree with preserved unrelated user changes; relevant sources bound below",
+  "modelProvider": "faux-patch-recovery",
+  "externalModelRequests": 0,
+  "faultMechanism": "process.exit(73) at awaited Runtime checkpoints and immediately after atomic link/rename; SIGKILL for the live-writer case; SQLite trigger rollback and explicit evidence/environment mutations",
+  "baselineCommit": "1671a7159f0d6d079c499d7c09df3db02bd27469",
+  "baselineScope": "The prior implementation stops unexecuted writes. verified_patches is a new explicit opt-in policy; safe_read_only still stops them. This is capability acceptance, not a same-policy live-model quality comparison.",
+  "observations": [
+    {
+      "scenario": "executes the exact 'create' once after 'before-effect', then continues read-only",
+      "checkpoint": "complete",
+      "restartMs": 26.90166700000009,
+      "resumeMs": 210.77041700000018,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "executes the exact 'create' once after 'after-prepared', then continues read-only",
+      "checkpoint": "complete",
+      "restartMs": 17.853083000000197,
+      "resumeMs": 253.21799999999985,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "executes the exact 'replace' once after 'before-effect', then continues read-only",
+      "checkpoint": "complete",
+      "restartMs": 15.105374999999867,
+      "resumeMs": 202.14208300000018,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "executes the exact 'replace' once after 'after-prepared', then continues read-only",
+      "checkpoint": "complete",
+      "restartMs": 13.0542089999999,
+      "resumeMs": 207.17116699999997,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "stops when permissions change after Run creation",
+      "checkpoint": "permissions",
+      "restartMs": 11.858541999999943,
+      "resumeMs": 59.360333999999966,
+      "modelCalls": 0,
+      "status": "failed",
+      "commitMarkers": 0,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "stops when target change after Run creation",
+      "checkpoint": "target",
+      "restartMs": 17.444208000000003,
+      "resumeMs": 51.32058400000005,
+      "modelCalls": 0,
+      "status": "failed",
+      "commitMarkers": 0,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-created without losing or repeating the patch",
+      "checkpoint": "after-created",
+      "restartMs": 11.444500000000062,
+      "resumeMs": 25.99333400000023,
+      "modelCalls": 0,
+      "status": "interrupted",
+      "commitMarkers": 0,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-created without losing or repeating the patch",
+      "checkpoint": "complete",
+      "restartMs": 12.442750000000046,
+      "resumeMs": 197.29312500000015,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 2,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-prepared without losing or repeating the patch",
+      "checkpoint": "after-prepared",
+      "restartMs": 12.126291999999921,
+      "resumeMs": 83.13862500000005,
+      "modelCalls": 0,
+      "status": "interrupted",
+      "commitMarkers": 0,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-prepared without losing or repeating the patch",
+      "checkpoint": "complete",
+      "restartMs": 20.84583299999997,
+      "resumeMs": 190.2170839999999,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 2,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-file without losing or repeating the patch",
+      "checkpoint": "after-file",
+      "restartMs": 13.464375000000018,
+      "resumeMs": 130.00637499999993,
+      "modelCalls": 0,
+      "status": "interrupted",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-file without losing or repeating the patch",
+      "checkpoint": "complete",
+      "restartMs": 19.363875000000007,
+      "resumeMs": 130.50354199999992,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 2,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-settlement without losing or repeating the patch",
+      "checkpoint": "after-settlement",
+      "restartMs": 21.1451669999999,
+      "resumeMs": 94.94187499999998,
+      "modelCalls": 0,
+      "status": "interrupted",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-settlement without losing or repeating the patch",
+      "checkpoint": "complete",
+      "restartMs": 25.790166999999997,
+      "resumeMs": 130.41379200000029,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 2,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-terminal without losing or repeating the patch",
+      "checkpoint": "after-terminal",
+      "restartMs": 12.102709000000004,
+      "resumeMs": 93.33174999999983,
+      "modelCalls": 0,
+      "status": "interrupted",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "recovers a second process loss at after-terminal without losing or repeating the patch",
+      "checkpoint": "complete",
+      "restartMs": 14.14408400000002,
+      "resumeMs": 124.37858300000016,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 2,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "does not start another Run when the final response is lost",
+      "checkpoint": "after-return",
+      "restartMs": 12.020125000000007,
+      "resumeMs": 202.3321249999999,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "rechecks retained file evidence after recovery itself was interrupted",
+      "checkpoint": "after-file",
+      "restartMs": 12.311374999999998,
+      "resumeMs": 117.82349999999997,
+      "modelCalls": 0,
+      "status": "interrupted",
+      "commitMarkers": 1,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "retains the earlier version in a patch chain across another interruption: false",
+      "checkpoint": "complete",
+      "restartMs": 14.49533299999996,
+      "resumeMs": 226.21875,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 2,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "retains the earlier version in a patch chain across another interruption: true",
+      "checkpoint": "after-terminal",
+      "restartMs": 12.957083000000011,
+      "resumeMs": 98.20224999999982,
+      "modelCalls": 0,
+      "status": "interrupted",
+      "commitMarkers": 2,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "retains the earlier version in a patch chain across another interruption: true",
+      "checkpoint": "complete",
+      "restartMs": 12.953457999999955,
+      "resumeMs": 117.48187499999995,
+      "modelCalls": 1,
+      "status": "completed",
+      "commitMarkers": 2,
+      "recoveryPlans": 2,
+      "externalModelRequests": 0
+    },
+    {
+      "scenario": "stops when the original process-capable environment becomes unavailable",
+      "checkpoint": "sandbox",
+      "restartMs": 12.332625000000007,
+      "resumeMs": 202.77087500000016,
+      "modelCalls": 0,
+      "status": "failed",
+      "commitMarkers": 0,
+      "recoveryPlans": 1,
+      "externalModelRequests": 0
+    }
+  ],
+  "cases": [
+    {
+      "name": "proves target commit was not entered at 'before-effect' for 'create'",
+      "status": "passed",
+      "durationMs": 2006.8769589999997
+    },
+    {
+      "name": "proves target commit was not entered at 'after-prepared' for 'create'",
+      "status": "passed",
+      "durationMs": 1768.8726659999998
+    },
+    {
+      "name": "proves target commit was not entered at 'before-effect' for 'replace'",
+      "status": "passed",
+      "durationMs": 1503.2074999999995
+    },
+    {
+      "name": "proves target commit was not entered at 'after-prepared' for 'replace'",
+      "status": "passed",
+      "durationMs": 1252.662625
+    },
+    {
+      "name": "keeps create indeterminate after the commit gate even if its target is unchanged",
+      "status": "passed",
+      "durationMs": 1778.786666
+    },
+    {
+      "name": "keeps replace indeterminate after the commit gate even if its target is unchanged",
+      "status": "passed",
+      "durationMs": 1453.899625
+    },
+    {
+      "name": "does not mistake an externally deleted committed file for an unexecuted operation",
+      "status": "passed",
+      "durationMs": 1372.9416249999995
+    },
+    {
+      "name": "rejects target drift after before-effect",
+      "status": "passed",
+      "durationMs": 1262.7045830000006
+    },
+    {
+      "name": "rejects target drift after after-prepared",
+      "status": "passed",
+      "durationMs": 1398.615334
+    },
+    {
+      "name": "fences the original writer before its commit gate",
+      "status": "passed",
+      "durationMs": 1422.561083999999
+    },
+    {
+      "name": "does not commit a target when the commit marker cannot be saved",
+      "status": "passed",
+      "durationMs": 1283.9783750000024
+    },
+    {
+      "name": "rejects missing exact input even when the journal proves no target commit",
+      "status": "passed",
+      "durationMs": 1278.427208000001
+    },
+    {
+      "name": "executes the exact 'create' once after 'before-effect', then continues read-only",
+      "status": "passed",
+      "durationMs": 5909.711416
+    },
+    {
+      "name": "executes the exact 'create' once after 'after-prepared', then continues read-only",
+      "status": "passed",
+      "durationMs": 5272.384
+    },
+    {
+      "name": "executes the exact 'replace' once after 'before-effect', then continues read-only",
+      "status": "passed",
+      "durationMs": 4751.938916000001
+    },
+    {
+      "name": "executes the exact 'replace' once after 'after-prepared', then continues read-only",
+      "status": "passed",
+      "durationMs": 4790.202999999998
+    },
+    {
+      "name": "does not enable writes for the existing safe_read_only policy",
+      "status": "passed",
+      "durationMs": 1221.9212079999998
+    },
+    {
+      "name": "stops when permissions change after Run creation",
+      "status": "passed",
+      "durationMs": 4368.755334000001
+    },
+    {
+      "name": "stops when target change after Run creation",
+      "status": "passed",
+      "durationMs": 4390.7152499999975
+    },
+    {
+      "name": "recovers a second process loss at after-created without losing or repeating the patch",
+      "status": "passed",
+      "durationMs": 7661.416166000003
+    },
+    {
+      "name": "recovers a second process loss at after-prepared without losing or repeating the patch",
+      "status": "passed",
+      "durationMs": 7712.7539160000015
+    },
+    {
+      "name": "recovers a second process loss at after-file without losing or repeating the patch",
+      "status": "passed",
+      "durationMs": 7748.069125000002
+    },
+    {
+      "name": "recovers a second process loss at after-settlement without losing or repeating the patch",
+      "status": "passed",
+      "durationMs": 8268.216832999999
+    },
+    {
+      "name": "recovers a second process loss at after-terminal without losing or repeating the patch",
+      "status": "passed",
+      "durationMs": 7694.518917000001
+    },
+    {
+      "name": "does not start another Run when the final response is lost",
+      "status": "passed",
+      "durationMs": 4540.461166999987
+    },
+    {
+      "name": "allows only one competing recovery process to execute a pending patch",
+      "status": "passed",
+      "durationMs": 4551.292291999998
+    },
+    {
+      "name": "rechecks retained file evidence after recovery itself was interrupted",
+      "status": "passed",
+      "durationMs": 7501.715249999994
+    },
+    {
+      "name": "retains the earlier version in a patch chain across another interruption: false",
+      "status": "passed",
+      "durationMs": 4619.247375000006
+    },
+    {
+      "name": "retains the earlier version in a patch chain across another interruption: true",
+      "status": "passed",
+      "durationMs": 7829.7354170000035
+    },
+    {
+      "name": "rejects direct recovery mode creation without the internal bounded grant",
+      "status": "passed",
+      "durationMs": 1131.7319169999973
+    },
+    {
+      "name": "stops when the original process-capable environment becomes unavailable",
+      "status": "passed",
+      "durationMs": 4667.016957999993
+    }
+  ],
+  "tests": {
+    "passed": 31,
+    "failed": 0
+  },
+  "sourceDigests": [
+    {
+      "path": "packages/contracts/src/execution-core.ts",
+      "sha256": "85f3a68eaaf8c6fec87def78cade95c95f36c6de25f7a5f8c382c28373e52026"
+    },
+    {
+      "path": "packages/runtime/src/store.ts",
+      "sha256": "7ea756ddcf7b44b64edb9207ecd4ac92b7bb1182b6e37c03771087259c9288be"
+    },
+    {
+      "path": "packages/runtime/src/process-run-readiness.ts",
+      "sha256": "e0499064247ae768059a9374b4f70cf6e59da89aba7987d4272fc6f5f9837662"
+    },
+    {
+      "path": "packages/runtime/src/agent-runtime.ts",
+      "sha256": "8b0c7bbf1b3ee40c448694fbaf655aacb27433783100171ab5b683062f923950"
+    },
+    {
+      "path": "packages/runtime/src/agent-runtime-options.ts",
+      "sha256": "24c26da5531c5fa97eb95cd20eeddca4a5a15e11c5d9a3e1c2adc3885548b4d2"
+    },
+    {
+      "path": "packages/runtime/src/agent-capability-runtime.ts",
+      "sha256": "0c2cfb78ca4535540935aa5d173e468dce7b99caa2f2b40385d733520d27cc7e"
+    },
+    {
+      "path": "packages/runtime/src/agent-budget-policy.ts",
+      "sha256": "96cd3de8d9757a9e8718d70f0ad183e454a9178d29ae393c02cd1fa41b44cbd1"
+    },
+    {
+      "path": "packages/runtime/src/internal-research-recovery-authorization.ts",
+      "sha256": "553f1ba91927cbaad8be84f106a7270f85f2173f1c2c411b414181ce8c439aa5"
+    },
+    {
+      "path": "packages/runtime/src/run-execution-tool-surface.ts",
+      "sha256": "a2a0b746e4747062d510df0b59a4b687c3c999f2be4b1b916c54b38e8f912f24"
+    },
+    {
+      "path": "packages/runtime/src/run-config.ts",
+      "sha256": "e147645fff80d186326264a5d196e50cff94a4a6f8f24f07b4b1b0f1e70ee23e"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-input.ts",
+      "sha256": "239764c509cc24160154116a026d00b1ded81f678a5c9dfd3fcdbfde439607e3"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-invocation.ts",
+      "sha256": "42e6b7f69f9202c4a153735893b9a0a73d9af58f8d08b83c1bc4aace5ef660e7"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-not-committed.ts",
+      "sha256": "69ab5e7af3941347cca129a1d936e6bda83879a18d89118002cae25885241b24"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-pending-inspection.ts",
+      "sha256": "94d004658a77394c9e73c50e3b7fd08823fc92eb115f2e7772e6e0e437dd7ea4"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-recovery-plan.ts",
+      "sha256": "1499b874a70636bb3f8a35372cb0c4428a44c641cc5e155623d88f371a358650"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-recovery-execution.ts",
+      "sha256": "f509a6a1e5b24916f9faca00bcc3c755b0abb951a1b8e3b46a99366e7f72a627"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-uncommitted-evidence.ts",
+      "sha256": "0601e7bc896dcf990a6c634ff20316f12c93df1aaadb3cf706856822ae715c03"
+    },
+    {
+      "path": "packages/runtime/src/local-process-owner.ts",
+      "sha256": "a70975590cde46124d1a4de2189dc93bd838ba618b2520c8ed053f38dfdfe505"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-tool-concurrency-leases.ts",
+      "sha256": "1b3de9436045938c3e80123bddd7e2831d56f18b5fcf24e09086dbc388e5a672"
+    },
+    {
+      "path": "packages/runtime/src/tool-invocation-capture.ts",
+      "sha256": "35280285460843b40419642199b866f7007db65d1a321c5ee6c047a859f5e0f8"
+    },
+    {
+      "path": "packages/runtime/src/tool-execution-admission-service.ts",
+      "sha256": "c65e0c3cc58b16b6d81c7eae3e83007c23b023365b1e326635c7e550826a0eb0"
+    },
+    {
+      "path": "packages/runtime/src/durable-tool-execution.ts",
+      "sha256": "87e28601176ccb820095184d14ffae45f88d1f2e6fb3f4b37f68826f40740a59"
+    },
+    {
+      "path": "packages/runtime/test/verified-patch-recovery.test.ts",
+      "sha256": "512e99712d513d1a6521f4ba8d324e4141dc3e00ce83a956374013f6e9bea649"
+    },
+    {
+      "path": "packages/runtime/test/uncommitted-patch-evidence.test.ts",
+      "sha256": "0749d107eeb23ff3a78924b14041e554fa172c77e0829adb51896fa1e01adb28"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/verified-patch-recovery-resume.ts",
+      "sha256": "2889069f4018087caa605e989a926d3387ca2be6e7b69fff78b1073475054e60"
+    },
+    {
+      "path": "packages/contracts/src/run-event-tool-definitions-v1.ts",
+      "sha256": "beea6d3e9df5bd146eaeb9084b584b2a52eb7276bf2f32c3a1f0768f4e027763"
+    },
+    {
+      "path": "packages/runtime/src/agent-run-recovery.ts",
+      "sha256": "fb933d9d7f1c2c08d886f8b696e1cbe552da0c366ec9b7314b672b9e210e5437"
+    },
+    {
+      "path": "packages/runtime/src/automatic-recovery.ts",
+      "sha256": "885f33f83ef076a55d40a99090d54d2dfcc91c9052fe2eda5716716d84762c71"
+    },
+    {
+      "path": "packages/runtime/src/run-interruption-recovery.ts",
+      "sha256": "2759bc851cb21dc15ae04698ccacf981a5f5f5500479e8b120ca76c1af5364a8"
+    },
+    {
+      "path": "packages/runtime/src/run-lost-owner-recovery.ts",
+      "sha256": "9f41c32fcb157e40e7d9f0144fb8a3c08118e3b2ac7542191665b7a5dbb9099a"
+    },
+    {
+      "path": "packages/runtime/src/run-tool-effect-observations.ts",
+      "sha256": "135f13237259a6b6ff06123ca5dc87a2a92745bda20731d2c77b4dc238f318c1"
+    },
+    {
+      "path": "packages/runtime/src/run-patch-recovery-evidence.ts",
+      "sha256": "8265c6c2466b098d1995b5e9a06526c9182ab761027dddb296bbf2783af56140"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-effect-indeterminate-commit.ts",
+      "sha256": "f7dcfe1b38a96c75b93a9148d5e213f2293a79b6c313655b07ae6795d5885181"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-tool-effect-authority.ts",
+      "sha256": "8eefac23baf3c9043a62f76696b67f284d37516b609bac7b2c4cc882a6de2001"
+    },
+    {
+      "path": "packages/runtime/src/stateless-agent-tools.ts",
+      "sha256": "4cdffea7d7b302d14105977355237a48219c6365040075ac8a180a022c624859"
+    },
+    {
+      "path": "packages/runtime/src/tools.ts",
+      "sha256": "29a75bea49928131f54ae01845149f22cb031fa7f505f26dcf0cb1ae29d76d6c"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-commit.ts",
+      "sha256": "349d0ed218e20b9b4c30458a6b06a7d70dc724ce6d326c035a198b9dc9a4365a"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-model.ts",
+      "sha256": "3cfbe1909c660f0f6b1b547f691418fab62ead65c586387d7f68b934cd98592a"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-tool.ts",
+      "sha256": "71cbfdd85aff67ef3a4a4bbf600b1d945c2ee5eedc7282a4ccb6e88ce9140c77"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-preparation.ts",
+      "sha256": "7a184afedac07acf7d28e0b5f86bfddf760d737eccf06fc06f6f3ed543308db8"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-reconciled-evidence.ts",
+      "sha256": "97e66e28f487434a76282cea532a890ddfc99e7ab83798fa2a9aca04a4571d01"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-interruption-reconciliation.ts",
+      "sha256": "f58489f312998e55f7eaacafd0a55b15d17262a872ce98c2686ea736fa27ec05"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-reconciliation.ts",
+      "sha256": "d438523fd35710d5bf625f17a779ff0fed94e075a9b39076dd84df804f0dce2e"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-recovery-capsule.ts",
+      "sha256": "90247adde5682fdb2e638dbae28cdd739f33a24877a7af3fe4d07af092e75e64"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-result-capsule.ts",
+      "sha256": "2b44cc4993f08b021bfaac525bc8c70fe8aeeae7f80983c30427504f8b361922"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-result-recovery.ts",
+      "sha256": "ca357f2fe0f62d9fa8cf9732d34544921ab273dbd59828f86262c110073c2790"
+    },
+    {
+      "path": "packages/runtime/src/workspace-write-lock.ts",
+      "sha256": "57044cea798487c963f0287b14ee249327be28faa10c104b970c6f8183aacf7b"
+    },
+    {
+      "path": "packages/runtime/src/local-private-capsule-store.ts",
+      "sha256": "266722ac35d49c9463a828527322ef4224d4756141523f9ba9b09ed9d69e8ee4"
+    },
+    {
+      "path": "packages/runtime/src/tool-effect-indeterminate-event.ts",
+      "sha256": "96207a9e0b109c095d903f00c6e90134822425404a35b7e1b50ece8ce15b7065"
+    },
+    {
+      "path": "packages/runtime/test/settled-patch-recovery.test.ts",
+      "sha256": "3ff4ce25ae82e377c67cdfd0b07584ada8e6c70bf674168b4423c82a73a26e49"
+    },
+    {
+      "path": "packages/runtime/test/unsettled-patch-recovery.test.ts",
+      "sha256": "96cae6a099dddba9315965a402450e932eafbb65f98e948a7c8b4bfd0a26800a"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/patch-recovery-crash.ts",
+      "sha256": "0b2c13e2b62cf0f7259e99517acb0a3910a150f10ed445f9f832c80116a016dc"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/patch-recovery-baseline.ts",
+      "sha256": "d3bbd0aae0f5e11552ca05ed258baf8a7e6fc057f5c6997e1dad12bd7ae75d4f"
+    },
+    {
+      "path": "scripts/check-verified-patch-recovery.mjs",
+      "sha256": "1fa228c746157f71c9229aca9790460dbf5480e0a8c6e4e508bc32c86ae18896"
+    }
+  ],
+  "limitations": [
+    "Supports exact captured Agent apply_patch calls. Model continuation remains read-only; generic writes and Workflow pending writes are not granted recovery authority.",
+    "A missing commit marker proves only that a v2 target commit was not entered. Already-created parent directories may remain; this does not claim every possible side effect was absent.",
+    "A present commit marker with no verifiable postcondition remains indeterminate, even when the target is absent or unchanged.",
+    "Recovery retains the frozen Agent revision and rechecks current write permissions. Tool-definition/compiler identity drift, missing private inputs, or changed file preconditions stop execution.",
+    "Process death and restart fixtures use the same tsx loader. These results do not establish power-loss durability, cross-host fencing, or live-model quality improvement.",
+    "Model-visible result summaries are bounded; omitted result bodies are marked. File state and completed Runs do not accept the overall objective.",
+    "No unified recovery UI usability acceptance or all-G04/all-goal completion is claimed."
+  ]
+}

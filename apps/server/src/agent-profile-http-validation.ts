@@ -415,7 +415,9 @@ function parseAutomaticRecoveryPolicy(
     3_600_000,
   );
   return record &&
-    (mode === "manual" || mode === "safe_read_only") &&
+    (mode === "manual" ||
+      mode === "safe_read_only" ||
+      mode === "verified_patches") &&
     maxAttempts !== undefined &&
     backoffMs !== undefined
     ? { mode, maxAttempts, backoffMs }

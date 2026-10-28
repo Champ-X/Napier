@@ -56,14 +56,14 @@ export interface WorkspacePatchResult {
 export type PrepareWorkspacePatch = (
   result: WorkspacePatchResult,
   identity: { dev: number; ino: number },
-) => Promise<void>;
+) => Promise<void | (() => Promise<void>)>;
 
 export type RecordWorkspacePatchPreparation = (
   callId: string,
   args: unknown,
   result: WorkspacePatchResult,
   identity: { dev: number; ino: number },
-) => Promise<void>;
+) => Promise<void | (() => Promise<void>)>;
 
 export interface WorkspacePatchObservationState {
   fileSha256: string;

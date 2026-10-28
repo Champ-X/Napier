@@ -62,7 +62,7 @@ describe("Context panel sections Chinese copy", () => {
     ]);
     const controller = stubController({
       configurationBusy: false,
-      agentRecoveryMode: "safe_read_only",
+      agentRecoveryMode: "verified_patches",
       agentRecoveryMaxAttempts: 2,
       agentRecoveryBackoffSeconds: 5,
       setAgentRecoveryMode: vi.fn(),
@@ -85,6 +85,8 @@ describe("Context panel sections Chinese copy", () => {
     );
 
     expect(container.textContent).toContain("安全自动恢复");
+    expect(container.textContent).toContain("当前权限和文件前置条件必须仍然允许");
+    expect(container.innerHTML).toContain('value="verified_patches"');
     expect(container.textContent).toContain("工具循环防护");
     expect(container.innerHTML).toContain('value="web_search"');
     expect(container.textContent).not.toContain("Safe automatic recovery");

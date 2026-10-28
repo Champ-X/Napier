@@ -1,3 +1,7 @@
+import {
+  patchCommitWasNotEntered,
+  patchNotCommittedPayload,
+} from "./workspace-patch-not-committed.js";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
 import type { RunEvent } from "@napier/contracts";
@@ -82,7 +86,8 @@ export async function reconcileInterruptedWorkspacePatches(input: {
         throw new Error("patch_target_busy_or_inaccessible");
       }),
     );
-    for (const { intent, binding } of values) {
+    for (const { event, intent, binding } of values) {
+      if (patchCommitWasNotEntered(input.events, event)) continue;
       if (
         !(await matchesWorkspacePatchPostcondition(
           root,
@@ -97,10 +102,14 @@ export async function reconcileInterruptedWorkspacePatches(input: {
       inputs: values.map(({ event }) => ({
         threadId: event.threadId,
         runId: event.runId,
-        type: "workspace.patch.reconciled",
+        type: patchCommitWasNotEntered(input.events, event)
+          ? "workspace.patch.not_committed"
+          : "workspace.patch.reconciled",
         category: "tool",
         visibility: "debug",
-        payload: patchReconciliationPayload(event),
+        payload: patchCommitWasNotEntered(input.events, event)
+          ? patchNotCommittedPayload(event)
+          : patchReconciliationPayload(event),
       })),
       release,
     };

@@ -28,7 +28,12 @@ export const DEFAULT_AUTOMATIC_RECOVERY_POLICY: Readonly<AutomaticRecoveryPolicy
 export function normalizeAutomaticRecoveryPolicy(
   input: AutomaticRecoveryPolicy,
 ): AutomaticRecoveryPolicy {
-  if (!input || (input.mode !== "manual" && input.mode !== "safe_read_only")) {
+  if (
+    !input ||
+    (input.mode !== "manual" &&
+      input.mode !== "safe_read_only" &&
+      input.mode !== "verified_patches")
+  ) {
     throw new Error("Automatic recovery mode is invalid");
   }
   return {

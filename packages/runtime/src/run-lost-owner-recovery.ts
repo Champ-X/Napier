@@ -110,7 +110,7 @@ export async function recoverLostRuns(
         transitionRunStatus(run, "interrupted");
         run.interruptedAt = timestamp;
         run.interruptionReason =
-          "Patch postconditions reconciled; original executor fenced. Remaining work requires continuation.";
+          "Patch commit state reconciled; original executor fenced. Remaining work requires continuation.";
         run.finishedAt = timestamp;
         run.error = run.interruptionReason;
         delete run.lease;

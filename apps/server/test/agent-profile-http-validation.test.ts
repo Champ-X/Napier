@@ -8,6 +8,18 @@ import {
 const THREAD_ID = "thread_0123456789abcdef";
 
 describe("Agent profile HTTP validation", () => {
+  it("accepts the explicit verified patch recovery policy", () => {
+    expect(
+      parseUpdateAgentProfileRequest({
+        automaticRecovery: {
+          mode: "verified_patches",
+          maxAttempts: 2,
+          backoffMs: 1000,
+        },
+      }),
+    ).toMatchObject({ automaticRecovery: { mode: "verified_patches" } });
+  });
+
   it("normalizes the complete profile update surface", () => {
     expect(
       parseUpdateAgentProfileRequest({

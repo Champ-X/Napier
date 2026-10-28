@@ -1,3 +1,11 @@
+import { canonicalJson } from "./ed25519.js";
+import {
+  planWorkspacePatchRecovery,
+  type PatchRecoveryPlan,
+} from "./workspace-patch-recovery-plan.js";
+export type { PatchRecoveryPlan } from "./workspace-patch-recovery-plan.js";
+export { VERIFIED_PATCH_RECOVERY } from "./workspace-patch-recovery-plan.js";
+import { VERIFIED_PATCH_RECOVERY } from "./workspace-patch-recovery-plan.js";
 import type {
   AgentProfile,
   AgentProfileRevision,
@@ -144,4 +152,57 @@ export function resolveStoredRunCapabilityProfile(input: {
   return authorized
     ? applyAgentCapabilityPresetOverride(base, input.capabilityPreset, "user")
     : base;
+}
+
+export function assertWorkspacePatchRecoveryGrant(input: {
+  source?: string | undefined;
+  executionMode: string;
+  parent: RunRecord | undefined;
+  agentId: string;
+  agentRevision: number;
+  threadId: string;
+  carrier: { [VERIFIED_PATCH_RECOVERY]?: PatchRecoveryPlan };
+  events: RunEvent[];
+}): PatchRecoveryPlan | undefined {
+  if (
+    input.executionMode === "safe_read_only_recovery" &&
+    (input.source !== "recovery" ||
+      !input.parent ||
+      input.parent.status !== "interrupted" ||
+      input.parent.threadId !== input.threadId ||
+      input.parent.agentId !== input.agentId)
+  )
+    throw new Error(
+      "Safe read-only recovery requires an interrupted parent Run",
+    );
+  const grant = input.carrier[VERIFIED_PATCH_RECOVERY];
+  if (input.executionMode !== "verified_patch_recovery") {
+    if (grant)
+      throw new Error(
+        "Patch recovery grant requires its bounded execution mode",
+      );
+    return undefined;
+  }
+  const parent = input.parent;
+  if (
+    !grant ||
+    input.source !== "recovery" ||
+    !parent ||
+    parent.threadId !== input.threadId ||
+    parent.agentId !== input.agentId ||
+    parent.agentRevision !== input.agentRevision ||
+    canonicalJson(planWorkspacePatchRecovery(parent, input.events)) !==
+      canonicalJson(grant)
+  )
+    throw new Error(
+      "Verified patch recovery requires its current internal operation grant",
+    );
+  return grant;
+}
+
+export function patchRecoveryRunInput(carrier: {
+  [VERIFIED_PATCH_RECOVERY]?: PatchRecoveryPlan;
+}) {
+  const grant = carrier[VERIFIED_PATCH_RECOVERY];
+  return grant ? { [VERIFIED_PATCH_RECOVERY]: grant } : {};
 }

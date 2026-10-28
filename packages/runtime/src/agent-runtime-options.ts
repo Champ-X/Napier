@@ -1,3 +1,4 @@
+import { VERIFIED_PATCH_RECOVERY, type PatchRecoveryPlan } from "./workspace-patch-recovery-plan.js";
 import type {
   AutomaticRecoveryAssessment,
   AutomaticRecoveryAttempt,
@@ -31,6 +32,7 @@ import {
 } from "./workflow-node-execution.js";
 
 export interface RunPromptOptions {
+  [VERIFIED_PATCH_RECOVERY]?: PatchRecoveryPlan;
   threadId: string;
   text: string;
   images?: PromptImageInput[];

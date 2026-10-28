@@ -1,3 +1,4 @@
+import { VERIFIED_PATCH_RECOVERY, assertWorkspacePatchRecoveryGrant, type PatchRecoveryPlan } from "./internal-research-recovery-authorization.js";
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -429,6 +430,7 @@ export type {
 } from "./thread-interaction-repository.js";
 
 export interface CreateRunInput {
+  [VERIFIED_PATCH_RECOVERY]?: PatchRecoveryPlan;
   threadId: string;
   agentId: string;
   model?: AgentProfile["model"];
@@ -3244,6 +3246,12 @@ export class LocalStore {
       authorizationCarrier: input,
     });
     const executionMode = input.executionMode ?? "standard";
+    const patchRecoveryPlan = assertWorkspacePatchRecoveryGrant({
+      source: input.source, executionMode,
+      parent: this.state.runs.find((candidate) => candidate.id === input.parentRunId),
+      agentId: input.agentId, agentRevision: effectiveRunAgent.revision, threadId: thread.id,
+      carrier: input, events: input.parentRunId ? this.requireLedger().listRunEvents(input.parentRunId) : [],
+    });
     if (openOperatorDecision) {
       const originRun = this.state.runs.find(
         (candidate) => candidate.id === openOperatorDecision.runId,
@@ -3421,23 +3429,6 @@ export class LocalStore {
       throw new Error(
         "Agent experiment capability requires read-only experiment execution",
       );
-    } else if (executionMode === "safe_read_only_recovery") {
-      const parent = input.parentRunId
-        ? this.state.runs.find(
-            (candidate) => candidate.id === input.parentRunId,
-          )
-        : undefined;
-      if (
-        input.source !== "recovery" ||
-        !parent ||
-        parent.threadId !== input.threadId ||
-        parent.agentId !== input.agentId ||
-        parent.status !== "interrupted"
-      ) {
-        throw new Error(
-          "Safe read-only recovery requires an interrupted parent Run",
-        );
-      }
     } else if (isWorkflowReadOnlyChildExecutionMode(executionMode)) {
       validateWorkflowReadOnlyChildRunGate({
         executionMode,
@@ -3512,6 +3503,10 @@ export class LocalStore {
           run.id,
         ).events
       : [];
+    if (patchRecoveryPlan) events.push(...this.appendEventsToThread(thread, [{
+      threadId: thread.id, runId: run.id, type: "workspace.patch.recovery_planned",
+      category: "tool", visibility: "debug", payload: patchRecoveryPlan,
+    }]));
     return { run, events };
   }
 

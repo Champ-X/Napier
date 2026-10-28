@@ -139,6 +139,7 @@ export const conversationDetailCopyEn = {
     modes: {
       manual: "Manual",
       safe_read_only: "Safe read only",
+      verified_patches: "Verified patches",
     },
     settlement: {
       timeout: "Timeout",
@@ -302,6 +303,7 @@ export const conversationDetailZh: LocaleOverride<
     modes: {
       manual: "手动",
       safe_read_only: "安全只读",
+      verified_patches: "已核验补丁",
     },
     settlement: {
       timeout: "超时",

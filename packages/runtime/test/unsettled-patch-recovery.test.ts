@@ -169,8 +169,9 @@ it.each(["create", "replace"])(
     const root = await crashed("after-prepared", operation);
     const store = await restart(root);
     const run = store.listRuns(store.listThreads()[0]!.id)[0]!;
-    expect(run.outcome).toBe("blocked_safety");
+    expect(run.status).toBe("interrupted");
     const events = await store.listRunEvents(run.id);
+    expect(events.filter((e) => e.type === "workspace.patch.not_committed")).toHaveLength(1);
     expect(
       events.filter((e) => e.type === "workspace.patch.prepared"),
     ).toHaveLength(1);

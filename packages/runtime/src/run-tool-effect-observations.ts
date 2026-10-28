@@ -1,3 +1,4 @@
+import { uncommittedPatchCandidates } from "./workspace-patch-uncommitted-evidence.js";
 import type { JsonValue, RunEvent } from "@napier/contracts";
 import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 import { reconciledPatchRecoveryEvidence } from "./workspace-patch-reconciled-evidence.js";
@@ -45,9 +46,11 @@ export interface RunToolEffectObservation {
 
 export function collectRunToolEffectObservations(
   events: RunEvent[],
+  allowVerifiedPatches = false,
 ): RunToolEffectObservation[] {
   const recoverablePatches = new Set(
     [
+      ...(allowVerifiedPatches ? uncommittedPatchCandidates(events) : []),
       ...settledPatchRecoveryCandidates(events),
       ...reconciledPatchRecoveryEvidence(events),
     ].map((patch) => patch.startedSeq),

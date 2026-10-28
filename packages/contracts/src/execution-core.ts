@@ -86,7 +86,10 @@ export interface RunLimits {
   timeoutMs: number;
 }
 
-export type AutomaticRecoveryMode = "manual" | "safe_read_only";
+export type AutomaticRecoveryMode =
+  | "manual"
+  | "safe_read_only"
+  | "verified_patches";
 
 export interface AutomaticRecoveryPolicy {
   mode: AutomaticRecoveryMode;
@@ -98,6 +101,7 @@ export type RunExecutionMode =
   | "standard"
   | "environment_degraded_read_only"
   | "safe_read_only_recovery"
+  | "verified_patch_recovery"
   | "workflow_map_read_only"
   | "workflow_loop_read_only"
   | "agent_experiment_read_only"

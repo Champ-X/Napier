@@ -1,6 +1,8 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -23,6 +25,50 @@ afterEach(async () => {
 });
 
 describe("durable tool concurrency leases", () => {
+  it("reclaims only a confirmed dead local process owner before TTL expiry", async () => {
+    const [store] = await openSharedStores();
+    const backend = store.toolConcurrencyLeaseBackend();
+    const child = spawn(
+      process.execPath,
+      ["-e", "setInterval(() => {}, 1000)"],
+      { stdio: "ignore" },
+    );
+    await once(child, "spawn");
+    const nowMs = Date.now();
+    const claim = (leaseId: string, ownerId: string) =>
+      backend.claim({
+        leaseId,
+        ownerId,
+        operationId: leaseId,
+        nowMs,
+        expiresAtMs: nowMs + 120_000,
+        requirements: [{ key: ["workspace"], mode: "exclusive" }],
+        ancestorLeases: [],
+      });
+    try {
+      const first = await claim(
+        "lease_dead_process",
+        `process:${child.pid}:runtime_test`,
+      );
+      expect(first.status).toBe("acquired");
+      expect((await claim("lease_waiter", "owner:unknown")).status).toBe(
+        "blocked",
+      );
+      const exited = once(child, "exit");
+      child.kill("SIGKILL");
+      await exited;
+      expect((await claim("lease_waiter", "owner:unknown")).status).toBe(
+        "acquired",
+      );
+      expect(
+        (await claim("lease_third", `process:${process.pid}:runtime_test`))
+          .status,
+      ).toBe("blocked");
+    } finally {
+      if (child.exitCode === null) child.kill("SIGKILL");
+    }
+  });
+
   it("serializes hierarchical resources across two LocalStore facades", async () => {
     const [firstStore, secondStore] = await openSharedStores();
     const firstGate = gate(firstStore, "owner:first");

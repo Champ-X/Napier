@@ -1,3 +1,4 @@
+import { contextRecoveryZh } from "./context-recovery-copy";
 import type { LocaleOverride } from "./locale";
 import type { contextCopyEn } from "./context-copy";
 
@@ -103,20 +104,7 @@ export const contextZh: LocaleOverride<typeof contextCopyEn> = {
   capabilityBrowserInteract: "浏览器交互",
   capabilityYes: "是",
   capabilityNo: "否",
-  recoveryPolicy: "中断策略",
-  recoveryTitle: "安全自动恢复",
-  recoveryKicker: "快照绑定 · 失败即关闭",
-  recoveryMode: "恢复模式",
-  recoveryModes: {
-    manual: "仅手动恢复",
-    safe_read_only: "自动 · 安全只读",
-  },
-  recoveryAttempts: "最大尝试次数",
-  recoveryBackoff: "基础延迟（秒）",
-  recoverySafeBody:
-    "仅当 schema-2 中断运行不存在未解决工具、写入、未知副作用或导入来源时才可继续。子运行使用冻结的智能体修订版，且只暴露本地读取工具。",
-  recoveryManualBody:
-    "中断的运行会等待操作者处理。始终可以手动恢复，并明确警告先前工具结果可能未知。",
+  ...contextRecoveryZh,
   modelAdvisor: "模型顾问",
   modelAdvisorMode: "顾问模式",
   modelAdvisorModes: {

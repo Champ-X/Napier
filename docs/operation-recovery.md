@@ -1,5 +1,36 @@
 # 操作级恢复：补丁对账与用户答案
 
+## 确认未提交后的补丁恢复（2026-10-29 当前切片）
+
+新增显式 `verified_patches` 策略：在智能体的中断策略中选择“自动 · 已核验补丁”，对采用该策略的新 Run 生效。`safe_read_only` 的写权限不变，也不会用修改后的智能体配置追溯授权旧 Run。恢复先执行已记录且确认未提交的精确补丁，再用只读工具继续模型工作；它不是无限制恢复写工具。
+
+主 Agent 的 `apply_patch` 调用将原始参数保存到私有胶囊（0600；512 KiB/对象、512 对象、32 MiB 总量），账本只保留摘要和绑定。普通执行的捕获仍为 best-effort，但恢复必须读取和验证胶囊。v2 写前准备记录增加强制 `workspace.patch.commit_started` 检查点；无法持久化该检查点就不能 link/rename 目标，已经消费的检查点不能再次授权提交。
+
+| 原操作状态 | 依据与恢复行为 |
+| --- | --- |
+| 尚未越过 effect boundary | 原 Run 已被终态封锁，完整 admission/start 日志与精确输入匹配；重查目标前置条件后可执行 |
+| v2 prepared 后、commit_started 前 | `workspace.patch.not_committed`、原操作 fence 和 interrupted 状态原子提交；确认没有进入目标提交，再重查前置条件 |
+| commit_started 已存在，目标仍缺失或未变化 | 仍为结果不确定；不会把“看起来没变”当作从未写入 |
+| 已提交但尚未返回/结算 | 复用已有文件身份/摘要对账；不重复写入 |
+| 已结算或终态响应丢失 | 保留精确结果或后置条件证据，继续剩余只读工作 |
+
+恢复计划和新 Run/租约同一次 SQLite 事务保存。每项计划引用原调用；下一次进程恢复会检查该项是否已在恢复 Run 启动，继承尚未开始的工作，或改为对账最近一次执行。原 Run 不补造 tool.completed。计划覆盖保留的先前补丁和当前待执行补丁，因此同文件版本链在第二次恢复时仍核对最终状态。
+
+每次执行继续使用 `executeAdmittedToolCall` 的 authority、并发资源和结算路径，以及原工具的诊断/输出保护。恢复前验证冻结的工具定义和当前智能体权限；实际执行前再次核对文件和权限。原配置涉及进程能力时，也重新检查 Sandbox 就绪状态。模型只看到只读工具。执行结果进入后续模型上下文，结果体有明确的上下文限额和省略标记；完整工具结果仍按现有私有结果存储规则保存。
+
+故障实验发现死进程的工具并发租约会残留 120 秒。现在仅对严格匹配本机进程 owner 格式、且 `process.kill(pid, 0)` 明确返回 ESRCH 的租约提前清理。活进程、未知 owner、EPERM 等未知状态不会被提前回收；清理资源租约不取代操作 fence 和补丁恢复证明。
+
+当前复现：`node scripts/check-verified-patch-recovery.mjs /tmp/napier-verified-patch-new.json`，输出独占创建。最终收据见 [verified-patch-recovery-verified-2026-10-29.json](artifacts/verified-patch-recovery-verified-2026-10-29.json)。31 个真实进程故障/拒绝用例覆盖 create/replace 的两个早期断点、五种恢复过程再次退出、最终响应丢失、双进程竞争、同文件多步补丁、权限/文件/Sandbox 漂移、缺失输入和晚到提交。没有重复目标提交；已有目标的 inode/mtime 在结果复用场景保持不变。0 外部模型请求，模型为显式 faux provider。
+
+[补齐 Sandbox 后的 31 用例收据](artifacts/verified-patch-recovery-current-2026-10-29.json) 也保留；最终仅将 Sandbox 类型导入改为直接依赖类型模块，消除新引入的 barrel 耦合超限后重新验证。
+
+[首份 30 用例收据](artifacts/verified-patch-recovery-2026-10-29.json) 保留添加 Sandbox 门槛之前的源码快照。测试过程中还发现 tsx 与 Vitest 的函数源码转换会产生不同工具定义摘要；恢复进程使用相同 tsx 入口验证，不放宽定义比较。耗时是本机单次 restart/continuation 采样，不包含策略 backoff，不代表真实模型性能改善。
+
+验证汇总：13 个 Runtime 文件共 125 个不同用例；Server 配置校验 8 个，Web 3 文件共 10 个用例。Contracts 构建、Runtime typecheck/build:compile、Web/SDK/Server typecheck、Web build 与 design contract 通过。架构为 10 项既有失败：将模式注册和恢复授权归回各自模块后，原 run-config 超限被消除；相应预算只下调。公开 API 仍为原 root 1897/1896 与 compatibility digest 两项失败。历史 release source manifest 未改，编译不等同完整发布验收。
+
+本切片仅授权已有精确捕获的主 Agent apply_patch。未知写工具、缺少准备证据的历史操作、Workflow 待执行写入、未进入 journal 的后续模型工具请求仍不获得写权限。v2 证明只针对目标提交，先前创建的父目录可能保留。未验证断电或跨主机语义、真实模型质量、完整自定义 lifecycle 扩展策略及统一恢复操作区的可用性；G04 与 G01–G07 继续实施。以下章节保留各历史切片的证据和当时边界。
+
+
 2026-10-29。当前实现覆盖已结算的 `apply_patch`、有写前意图的未结算文件提交，以及已保存 Workflow 审批的原请求重试。补丁恢复核对文件后继续只读工作；审批恢复复用已保存答案和 continuation。G04 整体验收仍未完成。
 
 ## Workflow 审批的原请求重试与进程互斥

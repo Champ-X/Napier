@@ -1,3 +1,4 @@
+import { notCommittedPatchForBoundary } from "./workspace-patch-not-committed.js";
 import type { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent, RunLeaseSummary } from "@napier/contracts";
@@ -44,7 +45,14 @@ export function assertEffectIndeterminateTerminalCommit(
     (event) => event.type === "tool.operation.effect_indeterminate",
   );
   if (markers.length === 0) {
-    if (events.some((event) => event.type === "workspace.patch.reconciled"))
+    if (
+      events.some((event) =>
+        [
+          "workspace.patch.reconciled",
+          "workspace.patch.not_committed",
+        ].includes(event.type),
+      )
+    )
       throw new EffectIndeterminateCommitError(
         events[0]!.runId,
         "patch reconciliation requires an atomic authority fence and Run transition",
@@ -82,7 +90,11 @@ export function assertNoContinuationAfterEffectIndeterminate(
 ): void {
   for (const event of events) {
     if (event.type === "tool.operation.effect_indeterminate") continue;
-    if (event.type === "workspace.patch.reconciled") {
+    if (
+      ["workspace.patch.reconciled", "workspace.patch.not_committed"].includes(
+        event.type,
+      )
+    ) {
       const proof = record(event.payload);
       if (
         !events.some(
@@ -113,7 +125,9 @@ export function assertNoContinuationAfterEffectIndeterminate(
     // The journal fence and its read-only reconciliation proof are one
     // atomic recovery transition. A later executor cannot append this proof.
     if (
-      event.type === "workspace.patch.reconciled" &&
+      ["workspace.patch.reconciled", "workspace.patch.not_committed"].includes(
+        event.type,
+      ) &&
       events.some((candidate) => candidate.id === marker.id)
     )
       continue;
@@ -221,10 +235,17 @@ function assertMarkerCommit(
         [...priorEvents, ...events],
         boundary.boundaryEvent,
       );
+    const negative =
+      boundary.boundaryEvent &&
+      notCommittedPatchForBoundary(
+        [...priorEvents, ...events],
+        boundary.boundaryEvent,
+      );
+    const proofSeq = proof?.completedSeq ?? negative?.seq;
     if (
-      !proof ||
-      proof.completedSeq <= marker.seq ||
-      proof.completedSeq >= terminal.seq
+      proofSeq === undefined ||
+      proofSeq <= marker.seq ||
+      proofSeq >= terminal.seq
     )
       throw markerError(
         marker,

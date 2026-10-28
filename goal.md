@@ -154,6 +154,14 @@
 - 验证：当前收据 3 文件 29 测试通过，连同 Workflow 执行/恢复/重试/并行节点、实验/断点/循环/成果结算和 SDK 回归，共 14 文件 156 个不同测试通过。Runtime typecheck / build:compile、diff check 通过；架构回到原 11 项，公开 API 仍为 1897/1896 与原 compatibility digest 不匹配。未提高预算，未重写 release source manifest；本轮不是完整发布验收。
 - G04 仍需 before-effect / before-target-commit 的确认未执行后继续、任意下游工具中断的适配与统一恢复操作区。G01–G07 其余目标全部保留；本切片不代表 G04 或全目标通过。
 
+### 后续推进：G04 确认未提交后执行原补丁
+
+- 从 `1671a715` 和前轮未提交草稿继续，保留用户 Web/文档/启动脚本改动。新增显式 `verified_patches` 策略；旧 `safe_read_only` 不扩大写权限。精确输入进入私有胶囊，账本只保存摘要；v2 prepared 后必须先持久化 commit_started 才能提交目标。原 Run fence 与 not_committed 证明原子落账，不用“文件没变化”推断从未执行。
+- 恢复计划与新 Run/租约原子保存，按原调用和最近执行继承未开始工作或已结算结果；确定性补丁阶段走共享 authority/并发/结算链，再让模型用只读工具继续。冻结定义、原权限与当前权限、文件前置条件及所需 Sandbox 状态必须一致；原调用不补造成功终态。补充死进程资源租约清理，只接受本机 owner 的 ESRCH 证据，不提前回收活/未知 owner。
+- 当前 [31 用例故障收据](docs/artifacts/verified-patch-recovery-verified-2026-10-29.json) 覆盖创建/替换的早期断点、恢复自身五种再次中断、响应丢失、双进程竞争、同文件版本链和环境/权限/输入拒绝。0 重复目标提交，0 外部模型请求；有界 fixture 模型只读 continuation 通过，不作为 live-model 质量提升。保留此前 [30 用例源码快照](docs/artifacts/verified-patch-recovery-2026-10-29.json)，其后补上 Sandbox 门槛。复现脚本和边界见 [operation-recovery.md](docs/operation-recovery.md)。
+- 相关 13 个 Runtime 文件共 125 个不同用例通过；Server 8 个、Web 10 个配置/投影用例通过。Contracts、Runtime 编译/typecheck、Web/SDK/Server typecheck、Web build/design contract 通过。架构现为 10 项既有失败，原 run-config 超限随职责收敛消除，预算仅下调；公开 API 仍为 1897/1896 与原 digest 不匹配，未重写历史发布 manifest。
+- G04 尚需统一恢复操作区和全分类验收；此能力限于精确捕获的主 Agent apply_patch，模型后续仍只读，Workflow 待执行写入、自定义 lifecycle 扩展和其他写工具尚未完成。G01/G02 剩余项及 G03/G05–G07 全部保留，总目标仍为 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -297,7 +305,7 @@
 **实施任务**
 
 - [ ] 基于现有 operation 记录区分：尚未执行、已确认完成、结果待对账、不可自动重放。
-- [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态或精确结算结果与私有绑定齐备时，重查后置条件并继续原有只读恢复；当前 26 场景进程故障证据已留存；有写前意图的未结算提交也可独立对账，未执行操作自动继续仍待完成。）
+- [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态或精确结算结果与私有绑定齐备时，重查后置条件并继续原有只读恢复；当前 26 场景进程故障证据已留存；有写前意图的未结算提交也可独立对账，精确捕获的未提交主 Agent apply_patch 已在显式 verified_patches 策略下继续；其他操作和统一恢复操作区仍待完成。）
 - [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。（有写前意图的 apply_patch 已实现文件身份/摘要对账；尚未完成全 G04 操作分类与恢复矩阵。）
 - [ ] 对环境漂移、权限变化、证据缺失和不可对账操作保留明确停止原因。
 - [ ] 将恢复建议与用户操作区接通，说明保留了什么、从哪里继续、哪些结果仍不确定。

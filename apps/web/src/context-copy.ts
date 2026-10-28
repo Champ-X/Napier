@@ -1,3 +1,4 @@
+import { contextRecoveryEn } from "./context-recovery-copy";
 import { deepMergeCopy, getLocale } from "./locale";
 import { contextZh } from "./context-copy.zh";
 export const contextCopyEn = {
@@ -105,20 +106,7 @@ export const contextCopyEn = {
   capabilityBrowserInteract: "Browser interact",
   capabilityYes: "yes",
   capabilityNo: "no",
-  recoveryPolicy: "Interruption policy",
-  recoveryTitle: "Safe automatic recovery",
-  recoveryKicker: "SNAPSHOT-BOUND · FAIL CLOSED",
-  recoveryMode: "Recovery mode",
-  recoveryModes: {
-    manual: "Manual resume only",
-    safe_read_only: "Automatic · safe read-only",
-  },
-  recoveryAttempts: "Maximum attempts",
-  recoveryBackoff: "Base delay (sec)",
-  recoverySafeBody:
-    "Only a schema-2 interrupted Run with no unresolved tools, writes, unknown effects, or imported provenance can continue. The child Run uses the frozen Agent revision and exposes only local read tools.",
-  recoveryManualBody:
-    "Interrupted Runs wait for an operator. Manual Resume remains available and always warns that prior tool outcomes may be unknown.",
+  ...contextRecoveryEn,
   modelAdvisor: "Model Advisor",
   modelAdvisorMode: "Advisor mode",
   modelAdvisorModes: {

@@ -73,7 +73,8 @@ function assessment(value: unknown): boolean {
     new Set(blockReasons).size === blockReasons.length &&
     eligible === (blockReasons.length === 0) &&
     (value["policy"]["mode"] === "manual" ||
-      value["policy"]["mode"] === "safe_read_only") &&
+      value["policy"]["mode"] === "safe_read_only" ||
+      value["policy"]["mode"] === "verified_patches") &&
     integer(value["policy"]["maxAttempts"], 1, 3) &&
     integer(value["policy"]["backoffMs"], 1_000, 3_600_000) &&
     toolCalls(value["toolCalls"]) &&

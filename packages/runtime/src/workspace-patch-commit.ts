@@ -32,6 +32,7 @@ export async function commitWorkspacePatch(input: {
     `.${path.basename(input.target)}.napier-${randomBytes(8).toString("hex")}.tmp`,
   );
   let temporaryExists = false;
+  let beginCommit: void | (() => Promise<void>);
   try {
     const temporary = await open(temporaryPath, "wx", input.mode);
     temporaryExists = true;
@@ -39,7 +40,7 @@ export async function commitWorkspacePatch(input: {
       await temporary.writeFile(input.output);
       await temporary.sync();
       const identity = await temporary.stat();
-      await input.prepare?.(input.result, {
+      beginCommit = await input.prepare?.(input.result, {
         dev: identity.dev,
         ino: identity.ino,
       });
@@ -47,6 +48,7 @@ export async function commitWorkspacePatch(input: {
       await temporary.close();
     }
     await input.beforeCommit();
+    await beginCommit?.();
     if (input.result.operation === "create") {
       await link(temporaryPath, input.target);
       // The target already exists if unlink/fsync subsequently fails.

@@ -82,7 +82,10 @@ export function assessAutomaticRecovery(
   const policy = options.run.configuration
     ? fingerprintAutomaticRecovery(options.run.configuration)
     : structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY);
-  const observations = collectRunToolEffectObservations(runEvents);
+  const observations = collectRunToolEffectObservations(
+    runEvents,
+    policy.mode === "verified_patches",
+  );
   const unsafeToolNames = canonicalNames(
     observations
       .filter((observation) => observation.effect === "write")
@@ -533,10 +536,7 @@ function validatePolicy(value: unknown): AutomaticRecoveryPolicy {
     "backoffMs",
   ]);
   return normalizeAutomaticRecoveryPolicy({
-    mode:
-      policy["mode"] === "manual" || policy["mode"] === "safe_read_only"
-        ? policy["mode"]
-        : ("invalid" as AutomaticRecoveryPolicy["mode"]),
+    mode: policy["mode"] as AutomaticRecoveryPolicy["mode"],
     maxAttempts: Number(policy["maxAttempts"]),
     backoffMs: Number(policy["backoffMs"]),
   });

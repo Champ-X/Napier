@@ -1,3 +1,4 @@
+import { localProcessOwnerStatus } from "./local-process-owner.js";
 import type { DatabaseSync } from "node:sqlite";
 
 import {
@@ -317,6 +318,20 @@ function deleteExpired(database: DatabaseSync, nowMs: number): void {
   database
     .prepare("DELETE FROM tool_concurrency_leases WHERE expires_at_ms <= ?")
     .run(nowMs);
+  // A dead local runtime cannot renew or release its resource leases. Domain
+  // execution authority still decides whether its abandoned work may resume.
+  const owners = database
+    .prepare(
+      "SELECT DISTINCT owner_id FROM tool_concurrency_leases WHERE owner_id LIKE 'process:%'",
+    )
+    .all();
+  for (const row of owners) {
+    const owner = String(row["owner_id"]);
+    if (localProcessOwnerStatus(owner) === "dead")
+      database
+        .prepare("DELETE FROM tool_concurrency_leases WHERE owner_id = ?")
+        .run(owner);
+  }
 }
 
 function validateClaim(input: ClaimDurableToolConcurrencyLeaseInput): void {

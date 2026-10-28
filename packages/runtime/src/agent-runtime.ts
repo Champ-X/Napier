@@ -193,6 +193,7 @@ import { ModelRouter, type ModelRouteSession } from "./model-route.js";
 import { createId, createProcessLeaseOwnerId } from "./ids.js";
 import {
   authorizeInternalCapabilityPresetRecoveryIf,
+  patchRecoveryRunInput,
   resolvePromptCapabilityProfile,
 } from "./internal-research-recovery-authorization.js";
 import {
@@ -201,6 +202,7 @@ import {
 } from "./import-boundary-format.js";
 import {
   continueAnsweredOperatorDecision,
+  prepareAgentRunRecoveryStage,
   resumeInterruptedAgentRun,
   resumeInterruptedAgentRunAutomatically,
 } from "./agent-run-recovery.js";
@@ -367,7 +369,7 @@ export class AgentRuntime {
     const requestedSource = (
       options as unknown as { source?: RunInvocationSource }
     ).source;
-    const prompt = validateAgentRunPrompt(
+    let prompt = validateAgentRunPrompt(
       options.text,
       requestedSource,
       [...(this.activeRuns.get(options.threadId)?.values() ?? [])].map(
@@ -440,6 +442,7 @@ export class AgentRuntime {
       effectiveAgentSnapshot.toolLoopGuard,
     );
     const createRunInput = {
+      ...patchRecoveryRunInput(options),
       threadId: thread.id,
       agentId: effectiveAgentSnapshot.id,
       model: modelRef,
@@ -595,16 +598,11 @@ export class AgentRuntime {
         ...(options.recovery ? { recovery: options.recovery } : {}),
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       });
-      const sourceContinuityGuidance =
-        await this.capabilities.prepareSourceContinuityGuidance({
-          owner: { threadId: thread.id, runId: run.id },
-          invocationSource,
-          automaticRecovery: options.recovery?.mode === "automatic",
-          sourceContinuityRequired: options.sourceContinuityRunId !== undefined,
-          sourceContinuityRunId: options.sourceContinuityRunId,
-          enabledTools: agentProfile.enabledTools,
-          onEvent: options.onEvent,
-        });
+      const { sourceContinuityGuidance, patchRecoveryGuidance } = await prepareAgentRunRecoveryStage({
+        store: this.store, run, profile: effectiveAgentSnapshot, capabilities: this.capabilities, sandbox: this.verificationSandbox,
+        concurrencyGate: this.toolConcurrencyGate, signal: abortController.signal, options, agentProfile,
+      });
+      prompt += patchRecoveryGuidance;
       abortController.signal.throwIfAborted();
       const model = await this.modelRegistry.resolveConfigured(modelRef);
       const modelRoute = await createAgentRunModelRoute(this.modelRouter, {

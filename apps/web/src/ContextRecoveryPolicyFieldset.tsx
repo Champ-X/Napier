@@ -48,6 +48,9 @@ export function ContextRecoveryPolicyFieldset({
             <option value="safe_read_only">
               {contextCopy.recoveryModes.safe_read_only}
             </option>
+            <option value="verified_patches">
+              {contextCopy.recoveryModes.verified_patches}
+            </option>
           </select>
         </label>
         <ContextNumberField
@@ -67,9 +70,11 @@ export function ContextRecoveryPolicyFieldset({
       </div>
       <p>
         <ShieldCheck size={11} aria-hidden="true" />
-        {agentRecoveryMode === "safe_read_only"
-          ? contextCopy.recoverySafeBody
-          : contextCopy.recoveryManualBody}
+        {agentRecoveryMode === "verified_patches"
+          ? contextCopy.recoveryVerifiedBody
+          : agentRecoveryMode === "safe_read_only"
+            ? contextCopy.recoverySafeBody
+            : contextCopy.recoveryManualBody}
       </p>
     </fieldset>
   );

@@ -1,3 +1,13 @@
+import type { OsSandboxAdapter } from "./sandbox-types.js";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
+import type { EventSink } from "./event-sink.js";
+import type { PatchRecoveryExecutionStore } from "./workspace-patch-recovery-execution.js";
+import type { AgentProfile } from "@napier/contracts";
+import type { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
+import { executeWorkspacePatchRecovery } from "./workspace-patch-recovery-execution.js";
+import { VERIFIED_PATCH_RECOVERY } from "./internal-research-recovery-authorization.js";
+import { planWorkspacePatchRecovery } from "./workspace-patch-recovery-plan.js";
+import { inspectWorkspacePatchRecoveryPlan } from "./workspace-patch-recovery-execution.js";
 import type {
   ExecutionPlan,
   RunEvent,
@@ -136,7 +146,15 @@ export async function resumeInterruptedAgentRunAutomatically(
     host.store.dataRoot,
     patches,
   );
+  const patchPlan =
+    modernRunConfiguration(interrupted.configuration) &&
+    interrupted.configuration.automaticRecovery.mode === "verified_patches"
+      ? planWorkspacePatchRecovery(interrupted, events)
+      : undefined;
+  if (patchPlan)
+    await inspectWorkspacePatchRecoveryPlan(host.store, thread.id, patchPlan);
   const recoveryOptions: RunPromptOptions = {
+    ...(patchPlan ? { [VERIFIED_PATCH_RECOVERY]: patchPlan } : {}),
     ...inheritedHarnessPolicyOptions(events, interrupted.id),
     threadId: thread.id,
     text:
@@ -153,7 +171,9 @@ export async function resumeInterruptedAgentRunAutomatically(
         : ""),
     model: interrupted.configuration.model,
     agentRevision: interrupted.configuration.agentRevision,
-    executionMode: "safe_read_only_recovery",
+    executionMode: patchPlan
+      ? "verified_patch_recovery"
+      : "safe_read_only_recovery",
     parentRunId: interrupted.id,
     source: "recovery",
     triggerId: attempt.triggerId,
@@ -203,7 +223,77 @@ function automaticRecoveryEligible(
     !isWorkflowRunSource(run.source) &&
     run.configuration &&
     modernRunConfiguration(run.configuration) &&
-    run.configuration.automaticRecovery.mode === "safe_read_only" &&
+    ["safe_read_only", "verified_patches"].includes(
+      run.configuration.automaticRecovery.mode,
+    ) &&
     run.configuration.contentSha256 === assessment.runConfigurationSha256,
   );
+}
+
+/** Prepare deterministic recovery before model context or source continuation. */
+export async function prepareAgentRunRecoveryStage(input: {
+  store: PatchRecoveryExecutionStore;
+  sandbox: OsSandboxAdapter;
+  run: RunRecord;
+  profile: AgentProfile;
+  capabilities: {
+    createTools(options: {
+      profile: AgentProfile;
+      threadId: string;
+      runId: string;
+      beforeWorkspaceWrite: () => Promise<void>;
+    }): AgentTool[];
+    prepareSourceContinuityGuidance(input: {
+      owner: { threadId: string; runId: string };
+      invocationSource: string;
+      automaticRecovery: boolean;
+      sourceContinuityRequired: boolean;
+      sourceContinuityRunId: string | undefined;
+      enabledTools: readonly string[];
+      onEvent: EventSink | undefined;
+    }): Promise<string>;
+  };
+  concurrencyGate: ToolConcurrencyGate;
+  signal: AbortSignal;
+  options: RunPromptOptions;
+  agentProfile: AgentProfile;
+}) {
+  const {
+    store,
+    sandbox,
+    run,
+    profile,
+    capabilities,
+    concurrencyGate,
+    signal,
+    options,
+    agentProfile,
+  } = input;
+  const patchRecoveryGuidance = await executeWorkspacePatchRecovery({
+    store,
+    sandbox,
+    run,
+    profile,
+    concurrencyGate,
+    signal,
+    onEvent: options.onEvent,
+    createTools: (beforeWorkspaceWrite) =>
+      capabilities.createTools({
+        profile,
+        threadId: run.threadId,
+        runId: run.id,
+        beforeWorkspaceWrite,
+      }),
+  });
+  const sourceContinuityGuidance =
+    await capabilities.prepareSourceContinuityGuidance({
+      owner: { threadId: run.threadId, runId: run.id },
+      invocationSource: options.source ?? "user",
+      automaticRecovery: options.recovery?.mode === "automatic",
+      sourceContinuityRequired: options.sourceContinuityRunId !== undefined,
+      sourceContinuityRunId: options.sourceContinuityRunId,
+      enabledTools: agentProfile.enabledTools,
+      onEvent: options.onEvent,
+    });
+  return { sourceContinuityGuidance, patchRecoveryGuidance };
 }

@@ -14,6 +14,7 @@ import type { LocalStore } from "./store.js";
 import { toolInvocationExperimentProtocol } from "./tool-invocation-experiment-eligibility.js";
 import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 import { createOwnedToolRecordV2 } from "./owned-tool-protocol.js";
+import { captureWorkspacePatchInvocation } from "./workspace-patch-invocation.js";
 
 export async function captureToolInvocation(
   store: LocalStore,
@@ -30,10 +31,25 @@ export async function captureToolInvocation(
     if (!tool || tool.name !== toolName) {
       throw new Error("Tool definition is unavailable");
     }
-    const invocation = toolInvocationExperimentProtocol(
-      createOwnedToolRecordV2(tool),
-      args,
-    );
+    const owned = createOwnedToolRecordV2(tool);
+    if (toolName === "apply_patch") {
+      if (
+        definitionSha256 !== undefined &&
+        definitionSha256 !== owned.definitionSha256
+      )
+        throw new Error(
+          "Patch definition hash does not match the owned protocol",
+        );
+      await captureWorkspacePatchInvocation(
+        store,
+        run,
+        callId,
+        args,
+        owned.definitionSha256,
+      );
+      return undefined;
+    }
+    const invocation = toolInvocationExperimentProtocol(owned, args);
     if (!invocation) return undefined;
     if (
       definitionSha256 !== undefined &&
