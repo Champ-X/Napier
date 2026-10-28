@@ -12,10 +12,10 @@ describe("Workbench layout", () => {
       'grid-template-areas:\n    "header"\n    "content"',
     );
     expect(styles).toContain(
-      '"notices"\n    "conversation"\n    "results"\n    "decisions"\n    "composer"',
+      '"notices"\n    "conversation"\n    "results"\n    "decisions"\n    "drafts"\n    "composer"',
     );
     expect(styles).toContain(
-      "grid-template-rows: auto minmax(0, 1fr) auto auto auto;",
+      "grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;",
     );
     expect(styles).toContain(".workspace-primary-surface");
     expect(styles).toContain(".conversation-workspace-view");

@@ -27,7 +27,7 @@ export function upsertThreadControlMessage(
   detail: WebThreadDetail | undefined,
   message: RunControlMessage,
 ): WebThreadDetail | undefined {
-  return detail
+  return detail && detail.thread.id === message.threadId
     ? {
         ...detail,
         runControlMessages: [

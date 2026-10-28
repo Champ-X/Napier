@@ -116,6 +116,15 @@
 - 绑定源码的收据：[run-control-idempotency-2026-10-29.json](docs/artifacts/run-control-idempotency-2026-10-29.json)；复现：[check-run-control-idempotency.mjs](scripts/check-run-control-idempotency.mjs)；协议说明：[run-control-idempotency.md](docs/run-control-idempotency.md)。HTTP 检查使用真实 Hono app.request 路由，不宣称是浏览器或 TCP 故障注入；0 外部模型请求。
 - G06-A 的草稿刷新持久化、附件生命周期、客户端身份保存、发件箱状态/撤回/编辑、跨线程异步归属仍未整体完成，因此不勾选该目标实施项。G01–G07 总目标保持 active。
 
+### 后续推进：G06-A 按会话保存草稿与失败归属
+
+- 上一轮为 **progress**，现场确认本地 `cdb3bed1`、`3260775e`，未 push。本轮把普通 Composer 的文本和 steering/follow_up 模式移到 workspace root/dataRoot + 实际 threadId 对应的浏览器持久存储；新会话使用其新 threadId 的独立空草稿，未选中会话时不写入临时全局草稿。
+- 切换会话和刷新保留文本/模式。延迟失败只恢复原会话；原会话已有新输入时，将失败文本保留为可恢复草稿，不覆盖新内容。恢复某份草稿时也保留当前文本，用户可显式丢弃；存储拒绝或额度不足时保留内存输入并提示复制保存。
+- 图片仍只在当前会话视图内存中保存，不写入 localStorage；切换会话或 workspace 清空。带 scope generation 的 setter 阻止 A→B→A 之后旧文件读取/发送失败重新注入图片。排队响应合入线程详情前检查 threadId，错误提示也核对选中线程；完整发件箱的持久化身份/状态仍未接入。
+- 7 文件共 45 个不同 Web 用例通过（含 7 个新存储/Hook/异步归属用例）。真实 HTTP 服务 + Chromium 验证多行草稿和模式刷新保留、A/B 独立、延迟队列失败保留 A 新旧文本、恢复草稿刷新保留、存储拒绝提示；7 种窗口尺寸无页面横向溢出且恢复操作可达，0 模型调用。截图修正了新增恢复区被旧布局压缩的问题，并增加显式 grid area，未覆盖用户原有 Composer 改动。
+- 收据：[composer-drafts-ui-2026-10-29.json](docs/artifacts/composer-drafts-ui-2026-10-29.json)；复现：[check-composer-drafts-ui.mjs](scripts/check-composer-drafts-ui.mjs)；说明：[composer-drafts.md](docs/composer-drafts.md)。Web typecheck/build、设计契约和 diff check 通过。新增耦合由复用已有 next-run 输入组合入口消除，架构仍为原 11 项；主 ViewModel 2238→2226 行，未提高预算。
+- 本轮仅勾选 G06-A 的草稿归属与既有附件生命周期两项。普通干预发送仍未使用上一轮新增的 clientMessageId；持久化发件箱、可靠重试、消费状态、撤回和取消后编辑仍待推进。G01–G07 总目标保持 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -315,8 +324,8 @@
 
 **实施任务**
 
-- [ ] 按 workspace / thread 保存文本草稿与发送模式，明确新会话草稿归属。
-- [ ] 遵守当前附件保存约定；如需持久保存图片，单独明确生命周期和清理机制。
+- [x] 按 workspace / thread 保存文本草稿与发送模式，明确新会话草稿归属。（本地浏览器持久化；真实浏览器刷新/切线程与 Hook workspace 隔离已验证。）
+- [x] 遵守当前附件保存约定；如需持久保存图片，单独明确生命周期和清理机制。（图片仍只保留当前视图内存，切换/刷新清空；不新增图片持久化，延迟读取不能跨视图回填。）
 - [ ] 发出的消息绑定 threadId、runId、clientMessageId，复用现有服务端控制语义。
 - [ ] 展示发送中、已排队、模型已读取、取消或失败；不要把“已读取”暗示为“要求已完成”。
 - [ ] 未消费的跟进可撤回；编辑采用明确的替换 / 取消后重发语义。

@@ -20,7 +20,6 @@ import type {
   OpenTelemetryTraceArtifact,
   ReviewExtensionRequest,
   ReviewMemoryRequest,
-  RunControlMessageMode,
   RunComparison,
   RunReplaySnapshot,
   StreamFrame,
@@ -73,10 +72,7 @@ import {
 } from "./api";
 import { getBootstrap, getBootstrapRestoringWorkspace } from "./bootstrap-api";
 import { contextCheckpointPayload } from "./context-checkpoint-payload";
-import {
-  promptImagesFromAttachments,
-  type ComposerImageAttachment,
-} from "./composer-image-attachments";
+import { promptImagesFromAttachments } from "./composer-image-attachments";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
 import type {
@@ -190,15 +186,19 @@ export function useWorkspaceViewModel() {
   const [selectedThreadId, setSelectedThreadId] = useState<string>();
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("plan");
   const [selectedModelKey, setSelectedModelKey] = useState("napier/demo");
-  const [composer, setComposer] = useState("");
-  const [composerImages, setComposerImages] = useState<
-    ComposerImageAttachment[]
-  >([]);
+  const {
+    preset: nextRunCapabilityPreset,
+    setPreset: setNextRunCapabilityPreset,
+    harnessPolicy: nextRunHarnessPolicy,
+    composerDraft,
+  } = useNextRunOptions(
+    selectedThreadId,
+    bootstrap ? JSON.stringify([bootstrap.workspace.root, bootstrap.workspace.dataRoot]) : undefined,
+  );
+  const { composer, setComposer, composerImages, setComposerImages, controlMessageMode, restoreComposer } = composerDraft;
   const [threadRunSessions, setThreadRunSessions] = useState<ThreadRunSessions>(
     {},
   );
-  const [controlMessageMode, setControlMessageMode] =
-    useState<RunControlMessageMode>("steering");
   const [goalDraft, setGoalDraft] = useState("");
   const [memoryDraft, setMemoryDraft, memoryProvenance] =
     useMemoryProvenanceDraft(proposeMemory);
@@ -243,16 +243,10 @@ export function useWorkspaceViewModel() {
     useState<OpenTelemetryTraceVerificationReceipt>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
-  const {
-    preset: nextRunCapabilityPreset,
-    setPreset: setNextRunCapabilityPreset,
-    harnessPolicy: nextRunHarnessPolicy,
-  } = useNextRunOptions(detail?.thread.id);
   const selectedThreadIdRef = useRef<string | undefined>(undefined);
   const threadDetailCacheRef = useRef(new Map<string, WebThreadDetail>());
   selectedThreadIdRef.current = selectedThreadId;
 
-  useEffect(() => setComposerImages([]), [detail?.thread.id]);
 
   const { activeRunId, isRunning, streamingText } = useMemo(
     () => threadRunViewState(detail, threadRunSessions),
@@ -411,7 +405,6 @@ export function useWorkspaceViewModel() {
         );
         setSelectedModelKey(modelKey(result.recommendedRunModel));
         [
-          setComposer,
           setGoalDraft,
           setMemoryDraft,
           setLabLeftRunId,
@@ -441,7 +434,6 @@ export function useWorkspaceViewModel() {
         setMemoryCategory("context");
         setMemoryScope("workspace");
         setMemoryReviewIntervalDays(90);
-        setControlMessageMode("steering");
         setInspectorTab("plan");
       } catch (cause) {
         setError(toErrorMessage(cause));
@@ -598,8 +590,8 @@ export function useWorkspaceViewModel() {
           );
           setDetail((current) => upsertThreadControlMessage(current, message));
         } catch (queueError) {
-          setComposer(text);
-          setError(toErrorMessage(queueError));
+          restoreComposer(text);
+          setRunError(detail.thread.id, queueError);
         }
         return;
       }
@@ -622,7 +614,7 @@ export function useWorkspaceViewModel() {
         onStart: () => startRunUi(threadId, detail),
         onRefresh: () => refreshBootstrap(threadId),
         onError: (error) => setRunError(threadId, error),
-        restoreInput: setComposer,
+        restoreInput: restoreComposer,
         restoreImages: () => setComposerImages(imageAttachments),
         onFinish: () => finishRunUi(threadId),
         onFrame: streamFrameHandler(threadId),
@@ -633,6 +625,7 @@ export function useWorkspaceViewModel() {
       composer,
       composerImages,
       controlMessageMode,
+      restoreComposer,
       detail,
       finishRunUi,
       isRunning,
@@ -2031,12 +2024,10 @@ export function useWorkspaceViewModel() {
     inspectorTab,
     selectedModelKey,
     selectedModel,
-    composer,
-    composerImages,
+    ...composerDraft,
     nextRunCapabilityPreset,
     nextRunHarnessPolicy,
     activeRunId,
-    controlMessageMode,
     goalDraft,
     memoryDraft,
     ...memoryProvenance,
@@ -2078,10 +2069,7 @@ export function useWorkspaceViewModel() {
     contextCheckpointCalibration: detail?.contextCheckpointCalibration,
     setInspectorTab,
     setSelectedModelKey,
-    setComposer,
-    setComposerImages,
     setNextRunCapabilityPreset,
-    setControlMessageMode,
     setGoalDraft,
     setMemoryDraft,
     setMemoryCategory,

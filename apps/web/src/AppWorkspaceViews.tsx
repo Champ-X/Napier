@@ -9,6 +9,7 @@ import {
 
 import type { AgentProfile, BootstrapResponse } from "@napier/contracts";
 import { Composer } from "./Composer";
+import { ComposerDraftNotices } from "./ComposerDraftNotices";
 import { artifactInspectorCopy } from "./artifact-inspector-copy";
 import { ArtifactInspector } from "./ArtifactInspector";
 import { WorkbenchBrowserRail } from "./WorkbenchBrowserRail";
@@ -202,6 +203,7 @@ export function AppWorkspaceViews({
             suppressed={showWorkspaceRail}
           />
           <WorkbenchDeferredDecisions vm={vm} />
+          <ComposerDraftNotices vm={vm} />
           <Composer
             vm={vm}
             activeAgent={activeAgent}
