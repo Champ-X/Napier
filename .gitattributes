@@ -1,0 +1,2 @@
+# Retained failure evidence is hash-bound. Preserve original line endings and EOF blanks.
+benchmarks/harness-failures/bounded-queue-false-completion-v1/** -text whitespace=-blank-at-eof

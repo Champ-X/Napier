@@ -1,0 +1,1 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {runJobs} from '../src/queue.mjs';test('failures remain per-job',async()=>{const error=new Error('job');const out=await runJobs([()=>{throw error},()=>2]);assert.equal(out[0].reason,error);assert.equal(out[1].value,2)});

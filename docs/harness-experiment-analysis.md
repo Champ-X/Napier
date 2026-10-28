@@ -86,6 +86,10 @@ retained `0.1.3` receipt untouched. To check that retained receipt:
 node scripts/create-harness-experiment-release-evidence.mjs --verify docs/artifacts/harness-experiment-release-evidence-0.1.3.json
 ```
 
-This protocol is part of G02. Adapting the existing real-model campaign reports,
-their scheduling and failure Casebook exports remains a separate integration
-step; passing contract tests is not evidence of a model-quality improvement.
+This protocol is part of G02. The existing real-model campaign already uses
+`harness-paired-schedule.mjs` for AB/BA dispatch and preserves stopped/missing
+cells. Its regression suite now includes a hash-verified historical false
+completion; see [retained failures](../benchmarks/harness-failures/README.md).
+Adapting campaign reports and claim eligibility to this statistical protocol
+remains an integration step. Passing contract tests or replaying historical
+output is not evidence of a current model-quality improvement.

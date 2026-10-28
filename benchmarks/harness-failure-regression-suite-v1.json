@@ -1,0 +1,17 @@
+{
+  "kind": "napier.harness-optimization-suite",
+  "schemaVersion": 1,
+  "id": "harness_failure_regression_v1",
+  "cases": [
+    {
+      "path": "harness-failures/bounded-queue-false-completion-v1",
+      "coverage": [
+        "async-queue",
+        "nominal-type-validation",
+        "false-completion"
+      ],
+      "taskFamily": "async-queue",
+      "partition": "regression"
+    }
+  ]
+}

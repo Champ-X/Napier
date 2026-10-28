@@ -1,0 +1,11 @@
+export async function settleJob(job) {
+  if (typeof job !== 'function') {
+    throw new TypeError('job must be a function');
+  }
+  try {
+    return {status: 'fulfilled', value: await job()};
+  } catch (reason) {
+    return {status: 'rejected', reason};
+  }
+}
+

@@ -47,9 +47,11 @@ export async function prepareHarnessSuite(suitePath, output) {
     throw new Error("Invalid Harness suite definition");
   const ids = new Set(),
     identities = new Set(),
+    familyPartitions = new Map(),
     cases = [];
   await mkdir(output, { recursive: false });
   for (const item of suite.cases) {
+    const metadata = suiteCaseMetadata(item, familyPartitions);
     if (
       !item ||
       typeof item.path !== "string" ||
@@ -120,6 +122,7 @@ export async function prepareHarnessSuite(suitePath, output) {
       id: manifest.id,
       path: destination,
       coverage: [...new Set(item.coverage)],
+      ...metadata,
       inputSha256,
       files,
     });
@@ -137,6 +140,28 @@ export async function prepareHarnessSuite(suitePath, output) {
     { flag: "wx" },
   );
   return receipt;
+}
+
+function suiteCaseMetadata(item, partitions) {
+  if (item?.taskFamily === undefined && item?.partition === undefined)
+    return {};
+  if (
+    typeof item.taskFamily !== "string" ||
+    !/^[a-z][a-z0-9_.-]{2,79}$/u.test(item.taskFamily) ||
+    !["tuning", "regression", "holdout"].includes(item.partition)
+  )
+    throw new Error(
+      "Suite task family and partition must be declared together",
+    );
+  if (
+    partitions.has(item.taskFamily) &&
+    partitions.get(item.taskFamily) !== item.partition
+  )
+    throw new Error(
+      "Suite task family cannot span tuning, regression and holdout",
+    );
+  partitions.set(item.taskFamily, item.partition);
+  return { taskFamily: item.taskFamily, partition: item.partition };
 }
 
 /** Wait for every started job, including failed/cancelled ones. An aborted

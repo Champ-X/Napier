@@ -39,6 +39,11 @@
 - 90/90→89/90 反例在新协议中为 `inconclusive`（区间越过 0.02 边界），历史协议重算为 `non_inferior`，均不再为 improved。重复同 case 的 seed 不缩窄聚类区间。零差异、方向、最小有效差异、缺失数据、分区串用、fixture 伪装 live、篡改 AB/BA 顺序均有回归覆盖。
 - 旧 `harness-experiment-release-evidence-0.1.3.json` 原样校验通过；当前 CLI 显式报告 `historical_contract_only` / `promotionReady: false`。新 fixture 生成器改用新文件名，未重写历史收据。
 - 最新架构检查仍为基线 11 项失败，新增统计模块的复杂度问题已修复；公开 API 仍为原有两项失败。G02 尚需接入真实 campaign 调度/报告与 Casebook 失败案例，未宣布 G02 或全目标完成。
+- 本地语义提交 `32f295e4` 保存评测协议切片，未 push。
+- 后续核对确认真实 campaign 的 `harness-paired-schedule.mjs` 已有 AB/BA、逐对停止和失败/缺失记录，继续复用。当前 `harness-suite` 增加任务族与 partition 的快照保留及跨分区拒绝。
+- 已通过现有 `buildFailureCase` 将真实失败 `run_cef83d950d1c416096e2` 导出到 `benchmarks/harness-failures/bounded-queue-false-completion-v1`，原始报告 SHA-256 与历史证据一致。保留初始 fixture 和历史失败 observed 两份不同快照，加入 `harness-failure-regression-suite-v1.json`，保留原 case ID，不充当新增独立任务或 holdout。
+- 当前离线重放确认：保留的模型输出被原 grader 判失败，现有 reference 被同一 grader 判通过。`harness-retained-failure`、`harness-suite`、`harness-paired-schedule`、`harness-paired-suite-cli`、`harness-campaign-evidence` 共 5 文件 41 测试通过；未调用付费模型，未把历史输出重放当作当前模型改进证据。
+- G02 下一步：将新分析协议/证据等级接入现有 `run-harness-optimization-suite.mjs` 和 `evaluateCampaignQuality`（目前后者仍只有原 scoped quality gate）；补齐预声明统计与实际 campaign 报告绑定。G01、G03–G07 尚未验收。
 
 ## 2. 保留的基础与实施原则
 
@@ -132,10 +137,10 @@
 - [x] 按指标方向区分 improved、non_inferior、regressed、inconclusive；非零差异不等于改进。
 - [x] 为主指标声明单位、方向、非劣边界和最小有效差异；在看结果前确定规则。
 - [x] 增加按 case / task family 聚类的 paired bootstrap 区间，避免把同任务重复运行视为独立任务。
-- [ ] 将固定 baseline→candidate 顺序改为记录在案的平衡 AB/BA 顺序，控制环境与缓存影响。
+- [x] 将固定 baseline→candidate 顺序改为记录在案的平衡 AB/BA 顺序，控制环境与缓存影响。（通用 executor 已修复；真实 campaign 复用已存在的 paired schedule，并通过当前 CLI/调度测试。顺序平衡本身不证明缓存因果。）
 - [ ] 显式区分 contract_fixture、deterministic_integration、live_model、production_task，绑定可支持的结论范围。
 - [ ] 保留失败与缺失结果，不以重试后的最佳结果替换；划分调参、回归与未参与调参的任务族。
-- [ ] 将真实使用中的失败案例纳入现有 Casebook / campaign，而非另建重复系统。
+- [x] 将真实使用中的失败案例纳入现有 Casebook / campaign，而非另建重复系统。（保留异步队列真实失败，现有 exporter / suite 可加载，历史失败与 reference 均经当前 grader 重放。）
 
 **验收**
 
