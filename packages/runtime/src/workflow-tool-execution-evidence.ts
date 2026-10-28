@@ -5,6 +5,31 @@ import {
   agentToolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { toJsonValue } from "./agent-runtime-utils.js";
+
+/** Recovery storage metadata does not extend a Workflow's typed patch output. */
+export function workflowToolOutputValue(
+  toolName: string,
+  details: unknown,
+): JsonValue {
+  const value = toJsonValue(details);
+  if (
+    toolName !== "apply_patch" ||
+    !value ||
+    Array.isArray(value) ||
+    typeof value !== "object" ||
+    value["kind"] !== "napier.workspace-patch" ||
+    value["schemaVersion"] !== 1 ||
+    typeof value["recoveryCapsuleSha256"] !== "string"
+  )
+    return value;
+  const { resultSha256, ...content } = value;
+  if (sha256(canonicalJson(content)) !== resultSha256) {
+    throw new Error("Workflow patch result digest is invalid");
+  }
+  const { recoveryCapsuleSha256: _capsule, ...output } = content;
+  return { ...output, resultSha256: sha256(canonicalJson(output)) };
+}
 
 export interface WorkflowToolCallBinding {
   threadId: string;

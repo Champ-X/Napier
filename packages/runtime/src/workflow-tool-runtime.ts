@@ -36,6 +36,7 @@ import {
   workflowToolCallId,
   workflowToolInputLedgerProjection,
   workflowToolOutputLedgerProjection,
+  workflowToolOutputValue,
 } from "./workflow-tool-execution-evidence.js";
 import type { WorkflowRuntimeEnvironment } from "./workflow-runtime-ports.js";
 
@@ -320,7 +321,10 @@ export class ExecutionPlanWorkflowToolRuntime {
         execute: () =>
           tool.execute(toolCallId!, args as never, executionController.signal),
         settlement: (result) => {
-          const output = toJsonValue(result.details);
+          const output = workflowToolOutputValue(
+            options.node.tool,
+            result.details,
+          );
           try {
             assertWorkflowValue(
               options.node.outputSchema,
@@ -338,7 +342,10 @@ export class ExecutionPlanWorkflowToolRuntime {
         },
       });
       const result = admitted.value;
-      const output = toJsonValue(result.details);
+      const output = workflowToolOutputValue(
+        options.node.tool,
+        result.details,
+      );
       const outputSha256 = sha256(canonicalJson(output));
       const outputText = agentToolResultText(result);
       const outputProjection = workflowToolOutputLedgerProjection(
