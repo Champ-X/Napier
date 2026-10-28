@@ -1,0 +1,78 @@
+import { getLocale } from "./locale";
+
+export const controlOutboxCopy =
+  getLocale() === "zh"
+    ? {
+        title: "干预发件箱",
+        sending: "发送中",
+        uncertain: "发送结果待确认",
+        failed: "发送失败",
+        queued: "已排队",
+        delivered: "已消费",
+        cancelled: "已取消",
+        cancelling: "撤回结果待确认",
+        hint: "已消费表示执行器已取走消息，不代表要求已完成。重试和替换始终发送到原运行。",
+        unavailable:
+          "浏览器无法保存发件箱，新的发送已停止。请保留输入；恢复浏览器存储后重试。已有请求仍需核对状态。",
+        retry: "重试原消息",
+        refresh: "核对状态",
+        cancel: "撤回",
+        edit: "撤回后编辑",
+        editing: "替换内容",
+        replacement: "发送替换消息",
+        abandonEdit: "放弃编辑",
+        mode: "发送方式",
+        steering: "即时纠偏",
+        follow_up: "排队跟进",
+        unknownText: "本浏览器没有保存原文。",
+        details: "发送详情",
+        originalRun: "原运行",
+        identity: "消息身份",
+        cancelledHint: "消息尚未消费即取消。",
+        race: "消息已被消费，无法撤回或替换。",
+        missing: "尚未找到收据。可核对状态或使用同一身份重试。",
+        invalid: "消息须为 1–16384 个 UTF-8 字节。",
+        mismatch: "收据与原消息不符，请核对发送详情。",
+        failure: "请求失败，请核对状态后重试。",
+        savedReplacement: "替换消息已进入发件箱。",
+        editHint:
+          "确认原消息已取消后才允许发送替换。原运行已结束时不会转发到新运行。",
+      }
+    : {
+        title: "Intervention outbox",
+        sending: "Sending",
+        uncertain: "Delivery unconfirmed",
+        failed: "Send failed",
+        queued: "Queued",
+        delivered: "Consumed",
+        cancelled: "Cancelled",
+        cancelling: "Cancellation unconfirmed",
+        hint: "Consumed means the executor took the message, not that the request was fulfilled. Retries and replacements always address the original run.",
+        unavailable:
+          "This browser cannot save the outbox. New sends are stopped; keep your input and retry after storage is available. Existing requests still need reconciliation.",
+        retry: "Retry original message",
+        refresh: "Check status",
+        cancel: "Withdraw",
+        edit: "Withdraw then edit",
+        editing: "Replacement text",
+        replacement: "Send replacement",
+        abandonEdit: "Discard edit",
+        mode: "Delivery mode",
+        steering: "Steer now",
+        follow_up: "Queue follow-up",
+        unknownText: "Original text is unavailable in this browser.",
+        details: "Delivery details",
+        originalRun: "Original run",
+        identity: "Message identity",
+        cancelledHint: "Cancelled before consumption.",
+        race: "Already consumed; withdrawal and replacement are unavailable.",
+        missing:
+          "No receipt found yet. Check status or retry with the same identity.",
+        invalid: "Use 1–16384 UTF-8 bytes for the message.",
+        mismatch:
+          "The receipt does not match the original message. Check delivery details.",
+        failure: "Request failed. Check status before retrying.",
+        savedReplacement: "The replacement is in the outbox.",
+        editHint:
+          "A replacement can be sent only after cancellation is confirmed. If the original run ended, it will not be forwarded to a new run.",
+      };

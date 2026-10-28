@@ -1,0 +1,111 @@
+.composer-intent-panel {
+  grid-area: drafts;
+  min-width: 0;
+  max-height: 32dvh;
+  overflow: auto;
+}
+.composer-intent-panel:empty {
+  display: none;
+}
+.control-outbox {
+  width: var(--content-axis);
+  margin-inline: auto;
+  padding: var(--space-2) var(--space-4);
+  border-block-start: 1px solid var(--color-border-subtle);
+  color: var(--color-fg);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.control-outbox summary {
+  cursor: pointer;
+  min-height: var(--control-target);
+  align-content: center;
+  font-weight: var(--font-weight-semibold);
+}
+.control-outbox > details > summary {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  border-block-end: 1px solid var(--color-border-subtle);
+}
+.control-outbox ol {
+  margin: 0;
+  padding-inline-start: var(--space-6);
+}
+.control-outbox li {
+  padding-block: var(--space-2);
+}
+.control-outbox li + li {
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+.control-outbox p {
+  margin-block: var(--space-2);
+}
+.control-outbox-hint,
+.control-outbox-details {
+  color: var(--color-fg-muted);
+}
+.control-outbox-state,
+.control-outbox-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.control-outbox pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  max-height: 8em;
+  overflow: auto;
+}
+.control-outbox dd {
+  margin-inline-start: 0;
+  font-family: var(--font-mono);
+}
+.control-outbox [role="alert"],
+.control-outbox-error {
+  color: var(--color-danger);
+}
+.control-outbox button,
+.control-outbox select,
+.control-outbox textarea {
+  min-height: var(--control-target);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+}
+.control-outbox button {
+  cursor: pointer;
+}
+.control-outbox button:hover {
+  background: var(--color-surface-raised);
+}
+.control-outbox button:active {
+  background: var(--color-surface-selected);
+}
+.control-outbox :disabled {
+  cursor: wait;
+  color: var(--color-fg-disabled);
+}
+.control-outbox form {
+  display: grid;
+  gap: var(--space-2);
+}
+.control-outbox textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 5em;
+}
+.control-outbox :focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+@media (forced-colors: active) {
+  .control-outbox :focus-visible {
+    outline: 3px solid Highlight;
+  }
+}

@@ -1,3 +1,4 @@
+import { useThreadSubmission } from "./use-thread-submission";
 import { useThreadDecisionActions } from "./use-thread-decision-actions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -50,7 +51,6 @@ import {
   previewExtensionPackageRolloutChannel as previewExtensionPackageRolloutChannelApi,
   previewExtensionPackageUpdate as previewExtensionPackageUpdateApi,
   publishExtensionPackageRolloutChannel as publishExtensionPackageRolloutChannelApi,
-  queueRunControlMessage,
   rebindWorkspaceRoot,
   reviewMemory,
   reviewExtension,
@@ -72,7 +72,6 @@ import {
 } from "./api";
 import { getBootstrap, getBootstrapRestoringWorkspace } from "./bootstrap-api";
 import { contextCheckpointPayload } from "./context-checkpoint-payload";
-import { promptImagesFromAttachments } from "./composer-image-attachments";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
 import type {
@@ -109,7 +108,6 @@ import { messagePayload } from "./message-payload";
 import { commitThreadLocation, threadIdFromLocation } from "./thread-location";
 import { useNextRunOptions } from "./use-next-run-options";
 import {
-  upsertThreadControlMessage,
   useMemoryProvenanceDraft,
 } from "./thread-detail-view-state";
 import { useRecoveredActiveRun } from "./use-active-run-state";
@@ -195,7 +193,6 @@ export function useWorkspaceViewModel() {
     selectedThreadId,
     bootstrap ? JSON.stringify([bootstrap.workspace.root, bootstrap.workspace.dataRoot]) : undefined,
   );
-  const { composer, setComposer, composerImages, setComposerImages, controlMessageMode, restoreComposer } = composerDraft;
   const [threadRunSessions, setThreadRunSessions] = useState<ThreadRunSessions>(
     {},
   );
@@ -571,75 +568,26 @@ export function useWorkspaceViewModel() {
     [],
   );
 
-  const submit = useCallback(
-    async (override?: string) => {
-      const text = (override ?? composer).trim();
-      if (!text || !detail || openOperatorDecision) return;
-      if (isRunning) {
-        if (!activeRunId) return;
-        setComposer("");
-        setError(undefined);
-        try {
-          const message = await queueRunControlMessage(
-            detail.thread.id,
-            activeRunId,
-            {
-              mode: controlMessageMode,
-              text,
-            },
-          );
-          setDetail((current) => upsertThreadControlMessage(current, message));
-        } catch (queueError) {
-          restoreComposer(text);
-          setRunError(detail.thread.id, queueError);
-        }
-        return;
-      }
-      if (!selectedModel.configured) {
-        setError(copy.modelUnavailableHint);
-        return;
-      }
-      const threadId = detail.thread.id;
-      const capabilityPreset = nextRunCapabilityPreset;
-      const imageAttachments = composerImages;
-      const promptImages = promptImagesFromAttachments(imageAttachments);
-      setComposer("");
-      setComposerImages([]);
-      await nextRunHarnessPolicy.execute({
-        threadId,
-        text,
-        ...(promptImages ? { images: promptImages } : {}),
-        model: parseModelKey(selectedModelKey),
-        ...(capabilityPreset ? { capabilityPreset } : {}),
-        onStart: () => startRunUi(threadId, detail),
-        onRefresh: () => refreshBootstrap(threadId),
-        onError: (error) => setRunError(threadId, error),
-        restoreInput: restoreComposer,
-        restoreImages: () => setComposerImages(imageAttachments),
-        onFinish: () => finishRunUi(threadId),
-        onFrame: streamFrameHandler(threadId),
-      });
-    },
-    [
-      activeRunId,
-      composer,
-      composerImages,
-      controlMessageMode,
-      restoreComposer,
-      detail,
-      finishRunUi,
-      isRunning,
-      nextRunCapabilityPreset,
-      nextRunHarnessPolicy.execute,
-      openOperatorDecision,
-      refreshBootstrap,
-      selectedModel.configured,
-      selectedModelKey,
-      setRunError,
-      startRunUi,
-      streamFrameHandler,
-    ],
-  );
+  const { submit, controlOutbox } = useThreadSubmission({
+    workspaceKey: bootstrap ? JSON.stringify([bootstrap.workspace.root, bootstrap.workspace.dataRoot]) : undefined,
+    threadId: selectedThreadId,
+    detail,
+    composer: composerDraft,
+    activeRunId,
+    isRunning,
+    blocked: Boolean(openOperatorDecision),
+    modelConfigured: selectedModel.configured,
+    modelUnavailableHint: copy.modelUnavailableHint,
+    model: parseModelKey(selectedModelKey),
+    capabilityPreset: nextRunCapabilityPreset,
+    execute: nextRunHarnessPolicy.execute,
+    onStart: startRunUi,
+    onFinish: finishRunUi,
+    onRefresh: refreshBootstrap,
+    onError: setRunError,
+    onFrame: streamFrameHandler,
+    setError,
+  });
 
   const resume = useCallback(async () => {
     if (!detail || !resumableRun || isRunning) return;
@@ -2025,6 +1973,7 @@ export function useWorkspaceViewModel() {
     selectedModelKey,
     selectedModel,
     ...composerDraft,
+    controlOutbox,
     nextRunCapabilityPreset,
     nextRunHarnessPolicy,
     activeRunId,

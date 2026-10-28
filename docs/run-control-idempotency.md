@@ -1,5 +1,7 @@
 # 干预消息的稳定重试身份
 
+Web 普通 Composer 现已接入该协议，持久化、重试、撤回和替换的当前实现及浏览器验收见[干预发件箱](control-outbox.md)。本文下方保留后端切片自身的验证范围与当时边界。
+
 `POST /api/threads/:threadId/runs/:runId/control-messages` 接受可选的 `clientMessageId`。调用方应在首次发送前保存该身份，并在网络失败、响应丢失、刷新后的重试中复用。Thread、Run 和客户端身份共同确定 control ID；相同内容的另一项用户意图应使用新身份。
 
 ```json

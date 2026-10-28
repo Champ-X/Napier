@@ -8,9 +8,9 @@
 
 图片沿用既有约定：只存在当前会话视图内存，不持久化 base64，不纳入恢复文本列表；切换会话、工作区或刷新后清空。图片 setter 捕获视图 generation，即使 A→B→A，旧上传读取或旧发送失败也不能恢复图片。文本 setter 则继续写原会话分区，保留意图。
 
-普通排队消息的详情合入函数现在核对 message.threadId，延迟错误也核对选中线程。这里不等于完整干预发件箱：当前发送路径尚未使用服务端 clientMessageId，不能宣称网络重试已经幂等；Run 身份、原始消息模式、取消和重发状态将在独立发件箱中完整保留。主 Prompt 请求也没有新增自动重试权限；恢复提示要求先检查原会话是否已接受发送。
+运行中干预现已接入[持久发件箱](control-outbox.md)：失败消息保留原 Run、身份、模式和文本，由同一身份重试，不再复制回 Composer 造成重复意图。普通 Prompt 仍使用这里的草稿恢复逻辑，没有新增自动重试权限；恢复提示要求先检查原会话是否已接受发送。
 
-## 当前验收
+## 草稿切片的原始验收
 
 [浏览器收据](artifacts/composer-drafts-ui-2026-10-29.json)绑定相关源码和 Web 构建入口，使用真实隔离 HTTP 服务/Store 与 Chromium；只对一个队列请求注入传输失败，并对浏览器持久存储注入 quota failure，没有替换业务 API 响应。
 
@@ -29,4 +29,8 @@ node scripts/check-composer-drafts-ui.mjs /tmp/napier-composer-drafts-new.json
 npm exec -w @napier/web -- vitest run test/thread-composer-drafts.test.tsx test/composer-image-attachments.test.ts test/composer-interaction.test.tsx test/use-next-run-harness-policy.test.tsx test/agent-capability-composer.test.ts test/thread-run-stream-state.test.ts test/workbench-layout.test.ts --maxWorkers=2
 ```
 
-Server/Runtime/Contracts 的现有 dist 需与当前后端源码一致；本轮使用上一轮已编译的后端。模型调用为 0。没有读屏实测或真实用户成功率测量，也未完成 G06-A 发件箱及 G01–G07 全部目标。
+Server/Runtime/Contracts 的现有 dist 需与当前后端源码一致；原草稿切片使用上一轮已编译的后端，模型调用为 0。没有读屏实测或真实用户成功率测量。
+
+## 发件箱接入后的回归
+
+当前脚本在验证运行中模式持久化后结算 fixture Run，再对普通 Prompt 注入延迟传输失败，继续验证新旧文本、刷新、存储失败与 7 种窗口尺寸。[新收据](artifacts/composer-drafts-prompt-ui-2026-10-29.json)绑定当前脚本和相关源码；0 模型调用。历史队列失败收据未重写。发件箱有独立的真实 Runtime/HTTP 浏览器验收，G01–G07 其余目标仍保持未完成。

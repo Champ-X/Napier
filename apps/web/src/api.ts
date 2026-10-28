@@ -72,7 +72,6 @@ import type {
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
-  QueueRunControlMessageRequest,
   ReplanExecutionPlanRequest,
   ReviewExtensionRequest,
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
@@ -83,7 +82,6 @@ import type {
   ResolveEvaluationConsensusRequest,
   ResolveEvaluationConsensusResult,
   RunComparison,
-  RunControlMessage,
   RunEvaluationRecord,
   RunReplaySnapshot,
   RunReplaySnapshotVerification,
@@ -890,31 +888,6 @@ export function listRecentWorkspaces(): Promise<RecentWorkspaceEntry[]> {
   return requestJson("/api/workspace/recent");
 }
 
-export function queueRunControlMessage(
-  threadId: string,
-  runId: string,
-  body: QueueRunControlMessageRequest,
-): Promise<RunControlMessage> {
-  return requestJson(
-    `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/control-messages`,
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
-}
-
-export function cancelRunControlMessage(
-  threadId: string,
-  runId: string,
-  controlMessageId: string,
-): Promise<RunControlMessage> {
-  return requestJson(
-    `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/control-messages/${encodeURIComponent(controlMessageId)}/cancel`,
-    { method: "POST" },
-  );
-}
-
 export function proposeMemory(body: CreateMemoryRequest): Promise<MemoryFact> {
   return requestJson("/api/memories", {
     method: "POST",
@@ -1177,4 +1150,6 @@ export {
   continueOperatorDecision,
   resumeInterruptedRun,
   streamPrompt,
+  queueRunControlMessage,
+  cancelRunControlMessage,
 } from "./thread-run-api";

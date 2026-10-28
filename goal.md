@@ -125,6 +125,16 @@
 - 收据：[composer-drafts-ui-2026-10-29.json](docs/artifacts/composer-drafts-ui-2026-10-29.json)；复现：[check-composer-drafts-ui.mjs](scripts/check-composer-drafts-ui.mjs)；说明：[composer-drafts.md](docs/composer-drafts.md)。Web typecheck/build、设计契约和 diff check 通过。新增耦合由复用已有 next-run 输入组合入口消除，架构仍为原 11 项；主 ViewModel 2238→2226 行，未提高预算。
 - 本轮仅勾选 G06-A 的草稿归属与既有附件生命周期两项。普通干预发送仍未使用上一轮新增的 clientMessageId；持久化发件箱、可靠重试、消费状态、撤回和取消后编辑仍待推进。G01–G07 总目标保持 active。
 
+### 后续推进：G06-A 持久干预发件箱
+
+- 上一轮为 **progress**，现场核对 `baf8a50e` 和保留的用户改动，未 push。普通 Composer 的运行中输入在发送前保存 workspace/thread/原 runId/clientMessageId、正文和模式；存储失败不清空输入、不发新请求。同渲染重复提交与相同身份并发重试被抑制。
+- 刷新后只查账，不自动重发；网络不确定时保留原身份。重试和替换均指向原 Run，当前 Run 改变不导致转发。收据按事件序号合入，晚到 queued 不覆盖 consumed/cancelled。消费显示为“已消费”，不把执行器取走消息等同于指令已完成。
+- 未消费消息可撤回；先确认取消才允许编辑。编辑稿和预分配的新身份跨刷新保留，发送替换复用新身份；消费抢先发生时拒绝撤回/替换。旧消息正文仅从与收据绑定且摘要匹配的 queued event 恢复，缺失时不伪造。查账复用原 Run 消息列表接口，不重复拉取全会话。
+- 最终 7 文件 73 个 Web 测试通过（含 15 个存储/动作测试和 5 个 Hook 测试）。真实 Chromium/HTTP/Runtime/SQLite 覆盖发送与取消响应丢失、撤回编辑刷新、跨线程延迟失败、消费与撤回竞争、新 Run 开始后的旧请求重试、旧客户端撤回和 quota failure。4 次排队、3 次取消、1 次消费；fixture 模型实际只看到一次替换指令，共 3 次模型调用，外部请求 0。
+- 运行中消息不再恢复成普通草稿，因而同步把原草稿检查脚本改为普通 Prompt 失败；当前新旧草稿保留、刷新、存储错误与 7 种尺寸均通过，模型调用 0。两组浏览器均无页面横向溢出，相关按钮可达；桌面/320px 截图已检查，但不宣称完整读屏/窄屏可用性或 G06-B 用户测量通过。
+- 证据：[control-outbox-ui-2026-10-29.json](docs/artifacts/control-outbox-ui-2026-10-29.json)、[composer-drafts-prompt-ui-2026-10-29.json](docs/artifacts/composer-drafts-prompt-ui-2026-10-29.json)；说明与复现：[control-outbox.md](docs/control-outbox.md)。Web typecheck/build、设计契约、diff check 通过；架构仍为原 11 项，主 ViewModel 2226→2175 行，API 行数预算因职责提取下调 1180→1155。历史收据与发布 manifest 未改写。
+- G06-A 实施项及上述验收已覆盖；workspace generation 隔离来自 Hook 测试，不替代 G05-B 多工作区后台运行验收。G01/G02 剩余项、G03/G04/G05、G06-B 与 G07 继续保持原范围，总目标 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -326,10 +336,10 @@
 
 - [x] 按 workspace / thread 保存文本草稿与发送模式，明确新会话草稿归属。（本地浏览器持久化；真实浏览器刷新/切线程与 Hook workspace 隔离已验证。）
 - [x] 遵守当前附件保存约定；如需持久保存图片，单独明确生命周期和清理机制。（图片仍只保留当前视图内存，切换/刷新清空；不新增图片持久化，延迟读取不能跨视图回填。）
-- [ ] 发出的消息绑定 threadId、runId、clientMessageId，复用现有服务端控制语义。
-- [ ] 展示发送中、已排队、模型已读取、取消或失败；不要把“已读取”暗示为“要求已完成”。
-- [ ] 未消费的跟进可撤回；编辑采用明确的替换 / 取消后重发语义。
-- [ ] 异步返回先核对目标线程，断网重试使用稳定身份，避免串写和重复发送。
+- [x] 发出的消息绑定 threadId、runId、clientMessageId，复用现有服务端控制语义。（发送前持久化；真实浏览器/HTTP 丢失响应后稳定身份重试不新增排队。）
+- [x] 展示发送中、已排队、模型已读取、取消或失败；不要把“已读取”暗示为“要求已完成”。（额外展示待确认；delivered 标作执行器“已消费”，不推断指令履行。）
+- [x] 未消费的跟进可撤回；编辑采用明确的替换 / 取消后重发语义。（真实取消响应丢失、编辑刷新、新身份替换及消费竞争已验证。）
+- [x] 异步返回先核对目标线程，断网重试使用稳定身份，避免串写和重复发送。（实际 A/B 导航、新 Run 下重试旧请求及 Hook workspace generation 覆盖。）
 
 **验收**：刷新不丢文本草稿；切线程不带入其他任务的输入；快速切换时响应不会改错线程；断网重试不重复排队；用户可确认消息是否被消费并撤回尚未消费的消息。
 

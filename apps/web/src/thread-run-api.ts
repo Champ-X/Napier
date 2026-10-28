@@ -1,5 +1,7 @@
 import { requestJson } from "./api-client";
 import type {
+  QueueRunControlMessageRequest,
+  RunControlMessage,
   AnswerOperatorDecisionRequest,
   OperatorDecision,
   PromptRequest,
@@ -88,5 +90,41 @@ export function cancelOperatorDecision(
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/operator-decisions/${encodeURIComponent(decisionId)}/cancel`,
     { method: "POST" },
+  );
+}
+
+export function queueRunControlMessage(
+  threadId: string,
+  runId: string,
+  body: QueueRunControlMessageRequest,
+): Promise<RunControlMessage> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/control-messages`,
+    {
+      signal: AbortSignal.timeout(20000),
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function listRunControlMessages(
+  threadId: string,
+  runId: string,
+): Promise<RunControlMessage[]> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/control-messages`,
+    { signal: AbortSignal.timeout(20000) },
+  );
+}
+
+export function cancelRunControlMessage(
+  threadId: string,
+  runId: string,
+  controlMessageId: string,
+): Promise<RunControlMessage> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/control-messages/${encodeURIComponent(controlMessageId)}/cancel`,
+    { method: "POST", signal: AbortSignal.timeout(20000) },
   );
 }

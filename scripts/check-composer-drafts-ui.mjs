@@ -112,10 +112,15 @@ try {
   await input.fill("B draft stays independent");
   await switchTo(a);
   assert.equal(await input.inputValue(), "原会话未发送的草稿\n保留多行文本。");
+  // Running interventions now stay in the durable outbox. Exercise ordinary
+  // prompt failure here so draft recovery remains independently covered.
+  await store.finishRun(run.id, "completed");
+  await page.reload();
+  await input.waitFor();
   const captured = Promise.withResolvers(),
     release = Promise.withResolvers();
   await page.route(
-    `${fixture.origin}/api/threads/${a.id}/runs/${run.id}/control-messages`,
+    `${fixture.origin}/api/threads/${a.id}/messages`,
     async (route) => {
       captured.resolve();
       await release.promise;
@@ -123,7 +128,7 @@ try {
     },
     { times: 1 },
   );
-  await page.locator('.composer-run-actions button[type="submit"]').click();
+  await page.locator('.composer button[type="submit"]').click();
   await captured.promise;
   await input.fill("A newer draft must survive");
   await switchTo(b);
@@ -227,7 +232,7 @@ try {
         sourceHead: execFileSync("git", ["rev-parse", "HEAD"], {
           encoding: "utf8",
         }).trim(),
-        evidenceClass: "browser_and_real_service_with_queue_transport_fault",
+        evidenceClass: "browser_and_real_service_with_prompt_transport_fault",
         textAndModeSurviveReload: true,
         threadDraftsIndependent: true,
         delayedFailureRetainsBothDrafts: true,
@@ -239,7 +244,7 @@ try {
         sourceDigests: before,
         screenshots,
         limitations: [
-          "Client outbox identities, retry and cancellation UI remain separate G06-A work.",
+          "Intervention identity, retry and cancellation are verified by check-control-outbox-ui.mjs; this checker exercises ordinary prompt draft recovery.",
           "Workspace-key and late-image isolation are covered by Hook tests; this browser run verifies thread navigation and reload.",
           "Screenshots are viewport captures; no full accessibility audit or user-study measurement is claimed.",
         ],
