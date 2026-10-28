@@ -24,6 +24,13 @@ export function createHarnessExperimentReleaseEvidence(input: {
   executions: HarnessExperimentExecution[];
   bindings: HarnessExperimentReleaseBinding[];
 }): HarnessExperimentReleaseEvidence {
+  return buildReleaseEvidence(input, false);
+}
+
+function buildReleaseEvidence(
+  input: Parameters<typeof createHarnessExperimentReleaseEvidence>[0],
+  historical: boolean,
+): HarnessExperimentReleaseEvidence {
   const experiment = validateHarnessExperiment(input.experiment);
   assertReleaseIdentity(input.generatedAt, input.productVersion);
   const executions = input.executions
@@ -43,6 +50,37 @@ export function createHarnessExperimentReleaseEvidence(input: {
     bindings,
     regressionAttribution,
   );
+  const kind = experiment.analysis?.evidenceKind ?? "contract_fixture";
+  const claimScope =
+    kind === "live_model"
+      ? ("live_quality" as const)
+      : kind === "production_task"
+        ? ("production_quality" as const)
+        : kind === "deterministic_integration"
+          ? ("integration_only" as const)
+          : ("contract_only" as const);
+  if (!historical) {
+    if (!experiment.analysis) blockers.push("analysis_protocol_missing");
+    if (claimScope === "contract_only" || claimScope === "integration_only")
+      blockers.push("evidence_does_not_support_live_quality");
+    if (!experiment.cases.some((item) => item.partition === "holdout"))
+      blockers.push("untuned_task_family_evidence_missing");
+    if (
+      bindings.some(
+        (binding) =>
+          !HASH.test(binding.environmentSha256 ?? "") ||
+          !HASH.test(binding.graderSha256 ?? ""),
+      )
+    )
+      blockers.push("environment_or_grader_binding_missing");
+    if (
+      bindings.some((binding) => binding.credentialClass === "test_fixture") ||
+      /fixture|faux|mock/iu.test(
+        experiment.modelRouteLock.servingModel.provider,
+      )
+    )
+      blockers.push("fixture_cannot_support_live_quality");
+  }
   const content = {
     kind: "napier.harness-experiment-release-evidence" as const,
     schemaVersion: 1 as const,
@@ -54,6 +92,7 @@ export function createHarnessExperimentReleaseEvidence(input: {
     trend,
     regressionAttribution,
     promotionReady: blockers.length === 0,
+    ...(!historical ? { claimScope } : {}),
     blockers,
   };
   return { ...content, contentSha256: sha256(canonicalJson(content)) };
@@ -69,13 +108,21 @@ export function validateHarnessExperimentReleaseEvidence(
   ) {
     throw new Error("Harness experiment release evidence is invalid");
   }
-  const rebuilt = createHarnessExperimentReleaseEvidence({
-    generatedAt: String(input["generatedAt"] ?? ""),
-    productVersion: String(input["productVersion"] ?? ""),
-    experiment: input["experiment"] as HarnessExperiment,
-    executions: array(input["executions"]) as HarnessExperimentExecution[],
-    bindings: array(input["bindings"]) as HarnessExperimentReleaseBinding[],
-  });
+  if (
+    input["claimScope"] === undefined &&
+    (input["experiment"] as HarnessExperiment)?.analysis
+  )
+    throw new Error("Current Harness evidence requires a claim scope");
+  const rebuilt = buildReleaseEvidence(
+    {
+      generatedAt: String(input["generatedAt"] ?? ""),
+      productVersion: String(input["productVersion"] ?? ""),
+      experiment: input["experiment"] as HarnessExperiment,
+      executions: array(input["executions"]) as HarnessExperimentExecution[],
+      bindings: array(input["bindings"]) as HarnessExperimentReleaseBinding[],
+    },
+    input["claimScope"] === undefined,
+  );
   if (canonicalJson(rebuilt) !== canonicalJson(input)) {
     throw new Error("Harness experiment release evidence hash is invalid");
   }
@@ -143,7 +190,11 @@ function attributeRegression(
     latestExecutionSha256: latest.contentSha256,
     ...(previous ? { previousExecutionSha256: previous.contentSha256 } : {}),
   };
-  if (latest.evaluation.verdict === "insufficient_evidence") {
+  if (
+    ["insufficient_evidence", "inconclusive"].includes(
+      latest.evaluation.verdict,
+    )
+  ) {
     return { ...base, status: "insufficient_evidence", factors: [] };
   }
   if (latest.evaluation.verdict !== "regressed") {
@@ -173,6 +224,9 @@ function changedFactors(
     factors.push("configuration");
   if (previous.credentialClass !== latest.credentialClass)
     factors.push("credential_class");
+  if (previous.environmentSha256 !== latest.environmentSha256)
+    factors.push("environment");
+  if (previous.graderSha256 !== latest.graderSha256) factors.push("grader");
   return factors;
 }
 
@@ -192,7 +246,11 @@ function releaseBlockers(
       blockers.push(`release_control_drift:${factor}`);
     }
   }
-  if (latest.evaluation.verdict === "insufficient_evidence")
+  if (
+    ["insufficient_evidence", "inconclusive"].includes(
+      latest.evaluation.verdict,
+    )
+  )
     blockers.push("latest_experiment_insufficient");
   if (latest.evaluation.verdict === "regressed")
     blockers.push("latest_experiment_regressed");

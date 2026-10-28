@@ -12,12 +12,42 @@ export type HarnessExperimentMetric =
   | "no_new_information_rate"
   | "intervention_count"
   | "overflow_failed_count"
+  | "cost_usd"
+  | "false_completion"
   | "evidence_completeness";
 
 export interface HarnessExperimentCase {
   id: string;
   inputSha256: string;
   tags: string[];
+  taskFamily?: string;
+  partition?: "tuning" | "regression" | "holdout";
+}
+
+export type HarnessEvidenceKind =
+  | "contract_fixture"
+  | "deterministic_integration"
+  | "live_model"
+  | "production_task";
+
+export interface HarnessMetricRule {
+  unit: "fraction" | "tokens" | "milliseconds" | "count" | "usd";
+  direction: "higher" | "lower";
+  nonInferiorityMargin: number;
+  minimumEffectiveDifference: number;
+}
+
+/** Pre-registered and hash-bound before observations are collected. */
+export interface HarnessAnalysisProtocol {
+  version: 1;
+  evidenceKind: HarnessEvidenceKind;
+  order: "balanced_ab_ba";
+  clusterBy: "case" | "task_family";
+  confidenceLevel: number;
+  bootstrapSamples: number;
+  bootstrapSeed: number;
+  minimumClusters: number;
+  metrics: Partial<Record<HarnessExperimentMetric, HarnessMetricRule>>;
 }
 
 export interface HarnessExperimentProfile {
@@ -109,6 +139,8 @@ export interface HarnessExperiment {
   primaryMetrics: HarnessExperimentMetric[];
   guardrailMetrics: HarnessExperimentMetric[];
   decisionRule: ExperimentDecisionRule;
+  /** Absent only on historical definitions, which cannot prove live quality. */
+  analysis?: HarnessAnalysisProtocol;
   contentSha256: string;
 }
 
@@ -124,6 +156,7 @@ export interface HarnessExperimentTrial {
   profileSha256: string;
   harnessReceiptSha256: string;
   metrics: Partial<Record<HarnessExperimentMetric, number>>;
+  evidenceKind?: HarnessEvidenceKind;
 }
 
 export interface HarnessExperimentMetricDecision {
@@ -133,7 +166,32 @@ export interface HarnessExperimentMetricDecision {
   baselineMean?: number;
   candidateMean?: number;
   delta?: number;
-  status: "passed" | "regressed" | "insufficient";
+  status:
+    | "passed"
+    | "improved"
+    | "non_inferior"
+    | "regressed"
+    | "inconclusive"
+    | "insufficient";
+  unit?: HarnessMetricRule["unit"];
+  nonInferiorityMargin?: number;
+  minimumEffectiveDifference?: number;
+  clusterCount?: number;
+  /** Candidate-minus-baseline interval, in the declared metric unit. */
+  confidenceInterval?: { lower: number; upper: number; level: number };
+}
+
+export interface HarnessFamilySummary {
+  taskFamily: string;
+  partition: "tuning" | "regression" | "holdout";
+  arm: HarnessExperimentArm;
+  expectedTrials: number;
+  observedTrials: number;
+  successRate: number | null;
+  costPerSuccessUsd: number | null;
+  durationP95Ms: number | null;
+  interventionRate: number | null;
+  falseCompletionRate: number | null;
 }
 
 export interface HarnessExperimentEvaluation {
@@ -149,7 +207,16 @@ export interface HarnessExperimentEvaluation {
   missingPairCount: number;
   primary: HarnessExperimentMetricDecision[];
   guardrails: HarnessExperimentMetricDecision[];
-  verdict: "improved" | "no_difference" | "regressed" | "insufficient_evidence";
+  verdict:
+    | "improved"
+    | "non_inferior"
+    | "inconclusive"
+    | "no_difference"
+    | "regressed"
+    | "insufficient_evidence";
+  evidenceKind?: HarnessEvidenceKind;
+  evidenceKindMismatchPairCount?: number;
+  families?: HarnessFamilySummary[];
   contentSha256: string;
 }
 
@@ -161,6 +228,13 @@ export interface HarnessExperimentExecution {
   startedAt: string;
   finishedAt: string;
   trials: HarnessExperimentTrial[];
+  failures?: Array<{
+    caseId: string;
+    seed: number;
+    arm: HarnessExperimentArm;
+    reason: "execution_failed" | "invalid_evidence";
+    runId?: string;
+  }>;
   evaluation: HarnessExperimentEvaluation;
   contentSha256: string;
 }
@@ -170,6 +244,8 @@ export interface HarnessExperimentReleaseBinding {
   sourceManifestSha256: string;
   configurationSha256: string;
   credentialClass: string;
+  environmentSha256?: string;
+  graderSha256?: string;
 }
 
 export interface HarnessExperimentTrendPoint {
@@ -187,6 +263,8 @@ export type HarnessExperimentRegressionFactor =
   | "candidate_profile"
   | "source_manifest"
   | "configuration"
+  | "environment"
+  | "grader"
   | "credential_class";
 
 export interface HarnessExperimentRegressionAttribution {
@@ -211,6 +289,12 @@ export interface HarnessExperimentReleaseEvidence {
   trend: HarnessExperimentTrendPoint[];
   regressionAttribution: HarnessExperimentRegressionAttribution;
   promotionReady: boolean;
+  /** Historical receipts omit this and must not be used for a live-quality claim. */
+  claimScope?:
+    | "contract_only"
+    | "integration_only"
+    | "live_quality"
+    | "production_quality";
   blockers: string[];
   contentSha256: string;
 }

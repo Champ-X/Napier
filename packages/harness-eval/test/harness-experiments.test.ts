@@ -136,12 +136,12 @@ describe("Harness experiments", () => {
     expect(evaluation.primary).toEqual([
       expect.objectContaining({
         metric: "task_success",
-        status: "passed",
+        status: "non_inferior",
         delta: 0,
       }),
       expect.objectContaining({
         metric: "repeated_call_rate",
-        status: "passed",
+        status: "improved",
         delta: expect.closeTo(-0.1),
       }),
     ]);
@@ -304,24 +304,30 @@ describe("Harness experiments", () => {
         },
       });
 
-      expect(requests).toEqual(
-        experiment.cases.flatMap((item) =>
-          experiment.seeds.flatMap((seed) => [
-            {
-              caseId: item.id,
-              seed,
-              arm: "baseline",
-              profileSha256: experiment.baselineProfile.contentSha256,
-            },
-            {
-              caseId: item.id,
-              seed,
-              arm: "candidate",
-              profileSha256: experiment.candidateProfile.contentSha256,
-            },
-          ]),
-        ),
+      expect(requests).toHaveLength(180);
+      const pairs = Array.from({ length: requests.length / 2 }, (_, i) =>
+        requests.slice(i * 2, i * 2 + 2),
       );
+      expect(pairs.filter((pair) => pair[0]!.arm === "baseline")).toHaveLength(
+        45,
+      );
+      expect(pairs.filter((pair) => pair[0]!.arm === "candidate")).toHaveLength(
+        45,
+      );
+      pairs.forEach((pair, index) => {
+        expect(pair.map((request) => request.arm)).toEqual(
+          index % 2 ? ["candidate", "baseline"] : ["baseline", "candidate"],
+        );
+        expect(pair[0]!.caseId).toBe(pair[1]!.caseId);
+        expect(pair[0]!.seed).toBe(pair[1]!.seed);
+        pair.forEach((request) =>
+          expect(request.profileSha256).toBe(
+            request.arm === "baseline"
+              ? experiment.baselineProfile.contentSha256
+              : experiment.candidateProfile.contentSha256,
+          ),
+        );
+      });
       expect(execution.trials).toHaveLength(180);
       expect(new Set(execution.trials.map((trial) => trial.runId)).size).toBe(
         180,
@@ -351,7 +357,7 @@ describe("Harness experiments", () => {
           servingModelMismatchPairCount: 0,
           profileMismatchPairCount: 0,
           missingPairCount: 0,
-          verdict: "no_difference",
+          verdict: "non_inferior",
         }),
       );
       expect(validateHarnessExperimentExecution(execution, experiment)).toEqual(
@@ -368,7 +374,7 @@ describe("Harness experiments", () => {
     const previous = execution(
       experiment,
       "2026-08-20T00:00:00.000Z",
-      "no_difference",
+      "non_inferior",
     );
     const latest = execution(
       experiment,
@@ -393,7 +399,7 @@ describe("Harness experiments", () => {
     });
 
     expect(evidence.trend.map((point) => point.verdict)).toEqual([
-      "no_difference",
+      "non_inferior",
       "regressed",
     ]);
     expect(evidence.regressionAttribution).toEqual({
@@ -403,7 +409,10 @@ describe("Harness experiments", () => {
       factors: ["candidate_profile"],
     });
     expect(evidence.promotionReady).toBe(false);
-    expect(evidence.blockers).toEqual(["latest_experiment_regressed"]);
+    expect(evidence.blockers).toEqual([
+      "latest_experiment_regressed",
+      ...fixtureScopeBlockers,
+    ]);
     expect(validateHarnessExperimentReleaseEvidence(evidence)).toEqual(
       evidence,
     );
@@ -414,7 +423,7 @@ describe("Harness experiments", () => {
     const previous = execution(
       experiment,
       "2026-08-20T00:00:00.000Z",
-      "no_difference",
+      "non_inferior",
     );
     const latest = execution(
       experiment,
@@ -452,6 +461,7 @@ describe("Harness experiments", () => {
       "release_control_drift:source_manifest",
       "latest_experiment_regressed",
       "regression_attribution_confounded",
+      ...fixtureScopeBlockers,
     ]);
   });
 
@@ -460,12 +470,12 @@ describe("Harness experiments", () => {
     const previous = execution(
       experiment,
       "2026-08-20T00:00:00.000Z",
-      "no_difference",
+      "non_inferior",
     );
     const latest = execution(
       experiment,
       "2026-08-21T00:00:00.000Z",
-      "no_difference",
+      "non_inferior",
       80,
     );
     const binding = {
@@ -488,7 +498,57 @@ describe("Harness experiments", () => {
     expect(evidence.promotionReady).toBe(false);
     expect(evidence.blockers).toEqual([
       "tool_schema_token_reduction_below_35_percent",
+      ...fixtureScopeBlockers,
     ]);
+  });
+
+  it("cannot promote flawless fixture results into a live-quality claim", () => {
+    const experiment = fixtureExperiment();
+    const executions = [
+      "2026-10-28T00:00:00.000Z",
+      "2026-10-29T00:00:00.000Z",
+    ].map((date) => execution(experiment, date, "non_inferior"));
+    const evidence = createHarnessExperimentReleaseEvidence({
+      generatedAt: "2026-10-29T00:00:00.000Z",
+      productVersion: "0.2.0",
+      experiment,
+      executions,
+      bindings: executions.map((item) => ({
+        executionSha256: item.contentSha256,
+        sourceManifestSha256: "a".repeat(64),
+        configurationSha256: "b".repeat(64),
+        credentialClass: "test_fixture",
+      })),
+    });
+    expect(evidence.claimScope).toBe("contract_only");
+    expect(evidence.promotionReady).toBe(false);
+    expect(evidence.blockers).toEqual(fixtureScopeBlockers);
+    expect(validateHarnessExperimentReleaseEvidence(evidence)).toEqual(
+      evidence,
+    );
+  });
+
+  it("rejects a rehashed execution that ignored its predeclared AB/BA order", () => {
+    const experiment = fixtureExperiment();
+    const valid = execution(
+      experiment,
+      "2026-10-29T00:00:00.000Z",
+      "non_inferior",
+    );
+    expect(validateHarnessExperimentExecution(valid, experiment)).toEqual(
+      valid,
+    );
+    const { contentSha256: _hash, ...changed } = structuredClone(valid);
+    [changed.trials[2], changed.trials[3]] = [
+      changed.trials[3]!,
+      changed.trials[2]!,
+    ];
+    expect(() =>
+      validateHarnessExperimentExecution(
+        { ...changed, contentSha256: sha256(canonicalJson(changed)) },
+        experiment,
+      ),
+    ).toThrow("balanced schedule");
   });
 });
 
@@ -567,22 +627,27 @@ function trial(
 function execution(
   experiment: ReturnType<typeof fixtureExperiment>,
   finishedAt: string,
-  verdict: "no_difference" | "regressed",
+  verdict: "non_inferior" | "regressed",
   candidateToolSchemaTokens = 60,
 ) {
   const delta = verdict === "regressed" ? -0.1 : 0;
-  const trials = experiment.cases.flatMap((item) =>
-    experiment.seeds.flatMap((seed) => [
-      trial(item.id, seed, "baseline", 1, 0.1),
-      trial(
-        item.id,
-        seed,
-        "candidate",
-        verdict === "regressed" ? 0.9 : 1,
-        0.1,
-        candidateToolSchemaTokens,
-      ),
-    ]),
+  const trials = experiment.cases.flatMap((item, caseIndex) =>
+    experiment.seeds.flatMap((seed, seedIndex) => {
+      const pair = [
+        trial(item.id, seed, "baseline", 1, 0.1),
+        trial(
+          item.id,
+          seed,
+          "candidate",
+          verdict === "regressed" ? 0.9 : 1,
+          0.1,
+          candidateToolSchemaTokens,
+        ),
+      ];
+      return (caseIndex * experiment.seeds.length + seedIndex) % 2
+        ? pair.reverse()
+        : pair;
+    }),
   );
   const evaluation = evaluateHarnessExperiment(experiment, trials);
   expect(evaluation.verdict).toBe(verdict);
@@ -595,7 +660,15 @@ function execution(
     startedAt: new Date(Date.parse(finishedAt) - 1_000).toISOString(),
     finishedAt,
     trials,
+    failures: [],
     evaluation,
   };
   return { ...content, contentSha256: sha256(canonicalJson(content)) };
 }
+
+const fixtureScopeBlockers = [
+  "evidence_does_not_support_live_quality",
+  "untuned_task_family_evidence_missing",
+  "environment_or_grader_binding_missing",
+  "fixture_cannot_support_live_quality",
+];

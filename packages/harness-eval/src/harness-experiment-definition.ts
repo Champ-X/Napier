@@ -1,36 +1,32 @@
 import type {
   ExperimentDecisionRule,
+  HarnessAnalysisProtocol,
   HarnessExperiment,
   HarnessExperimentCase,
   HarnessExperimentEvaluation,
   HarnessExperimentMetric,
-  HarnessExperimentMetricDecision,
   HarnessExperimentProfile,
   HarnessExperimentTrial,
   ModelRouteLock,
 } from "@napier/contracts/harness-experiments";
 
-import { canonicalJson, sha256, validateModelHarnessExperimentProfile } from "@napier/runtime/harness-eval-support";
+import {
+  canonicalJson,
+  sha256,
+  validateModelHarnessExperimentProfile,
+} from "@napier/runtime/harness-eval-support";
+
+import {
+  analysisProtocol,
+  clusteredMetricDecision,
+  legacyMetricDecision,
+  metricUnits,
+} from "./harness-experiment-analysis.js";
+import { familySummaries } from "./harness-experiment-family-summary.js";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const ID = /^[a-z][a-z0-9_.-]{2,79}$/u;
-const METRICS = new Set<HarnessExperimentMetric>([
-  "task_success",
-  "input_tokens",
-  "output_tokens",
-  "tool_schema_tokens",
-  "duration_ms",
-  "tool_call_count",
-  "repeated_call_rate",
-  "no_new_information_rate",
-  "intervention_count",
-  "overflow_failed_count",
-  "evidence_completeness",
-]);
-const HIGHER_IS_BETTER = new Set<HarnessExperimentMetric>([
-  "task_success",
-  "evidence_completeness",
-]);
+const METRICS = new Set(Object.keys(metricUnits));
 
 export function createHarnessExperiment(input: {
   id: string;
@@ -42,8 +38,18 @@ export function createHarnessExperiment(input: {
   primaryMetrics: HarnessExperimentMetric[];
   guardrailMetrics: HarnessExperimentMetric[];
   decisionRule?: Partial<ExperimentDecisionRule>;
+  analysis?: Partial<Omit<HarnessAnalysisProtocol, "metrics">> & {
+    metrics?: HarnessAnalysisProtocol["metrics"];
+  };
 }): HarnessExperiment {
-  const cases = normalizeCases(input.cases);
+  return buildExperiment(input, false);
+}
+
+function buildExperiment(
+  input: Parameters<typeof createHarnessExperiment>[0],
+  historical: boolean,
+): HarnessExperiment {
+  const cases = normalizeCases(input.cases, historical);
   const seeds = uniqueSeeds(input.seeds);
   const decisionRule: ExperimentDecisionRule = {
     minimumCases: input.decisionRule?.minimumCases ?? 30,
@@ -85,6 +91,14 @@ export function createHarnessExperiment(input: {
     primaryMetrics,
     guardrailMetrics,
     decisionRule,
+    ...(!historical
+      ? {
+          analysis: analysisProtocol(
+            { primaryMetrics, guardrailMetrics, decisionRule },
+            input.analysis,
+          ),
+        }
+      : {}),
   };
   return { ...content, contentSha256: sha256(canonicalJson(content)) };
 }
@@ -97,19 +111,25 @@ export function validateHarnessExperiment(input: unknown): HarnessExperiment {
   ) {
     throw new Error("Harness experiment is invalid");
   }
-  const rebuilt = createHarnessExperiment({
-    id: String(input["id"] ?? ""),
-    baselineProfile: input["baselineProfile"] as HarnessExperimentProfile,
-    candidateProfile: input["candidateProfile"] as HarnessExperimentProfile,
-    cases: array(input["cases"]) as HarnessExperimentCase[],
-    modelRouteLock: input["modelRouteLock"] as ModelRouteLock,
-    seeds: array(input["seeds"]).map(Number),
-    primaryMetrics: array(input["primaryMetrics"]) as HarnessExperimentMetric[],
-    guardrailMetrics: array(
-      input["guardrailMetrics"],
-    ) as HarnessExperimentMetric[],
-    decisionRule: input["decisionRule"] as ExperimentDecisionRule,
-  });
+  const rebuilt = buildExperiment(
+    {
+      id: String(input["id"] ?? ""),
+      baselineProfile: input["baselineProfile"] as HarnessExperimentProfile,
+      candidateProfile: input["candidateProfile"] as HarnessExperimentProfile,
+      cases: array(input["cases"]) as HarnessExperimentCase[],
+      modelRouteLock: input["modelRouteLock"] as ModelRouteLock,
+      seeds: array(input["seeds"]).map(Number),
+      primaryMetrics: array(
+        input["primaryMetrics"],
+      ) as HarnessExperimentMetric[],
+      guardrailMetrics: array(
+        input["guardrailMetrics"],
+      ) as HarnessExperimentMetric[],
+      decisionRule: input["decisionRule"] as ExperimentDecisionRule,
+      analysis: input["analysis"] as HarnessAnalysisProtocol,
+    },
+    input["analysis"] === undefined,
+  );
   if (
     input["caseSetDigest"] !== rebuilt.caseSetDigest ||
     input["contentSha256"] !== rebuilt.contentSha256
@@ -145,6 +165,7 @@ export function evaluateHarnessExperiment(
   let servingModelMismatchPairCount = 0;
   let profileMismatchPairCount = 0;
   let missingPairCount = 0;
+  let evidenceKindMismatchPairCount = 0;
   for (const pair of expected) {
     const baseline = byKey.get(trialKey(pair.caseId, pair.seed, "baseline"));
     const candidate = byKey.get(trialKey(pair.caseId, pair.seed, "candidate"));
@@ -170,21 +191,36 @@ export function evaluateHarnessExperiment(
       profileMismatchPairCount += 1;
       continue;
     }
+    if (
+      experiment.analysis &&
+      [baseline, candidate].some(
+        (trial) =>
+          (trial.evidenceKind ?? "contract_fixture") !==
+          experiment.analysis!.evidenceKind,
+      )
+    ) {
+      evidenceKindMismatchPairCount++;
+      continue;
+    }
     comparable.push({ baseline, candidate });
   }
   const primary = experiment.primaryMetrics.map((metric) =>
-    metricDecision(
-      metric,
-      comparable,
-      experiment.decisionRule.primaryNonInferiorityMargin,
-    ),
+    experiment.analysis
+      ? clusteredMetricDecision(experiment, metric, comparable)
+      : legacyMetricDecision(
+          metric,
+          comparable,
+          experiment.decisionRule.primaryNonInferiorityMargin,
+        ),
   );
   const guardrails = experiment.guardrailMetrics.map((metric) =>
-    metricDecision(
-      metric,
-      comparable,
-      experiment.decisionRule.guardrailRegressionTolerance,
-    ),
+    experiment.analysis
+      ? clusteredMetricDecision(experiment, metric, comparable)
+      : legacyMetricDecision(
+          metric,
+          comparable,
+          experiment.decisionRule.guardrailRegressionTolerance,
+        ),
   );
   const insufficient =
     comparable.length !== expected.length ||
@@ -195,7 +231,12 @@ export function evaluateHarnessExperiment(
     (metric) => metric.status === "regressed",
   );
   const improved = primary.some(
-    (metric) => metric.status === "passed" && metric.delta !== 0,
+    (metric) =>
+      metric.status === "improved" ||
+      (metric.status === "passed" &&
+        (metric.direction === "higher"
+          ? metric.delta! > 0
+          : metric.delta! < 0)),
   );
   const content = {
     kind: "napier.harness-experiment-evaluation" as const,
@@ -210,13 +251,27 @@ export function evaluateHarnessExperiment(
     missingPairCount,
     primary,
     guardrails,
+    ...(experiment.analysis
+      ? {
+          evidenceKind: experiment.analysis.evidenceKind,
+          evidenceKindMismatchPairCount,
+          families: familySummaries(experiment, [...byKey.values()]),
+        }
+      : {}),
     verdict: insufficient
       ? ("insufficient_evidence" as const)
       : regressed
         ? ("regressed" as const)
-        : improved
-          ? ("improved" as const)
-          : ("no_difference" as const),
+        : [...primary, ...guardrails].some(
+              (metric) => metric.status === "inconclusive",
+            )
+          ? ("inconclusive" as const)
+          : improved
+            ? ("improved" as const)
+            : experiment.analysis ||
+                [...primary, ...guardrails].some((metric) => metric.delta !== 0)
+              ? ("non_inferior" as const)
+              : ("no_difference" as const),
   };
   return { ...content, contentSha256: sha256(canonicalJson(content)) };
 }
@@ -236,55 +291,20 @@ export function validateHarnessExperimentTrial(
     !record(trial.metrics) ||
     Object.entries(trial.metrics).some(
       ([metric, value]) =>
-        !METRICS.has(metric as HarnessExperimentMetric) || !finite(value),
+        !METRICS.has(metric) ||
+        !finite(value) ||
+        value < 0 ||
+        (metricUnits[metric as HarnessExperimentMetric] === "fraction" &&
+          value > 1),
     )
   ) {
     throw new Error("Harness experiment trial is invalid");
   }
 }
 
-function metricDecision(
-  metric: HarnessExperimentMetric,
-  pairs: readonly {
-    baseline: HarnessExperimentTrial;
-    candidate: HarnessExperimentTrial;
-  }[],
-  tolerance: number,
-): HarnessExperimentMetricDecision {
-  const observations = pairs.flatMap((pair) => {
-    const baseline = pair.baseline.metrics[metric];
-    const candidate = pair.candidate.metrics[metric];
-    return finite(baseline) && finite(candidate)
-      ? [{ baseline, candidate }]
-      : [];
-  });
-  const direction = HIGHER_IS_BETTER.has(metric) ? "higher" : "lower";
-  if (observations.length !== pairs.length || observations.length === 0) {
-    return {
-      metric,
-      direction,
-      pairCount: observations.length,
-      status: "insufficient",
-    };
-  }
-  const baselineMean = mean(observations.map((item) => item.baseline));
-  const candidateMean = mean(observations.map((item) => item.candidate));
-  const delta = candidateMean - baselineMean;
-  const passed =
-    direction === "higher" ? delta >= -tolerance : delta <= tolerance;
-  return {
-    metric,
-    direction,
-    pairCount: observations.length,
-    baselineMean,
-    candidateMean,
-    delta,
-    status: passed ? "passed" : "regressed",
-  };
-}
-
 function normalizeCases(
   cases: HarnessExperimentCase[],
+  historical: boolean,
 ): HarnessExperimentCase[] {
   if (!Array.isArray(cases))
     throw new Error("Harness experiment cases are invalid");
@@ -292,17 +312,36 @@ function normalizeCases(
     id: item.id,
     inputSha256: item.inputSha256,
     tags: [...new Set(item.tags)].sort(),
+    ...(!historical
+      ? {
+          taskFamily: item.taskFamily ?? [...item.tags].sort()[0] ?? item.id,
+          partition: item.partition ?? ("regression" as const),
+        }
+      : {}),
   }));
   if (
     normalized.some(
       (item) =>
         !ID.test(item.id) ||
         !HASH.test(item.inputSha256) ||
+        (!historical &&
+          (!ID.test(item.taskFamily!) ||
+            !["tuning", "regression", "holdout"].includes(item.partition!))) ||
         item.tags.some((tag) => !ID.test(tag)),
     ) ||
     new Set(normalized.map((item) => item.id)).size !== normalized.length
   ) {
     throw new Error("Harness experiment case set is invalid");
+  }
+  const partitions = new Map<string, string>();
+  for (const item of normalized) {
+    if (!item.taskFamily) continue;
+    const previous = partitions.get(item.taskFamily);
+    if (previous && previous !== item.partition)
+      throw new Error(
+        "A task family cannot span tuning, regression and holdout partitions",
+      );
+    partitions.set(item.taskFamily, item.partition!);
   }
   return normalized.sort((left, right) => left.id.localeCompare(right.id));
 }
@@ -388,8 +427,12 @@ function validateDecisionRule(rule: ExperimentDecisionRule): void {
 }
 
 function validProfile(profile: unknown): profile is HarnessExperimentProfile {
-  try { validateModelHarnessExperimentProfile(profile); return true; }
-  catch { return false; }
+  try {
+    validateModelHarnessExperimentProfile(profile);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function expectedPairs(
@@ -416,10 +459,6 @@ function trialKey(
   arm: "baseline" | "candidate",
 ): string {
   return `${caseId}:${String(seed)}:${arm}`;
-}
-
-function mean(values: readonly number[]): number {
-  return values.reduce((total, value) => total + value, 0) / values.length;
 }
 
 function finite(value: unknown): value is number {

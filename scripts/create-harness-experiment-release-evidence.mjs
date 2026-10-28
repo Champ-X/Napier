@@ -23,7 +23,7 @@ import { createReleaseProductSourceManifest } from "./release-product-source-man
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const outputPath = path.join(
   repoRoot,
-  "docs/artifacts/harness-experiment-release-evidence-0.1.3.json",
+  "docs/artifacts/harness-experiment-contract-evidence-0.1.4.json",
 );
 const caseInputs = new Map(
   Array.from({ length: 30 }, (_, index) => {
@@ -42,7 +42,7 @@ if (verifyIndex >= 0) {
     JSON.parse(await readFile(target, "utf8")),
   );
   process.stdout.write(
-    `${JSON.stringify({ valid: true, promotionReady: evidence.promotionReady, contentSha256: evidence.contentSha256 })}\n`,
+    `${JSON.stringify({ valid: true, claimScope: evidence.claimScope ?? "historical_contract_only", promotionReady: ["live_quality", "production_quality"].includes(evidence.claimScope) && evidence.promotionReady, contentSha256: evidence.contentSha256 })}\n`,
   );
 } else {
   const temporaryRoot = await mkdtemp(
@@ -105,7 +105,12 @@ if (verifyIndex >= 0) {
         credentialClass: "test_fixture",
       })),
     });
-    if (!evidence.promotionReady) {
+    if (
+      evidence.claimScope !== "contract_only" ||
+      evidence.executions.some(
+        (execution) => execution.evaluation.verdict !== "improved",
+      )
+    ) {
       throw new Error(
         `Harness experiment release evidence is blocked: ${evidence.blockers.join(",")}`,
       );

@@ -6,6 +6,7 @@ import type {
   HarnessExperimentMetric,
   HarnessExperimentProfile,
   HarnessExperimentTrial,
+  HarnessEvidenceKind,
   ModelRouteLock,
 } from "@napier/contracts/harness-experiments";
 
@@ -25,6 +26,7 @@ export interface HarnessExperimentTrialEvidence {
   run: RunRecord;
   events: readonly RunEvent[];
   metrics?: Partial<Record<HarnessExperimentMetric, number>>;
+  evidenceKind?: HarnessEvidenceKind;
 }
 
 export interface HarnessExperimentTrialRequest {
@@ -47,38 +49,66 @@ export async function executeHarnessExperiment(input: {
   const clock = input.clock ?? (() => new Date());
   const startedAt = clock().toISOString();
   const trials: HarnessExperimentTrial[] = [];
+  const failures: NonNullable<HarnessExperimentExecution["failures"]> = [];
   const runIds = new Set<string>();
+  let pairIndex = 0;
   for (const item of experiment.cases) {
     for (const seed of experiment.seeds) {
-      for (const arm of ["baseline", "candidate"] as const) {
+      const order =
+        experiment.analysis && pairIndex++ % 2 === 1
+          ? (["candidate", "baseline"] as const)
+          : (["baseline", "candidate"] as const);
+      for (const arm of order) {
         const profile =
           arm === "baseline"
             ? experiment.baselineProfile
             : experiment.candidateProfile;
-        const evidence = await input.execute({
-          experiment,
-          case: item,
-          seed,
-          arm,
-          profile,
-          modelRouteLock: structuredClone(experiment.modelRouteLock),
-        });
+        let evidence: HarnessExperimentTrialEvidence;
+        try {
+          evidence = await input.execute({
+            experiment,
+            case: item,
+            seed,
+            arm,
+            profile,
+            modelRouteLock: structuredClone(experiment.modelRouteLock),
+          });
+        } catch {
+          // Keep the original missing cell; never replace it with a best retry.
+          failures.push({
+            caseId: item.id,
+            seed,
+            arm,
+            reason: "execution_failed",
+          });
+          continue;
+        }
         if (runIds.has(evidence.run.id)) {
           throw new Error(
             `Harness experiment Run must be unique: ${evidence.run.id}`,
           );
         }
         runIds.add(evidence.run.id);
-        trials.push(
-          projectHarnessExperimentTrial({
-            experiment,
-            case: item,
+        try {
+          trials.push(
+            projectHarnessExperimentTrial({
+              experiment,
+              case: item,
+              seed,
+              arm,
+              profile,
+              ...evidence,
+            }),
+          );
+        } catch {
+          failures.push({
+            caseId: item.id,
             seed,
             arm,
-            profile,
-            ...evidence,
-          }),
-        );
+            runId: evidence.run.id,
+            reason: "invalid_evidence",
+          });
+        }
       }
     }
   }
@@ -91,6 +121,7 @@ export async function executeHarnessExperiment(input: {
     startedAt,
     finishedAt: clock().toISOString(),
     trials,
+    ...(experiment.analysis ? { failures } : {}),
     evaluation,
   };
   return { ...content, contentSha256: sha256(canonicalJson(content)) };
@@ -105,6 +136,7 @@ export function projectHarnessExperimentTrial(input: {
   run: RunRecord;
   events: readonly RunEvent[];
   metrics?: Partial<Record<HarnessExperimentMetric, number>>;
+  evidenceKind?: HarnessEvidenceKind;
 }): HarnessExperimentTrial {
   const events = input.events.filter((event) => event.runId === input.run.id);
   if (events.length !== input.events.length) {
@@ -159,6 +191,9 @@ export function projectHarnessExperimentTrial(input: {
     profileSha256: profile.profileSha256,
     harnessReceiptSha256: profile.harnessReceiptSha256,
     metrics: { ...projected, ...metricOverrides(input.metrics) },
+    ...(input.experiment.analysis
+      ? { evidenceKind: input.evidenceKind ?? "contract_fixture" }
+      : {}),
   };
   validateHarnessExperimentTrial(input.experiment, trial);
   return trial;
@@ -221,10 +256,52 @@ export function validateHarnessExperimentExecution(
     throw new Error("Harness experiment execution is invalid");
   }
   const trials = array(input["trials"]) as HarnessExperimentTrial[];
+  const failures =
+    input["failures"] === undefined ? [] : array(input["failures"]);
+  const seen = new Set(
+    trials.map((trial) => `${trial.caseId}:${trial.seed}:${trial.arm}`),
+  );
+  for (const failure of failures) {
+    if (
+      !record(failure) ||
+      !["execution_failed", "invalid_evidence"].includes(failure["reason"]) ||
+      !experiment.cases.some((item) => item.id === failure["caseId"]) ||
+      !experiment.seeds.includes(failure["seed"]) ||
+      !["baseline", "candidate"].includes(failure["arm"])
+    )
+      throw new Error("Harness experiment failure cell is invalid");
+    const key = `${failure["caseId"]}:${failure["seed"]}:${failure["arm"]}`;
+    if (seen.has(key))
+      throw new Error("Harness experiment failure cell is duplicated");
+    seen.add(key);
+  }
+  if (experiment.analysis) {
+    const schedule = experiment.cases.flatMap((item, caseIndex) =>
+      experiment.seeds.flatMap((seed, seedIndex) => {
+        const arms =
+          (caseIndex * experiment.seeds.length + seedIndex) % 2
+            ? ["candidate", "baseline"]
+            : ["baseline", "candidate"];
+        return arms.map((arm) => `${item.id}:${seed}:${arm}`);
+      }),
+    );
+    const trialKeys = trials.map(
+      (trial) => `${trial.caseId}:${trial.seed}:${trial.arm}`,
+    );
+    const successfulCells = new Set(trialKeys);
+    if (
+      seen.size !== schedule.length ||
+      canonicalJson(schedule.filter((key) => successfulCells.has(key))) !==
+        canonicalJson(trialKeys)
+    )
+      throw new Error(
+        "Harness experiment execution does not match its balanced schedule",
+      );
+  }
   const evaluation = evaluateHarnessExperiment(experiment, trials);
   if (
     !record(input["evaluation"]) ||
-    input["evaluation"]["contentSha256"] !== evaluation.contentSha256
+    canonicalJson(input["evaluation"]) !== canonicalJson(evaluation)
   ) {
     throw new Error("Harness experiment execution evaluation is invalid");
   }
@@ -236,6 +313,13 @@ export function validateHarnessExperimentExecution(
     startedAt: input["startedAt"],
     finishedAt: input["finishedAt"],
     trials: structuredClone(trials),
+    ...(experiment.analysis
+      ? {
+          failures: structuredClone(failures) as NonNullable<
+            HarnessExperimentExecution["failures"]
+          >,
+        }
+      : {}),
     evaluation,
   };
   if (input["contentSha256"] !== sha256(canonicalJson(content))) {
@@ -284,6 +368,8 @@ function metricOverrides(
   const allowed = new Set<HarnessExperimentMetric>([
     "task_success",
     "evidence_completeness",
+    "cost_usd",
+    "false_completion",
   ]);
   if (
     Object.entries(metrics).some(
