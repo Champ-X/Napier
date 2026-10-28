@@ -84,7 +84,7 @@ export async function validateWorkflowResultFrame(
   return structuredClone(input) as ExecutionPlanWorkflowResultFrame;
 }
 
-async function validateWorkflowResult(
+export async function validateWorkflowResult(
   input: unknown,
 ): Promise<ExecutionPlanWorkflowResult> {
   const result = requiredRecord(input, "Workflow result");

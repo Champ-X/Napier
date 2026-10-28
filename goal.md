@@ -171,6 +171,17 @@
 - Contracts/Runtime/Server/Web 编译或 typecheck、SDK typecheck、Web design contract 通过；OpenAPI 当前生成物及 292/292 历史 operation 兼容通过。主 ViewModel 2175→2148 行，架构仍为 10 项既有失败；公开 API 仍为 1897/1896 与既有 digest 不匹配。未提高预算、未改写历史 release manifest，构建不等同发布验收。
 - 边界：尚未在此区接通完整 Workflow 恢复变更操作、通用写工具、自定义 lifecycle、SDK/CLI 新只读开关和历史活动卡终态统一；完整分类验收与 G04 总体验收未勾选。G01/G02 剩余项及 G03/G05–G07 原范围继续保留，整体仍为 active。本轮属于 **progress**。
 
+### 后续推进：G04 持久定义与 Workflow 恢复入口
+
+- 上一轮为 **progress**，本轮现场核对 `32b3e14a` 与 17 个本地领先提交，保留已有用户前端/文档/启动脚本改动，未 push。继续保持 G01–G07 全部目标，没有以恢复入口代替完整目标验收。
+- 新 Workflow 在创建执行 Plan 和运行节点前，将验证后的原 manifest 保存到既有私有胶囊存储；按内容摘要寻址、0600 文件权限、有明确数量/容量上限。恢复时绑定原启动记录、Plan、Agent revision 与定义；旧定义缺失、篡改或证据冲突时停止，不推断重建。
+- 新增 `GET/POST /api/threads/:threadId/workflows/:planId/recovery`。POST 只接收检查点摘要，在现有跨进程 Workflow 锁内复核并持久消费该检查点，再使用原节点恢复协议。并发和旧请求重试不会放行新的断点；已消费请求返回 409，客户端刷新真实进度，不宣称同请求结果重放。原带 manifest 的 Workflow API 保持兼容。
+- Task 概览接通原定义恢复、保存审批后继续和断点继续；移除该区域的通用 Agent 提示续跑与重复待回答提示。Web 按 workspace/thread/plan 隔离异步结果，抑制即时重复点击，响应不确定时查询持久状态，保留步骤完成与任务验收的区别。
+- 当前真实 HTTP/SQLite/Chromium 证据覆盖浏览器保存答案、提交成功后丢弃响应、两个断点间的旧请求重试、定义消失、键盘及 7 个窗口尺寸；写入各一次，重试不变更文件 inode/mtime，零模型调用。故障机制为浏览器 abort 已完成的 HTTP 响应，并非 TCP 丢包。收据 [workflow-recovery-ui-bound-2026-10-29.json](docs/artifacts/workflow-recovery-ui-bound-2026-10-29.json) 的 30 个源码摘要全部匹配；首轮中间截图中的重复提示已在最终确认中移除。复现与边界见 [operation-recovery.md](docs/operation-recovery.md)。
+- 新测试还在 claim 与 Workflow completed 落账后 SIGKILL 独立子进程，重启保留答案并拒绝旧检查点；覆盖独立 Store 并发、定义缺失/篡改、跨线程/重复启动证据、目标文件后续漂移和复制账本后的工作区隔离。相关 Runtime 6 文件 107 用例、Server 2 文件 13 用例、Web 4 文件 21 用例、OpenAPI 1 文件 5 用例，共 **13 文件 146 个不同用例**通过；Contracts/Runtime compile/Server/Web build 与类型检查通过。
+- Web design 为 89 CSS 文件、284 variables、0 色值/小字债，Impeccable detector `[]`。架构仍为原 10 项失败；公开 API 仍为原 root 1897/1896 与 compatibility digest 不匹配，未提高预算。当前 OpenAPI 包含 307 个路由，292/292 历史操作兼容；历史发布 manifest 未改，不作为发布验收。
+- G04 仍需通用不确定副作用对账、完整操作分类矩阵、已完成 Workflow 写节点的通用后置条件核查和历史活动卡终态；新恢复入口与只读开关的 SDK/CLI 便利方法未接通。G01/G02 剩余项、G03/G05–G07 全部保留。后续继续修正恢复后的活动终态表达，并推进尚未实施的共享执行内核和隔离工作区等目标。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：

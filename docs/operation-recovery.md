@@ -166,3 +166,20 @@ Run 已创建但提示尚未保存时退出，重启后仍返回该 Run 的 inte
 验证与复现见 `docs/artifacts/recovery-operations-ui-current-2026-10-29.json` 和 `scripts/check-recovery-operations-ui.mjs`。脚本要求先构建 Contracts、Runtime（`build:compile`）、Server、Web，然后使用独立临时目录与真实 HTTP/SQLite/Chromium。故障由真实子进程在目标文件提交后退出；只有模型是 faux provider，禁止浏览器访问外网。证据覆盖 7 种尺寸、键盘 disclosure、按钮实际命中检查、只读权限、恶意写调用被拒、原文件 inode/mtime 不变、部分状态和父检查点保留、旧请求重试不新建 Run。首轮 320px 截图被现有证据抽屉遮挡，已修改脚本关闭抽屉并检查按钮可点击；该首轮不算窄屏验收。
 
 范围：Workflow 在本区只能查看计划概览或转到已有审批区，尚未接通所有 Workflow 恢复变更操作；保存审批答案仍走既有决策服务。未增加通用写工具自动重放，也未完成完整恢复分类验收、历史活动卡终态统一或 SDK/CLI 的新只读开关。Hook 测试覆盖响应不确定后的刷新与原会话错误归属，不等同于真实 TCP 响应丢失故障注入。本轮保持 G04 与总目标 active。
+
+
+## 2026-10-29：使用原定义继续 Workflow
+
+Task 概览现在提供 Workflow 专用操作：查看待回答问题、从当前断点继续、继续已保存答案，以及按既有 Workflow 规则重试可恢复节点。它不会调用普通 Agent 的通用继续提示。已保存答案仍通过原决策服务写入；Workflow 原有审批、节点恢复、Agent revision、工具权限和尝试次数校验继续生效。新的 UI 入口不需要重新上传 manifest。
+
+新 Workflow 在创建执行 Plan、运行节点之前，将验证后的完整定义写入私有 `workflow-manifests` 胶囊目录。对象按 manifest 的内容摘要寻址，权限为 0600；目录权限和原有胶囊校验复用现有存储。限额为单对象 1 MiB、2048 个对象、总量 128 MiB，保存失败时停止创建执行 Plan，不静默降级为无定义记录。没有为旧 Workflow 推断或重建缺失定义；旧记录缺少定义、定义损坏、启动证据重复或绑定漂移时明确停止。
+
+公开入口为 `GET /api/threads/:threadId/workflows/:planId/recovery` 和同路径 `POST`。GET 返回可用性、动作和检查点摘要，不返回可执行定义。POST 只接受 `{ checkpointSha256 }`。摘要绑定 workspaceRoot/dataRoot 及当前 Plan、事件、Runs、决策和原 manifest；执行锁内重新核验，再持久追加 `workflow.recovery.claimed`，随后进入现有 Workflow Runtime。该声明消费的是这一检查点的继续请求：并发调用只允许一个通过，已经消费或变化的旧请求返回 409，需要刷新。它不会把旧请求改解释为对后一个断点的许可，也不声称旧请求会返回相同 HTTP 结果。此约束适用于新 recovery 入口；原来直接提供 manifest 的 `/workflows` API 保持兼容，没有将它的裸 `continueBreakpoint` 标记改成新的协议。
+
+Web 按 workspace、thread、plan 隔离状态，抑制同一渲染内的重复提交；延迟读取不能替换较新的检查点。提交失败或响应不确定后，先查询持久状态再启用下一次操作；切换视图后旧操作不会写入新视图。原定义、计划和操作身份在 Runtime 校验，前端分类不成为执行权限。已完成步骤与整个任务验收分开表述；Workflow 区域不重复显示“重新回答”的通用提示。
+
+当前浏览器证据为 [workflow-recovery-ui-bound-2026-10-29.json](artifacts/workflow-recovery-ui-bound-2026-10-29.json)，绑定 30 个源码/测试/脚本摘要。复现：构建 Contracts、Runtime `build:compile`、Server、Web 后，运行 `node scripts/check-workflow-recovery-ui.mjs /tmp/new-workflow-receipt.json`，独占创建收据。脚本用真实 HTTP、SQLite、Chromium 和文件写入，零模型调用；检查保存答案后续跑、HTTP 提交成功后在浏览器丢弃响应、两断点之间的旧请求重试、定义消失、键盘操作和 7 种窗口尺寸。两次写入各只执行一次，响应丢失后的旧请求不改动文件 inode/mtime。该故障是浏览器在实际 HTTP 完成后 abort，并非 TCP 丢包注入。首份中间收据位于忽略的 benchmark-results，包含后来移除的重复提示，不作为当前截图。
+
+新增 Runtime 测试还在 claim 落账后和 Workflow completed 落账后用独立子进程 SIGKILL，重启后保留答案、拒绝旧请求，并从新检查点继续或观察已完成结果；覆盖两个独立 Store 并发、定义缺失/篡改、跨线程/重复启动证据、创建目标的环境漂移。将账本复制到另一组 workspaceRoot/dataRoot 后，旧检查点摘要也会被拒绝，不能跨目录授权。目标在检查点后被用户创建时，原 apply_patch 的前置条件使节点 blocked，用户内容和文件身份保留。
+
+边界：本切片没有为任意外部副作用增加对账适配器，也没有承诺重查所有已完成 Workflow 写节点的当前文件状态；仍遵守原 Workflow 的节点证据和已声明产物校验。新 recovery 请求本身尚无 SDK/CLI 便利方法；完整恢复分类、历史活动卡终态、G01/G02 剩余项与 G03/G05–G07 均未据此验收。界面没有完成率或真实模型质量改善声明。

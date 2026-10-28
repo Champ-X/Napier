@@ -6,7 +6,7 @@ import {
   Target,
   TriangleAlert,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type {
   ExecutionPlanStatus,
@@ -39,6 +39,7 @@ export function TaskOverviewPanel({
   onGoalClear,
   onContinue,
   onReviewDecision,
+  workflow,
 }: {
   detail: OverviewDetail | undefined;
   goal: GoalState | undefined;
@@ -50,6 +51,7 @@ export function TaskOverviewPanel({
   onGoalClear(): void;
   onContinue(): void;
   onReviewDecision(): void;
+  workflow?: ReactNode;
 }) {
   const model = deriveTaskOverview(detail, goal);
   const [completedOpen, setCompletedOpen] = useState(false);
@@ -97,7 +99,9 @@ export function TaskOverviewPanel({
         ) : null}
       </header>
 
-      {decision ? (
+      {workflow}
+
+      {decision && !workflow ? (
         <section
           className="task-decision-blocker"
           aria-labelledby="task-decision-title"
@@ -123,7 +127,7 @@ export function TaskOverviewPanel({
       {model.currentStep ? (
         <CurrentStep
           step={model.currentStep}
-          canContinue={model.canContinue && !decision}
+          canContinue={model.canContinue && !decision && !workflow}
           modelConfigured={modelConfigured}
           onContinue={onContinue}
         />

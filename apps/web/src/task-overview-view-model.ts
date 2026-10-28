@@ -94,7 +94,7 @@ export function deriveTaskOverview(
   };
 }
 
-function activeExecutionPlan(
+export function activeExecutionPlan(
   detail: OverviewDetail | undefined,
 ): ExecutionPlan | undefined {
   return (

@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "kind": "napier.workflow-recovery-ui-evidence",
+  "recordedAt": "2026-10-28T22:27:18.730Z",
+  "sourceHead": "32b3e14a19876ddbd0641ba7a4dbcfb006ab6dff",
+  "sources": [
+    {
+      "path": "packages/contracts/src/workflow-recovery.ts",
+      "sha256": "5d5eb6dc04832cdce19a1df6464756c679c8dba9186a5aad9e87a1c33215bc50"
+    },
+    {
+      "path": "packages/contracts/src/run-event-domain-definitions-v1.ts",
+      "sha256": "931d6348c12d4bb6fd23988699c6d3f1144fa28fa641dbe2032c79f366bfac2a"
+    },
+    {
+      "path": "packages/contracts/package.json",
+      "sha256": "74de1f721d53e6039a35fbd92a6e92bceaceb2b2a96ac1b2a9fe4dbc60d9b850"
+    },
+    {
+      "path": "packages/runtime/src/workflow-manifest-store.ts",
+      "sha256": "10c39f70f630afdb7826cc6fd5a829783150721d0139fb2c9b651d465742d6ce"
+    },
+    {
+      "path": "packages/runtime/src/workflow-recovery-checkpoint.ts",
+      "sha256": "868ddd02b9f8e264d2d6fac25d546749fc34e629bce76701aca354ee03ba2aa9"
+    },
+    {
+      "path": "packages/runtime/src/workflow-context-factory.ts",
+      "sha256": "ae62f8bcf13609bba4ba31cb269ddd6f54325554139822dbea2b5e1a67c5f0b7"
+    },
+    {
+      "path": "packages/runtime/src/workflow-runtime.ts",
+      "sha256": "14b6bc15e55ffb03840c765c86fea22279ec18c4cea95fe4148f4c9fc80ce3bf"
+    },
+    {
+      "path": "packages/runtime/src/workflow-execution-lock.ts",
+      "sha256": "2d45fce4a58d56924a7cce4ed02068dbfda4334a7e2acd7b753d2c2774390442"
+    },
+    {
+      "path": "packages/runtime/src/workflow-breakpoints.ts",
+      "sha256": "3965407c55b6c21c35d51568d30d62cad2902728577d5e398e4f325f2002b085"
+    },
+    {
+      "path": "packages/runtime/src/workflow-approval-node.ts",
+      "sha256": "01b00bcf921657b450f024c0c0fc1d1e49bc4308f50a232e2d4adbfddf583ee3"
+    },
+    {
+      "path": "apps/server/src/workflow-recovery-http.ts",
+      "sha256": "546a3840a5b4eca95c3c4249dcabdd0dead592f641e7ee8811324e176662846d"
+    },
+    {
+      "path": "apps/server/src/thread-workflow-http.ts",
+      "sha256": "e12b742b2bbcd57cbd92ea78263a880327c1a7f1108fe4290ae216ef9b636dda"
+    },
+    {
+      "path": "apps/web/src/workflow-recovery-api.ts",
+      "sha256": "9eee60b1a19c6e88d447b0b1de02074cba22f920ffd64ad70fc75262c09e8c9b"
+    },
+    {
+      "path": "apps/web/src/use-workflow-recovery.ts",
+      "sha256": "804cd18697640499670a171c970ce1cfda3e6acdee516a6ea0245629c3175adf"
+    },
+    {
+      "path": "apps/web/src/WorkflowRecoveryPanel.tsx",
+      "sha256": "0d2321fdb23c75bdff2d2718413d4e41be9117fb4075d16e171bba3b6302c6fc"
+    },
+    {
+      "path": "apps/web/src/workflow-recovery-copy.ts",
+      "sha256": "12a36ad32bbaed245935c9c8b28b7d0b8f57ad398c84dcc90f9e82a9cb818a76"
+    },
+    {
+      "path": "apps/web/src/workflow-recovery.css",
+      "sha256": "666e4f0677616d145055abf2f66016bcd75115a81d01f662ecef453f21a661c2"
+    },
+    {
+      "path": "apps/web/src/workflow-result-web-protocol.ts",
+      "sha256": "370f1f8faab1501c2d248ccbb96888c794d4674c0fa4a9ab94a2df71366bb534"
+    },
+    {
+      "path": "apps/web/src/TaskWorkspace.tsx",
+      "sha256": "aeeb1397e30ec83a1246751e591a4e94209cefc863855062342f9b3220df59d1"
+    },
+    {
+      "path": "apps/web/src/TaskOverviewPanel.tsx",
+      "sha256": "d90a372ebc09ae94e1103fa37229d8c37d061b4bf6571bd6b427136a00e15978"
+    },
+    {
+      "path": "apps/web/src/task-overview-view-model.ts",
+      "sha256": "bce987b13601aa45c3dfde5816b330d2f6fbcf6e1d6579275020ab515fd05d6f"
+    },
+    {
+      "path": "packages/runtime/test/workflow-recovery-checkpoint.test.ts",
+      "sha256": "815eac1bce91d212ae3713d7bfa704c0364320cb09719a9b2db80a75fcbaeb11"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workflow-checkpoint-crash.ts",
+      "sha256": "f58e91b5b214785158e65275ee4a8cdafac303f2fff2de4d0234e64f223c6aef"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workflow-checkpoint-ui-setup.ts",
+      "sha256": "1144260ec26b2f0ec68267d55184edc88d8f27149bed2e3ef00e1d6f3c48058f"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workflow-approval-recovery-setup.ts",
+      "sha256": "d642118b7475ffae05c9069d6c92586db9936203aafb865fcc0ceb1501201f76"
+    },
+    {
+      "path": "apps/server/test/workflow-recovery.test.ts",
+      "sha256": "536cbb336c66871d65e7f263286f00099e5188ef6c827260e1d0d4174f76d219"
+    },
+    {
+      "path": "apps/web/test/workflow-recovery.test.tsx",
+      "sha256": "d68caa8e4d822af85d13993fe1d0746467a85e44bb4b7900ccc2fe7138f4a856"
+    },
+    {
+      "path": "scripts/check-workflow-recovery-ui.mjs",
+      "sha256": "73f07176ada0854676011248d69539b535c0a137846a5437111e51077d2c346f"
+    },
+    {
+      "path": "scripts/generate-management-openapi.mjs",
+      "sha256": "83afd5259c25e6b5db0734cb4c960126be4e7a19404dc00d5a84f67149a5cc11"
+    },
+    {
+      "path": "scripts/generate-management-openapi.test.mjs",
+      "sha256": "2c8a73484bfb102d7567389024c6e952dcbf6bdf11ac2e44756db2a9ed5b27a6"
+    }
+  ],
+  "externalModelRequests": 0,
+  "fixtureModelCalls": 0,
+  "observations": [
+    {
+      "scenario": "saved-approval-response-loss",
+      "browserSavedAnswer": true,
+      "responseDroppedAfterHttpCommit": true,
+      "staleRetryStatus": 409,
+      "unchangedFileIdentity": true
+    },
+    {
+      "scenario": "two-breakpoints",
+      "staleRequestDidNotReleaseLaterBreakpoint": true,
+      "writeStarts": 1
+    },
+    {
+      "scenario": "missing-definition",
+      "recoveryActionRemoved": true
+    }
+  ],
+  "layouts": [
+    {
+      "width": 1440,
+      "height": 900,
+      "actionReachable": true,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "actionReachable": true,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "actionReachable": true,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "actionReachable": true,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 720,
+      "height": 900,
+      "actionReachable": true,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "actionReachable": true,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 320,
+      "height": 900,
+      "actionReachable": true,
+      "horizontalOverflow": false
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "/Users/champ/orca/Napier/benchmark-results/workflow-recovery-ui/workflow-recovery-ui-bound-2026-10-29.json/workflow-1440.png",
+      "sha256": "33be658849971e0dd35e3a5b19537b1034bd7412c4dbf7ecbd05645a7f50524a"
+    },
+    {
+      "path": "/Users/champ/orca/Napier/benchmark-results/workflow-recovery-ui/workflow-recovery-ui-bound-2026-10-29.json/workflow-320.png",
+      "sha256": "9df1ea7f0b928b18cfcd1e142c8c4827e4884a3d3a2d3650cab2451e80eedee8"
+    }
+  ],
+  "pageErrors": [],
+  "responseLossMechanism": "Browser abort after an actual HTTP response completed; not a TCP packet-loss injection."
+}

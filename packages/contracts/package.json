@@ -24,6 +24,10 @@
       "types": "./dist/management-http.d.ts",
       "import": "./dist/management-http.js"
     },
+    "./workflow-recovery": {
+      "types": "./dist/workflow-recovery.d.ts",
+      "import": "./dist/workflow-recovery.js"
+    },
     "./manual-run-recovery": {
       "types": "./dist/manual-run-recovery.d.ts",
       "import": "./dist/manual-run-recovery.js"

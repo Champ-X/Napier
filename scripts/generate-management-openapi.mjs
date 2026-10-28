@@ -8,6 +8,9 @@ const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const defaultSourceDirectory = "apps/server/src";
 const defaultArtifactPath = "docs/artifacts/management-openapi-0.1.0.json";
 const PROMOTED_OPERATION_SCHEMAS = {
+  "POST /api/threads/{threadId}/workflows/{planId}/recovery": {
+    request: "#/components/schemas/RecoverWorkflowRequest",
+  },
   "GET /api/workspace/file": {
     binaryResponse: true,
     responseContentTypes: { 200: "*/*" },
@@ -240,6 +243,14 @@ export async function generateManagementOpenApi(options = {}) {
     paths,
     components: {
       schemas: {
+        RecoverWorkflowRequest: {
+          type: "object",
+          required: ["checkpointSha256"],
+          additionalProperties: false,
+          properties: {
+            checkpointSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
         ErrorResponse: {
           type: "object",
           required: ["error"],
@@ -391,7 +402,11 @@ export async function generateManagementOpenApi(options = {}) {
           properties: {
             mode: { $ref: "#/components/schemas/RunControlMessageMode" },
             text: { type: "string", minLength: 1, maxLength: 16384 },
-            clientMessageId: { type: "string", pattern: "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$", maxLength: 128 },
+            clientMessageId: {
+              type: "string",
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$",
+              maxLength: 128,
+            },
           },
         },
         RunControlMessage: {
@@ -413,7 +428,11 @@ export async function generateManagementOpenApi(options = {}) {
           additionalProperties: false,
           properties: {
             kind: { const: "napier.run-control-message" },
-            clientMessageId: { type: "string", pattern: "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$", maxLength: 128 },
+            clientMessageId: {
+              type: "string",
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$",
+              maxLength: 128,
+            },
             schemaVersion: { const: 1 },
             id: {
               type: "string",

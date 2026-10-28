@@ -1,3 +1,4 @@
+import type { RecoverWorkflowRequest } from "@napier/contracts/workflow-recovery";
 import path from "node:path";
 import type {
   ExecuteExecutionPlanWorkflowRequest,
@@ -26,7 +27,7 @@ import {
 import {
   assertWorkflowValue,
   workflowSchemaSha256,
-} from "./workflow-manifests.js";
+} from "./workflow-schemas.js";
 import { DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY } from "./workflow-parallel-scheduler.js";
 import {
   assertWorkflowPlanMatchesManifest,
@@ -34,6 +35,12 @@ import {
 } from "./workflow-runtime-model.js";
 import { workflowSimulationRequestEvents } from "./workflow-simulation-evidence.js";
 import { withWorkflowExecutionLock } from "./workflow-execution-lock.js";
+import { workflowManifestStore } from "./workflow-manifest-store.js";
+import {
+  WORKFLOW_RECOVERY_CHECKPOINT,
+  loadWorkflowRecoveryManifest,
+  workflowRecoveryCheckpoint,
+} from "./workflow-recovery-checkpoint.js";
 
 export interface RunExecutionPlanWorkflowOptions {
   threadId: string;
@@ -41,6 +48,7 @@ export interface RunExecutionPlanWorkflowOptions {
   signal?: AbortSignal;
   onEvent?: EventSink;
   [WORKFLOW_EXPERIMENT_EXECUTION]?: WorkflowExperimentExecution;
+  [WORKFLOW_RECOVERY_CHECKPOINT]?: string;
 }
 
 export class ExecutionPlanWorkflowContextFactory {
@@ -66,13 +74,113 @@ export class ExecutionPlanWorkflowContextFactory {
           await this.store.runLifecycleRepository.reconcileInterruptedRuns(
             true,
           );
+        await this.assertRecoveryCheckpoint(options);
         const context =
           "planId" in options.request
             ? await this.resume(options, manifest)
             : await this.create(options, manifest);
+        if (options[WORKFLOW_RECOVERY_CHECKPOINT]) {
+          // Consume before any node execution. A lost response can never release
+          // a later breakpoint by replaying the same request.
+          await this.ledger.append(
+            {
+              threadId: options.threadId,
+              runId: createId("runctl"),
+              type: "workflow.recovery.claimed",
+              category: "plan",
+              visibility: "user",
+              payload: {
+                schemaVersion: 1,
+                planId: context.plan.id,
+                manifestSha256: manifest.contentSha256,
+                checkpointSha256: options[WORKFLOW_RECOVERY_CHECKPOINT]!,
+              },
+            },
+            options.onEvent,
+          );
+        }
         return execute(context);
       },
     );
+  }
+
+  recoveryCheckpoint(threadId: string, planId: string) {
+    return workflowRecoveryCheckpoint(
+      this.store,
+      threadId,
+      planId,
+      this.ledger,
+    );
+  }
+
+  async recoveryOptions(options: {
+    threadId: string;
+    planId: string;
+    request: RecoverWorkflowRequest;
+    signal?: AbortSignal;
+    onEvent?: EventSink;
+  }): Promise<RunExecutionPlanWorkflowOptions> {
+    const checkpoint = await this.recoveryCheckpoint(
+      options.threadId,
+      options.planId,
+    );
+    if (
+      checkpoint.status !== "ready" ||
+      !checkpoint.checkpointSha256 ||
+      checkpoint.checkpointSha256 !== options.request.checkpointSha256
+    ) {
+      throw new Error(
+        "Workflow recovery checkpoint has changed; refresh before continuing",
+      );
+    }
+    const manifest = await loadWorkflowRecoveryManifest(
+      this.store,
+      options.threadId,
+      options.planId,
+      this.ledger,
+    );
+    return {
+      threadId: options.threadId,
+      request: {
+        manifest,
+        planId: options.planId,
+        ...(checkpoint.action === "continue_breakpoint"
+          ? { continueBreakpoint: true }
+          : {}),
+        ...(checkpoint.action === "retry_blocked"
+          ? { retryBlocked: true }
+          : {}),
+      },
+      [WORKFLOW_RECOVERY_CHECKPOINT]: checkpoint.checkpointSha256,
+      ...(options.signal ? { signal: options.signal } : {}),
+      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+    };
+  }
+
+  private async assertRecoveryCheckpoint(
+    options: RunExecutionPlanWorkflowOptions,
+  ): Promise<void> {
+    const expected = options[WORKFLOW_RECOVERY_CHECKPOINT];
+    if (!expected) return;
+    if (!("planId" in options.request))
+      throw new Error("Workflow recovery requires a Plan");
+    const current = await this.recoveryCheckpoint(
+      options.threadId,
+      options.request.planId,
+    );
+    if (
+      current.status !== "ready" ||
+      current.checkpointSha256 !== expected ||
+      current.manifestSha256 !== options.request.manifest.contentSha256 ||
+      (current.action === "continue_breakpoint") !==
+        (options.request.continueBreakpoint === true) ||
+      (current.action === "retry_blocked") !==
+        (options.request.retryBlocked === true)
+    ) {
+      throw new Error(
+        "Workflow recovery checkpoint has changed; refresh before continuing",
+      );
+    }
   }
 
   async create(
@@ -96,6 +204,10 @@ export class ExecutionPlanWorkflowContextFactory {
         ? agent.revision
         : experiment.agentRevision;
     this.store.getAgentRevision(agent.id, agentRevision);
+    await workflowManifestStore(this.store.dataRoot).put(
+      manifest.contentSha256,
+      JSON.stringify(manifest),
+    );
     const plan = await this.store.createPlan(
       options.threadId,
       executionPlanRequestFromBlueprint(manifest.blueprint),

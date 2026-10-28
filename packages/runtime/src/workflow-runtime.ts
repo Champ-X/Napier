@@ -1,3 +1,4 @@
+import type { RecoverWorkflowRequest } from "@napier/contracts/workflow-recovery";
 import type {
   ExecutionPlanWorkflowBreakpoint,
   ExecutionPlanWorkflowNode,
@@ -116,6 +117,20 @@ export class ExecutionPlanWorkflowRuntime {
         completePlanStep: (context, nodeId, runId, outputSha256) =>
           this.completePlanStep(context, nodeId, runId, outputSha256),
       });
+  }
+
+  recoveryCheckpoint(threadId: string, planId: string) {
+    return this.contexts.recoveryCheckpoint(threadId, planId);
+  }
+
+  async recover(options: {
+    threadId: string;
+    planId: string;
+    request: RecoverWorkflowRequest;
+    signal?: AbortSignal;
+    onEvent?: NonNullable<RunExecutionPlanWorkflowOptions["onEvent"]>;
+  }): Promise<ExecutionPlanWorkflowResult> {
+    return this.run(await this.contexts.recoveryOptions(options));
   }
 
   async run(

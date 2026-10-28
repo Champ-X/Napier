@@ -1,0 +1,65 @@
+.workflow-recovery {
+  padding-block: var(--space-4);
+  border-block: 1px solid var(--color-border);
+  color: var(--color-fg);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.workflow-recovery h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+}
+.workflow-recovery p {
+  margin-block: var(--space-2);
+  max-width: 72ch;
+}
+.workflow-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: var(--space-3);
+}
+.workflow-recovery button {
+  min-height: var(--control-target-primary);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font: inherit;
+  cursor: pointer;
+}
+.workflow-recovery button:hover:not(:disabled, [aria-disabled="true"]) {
+  background: var(--color-bg-subtle);
+}
+.workflow-recovery .workflow-recovery-primary {
+  color: var(--color-fg-on-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.workflow-recovery
+  .workflow-recovery-primary:hover:not([aria-disabled="true"]) {
+  background: var(--color-accent-hover);
+}
+.workflow-recovery button:is(:disabled, [aria-disabled="true"]) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.workflow-recovery summary {
+  cursor: pointer;
+  min-height: var(--control-target);
+  align-content: center;
+}
+.workflow-recovery :is(button, summary):focus-visible {
+  outline: var(--control-focus-width) solid var(--color-focus-ring);
+  outline-offset: var(--control-focus-offset);
+}
+.workflow-recovery .workflow-recovery-error {
+  color: var(--color-danger);
+}
+.workflow-recovery code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}

@@ -13601,6 +13601,116 @@
         "x-napier-source-route": "POST /api/threads/:threadId/workflows/:planId/experiments/preview"
       }
     },
+    "/api/threads/{threadId}/workflows/{planId}/recovery": {
+      "get": {
+        "operationId": "get-threads-by-threadId-workflows-by-planId-recovery",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/workflows/{planId}/recovery",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/workflows/:planId/recovery"
+      },
+      "post": {
+        "operationId": "post-threads-by-threadId-workflows-by-planId-recovery",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/workflows/{planId}/recovery",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoverWorkflowRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/workflows/:planId/recovery",
+        "x-napier-promoted-request-schema-ref": "#/components/schemas/RecoverWorkflowRequest",
+        "x-napier-promoted-response-schema-refs": {}
+      }
+    },
     "/api/threads/{threadId}/workspace-trash": {
       "get": {
         "operationId": "get-threads-by-threadId-workspace-trash",
@@ -14068,6 +14178,18 @@
   },
   "components": {
     "schemas": {
+      "RecoverWorkflowRequest": {
+        "type": "object",
+        "required": [
+          "checkpointSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "checkpointSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
       "ErrorResponse": {
         "type": "object",
         "required": [
@@ -17005,11 +17127,12 @@
     "apps/server/src/thread-operations-http.ts",
     "apps/server/src/thread-workflow-http.ts",
     "apps/server/src/tool-display-http.ts",
+    "apps/server/src/workflow-recovery-http.ts",
     "apps/server/src/workspace-directories-http.ts",
     "apps/server/src/workspace-process-http.ts",
     "apps/server/src/workspace-root-http.ts"
   ],
-  "x-napier-source-sha256": "8236ddc0de7fd7a1926b3fb5549d3ef0131c2f3343d836449d503b712cb18d77",
-  "x-napier-route-count": 305,
-  "x-napier-route-set-sha256": "1ceb6838e1e99579692013088da8e4cfd226d9b32a83b313f68c4e00cf191fb2"
+  "x-napier-source-sha256": "4a5416c83f923ac02afc1bb0197323844cace652fc67952d95a8f40454c949ca",
+  "x-napier-route-count": 307,
+  "x-napier-route-set-sha256": "6c3d67bb6efa7c689327d6ed2046ee4e89ef54b0523122782749c703e5ba3fd2"
 }

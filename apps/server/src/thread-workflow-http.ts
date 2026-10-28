@@ -1,4 +1,5 @@
 import { Hono, type Context } from "hono";
+import { registerWorkflowRecoveryHttp } from "./workflow-recovery-http.js";
 import {
   registerContextCompactionHttp,
   type ContextCompactionHttpServices,
@@ -59,6 +60,7 @@ export function registerThreadWorkflowHttp(
   services: ThreadWorkflowHttpServices,
 ): void {
   registerContextCompactionHttp(app, services);
+  registerWorkflowRecoveryHttp(app, services);
   app.post("/api/threads/:threadId/workflows", (context) =>
     executeWorkflowHttp(context, services, HTTP_HELPERS),
   );

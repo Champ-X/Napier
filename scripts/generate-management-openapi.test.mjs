@@ -15,6 +15,24 @@ const temporaryRoots = [];
 const scriptPath = path.resolve("scripts/generate-management-openapi.mjs");
 
 describe("management OpenAPI generator", () => {
+  it("discovers both persisted Workflow recovery routes and the exact checkpoint request", async () => {
+    const { artifact } = await generateManagementOpenApi();
+    const route =
+      artifact.paths["/api/threads/{threadId}/workflows/{planId}/recovery"];
+    expect(route.get).toBeDefined();
+    expect(route.post.requestBody).toMatchObject({
+      required: true,
+      content: {
+        "application/json": {
+          schema: { $ref: "#/components/schemas/RecoverWorkflowRequest" },
+        },
+      },
+    });
+    expect(artifact.components.schemas.RecoverWorkflowRequest).toMatchObject({
+      required: ["checkpointSha256"],
+      additionalProperties: false,
+    });
+  });
   afterEach(async () => {
     await Promise.all(
       temporaryRoots

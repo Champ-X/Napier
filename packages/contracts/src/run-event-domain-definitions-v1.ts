@@ -126,6 +126,7 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
       "workflow.blocked",
       "workflow.breakpoint.continued",
       "workflow.breakpoint.reached",
+      "workflow.recovery.claimed",
       "workflow.cancelled",
       "workflow.completed",
       "workflow.deterministic.completed",

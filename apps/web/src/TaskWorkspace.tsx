@@ -5,6 +5,8 @@ import type { KeyboardEvent } from "react";
 import { copy } from "./copy";
 import { TaskChangesPanel } from "./TaskChangesPanel";
 import { TaskOverviewPanel } from "./TaskOverviewPanel";
+import { activeExecutionPlan } from "./task-overview-view-model";
+import { WorkflowRecoveryPanel, isWorkflowPlan } from "./WorkflowRecoveryPanel";
 import { TaskRuntimePanel } from "./TaskRuntimePanel";
 import {
   hasTaskRuntime,
@@ -41,6 +43,15 @@ export function TaskWorkspace({
     vm.activeRunId,
   );
   const runtimeVisible = hasTaskRuntime(availability);
+  const workflowPlan = activeExecutionPlan(vm.detail);
+  const workflowOwned = isWorkflowPlan(
+    workflowPlan?.id,
+    vm.detail?.events ?? [],
+  );
+  const workspaceKey = JSON.stringify([
+    vm.bootstrap?.workspace.root,
+    vm.bootstrap?.workspace.dataRoot,
+  ]);
   const sections = BASE_SECTIONS.filter((entry) =>
     taskSectionIds(runtimeVisible).includes(entry.id),
   );
@@ -99,6 +110,20 @@ export function TaskWorkspace({
             onGoalClear={() => void vm.removeGoal()}
             onContinue={() => void vm.submit(copy.planNextPrompt)}
             onReviewDecision={onOpenConversation}
+            workflow={
+              workflowOwned && workflowPlan && vm.detail ? (
+                <WorkflowRecoveryPanel
+                  key={`${workspaceKey}:${vm.detail.thread.id}:${workflowPlan.id}`}
+                  workspaceKey={workspaceKey}
+                  threadId={vm.detail.thread.id}
+                  plan={workflowPlan}
+                  eventCount={vm.detail.thread.eventCount}
+                  running={vm.isRunning}
+                  onSettled={vm.refreshActiveThread}
+                  onReviewDecision={onOpenConversation}
+                />
+              ) : undefined
+            }
           />
         ) : null}
         {section === "changes" ? (
