@@ -98,6 +98,15 @@
 - 相关 12 文件 150 个不同测试通过，Runtime typecheck、build:compile、diff check 通过。决策 gate 提取后 Store 行数/复杂度预算降至 3766/96；架构仍为原 11 项，公开 API 仍为 1897/1896 与 compatibility digest 不匹配；不重写历史发布 manifest。
 - 此切片不等于 G04 全部验收：Workflow 审批进程故障矩阵、未执行/未结算写操作对账、统一恢复操作区及 G06-B 浏览器回答并继续仍待实现/验收；G01–G07 总目标保持 active。详细行为与限制见 [operation-recovery.md](docs/operation-recovery.md)。
 
+### 后续推进：G06-B 普通问题回答并继续
+
+- 新增普通问题的“回答并继续”主操作与“仅保存答案”次操作。前端先保存，再使用已有 decision 身份启动幂等 continuation；Workflow 问题仍只保存，继续执行遵守其自身协议。
+- 草稿、请求状态与错误按 workspace root/dataRoot、threadId、decisionId 隔离，同一渲染中的重复点击也只发一次请求。保存失败保留输入；保存响应丢失后查询持久化记录，确认同一答案后提供继续入口；续跑失败保留已保存答案，重试不重复保存。Workspace 变化后旧操作不继续发起写入或提交旧结果。
+- 使用隔离的真实 HTTP、Runtime、SQLite、apply_patch 与 Chromium 验证 8 组观察：正常提交、保存请求失败、保存响应丢失、续跑请求失败、续跑响应丢失、仅保存、后台续跑和会话切换。每个执行场景仅一个答案事件、一个 continuation、一次工具写入；6 次续跑共 18 次 fixture 模型调用，0 外部模型请求。B 会话仍可编辑，A 完成后不切回 A、不污染 B 草稿或错误。
+- 107 项相关 Web 测试（5 文件）、Web typecheck/build、check:web-design、diff check 通过。七种窗口尺寸检查无页面级横向溢出，主操作通过实际点击可达性检查；320px 下 Enter 提交真实续跑成功。截图受现有滚动区域和固定壳层裁剪，不将其当作全屏内容、读屏或完整窄屏可用性验收；G06-B 的统一交互原语/可用性测量保持待办。
+- 收据：[operator-decision-ui-2026-10-29.json](docs/artifacts/operator-decision-ui-2026-10-29.json)，绑定相关源码、实际服务构建摘要和七张截图；复现：[check-operator-decision-ui.mjs](scripts/check-operator-decision-ui.mjs)。详细边界见 [operator-decision-ui.md](docs/operator-decision-ui.md)。不将脚本模型当作 live-model 质量证据。
+- API 决策职责移至已有 thread-run-api 模块，主 ViewModel 从本轮开始前 2317 行降至 2238；API 行数预算随实际职责提取从 1204 降至 1180。架构仍为原 11 项，未提高任何预算。问答草稿仅在挂载期间跨会话保留，刷新持久化、普通 Composer 干预队列、浏览器确认隔离、统一恢复区仍待后续；G01–G07 保持 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -313,7 +322,7 @@
 **实施任务**
 
 - [ ] 将需要选择、预算暂停、环境阻塞、可恢复和结果待对账状态聚合到清楚的下一步操作区。
-- [ ] 普通问题提供“回答并继续”，内部先持久化答案，再幂等启动 continuation；必要时保留仅保存答案选项。
+- [x] 普通问题提供“回答并继续”，内部先持久化答案，再幂等启动 continuation；必要时保留仅保存答案选项。（真实浏览器/HTTP/SQLite/文件工具验证正常、请求失败、响应丢失和跨会话路径；不代表完整 G06-B 验收。）
 - [ ] 恢复说明优先解释下一步行为，hash / run ID 等技术字段放详情，不增加普遍审批门槛。
 - [ ] 保留阅读布局，增加可固定的预览、diff 和来源面板；宽屏空间用于审阅，不单纯拉宽正文。
 - [ ] 支持定位任务、产物及版本的深链接，并恢复审阅位置。

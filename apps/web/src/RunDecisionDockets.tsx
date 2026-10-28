@@ -19,6 +19,9 @@ export function RunDecisionDockets({
   vm: Pick<
     WorkspaceViewModel,
     | "answerOperatorDecision"
+    | "answerAndContinueOperatorDecision"
+    | "operatorDecisionState"
+    | "setOperatorDecisionDraft"
     | "browserInteractionConfirmation"
     | "browserInteractionConfirmationBusy"
     | "cancelOperatorDecision"
@@ -37,7 +40,13 @@ export function RunDecisionDockets({
       {vm.openOperatorDecision ? (
         <Suspense fallback={null}>
           <LazyOperatorDecisionPanel
-            decision={vm.openOperatorDecision}
+            key={vm.openOperatorDecision.id}
+            decision={
+              vm.operatorDecisionState?.savedDecision ?? vm.openOperatorDecision
+            }
+            state={vm.operatorDecisionState}
+            onDraftChange={vm.setOperatorDecisionDraft}
+            onAnswerAndContinue={vm.answerAndContinueOperatorDecision}
             workflowOwned={vm.openOperatorDecisionWorkflowOwned}
             busy={vm.operatorDecisionBusy}
             onAnswer={vm.answerOperatorDecision}

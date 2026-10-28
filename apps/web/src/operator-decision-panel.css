@@ -1,0 +1,83 @@
+.operator-decision {
+  border-inline-start-width: 1px;
+  box-shadow: none;
+}
+
+.operator-decision-heading > strong {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+
+.operator-decision-options input {
+  position: static;
+  width: var(--space-4);
+  height: var(--space-4);
+  margin: 0;
+  opacity: 1;
+  accent-color: var(--color-accent);
+}
+
+.operator-decision-error,
+.operator-decision-status {
+  margin-block: var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  overflow-wrap: anywhere;
+}
+
+.operator-decision-error {
+  color: var(--color-danger);
+}
+
+.operator-decision-status {
+  color: var(--color-fg-muted);
+}
+
+.operator-decision-status:empty {
+  display: none;
+}
+
+.operator-decision footer,
+.operator-decision footer > div {
+  flex-wrap: wrap;
+}
+
+.operator-decision-receipt {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.operator-decision-receipt summary {
+  cursor: pointer;
+}
+
+.operator-decision-receipt code {
+  display: block;
+  margin-block-start: var(--space-2);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.operator-decision .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.operator-decision-primary {
+  min-height: var(--control-target-primary);
+}
+
+.operator-decision-receipt summary {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  letter-spacing: 0;
+  text-transform: none;
+}

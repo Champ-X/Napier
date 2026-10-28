@@ -1,95 +1,128 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowRight, CircleHelp, X } from "lucide-react";
-
 import type {
   AnswerOperatorDecisionRequest,
   OperatorDecision,
 } from "@napier/contracts";
-
 import { operatorDecisionCopy as copy } from "./operator-decision-copy";
+import type { OperatorDecisionUiState } from "./use-operator-decision-actions";
+import "./operator-decision-panel.css";
 
-export default function OperatorDecisionPanel({
-  decision,
-  workflowOwned,
-  busy,
-  onAnswer,
-  onContinue,
-  onCancel,
-}: {
+export interface OperatorDecisionPanelProps {
   decision: OperatorDecision;
   workflowOwned: boolean;
   busy: boolean;
+  state?: OperatorDecisionUiState | undefined;
+  onDraftChange: (draft: AnswerOperatorDecisionRequest) => void;
   onAnswer: (
+    decisionId: string,
+    answer: AnswerOperatorDecisionRequest,
+  ) => Promise<void>;
+  onAnswerAndContinue: (
     decisionId: string,
     answer: AnswerOperatorDecisionRequest,
   ) => Promise<void>;
   onContinue: (decision: OperatorDecision) => Promise<void>;
   onCancel: (decisionId: string) => Promise<void>;
-}) {
-  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(
-    decision.selectedOptionIds ?? [],
-  );
-  const [customText, setCustomText] = useState(decision.customText ?? "");
+}
 
-  useEffect(() => {
-    setSelectedOptionIds(decision.selectedOptionIds ?? []);
-    setCustomText(decision.customText ?? "");
-  }, [decision.id, decision.selectedOptionIds, decision.customText]);
-
-  const answered = decision.status === "answered";
-  const selected = new Set(selectedOptionIds);
-  const toggleOption = (optionId: string): void => {
-    setSelectedOptionIds((current) =>
-      decision.multiSelect
-        ? current.includes(optionId)
-          ? current.filter((id) => id !== optionId)
-          : [...current, optionId]
-        : [optionId],
+export default function OperatorDecisionPanel({
+  decision,
+  workflowOwned,
+  busy,
+  state,
+  onDraftChange,
+  onAnswer,
+  onAnswerAndContinue,
+  onContinue,
+  onCancel,
+}: OperatorDecisionPanelProps) {
+  const form = useRef<HTMLFormElement>(null);
+  const [validation, setValidation] = useState<string>();
+  const answered =
+    decision.status === "answered" || decision.status === "continued";
+  const draft = (!answered && state?.draft) || {
+    selectedOptionIds: decision.selectedOptionIds ?? [],
+    customText: decision.customText ?? "",
+  };
+  const selected = new Set(draft.selectedOptionIds);
+  const change = (next: AnswerOperatorDecisionRequest) => {
+    setValidation(undefined);
+    onDraftChange(next);
+  };
+  const submit = (continueAfterSave: boolean): void => {
+    if (busy || answered) return;
+    const customText = draft.customText?.trim() ?? "";
+    if (!draft.selectedOptionIds.length && !customText) {
+      setValidation(copy.chooseAnswer);
+      form.current?.querySelector<HTMLInputElement>("input")?.focus();
+      return;
+    }
+    if (new TextEncoder().encode(customText).byteLength > 4096) {
+      setValidation(copy.answerTooLong);
+      const details = form.current?.querySelector<HTMLDetailsElement>(
+        ".operator-decision-custom",
+      );
+      if (details) details.open = true;
+      form.current?.querySelector("textarea")?.focus();
+      return;
+    }
+    const answer = {
+      selectedOptionIds: draft.selectedOptionIds,
+      ...(customText ? { customText } : {}),
+    };
+    void (continueAfterSave && !workflowOwned ? onAnswerAndContinue : onAnswer)(
+      decision.id,
+      answer,
     );
   };
-  const canAnswer =
-    !busy && (selectedOptionIds.length > 0 || Boolean(customText.trim()));
-
+  const status =
+    state?.phase === "saving"
+      ? copy.saving
+      : state?.phase === "continuing"
+        ? copy.continuing
+        : state?.phase === "cancelling"
+          ? copy.cancelling
+          : "";
+  const error = validation ?? state?.error;
+  const hintId = `decision-hint-${decision.id}`;
+  const errorId = `decision-error-${decision.id}`;
   return (
     <section
       className="operator-decision"
       aria-labelledby={`operator-decision-${decision.id}`}
-      aria-busy={Boolean(busy)}
+      aria-busy={busy}
     >
       <header className="operator-decision-heading">
         <div className="operator-decision-glyph" aria-hidden="true">
           <CircleHelp size={18} />
         </div>
-        <div>
-          <span>{copy.eyebrow}</span>
-          <strong>{answered ? copy.answered : copy.waiting}</strong>
-        </div>
-        <code title={decision.contentSha256}>{decision.id.slice(-8)}</code>
+        <strong>{answered ? copy.answered : copy.waiting}</strong>
       </header>
-
       <form
+        ref={form}
         onSubmit={(event) => {
           event.preventDefault();
-          if (!canAnswer) return;
-          void onAnswer(decision.id, {
-            selectedOptionIds,
-            ...(customText.trim() ? { customText: customText.trim() } : {}),
-          });
+          submit(true);
         }}
       >
-        <fieldset disabled={Boolean(busy) || answered}>
+        <fieldset
+          disabled={busy || answered}
+          aria-describedby={`${hintId}${error ? ` ${errorId}` : ""}`}
+        >
           <legend id={`operator-decision-${decision.id}`}>
-            <span>{decision.header}</span>
             <strong>{decision.question}</strong>
           </legend>
           <div className="operator-decision-context">
-            <p>{copy.runSettled}</p>
+            <p id={hintId}>
+              {workflowOwned ? copy.workflowHint : copy.runSettled}
+            </p>
             <span>
               {decision.multiSelect ? copy.multiSelect : copy.singleSelect}
             </span>
           </div>
           <div className="operator-decision-options">
-            {decision.options.map((option, index) => (
+            {decision.options.map((option) => (
               <label
                 className={selected.has(option.id) ? "is-selected" : undefined}
                 key={option.id}
@@ -99,11 +132,19 @@ export default function OperatorDecisionPanel({
                   name={`decision-${decision.id}`}
                   value={option.id}
                   checked={selected.has(option.id)}
-                  onChange={() => toggleOption(option.id)}
+                  onChange={() =>
+                    change({
+                      ...draft,
+                      selectedOptionIds: decision.multiSelect
+                        ? selected.has(option.id)
+                          ? draft.selectedOptionIds.filter(
+                              (id) => id !== option.id,
+                            )
+                          : [...draft.selectedOptionIds, option.id]
+                        : [option.id],
+                    })
+                  }
                 />
-                <span className="operator-option-index">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
                 <span>
                   <strong>{option.label}</strong>
                   <small>{option.description}</small>
@@ -111,47 +152,71 @@ export default function OperatorDecisionPanel({
               </label>
             ))}
           </div>
-          <details className="operator-decision-custom">
+          <details
+            className="operator-decision-custom"
+            open={Boolean(draft.customText)}
+          >
             <summary>
               {copy.customAnswer} <small>{copy.optional}</small>
             </summary>
+            <label
+              className="visually-hidden"
+              htmlFor={`decision-text-${decision.id}`}
+            >
+              {copy.customAnswer}
+            </label>
             <textarea
-              aria-label={copy.customAnswer}
+              id={`decision-text-${decision.id}`}
+              name="customText"
               rows={2}
               maxLength={4096}
-              value={customText}
+              value={draft.customText ?? ""}
               placeholder={copy.customPlaceholder}
-              onChange={(event) => setCustomText(event.target.value)}
+              onChange={(event) =>
+                change({ ...draft, customText: event.target.value })
+              }
             />
           </details>
         </fieldset>
-
+        {error ? (
+          <p className="operator-decision-error" id={errorId} role="alert">
+            {error}
+          </p>
+        ) : null}
+        <p className="operator-decision-status" role="status">
+          {status}
+        </p>
         <footer>
-          {answered ? (
-            <span className="operator-decision-receipt">
-              {copy.receipt}
-              <code title={decision.answerSha256}>
-                {decision.answerSha256?.slice(0, 12)}
-              </code>
-            </span>
-          ) : (
-            <span />
-          )}
+          <details className="operator-decision-receipt">
+            <summary>{copy.receipt}</summary>
+            <code>{decision.id}</code>
+            {answered ? <code>{decision.answerSha256}</code> : null}
+          </details>
           <div>
             <button
               className="operator-decision-cancel"
               type="button"
-              disabled={Boolean(busy)}
+              disabled={busy || decision.status === "continued"}
               onClick={() => void onCancel(decision.id)}
             >
               <X size={12} aria-hidden="true" />
               {copy.cancel}
             </button>
+            {!answered && !workflowOwned ? (
+              <button
+                className="operator-decision-cancel"
+                type="button"
+                disabled={busy}
+                onClick={() => submit(false)}
+              >
+                {copy.saveOnly}
+              </button>
+            ) : null}
             {answered && !workflowOwned ? (
               <button
                 className="operator-decision-primary"
                 type="button"
-                disabled={Boolean(busy)}
+                disabled={busy}
                 onClick={() => void onContinue(decision)}
               >
                 {copy.continue}
@@ -165,9 +230,9 @@ export default function OperatorDecisionPanel({
               <button
                 className="operator-decision-primary"
                 type="submit"
-                disabled={!canAnswer}
+                disabled={busy}
               >
-                {copy.submit}
+                {workflowOwned ? copy.saveOnly : copy.submit}
                 <ArrowRight size={13} aria-hidden="true" />
               </button>
             )}

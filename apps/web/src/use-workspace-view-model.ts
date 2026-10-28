@@ -1,8 +1,8 @@
+import { useThreadDecisionActions } from "./use-thread-decision-actions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   AgentProfile,
-  AnswerOperatorDecisionRequest,
   BootstrapResponse,
   ContextCheckpointSnapshot,
   CreateMcpExtensionRequest,
@@ -18,7 +18,6 @@ import type {
   MemoryScope,
   McpToolEffect,
   OpenTelemetryTraceArtifact,
-  OperatorDecision,
   ReviewExtensionRequest,
   ReviewMemoryRequest,
   RunControlMessageMode,
@@ -29,15 +28,12 @@ import type {
 } from "@napier/contracts";
 import type { LiveReadyBootstrapResponse } from "@napier/contracts/default-run-model";
 import {
-  answerOperatorDecision as answerOperatorDecisionApi,
   applyExtensionPackageDeployment as applyExtensionPackageDeploymentApi,
   applyExtensionPackageRolloutChannel as applyExtensionPackageRolloutChannelApi,
   applyExtensionPackageUpdate as applyExtensionPackageUpdateApi,
-  cancelOperatorDecision as cancelOperatorDecisionApi,
   clearGoal,
   compareThreadRuns,
   connectExtension,
-  continueOperatorDecision as continueOperatorDecisionApi,
   createBranch,
   createExtensionPublisherTrustAnchor as createExtensionPublisherTrustAnchorApi,
   createMcpExtension,
@@ -115,7 +111,6 @@ import {
 } from "./thread-run-stream-state";
 import { messagePayload } from "./message-payload";
 import { commitThreadLocation, threadIdFromLocation } from "./thread-location";
-import { useBrowserInteractionConfirmation } from "./use-browser-interaction-confirmation";
 import { useNextRunOptions } from "./use-next-run-options";
 import {
   upsertThreadControlMessage,
@@ -247,7 +242,6 @@ export function useWorkspaceViewModel() {
   const [traceVerificationReceipt, setTraceVerificationReceipt] =
     useState<OpenTelemetryTraceVerificationReceipt>();
   const [isLoading, setIsLoading] = useState(true);
-  const [operatorDecisionBusy, setOperatorDecisionBusy] = useState(false);
   const [error, setError] = useState<string>();
   const {
     preset: nextRunCapabilityPreset,
@@ -347,10 +341,6 @@ export function useWorkspaceViewModel() {
         ?.source === "workflow",
     [detail?.runs, openOperatorDecision],
   );
-  const browserInteraction = useBrowserInteractionConfirmation(
-    detail,
-    setError,
-  );
   const terminalRuns = useMemo(
     () =>
       (detail?.runs ?? []).filter(
@@ -446,7 +436,6 @@ export function useWorkspaceViewModel() {
         [
           setTraceExportBusy,
           setTraceVerifyBusy,
-          setOperatorDecisionBusy,
         ].forEach((reset) => reset(false));
         setMemoryConsolidatesIds([]);
         setMemoryCategory("context");
@@ -574,10 +563,12 @@ export function useWorkspaceViewModel() {
     (threadId: string, source: WebThreadDetail) => {
       threadDetailCacheRef.current.set(threadId, source);
       setThreadRunSessions((current) => attachThreadRun(current, threadId));
-      setRunReplayVerificationReceipt(undefined);
-      setTraceExportReceipt(undefined);
-      setTraceVerificationReceipt(undefined);
-      setError(undefined);
+      if (selectedThreadIdRef.current === threadId) {
+        setRunReplayVerificationReceipt(undefined);
+        setTraceExportReceipt(undefined);
+        setTraceVerificationReceipt(undefined);
+        setError(undefined);
+      }
     },
     [],
   );
@@ -702,85 +693,19 @@ export function useWorkspaceViewModel() {
     }
   }, [detail]);
 
-  const answerOperatorDecision = useCallback(
-    async (
-      decisionId: string,
-      answer: AnswerOperatorDecisionRequest,
-    ): Promise<void> => {
-      if (!detail || operatorDecisionBusy) return;
-      setOperatorDecisionBusy(true);
-      setError(undefined);
-      try {
-        await answerOperatorDecisionApi(detail.thread.id, decisionId, answer);
-        await refreshActiveThread();
-      } catch (answerError) {
-        setError(toErrorMessage(answerError));
-      } finally {
-        setOperatorDecisionBusy(false);
-      }
-    },
-    [detail, operatorDecisionBusy, refreshActiveThread],
-  );
-
-  const cancelOperatorDecision = useCallback(
-    async (decisionId: string): Promise<void> => {
-      if (!detail || operatorDecisionBusy) return;
-      setOperatorDecisionBusy(true);
-      setError(undefined);
-      try {
-        await cancelOperatorDecisionApi(detail.thread.id, decisionId);
-        await refreshActiveThread();
-      } catch (cancelError) {
-        setError(toErrorMessage(cancelError));
-      } finally {
-        setOperatorDecisionBusy(false);
-      }
-    },
-    [detail, operatorDecisionBusy, refreshActiveThread],
-  );
-
-  const continueOperatorDecision = useCallback(
-    async (decision: OperatorDecision): Promise<void> => {
-      if (
-        !detail ||
-        decision.status !== "answered" ||
-        operatorDecisionBusy ||
-        isRunning
-      ) {
-        return;
-      }
-      const threadId = detail.thread.id;
-      setOperatorDecisionBusy(true);
-      startRunUi(threadId, detail);
-      try {
-        await continueOperatorDecisionApi(
-          threadId,
-          decision.id,
-          streamFrameHandler(threadId),
-        );
-        await refreshBootstrap(threadId);
-      } catch (continueError) {
-        setRunError(threadId, continueError);
-        if (selectedThreadIdRef.current === threadId) {
-          await refreshActiveThread().catch(() => undefined);
-        }
-      } finally {
-        setOperatorDecisionBusy(false);
-        finishRunUi(threadId);
-      }
-    },
-    [
-      detail,
-      finishRunUi,
-      isRunning,
-      operatorDecisionBusy,
-      refreshActiveThread,
-      refreshBootstrap,
-      setRunError,
-      startRunUi,
-      streamFrameHandler,
-    ],
-  );
+  const operatorDecisionActions = useThreadDecisionActions({
+    loadThread: getThread,
+    setError,
+    workspaceKey: bootstrap ? JSON.stringify([bootstrap.workspace.root, bootstrap.workspace.dataRoot]) : undefined,
+    detail,
+    decision: openOperatorDecision,
+    isRunning,
+    onStart: startRunUi,
+    onFinish: finishRunUi,
+    onFrame: streamFrameHandler,
+    onCommit: commitRefreshedThreadDetail,
+    onRunError: setRunError,
+  });
 
   const saveGoal = useCallback(async () => {
     if (!detail || !goalDraft.trim()) return;
@@ -2135,10 +2060,9 @@ export function useWorkspaceViewModel() {
     traceVerificationReceipt,
     labBusyAction,
     labFixtureReceipt,
-    operatorDecisionBusy,
+    ...operatorDecisionActions,
     ...subagentHubActions,
     ...threadNavigation,
-    ...browserInteraction,
     streamingText,
     messages,
     visibleTrace,
@@ -2168,9 +2092,6 @@ export function useWorkspaceViewModel() {
     submit,
     resume,
     stop,
-    answerOperatorDecision,
-    cancelOperatorDecision,
-    continueOperatorDecision,
     saveGoal,
     removeGoal,
     branchFrom,

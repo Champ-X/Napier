@@ -1,5 +1,4 @@
 import type {
-  AnswerOperatorDecisionRequest,
   ApplyExtensionPackageDeploymentRequest,
   ApplyExtensionPackageDeploymentResult,
   ApplyExtensionPackageRolloutChannelRequest,
@@ -65,7 +64,6 @@ import type {
   MemoryFact,
   OpenTelemetryTraceArtifact,
   OpenTelemetryTraceArtifactVerification,
-  OperatorDecision,
   PreviewExtensionPackageDeploymentRequest,
   PublishExtensionPackageRolloutChannelRequest,
   PreviewExtensionPackageUpdateRequest,
@@ -917,30 +915,6 @@ export function cancelRunControlMessage(
   );
 }
 
-export function answerOperatorDecision(
-  threadId: string,
-  decisionId: string,
-  body: AnswerOperatorDecisionRequest,
-): Promise<OperatorDecision> {
-  return requestJson(
-    `/api/threads/${encodeURIComponent(threadId)}/operator-decisions/${encodeURIComponent(decisionId)}/answer`,
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
-}
-
-export function cancelOperatorDecision(
-  threadId: string,
-  decisionId: string,
-): Promise<OperatorDecision> {
-  return requestJson(
-    `/api/threads/${encodeURIComponent(threadId)}/operator-decisions/${encodeURIComponent(decisionId)}/cancel`,
-    { method: "POST" },
-  );
-}
-
 export function proposeMemory(body: CreateMemoryRequest): Promise<MemoryFact> {
   return requestJson("/api/memories", {
     method: "POST",
@@ -1198,6 +1172,8 @@ export function applyExtensionPackageUpdate(
 }
 
 export {
+  answerOperatorDecision,
+  cancelOperatorDecision,
   continueOperatorDecision,
   resumeInterruptedRun,
   streamPrompt,
