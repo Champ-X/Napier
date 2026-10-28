@@ -1,3 +1,4 @@
+import path from "node:path";
 import type {
   ExecuteExecutionPlanWorkflowRequest,
   ExecutionPlanWorkflowManifest,
@@ -7,6 +8,7 @@ import type { EventSink } from "./event-sink.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { LocalStore } from "./store.js";
+import { LEDGER_DATABASE_FILENAME } from "./sqlite-ledger-model.js";
 import { validateExecutionPlanWorkflowBreakpointNodeIds } from "./workflow-breakpoint-model.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import type { WorkflowExecutionContext } from "./workflow-context.js";
@@ -31,6 +33,7 @@ import {
   workflowPlanCreatedPayload,
 } from "./workflow-runtime-model.js";
 import { workflowSimulationRequestEvents } from "./workflow-simulation-evidence.js";
+import { withWorkflowExecutionLock } from "./workflow-execution-lock.js";
 
 export interface RunExecutionPlanWorkflowOptions {
   threadId: string;
@@ -45,6 +48,32 @@ export class ExecutionPlanWorkflowContextFactory {
     private readonly store: LocalStore,
     private readonly ledger: ExecutionPlanWorkflowLedger,
   ) {}
+
+  async withContext<T>(
+    options: RunExecutionPlanWorkflowOptions,
+    manifest: ExecutionPlanWorkflowManifest,
+    execute: (context: WorkflowExecutionContext) => Promise<T>,
+  ): Promise<T> {
+    return withWorkflowExecutionLock(
+      {
+        databasePath: path.join(this.store.dataRoot, LEDGER_DATABASE_FILENAME),
+        threadId: options.threadId,
+        wait: "planId" in options.request,
+        ...(options.signal ? { signal: options.signal } : {}),
+      },
+      async (reclaimed) => {
+        if (reclaimed)
+          await this.store.runLifecycleRepository.reconcileInterruptedRuns(
+            true,
+          );
+        const context =
+          "planId" in options.request
+            ? await this.resume(options, manifest)
+            : await this.create(options, manifest);
+        return execute(context);
+      },
+    );
+  }
 
   async create(
     options: RunExecutionPlanWorkflowOptions,

@@ -1,5 +1,7 @@
 import type { LedgerRunLease } from "./sqlite-run-leases.js";
 
+export const LEDGER_DATABASE_FILENAME = "ledger.sqlite";
+
 export interface LedgerSnapshot {
   revision: number;
   snapshotRevision: number;

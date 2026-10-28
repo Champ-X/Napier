@@ -1,6 +1,36 @@
 # 操作级恢复：补丁对账与用户答案
 
-2026-10-29。当前实现覆盖已结算的 `apply_patch`，以及有写前意图的未结算文件提交。前者继承终态或精确结果，后者独立核对当前文件后只读续跑。G04 整体验收仍未完成。
+2026-10-29。当前实现覆盖已结算的 `apply_patch`、有写前意图的未结算文件提交，以及已保存 Workflow 审批的原请求重试。补丁恢复核对文件后继续只读工作；审批恢复复用已保存答案和 continuation。G04 整体验收仍未完成。
+
+## Workflow 审批的原请求重试与进程互斥
+
+此前 Store 已支持同答案重试，并将 continuation 与新 Run 原子保存，但嵌入式 `answerAndResume` 仍只接受 pending 决策。真实进程在保存答案后退出，调用方重试同一请求会得到 state_conflict。现在显式 decisionId 可以定位 pending、answered 或 continued 的原决策；没有 decisionId 的 pending 查询仍只返回待回答决策。
+
+请求使用原 pending、已保存答案或当前决策快照校验 expectedDecisionSha256，再按原问题规则验证答案。保存仍交给已有规范化和 answerSha256 去重：不同答案冲突，已取消答案不重新启用。及时保存的答案按原 answeredAt 判断截止时间，因此响应丢失后即使过期也能继续；已过期但尚未回答的决策拒绝保存。已落账答案的观察者回调失败不会抹掉答案，显式取消在保存之后仍可停止这次调用，随后重试继续。
+
+保存前复用 Workflow ledger 验证 Plan/manifest、原 Run 的 Agent/revision、节点开始 input 摘要、审批 schema/attempt、requestedEventSeq、原 requestSha256 与 expiresAt。续跑时保留原有上下文、输出、continuation 身份和结果完整性检查。原 continuation 已经存在时不新建；成功或拒绝后的重复请求没有新增事件，拒绝不会执行下游工具。
+
+并发实测暴露了原来只在一个 Runtime 实例内有效的 activeThreads 限制。Workflow 上下文现在通过同一 SQLite ledger 的 Thread 级进程锁执行。SQLite 事务原子认领和替换死亡进程，随机 token 限定释放；恢复请求等待前一个驱动者退出并支持 AbortSignal，新建执行遇到占用仍拒绝。同一 Workflow 内的并行节点和其他 Thread 不串行化。原 owner 死亡后，接管者先复用现有 Run 对账，再重新读取上下文，不保留等待前的状态快照。
+
+锁没有 TTL：活进程即使暂停也不能被另一个驱动者抢占。只有 ESRCH 证明原 PID 已不存在；权限错误或其他探测错误保守等待。该机制仅适用于本机 LocalStore；PID 复用可能保守阻塞，不支持跨主机 fencing。SQLite schema 从 7 迁到 8，只增加锁表和迁移记录；已有事件不改写，旧 Runtime 不能直接打开升级后的数据库。初始化的 busy_timeout 提前到首次读取 schema 之前，处理同时打开数据库时观察到的锁冲突。
+
+复现：`node scripts/check-workflow-approval-recovery.mjs /tmp/napier-workflow-approval-new.json`，输出独占创建。当前收据：[workflow-approval-recovery-verified-2026-10-29.json](artifacts/workflow-approval-recovery-verified-2026-10-29.json)。审批、SQLite 与 apply_patch 均真实执行，模型注册表为空，0 外部模型请求。
+
+| 故障或竞争 | 验证范围 |
+| --- | --- |
+| 答案落账、continuation 事务前/后、审批完成前、Plan 已完成但节点事件未写、节点事件已写、Workflow 结果已写后退出 | 同一请求恢复成功；approve 与 reject 各 7 个断点；分别仅 3 / 2 个 Run，1 个答案、1 个 continuation，1 / 0 次下游写入 |
+| 两个独立进程同时重试 | barrier 同步开始；两个调用均返回 completed，只有一个 continuation 和一次写入 |
+| 原 driver 在 continuation 事务后 SIGSTOP，再 SIGKILL | 活进程期间等待；死亡后接管，复用 interrupted continuation，下游只执行一次 |
+| 同一 Runtime 并发、等待者取消、其他 Thread 执行 | 请求串行恢复；取消不影响原 owner；其他 Thread 能到达等待审批 |
+| 截止后重试、错误摘要、改变答案、损坏请求绑定、观察者断开 | 保留原答案；无效请求在新答案或下游执行前拒绝；已保存的及时答案可继续 |
+
+固定 `610a8ef54426fb3408d43d1e33f1ce6f419cd7ca` 的旧嵌入式审批服务在同一个真实已保存答案上仍拒绝重试，当前服务可以完成。该对照仅冻结审批 API，支持模块使用当前实现；不是完整历史发行版基准。收据记录单次重启与续跑时间、Run/事件/写入数量；不将这组本机采样称为生产性能改善。最终响应丢失场景检查文件 inode/mtime 保持不变。
+
+此前的 [中间收据](artifacts/workflow-approval-recovery-current-2026-10-29.json) 保留其源码快照。随后补充反例发现：请求以已回答快照的摘要发起后，continued 状态会让同一请求再次被误判 stale。现已覆盖这一历史快照并验证重复调用没有新事件，最终收据包含该回归。一次更早的证据封装运行仅保留了测试进程 exit 1，没有保留具体失败项，原因无法据此确定；封装现已输出失败断言，后续当前源码的独立运行通过。未将中间结果当作最终验收。
+
+相关检查共 14 文件 156 个不同用例通过，其中当前收据固定 3 文件 29 项；其他覆盖 Workflow 执行/恢复/重试/并行节点、实验/断点/循环/成果结算和 SDK。Runtime typecheck / build:compile 与 diff check 通过。架构回到原 11 项失败，公开 API 仍为 root 1897/1896 和 compatibility digest 不匹配；未提高预算，未修改历史 release source manifest，编译不等于完整发布验收。
+
+这些检查覆盖审批与 continuation 边界，不授权任意下游写工具的自动重放。下游工具自身执行中断仍适用原有操作恢复策略。未执行操作自动继续、统一恢复操作区，以及 G01–G07 的剩余目标仍待完成；不宣称断电持久性或外部系统普遍 exactly-once。以下补丁和普通问题章节保留此前切片的历史证据及当时边界。
 
 ## 未结算补丁的写前意图与对账
 

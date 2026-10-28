@@ -47,7 +47,7 @@ import {
   ConcurrentRunLeaseUpdateError,
   ConcurrentStoreUpdateError,
 } from "./sqlite-ledger-errors.js";
-export const LEDGER_DATABASE_FILENAME = "ledger.sqlite";
+export { LEDGER_DATABASE_FILENAME } from "./sqlite-ledger-model.js";
 export { LEDGER_SCHEMA_VERSION } from "./sqlite-ledger-schema.js";
 export {
   ConcurrentRunLeaseUpdateError,
@@ -77,6 +77,7 @@ export class SqliteLedger {
       allowExtension: false,
     });
     try {
+      database.exec("PRAGMA busy_timeout = 5000");
       const versionRow = database.prepare("PRAGMA user_version").get() as {
         user_version: number;
       };
@@ -91,7 +92,6 @@ export class SqliteLedger {
       database.exec(`
         PRAGMA journal_mode = WAL;
         PRAGMA synchronous = FULL;
-        PRAGMA busy_timeout = 5000;
         PRAGMA foreign_keys = ON;
         PRAGMA trusted_schema = OFF;
       `);

@@ -53,7 +53,6 @@ import {
 export type { RunExecutionPlanWorkflowOptions } from "./workflow-context-factory.js";
 
 export class ExecutionPlanWorkflowRuntime {
-  private readonly activeThreads = new Set<string>();
   private readonly ledger: ExecutionPlanWorkflowLedger;
   private readonly artifactSettlement: ExecutionPlanWorkflowArtifactSettlement;
   private readonly breakpointRuntime: ExecutionPlanWorkflowBreakpointRuntime;
@@ -136,19 +135,9 @@ export class ExecutionPlanWorkflowRuntime {
         "Workflow retry and breakpoint continuation are mutually exclusive",
       );
     }
-    if (this.activeThreads.has(options.threadId)) {
-      throw new Error("Thread already has an active Workflow execution");
-    }
-    this.activeThreads.add(options.threadId);
-    try {
-      const context =
-        "planId" in options.request
-          ? await this.contexts.resume(options, manifest)
-          : await this.contexts.create(options, manifest);
-      return await this.executeContext(context);
-    } finally {
-      this.activeThreads.delete(options.threadId);
-    }
+    return this.contexts.withContext(options, manifest, (context) =>
+      this.executeContext(context),
+    );
   }
 
   private async executeContext(

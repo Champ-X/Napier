@@ -24,6 +24,34 @@ afterEach(async () => {
 });
 
 describe("SQLite ledger schema migration", () => {
+  it("adds Workflow ownership to a version 7 ledger without rewriting events", async () => {
+    const options = await createOptions();
+    const first = await openStore(options);
+    const thread = first.listThreads()[0]!;
+    const events = await first.listEvents(thread.id);
+    first.close();
+    const database = new DatabaseSync(
+      path.join(options.dataRoot, LEDGER_DATABASE_FILENAME),
+    );
+    database.exec(`DROP TABLE workflow_execution_locks;
+      DELETE FROM ledger_schema_migrations WHERE version = 8;
+      PRAGMA user_version = 7;`);
+    database.close();
+    const migrated = await openStore(options);
+    expect(await migrated.listEvents(thread.id)).toEqual(events);
+    expect(migrated.getLedgerSchemaReport().schemaVersion).toBe(8);
+    const inspect = new DatabaseSync(
+      path.join(options.dataRoot, LEDGER_DATABASE_FILENAME),
+    );
+    try {
+      expect(
+        inspect.prepare("SELECT * FROM workflow_execution_locks").all(),
+      ).toEqual([]);
+    } finally {
+      inspect.close();
+    }
+  });
+
   it("fails closed on an unsupported SQLite schema version", async () => {
     const options = await createOptions();
     await mkdir(options.dataRoot, { recursive: true });
@@ -87,6 +115,7 @@ function migrationHistory(initialName: string) {
       version: 7,
       name: "durable_tool_concurrency_leases",
     }),
+    expect.objectContaining({ version: 8, name: "workflow_execution_locks" }),
   ];
 }
 

@@ -7,15 +7,23 @@ import type {
   OperatorDecision,
 } from "@napier/contracts";
 
-import type { EventSink } from "./event-sink.js";
+import { emitBestEffort, type EventSink } from "./event-sink.js";
 import type { EmbeddedWorkflowExecution } from "./embedded-workflow-model.js";
 import { validateExecutionPlanWorkflowManifest } from "./workflow-manifests.js";
-import { createOperatorDecisionAnsweredPayload } from "./operator-decisions.js";
+import {
+  createOperatorDecisionAnsweredPayload,
+  projectOperatorDecisions,
+} from "./operator-decisions.js";
 import type { LocalStore } from "./store.js";
-import { workflowApprovalDecisionContractMatches } from "./workflow-approval-model.js";
+import {
+  workflowApprovalDecisionContractMatches,
+  workflowApprovalAnsweredBeforeExpiry,
+} from "./workflow-approval-model.js";
 import {
   WORKFLOW_APPROVAL_REQUESTED_EVENT,
+  WORKFLOW_NODE_STARTED_EVENT,
   WORKFLOW_STARTED_EVENT,
+  ExecutionPlanWorkflowLedger,
 } from "./workflow-ledger.js";
 import { assertWorkflowPlanMatchesManifest } from "./workflow-runtime-model.js";
 import type { ExecutionPlanWorkflowRuntime } from "./workflow-runtime.js";
@@ -101,7 +109,7 @@ export class EmbeddedWorkflowApprovalService {
       options.planId,
       options.decisionId,
     );
-    if (target.decision.contentSha256 !== options.expectedDecisionSha256) {
+    if (!target.snapshotSha256s.includes(options.expectedDecisionSha256)) {
       throw new EmbeddedWorkflowApprovalError(
         "stale_decision",
         "Workflow Approval decision has changed",
@@ -110,7 +118,7 @@ export class EmbeddedWorkflowApprovalService {
     try {
       assertWorkflowApprovalAnswer(options.answer);
       createOperatorDecisionAnsweredPayload({
-        decision: target.decision,
+        decision: target.requestDecision,
         answer: options.answer,
       });
     } catch (error) {
@@ -133,7 +141,7 @@ export class EmbeddedWorkflowApprovalService {
       );
     }
     for (const event of mutation.events) {
-      await options.onEvent?.(event);
+      await emitBestEffort(options.onEvent, event);
     }
     options.signal?.throwIfAborted();
     const result = await this.workflows.run({
@@ -166,6 +174,8 @@ export class EmbeddedWorkflowApprovalService {
   ): Promise<{
     node: ExecutionPlanWorkflowApprovalNode;
     decision: OperatorDecision;
+    requestDecision: OperatorDecision;
+    snapshotSha256s: string[];
   }> {
     const plan = this.store.getPlan(planId);
     if (plan.threadId !== threadId) {
@@ -197,22 +207,25 @@ export class EmbeddedWorkflowApprovalService {
         "Workflow Approval start evidence is unavailable",
       );
     }
-    const decisions = (await this.store.listOperatorDecisions(threadId)).filter(
-      (decision) =>
-        decision.status === "pending" &&
-        (decisionId === undefined || decision.id === decisionId),
+    const decisions = projectOperatorDecisions(events).filter((decision) =>
+      decisionId === undefined
+        ? decision.status === "pending"
+        : decision.id === decisionId &&
+          ["pending", "answered", "continued"].includes(decision.status),
     );
     if (decisions.length !== 1) {
       throw new EmbeddedWorkflowApprovalError(
         "state_conflict",
-        "Workflow has no single pending Approval decision",
+        "Workflow has no single eligible Approval decision",
       );
     }
     const decision = decisions[0]!;
     const targets = plan.steps.flatMap((step) => {
       const node = manifest.nodes.find((candidate) => candidate.id === step.id);
       return node?.type === "approval" &&
-        step.status === "running" &&
+        (step.status === "running" ||
+          (decision.status === "continued" &&
+            ["completed", "blocked"].includes(step.status))) &&
         step.runId === decision.runId
         ? [node]
         : [];
@@ -236,14 +249,95 @@ export class EmbeddedWorkflowApprovalService {
         "Workflow Approval request evidence is mismatched",
       );
     }
+    const requestDecision = projectOperatorDecisions(
+      events.filter((event) => event.seq <= decision.requestedEventSeq),
+      decision.runId,
+    ).find((candidate) => candidate.id === decision.id);
+    if (!requestDecision || requestDecision.status !== "pending")
+      throw new EmbeddedWorkflowApprovalError(
+        "evidence_mismatch",
+        "Workflow Approval original decision is unavailable",
+      );
+    const answerSnapshot = projectOperatorDecisions(
+      events.filter((event) => event.seq <= (decision.answeredEventSeq ?? 0)),
+      decision.runId,
+    ).find((candidate) => candidate.id === decision.id);
+    await this.verifyRequestBinding(manifest, threadId, planId, node, decision);
     const expiresAt = Date.parse(decision.requestedAt) + node.timeoutMs;
-    if (!Number.isFinite(expiresAt) || Date.now() >= expiresAt) {
+    if (
+      !Number.isFinite(expiresAt) ||
+      (decision.status === "pending"
+        ? Date.now() >= expiresAt
+        : !workflowApprovalAnsweredBeforeExpiry(
+            decision,
+            new Date(expiresAt).toISOString(),
+          ))
+    ) {
       throw new EmbeddedWorkflowApprovalError(
         "expired_decision",
         "Workflow Approval decision has expired",
       );
     }
-    return { node, decision };
+    return {
+      node,
+      decision,
+      requestDecision,
+      snapshotSha256s: [
+        decision.contentSha256,
+        requestDecision.contentSha256,
+        ...(answerSnapshot ? [answerSnapshot.contentSha256] : []),
+      ],
+    };
+  }
+
+  private async verifyRequestBinding(
+    manifest: ExecutionPlanWorkflowManifest,
+    threadId: string,
+    planId: string,
+    node: ExecutionPlanWorkflowApprovalNode,
+    decision: OperatorDecision,
+  ): Promise<void> {
+    try {
+      const ledger = new ExecutionPlanWorkflowLedger(this.store);
+      const start = await ledger.recoverWorkflowStart(
+        threadId,
+        planId,
+        manifest,
+        manifest.maxConcurrency ?? 1,
+      );
+      const run = this.store
+        .listRuns(threadId)
+        .find((candidate) => candidate.id === decision.runId);
+      if (
+        !run ||
+        run.source !== "workflow" ||
+        run.agentId !== start.agentId ||
+        run.agentRevision !== start.agentRevision ||
+        this.store.getThread(threadId).agentId !== start.agentId
+      )
+        throw new Error("Workflow Approval Run identity is mismatched");
+      const starts = (await this.store.listEvents(threadId)).filter(
+        (event) =>
+          event.type === WORKFLOW_NODE_STARTED_EVENT &&
+          event.runId === decision.runId &&
+          record(event.payload)?.["planId"] === planId &&
+          record(event.payload)?.["nodeId"] === node.id,
+      );
+      const inputSha256 = record(starts[0]?.payload ?? null)?.["inputSha256"];
+      if (starts.length !== 1 || typeof inputSha256 !== "string")
+        throw new Error("Workflow Approval input evidence is unavailable");
+      await ledger.approvalDecision(
+        { threadId, manifest, plan: this.store.getPlan(planId) },
+        node,
+        decision.runId,
+        inputSha256,
+      );
+    } catch (error) {
+      throw new EmbeddedWorkflowApprovalError(
+        "evidence_mismatch",
+        errorMessage(error),
+      );
+    }
   }
 }
 

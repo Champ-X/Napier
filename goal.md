@@ -144,6 +144,16 @@
 - 相关 11 文件 104 个不同用例通过；最终工具配置收敛后重跑进程矩阵和受影响兼容检查。Contracts build、Runtime typecheck/build:compile、diff check 通过；架构仍为原 11 项，公开 API 仍为 1897/1896 与 compatibility digest 两类失败。tools.ts 预算从 1776 下调为 1766；未提高预算或重写旧发布 manifest，编译不等于发布验收。
 - G04 仍需确认未执行操作的自动继续、Workflow 审批进程矩阵、统一恢复说明与操作区；其他工具没有获得自动写重放权。G01–G07 总目标保持 active，未降低或删减验收标准。
 
+### 后续推进：G04 Workflow 审批原请求重试
+
+- 上一轮为 **progress**：现场核对 `main @ 610a8ef5`，保留原有 Web/文档/启动脚本改动，未 push。沿用底层已完成的答案规范化去重和 Run/continuation 原子事务，补齐嵌入式审批接口只接受 pending 导致的重试缺口。
+- `answerAndResume` 接受绑定的原始、已回答或当前决策快照；同答案原请求在 answered/continued 状态可继续，不同答案冲突。及时保存的答案过期后仍可重试，已过期的 pending 答案拒绝保存。复用 Workflow ledger 校验 manifest、Agent revision、节点 input/schema/attempt、requestedEventSeq、requestSha256 与期限；不因重试放松审批证据。
+- 真实独立进程重试暴露了实例内 activeThreads 无法阻止多个驱动者的问题。现在同一 SQLite ledger 按 Thread 原子认领进程锁；恢复请求等待并可取消，其他 Thread 和同一 Workflow 内并行节点保持运行。仅在原 PID 不存在时接管，先复用 Run 对账再重读上下文。无 TTL 抢占活进程；PID 复用可保守阻塞，范围仅本机。schema 7→8 新增锁表，事件不改写，旧 Runtime 不能直接读取升级后的数据库；初始化 busy_timeout 前移到首次 schema 查询之前。
+- 已执行 approve/reject 各 7 个真实进程退出断点、barrier 同步的跨进程竞争、SIGSTOP 活 owner 等待与 SIGKILL 后接管，以及固定旧 `610a8ef5` 审批 API 的同一已保存答案对照。没有丢失答案、孤立 continuation 或重复下游写入；拒绝分支不写文件。空模型注册表，外部模型调用 0。当前收据：[workflow-approval-recovery-verified-2026-10-29.json](docs/artifacts/workflow-approval-recovery-verified-2026-10-29.json)，复现：[check-workflow-approval-recovery.mjs](scripts/check-workflow-approval-recovery.mjs)。单次重启/续跑采样不作为模型质量或生产延迟改善证据。
+- 提交前新增反例还发现已回答快照在 continued 后重试会误报 stale，已修复并保留前一份中间收据。一次早期证据封装 exit 1 未保留具体失败项，已改进失败输出；最终验证与边界见 [operation-recovery.md](docs/operation-recovery.md)。
+- 验证：当前收据 3 文件 29 测试通过，连同 Workflow 执行/恢复/重试/并行节点、实验/断点/循环/成果结算和 SDK 回归，共 14 文件 156 个不同测试通过。Runtime typecheck / build:compile、diff check 通过；架构回到原 11 项，公开 API 仍为 1897/1896 与原 compatibility digest 不匹配。未提高预算，未重写 release source manifest；本轮不是完整发布验收。
+- G04 仍需 before-effect / before-target-commit 的确认未执行后继续、任意下游工具中断的适配与统一恢复操作区。G01–G07 其余目标全部保留；本切片不代表 G04 或全目标通过。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：

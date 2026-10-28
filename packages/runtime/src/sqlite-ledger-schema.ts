@@ -6,8 +6,9 @@ import {
   synchronizeRunLeases,
 } from "./sqlite-run-leases.js";
 import { createToolConcurrencyLeaseSchema } from "./sqlite-tool-concurrency-schema.js";
+import { createWorkflowExecutionLockSchema } from "./workflow-execution-lock.js";
 
-export const LEDGER_SCHEMA_VERSION = 7;
+export const LEDGER_SCHEMA_VERSION = 8;
 
 export function migrateLedgerSchema(
   database: DatabaseSync,
@@ -26,6 +27,15 @@ export function migrateLedgerSchema(
     migrateEventIdempotencySchema(database, currentVersion);
     createToolConcurrencyLeaseSchema(database);
     migrateToolConcurrencyLeaseSchema(database, currentVersion);
+    createWorkflowExecutionLockSchema(database);
+    if (currentVersion < 8) {
+      recordMigration(
+        database,
+        8,
+        "workflow_execution_locks",
+        new Date().toISOString(),
+      );
+    }
     database.exec(`PRAGMA user_version = ${LEDGER_SCHEMA_VERSION}`);
     database.exec("COMMIT");
   } catch (error) {

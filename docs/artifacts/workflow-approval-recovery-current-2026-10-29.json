@@ -1,0 +1,384 @@
+{
+  "kind": "napier.workflow-approval-recovery-evidence",
+  "schemaVersion": 1,
+  "evidenceClass": "deterministic_process_fault_injection",
+  "capturedAt": "2026-10-28T20:41:14.467Z",
+  "sourceHead": "610a8ef54426fb3408d43d1e33f1ce6f419cd7ca",
+  "sourceState": "worktree with preserved unrelated user changes; relevant sources bound below",
+  "externalModelRequests": 0,
+  "modelProvider": "empty registry; approval and apply_patch only",
+  "faultMechanism": "process.exit(73) at real SQLite and Workflow checkpoints; synchronized independent retries; SIGSTOP/SIGKILL of a live owner",
+  "baselineCommit": "610a8ef54426fb3408d43d1e33f1ce6f419cd7ca",
+  "baselineScope": "fixed pre-change embedded approval service against the same actual saved answer with current Store/Workflow dependencies; not a full historical release",
+  "observations": [
+    {
+      "checkpoint": "after-answer",
+      "reject": false,
+      "status": "completed",
+      "restartMs": 10.878249999999753,
+      "resumeMs": 286.96979100000044,
+      "answerSha256": "019e05023c60dea8e726911272589c54ebf33b04e04ab31380d7ef78613646b8",
+      "continuationRunId": "run_937ae8ef3ecc4460a61e",
+      "runCount": 3,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 1,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-answer",
+      "reject": true,
+      "status": "blocked",
+      "restartMs": 11.31170899999961,
+      "resumeMs": 136.17658299999948,
+      "answerSha256": "0e17c1c3962bc33b534cd548bb36c3059ade0eb79e4a4f567f2600a32cacaf78",
+      "continuationRunId": "run_88a6b170c2da4d8aab6a",
+      "runCount": 2,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 0,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "before-continuation-commit",
+      "reject": false,
+      "status": "completed",
+      "restartMs": 9.178749999999127,
+      "resumeMs": 246.19212499999958,
+      "answerSha256": "019e05023c60dea8e726911272589c54ebf33b04e04ab31380d7ef78613646b8",
+      "continuationRunId": "run_2a8ab053358e494ea949",
+      "runCount": 3,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 1,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "before-continuation-commit",
+      "reject": true,
+      "status": "blocked",
+      "restartMs": 2.5021670000005543,
+      "resumeMs": 76.43225000000166,
+      "answerSha256": "0e17c1c3962bc33b534cd548bb36c3059ade0eb79e4a4f567f2600a32cacaf78",
+      "continuationRunId": "run_31ace6bc5fea4abbb69f",
+      "runCount": 2,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 0,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-continuation-commit",
+      "reject": false,
+      "status": "completed",
+      "restartMs": 33.52045899999939,
+      "resumeMs": 116.45899999999892,
+      "answerSha256": "019e05023c60dea8e726911272589c54ebf33b04e04ab31380d7ef78613646b8",
+      "continuationRunId": "run_4ffb374a06264094bf41",
+      "runCount": 3,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 1,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-continuation-commit",
+      "reject": true,
+      "status": "blocked",
+      "restartMs": 30.39550000000054,
+      "resumeMs": 32.8862079999999,
+      "answerSha256": "0e17c1c3962bc33b534cd548bb36c3059ade0eb79e4a4f567f2600a32cacaf78",
+      "continuationRunId": "run_dd8714dc45344968b42d",
+      "runCount": 2,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 0,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "before-approval-complete",
+      "reject": false,
+      "status": "completed",
+      "restartMs": 10.497041999999055,
+      "resumeMs": 193.48429099999885,
+      "answerSha256": "019e05023c60dea8e726911272589c54ebf33b04e04ab31380d7ef78613646b8",
+      "continuationRunId": "run_008dcf87ad4446a68427",
+      "runCount": 3,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 1,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "before-approval-complete",
+      "reject": true,
+      "status": "blocked",
+      "restartMs": 2.341667000000598,
+      "resumeMs": 85.04600000000028,
+      "answerSha256": "0e17c1c3962bc33b534cd548bb36c3059ade0eb79e4a4f567f2600a32cacaf78",
+      "continuationRunId": "run_e3f66c846187476f8e44",
+      "runCount": 2,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 0,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-approval-plan-commit",
+      "reject": false,
+      "status": "completed",
+      "restartMs": 2.2824170000021695,
+      "resumeMs": 143.53420900000128,
+      "answerSha256": "019e05023c60dea8e726911272589c54ebf33b04e04ab31380d7ef78613646b8",
+      "continuationRunId": "run_71adb0f7f5fd4b469b01",
+      "runCount": 3,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 1,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-approval-plan-commit",
+      "reject": true,
+      "status": "blocked",
+      "restartMs": 9.524999999997817,
+      "resumeMs": 132.7325830000009,
+      "answerSha256": "0e17c1c3962bc33b534cd548bb36c3059ade0eb79e4a4f567f2600a32cacaf78",
+      "continuationRunId": "run_c84abaec9e3a4d93b3f1",
+      "runCount": 2,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 0,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-approval-event",
+      "reject": false,
+      "status": "completed",
+      "restartMs": 8.85083400000076,
+      "resumeMs": 247.24920900000143,
+      "answerSha256": "019e05023c60dea8e726911272589c54ebf33b04e04ab31380d7ef78613646b8",
+      "continuationRunId": "run_e56cdc41187c4573868b",
+      "runCount": 3,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 1,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-approval-event",
+      "reject": true,
+      "status": "blocked",
+      "restartMs": 3.077208000002429,
+      "resumeMs": 59.79512500000055,
+      "answerSha256": "0e17c1c3962bc33b534cd548bb36c3059ade0eb79e4a4f567f2600a32cacaf78",
+      "continuationRunId": "run_b6b2cca0d7504eb38755",
+      "runCount": 2,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 0,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-workflow-completed",
+      "reject": false,
+      "status": "completed",
+      "restartMs": 10.381333999997878,
+      "resumeMs": 48.51983299999847,
+      "answerSha256": "019e05023c60dea8e726911272589c54ebf33b04e04ab31380d7ef78613646b8",
+      "continuationRunId": "run_6bb32a65f7d34f9d9ae8",
+      "runCount": 3,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 1,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": true,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "after-workflow-completed",
+      "reject": true,
+      "status": "blocked",
+      "restartMs": 3.1033749999987776,
+      "resumeMs": 34.78816699999879,
+      "answerSha256": "0e17c1c3962bc33b534cd548bb36c3059ade0eb79e4a4f567f2600a32cacaf78",
+      "continuationRunId": "run_2a56019fb43d4ec983b5",
+      "runCount": 2,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 0,
+      "repeatedRequestAddedEvents": 0,
+      "existingFileIdentityPreserved": null,
+      "externalModelRequests": 0
+    },
+    {
+      "checkpoint": "concurrent-independent-processes",
+      "statuses": [
+        "completed",
+        "completed"
+      ],
+      "runCount": 3,
+      "answeredEvents": 1,
+      "continuedEvents": 1,
+      "writeStarts": 1
+    },
+    {
+      "checkpoint": "paused-live-owner-then-SIGKILL",
+      "waitedForLiveOwner": true,
+      "status": "completed",
+      "continuationStatus": "interrupted",
+      "runCount": 3,
+      "continuedEvents": 1,
+      "writeStarts": 1
+    },
+    {
+      "checkpoint": "fixed-baseline-same-saved-answer",
+      "baseline": "state_conflict",
+      "current": "completed",
+      "baselineAddedEvents": 0,
+      "writeStarts": 1
+    }
+  ],
+  "tests": {
+    "passed": 29,
+    "failed": 0
+  },
+  "sourceDigests": [
+    {
+      "path": "packages/runtime/src/embedded-workflow-approvals.ts",
+      "sha256": "e10bdfd3e3d501f00728ca13886a7b7e256517402f7697085038624f8512660e"
+    },
+    {
+      "path": "packages/runtime/src/workflow-execution-lock.ts",
+      "sha256": "2d45fce4a58d56924a7cce4ed02068dbfda4334a7e2acd7b753d2c2774390442"
+    },
+    {
+      "path": "packages/runtime/src/workflow-runtime.ts",
+      "sha256": "a57d27767875442cb037811755e30fbaf1f93f969794896fb9cc174df68b7221"
+    },
+    {
+      "path": "packages/runtime/src/workflow-context-factory.ts",
+      "sha256": "c087c6f68446657da5ad955964180783ba843bb09b53cdd07fab563dbc6bf849"
+    },
+    {
+      "path": "packages/runtime/src/workflow-approval-node.ts",
+      "sha256": "01b00bcf921657b450f024c0c0fc1d1e49bc4308f50a232e2d4adbfddf583ee3"
+    },
+    {
+      "path": "packages/runtime/src/workflow-approval-runtime.ts",
+      "sha256": "c5fe1771e1eecc847cc8477e6fd8312fbf8697c6705c44ad96bbc707c9638d1e"
+    },
+    {
+      "path": "packages/runtime/src/workflow-approval-model.ts",
+      "sha256": "6e883ad08c10f30658d7e18d8546a1f31ca807c8fb28aff7a17a9018e44b1dca"
+    },
+    {
+      "path": "packages/runtime/src/workflow-ledger.ts",
+      "sha256": "de0739dba4bb8f9bb559306f8ce2ccf448525ee2bf78bd05bf59b1d062cd8b4a"
+    },
+    {
+      "path": "packages/runtime/src/workflow-recovery.ts",
+      "sha256": "a82ea2b8b3722eab6d35e35a3182131dc396a79abaa2322e58acd3f2aab23efa"
+    },
+    {
+      "path": "packages/runtime/src/workflow-result.ts",
+      "sha256": "9a740f24ec0210c7a165f8e403889530693f078442622f8538862dfeab61ee03"
+    },
+    {
+      "path": "packages/runtime/src/thread-interaction-repository.ts",
+      "sha256": "0df4bb64dcd84cd9b9f959932ca6f7422acb07589b6ab55e36c2069dedbe9d0f"
+    },
+    {
+      "path": "packages/runtime/src/operator-decision-payloads.ts",
+      "sha256": "76b752dfa374a2b38f988ef8e7074f67fe87c9630015ec7c50f5ca974cc9b093"
+    },
+    {
+      "path": "packages/runtime/src/operator-decisions.ts",
+      "sha256": "00069166dc1a87798c1f421f1b40829890262e47b82e9b57bbe36775020662d8"
+    },
+    {
+      "path": "packages/runtime/src/store.ts",
+      "sha256": "4b70d2cff814e44ae90edead31c1856e2bce3d430a341e6190165b80c68fbf15"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-ledger.ts",
+      "sha256": "065ea20ad8c4d2d34d56cd74e5bc197589c6dae8d1f58acf4b08963a434acb17"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-ledger-model.ts",
+      "sha256": "3e674c6a9538aeeac7c4c61fde3428b4612638f9e1027bb397e9eaaaff61231e"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-ledger-schema.ts",
+      "sha256": "47ccb60c4524f0a3682e7744befce7b6e86ff242e6a1696726541ee3131086de"
+    },
+    {
+      "path": "packages/runtime/src/run-interruption-recovery.ts",
+      "sha256": "2759bc851cb21dc15ae04698ccacf981a5f5f5500479e8b120ca76c1af5364a8"
+    },
+    {
+      "path": "packages/runtime/src/run-lost-owner-recovery.ts",
+      "sha256": "e9ab74e1f7583273fb7bc6e23593fb357a53bf97127b438e5c36141539d21a1d"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workflow-approval-baseline.ts",
+      "sha256": "117c07d5ce86a3f3ae0acf5eba08b09056321bcc8e066f2d33d5b026191b441e"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workflow-approval-recovery-setup.ts",
+      "sha256": "d642118b7475ffae05c9069d6c92586db9936203aafb865fcc0ceb1501201f76"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workflow-approval-recovery-crash.ts",
+      "sha256": "6d246c037b5e4386737ef6ae186639ef13ed418027fb59c0065fb666a4545a2b"
+    },
+    {
+      "path": "packages/runtime/test/workflow-approval-recovery.test.ts",
+      "sha256": "acbd83c9bb2476c914cd6a1fc58e7db8be7a698666f2238e750b661b006ced18"
+    },
+    {
+      "path": "packages/runtime/test/embedded-workflow-approval-retry.test.ts",
+      "sha256": "3a178844a1e6e6339be7581daf25fa0c5e610137d440505528d7c0f883a246fa"
+    },
+    {
+      "path": "packages/runtime/test/sqlite-ledger-migration.test.ts",
+      "sha256": "74adc079a568cf3ff689d7b6ff7364c5003fecfae3972d75617d7318f8faaa74"
+    },
+    {
+      "path": "scripts/check-workflow-approval-recovery.mjs",
+      "sha256": "4d440df4653bc8a1258990ad7005e7da264498e98f7e86f07927a5685134f066"
+    }
+  ],
+  "limitations": [
+    "Local PID ownership only: no cross-host fencing, TTL takeover of a live owner, or power-loss claim. PID reuse can conservatively block until that process exits.",
+    "SQLite schema migrates from version 7 to 8; older runtimes cannot open the upgraded ledger.",
+    "Approval retries preserve the original answer and reuse the continuation; they do not authorize replay of arbitrary downstream write tools.",
+    "The matrix covers approval/continuation and successful final-response loss. Interrupted downstream tools retain their existing recovery policy.",
+    "Measured restart/resume timings are individual local samples, not comparative latency or model-quality evidence.",
+    "No recovery UI acceptance, before-effect automatic continuation, live-model quality improvement or full G04/G01-G07 acceptance is claimed."
+  ]
+}
