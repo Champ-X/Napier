@@ -1,6 +1,7 @@
 import type { JsonObject, RunEvent } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { isRunControlClientMessageId } from "./run-control-message-queue.js";
 import {
   exactKeys,
   fail,
@@ -237,7 +238,7 @@ function decodeQueued(
       "textBytes",
       "requestSha256",
     ],
-    [],
+    ["clientMessageId"],
     deliveryEventSeq,
   );
   if (
@@ -248,6 +249,16 @@ function decodeQueued(
     return fail(
       "control_epoch_lineage",
       "Run control delivery references an invalid queued request",
+      deliveryEventSeq,
+    );
+  }
+  if (
+    value["clientMessageId"] !== undefined &&
+    !isRunControlClientMessageId(value["clientMessageId"])
+  ) {
+    return fail(
+      "control_epoch_lineage",
+      "Run control client identity is invalid",
       deliveryEventSeq,
     );
   }

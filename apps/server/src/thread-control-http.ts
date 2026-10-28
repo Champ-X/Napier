@@ -176,6 +176,7 @@ function registerRunControlMessageHttp(
           runId,
           mode: body.mode,
           text: body.text,
+          ...(body.clientMessageId ? { clientMessageId: body.clientMessageId } : {}),
         });
         setRunControlMessageHeaders(context, message);
         return context.json(message, 202);

@@ -90,6 +90,7 @@ export function runControlMessageErrorStatus(error: unknown): 400 | 404 | 409 {
     "active thread run",
     "cannot be cancelled",
     "limit reached",
+    "clientmessageid conflict",
     "demo model",
   ].some((fragment) => message.includes(fragment))
     ? 409

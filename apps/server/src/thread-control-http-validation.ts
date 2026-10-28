@@ -35,18 +35,26 @@ export function parseCreateBranchRequest(
 export function parseQueueRunControlMessageRequest(
   input: unknown,
 ): QueueRunControlMessageRequest | undefined {
-  const record = requestRecord(input, ["mode", "text"]);
+  const record = requestRecord(input, ["mode", "text", "clientMessageId"]);
   const mode = record?.["mode"];
+  const clientMessageId = record?.["clientMessageId"];
   const text =
     typeof record?.["text"] === "string" ? record["text"].trim() : undefined;
   if (
+    (clientMessageId !== undefined &&
+      (typeof clientMessageId !== "string" ||
+        !/^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$/.test(clientMessageId))) ||
     (mode !== "steering" && mode !== "follow_up") ||
     !text ||
     Buffer.byteLength(text, "utf8") > MAX_RUN_CONTROL_MESSAGE_BYTES
   ) {
     return undefined;
   }
-  return { mode, text };
+  return {
+    mode,
+    text,
+    ...(typeof clientMessageId === "string" ? { clientMessageId } : {}),
+  };
 }
 
 export function parseBrowserInteractionConfirmationDecision(

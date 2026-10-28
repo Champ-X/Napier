@@ -3,7 +3,7 @@ import {
   type RunControlMessageMode,
   type RunEvent,
 } from "@napier/contracts";
-import { createId } from "./ids.js";
+import { controlMessageIdForRequest } from "./run-control-message-queue.js";
 import {
   createRunControlMessageCancelledPayload,
   createRunControlMessageDeliveredPayload,
@@ -19,6 +19,7 @@ import type { StoreRepositoryHost } from "./store-repository-host.js";
 export interface QueueRunControlMessageInput {
   threadId: string;
   runId: string;
+  clientMessageId?: string;
   mode: RunControlMessageMode;
   text: string;
 }
@@ -50,16 +51,40 @@ export class RunControlRepository {
       this.host.stateQueue.run(async () => {
         const thread = this.host.mutableThread(input.threadId);
         const run = this.host.mutableRun(input.runId);
+        if (run.threadId !== thread.id)
+          throw new Error("Run control message requires the active Thread Run");
+        const payload = createRunControlMessageQueuedPayload({
+          controlMessageId: controlMessageIdForRequest(input),
+          mode: input.mode,
+          text: input.text,
+          ...(input.clientMessageId !== undefined
+            ? { clientMessageId: input.clientMessageId }
+            : {}),
+        });
+        const currentEvents = this.host.requireLedger().listEvents(thread.id);
+        const currentMessages = projectRunControlMessages(
+          currentEvents,
+          run.id,
+        );
+        const existing = currentMessages.find(
+          (message) => message.id === payload.controlMessageId,
+        );
+        if (existing) {
+          if (
+            existing.textSha256 !== payload.textSha256 ||
+            existing.mode !== payload.mode ||
+            existing.clientMessageId !== payload.clientMessageId
+          ) {
+            throw new Error("Run control message clientMessageId conflict");
+          }
+          return structuredClone(existing);
+        }
         if (run.source === "workflow") {
           throw new Error(
             "Workflow node Runs do not accept live Run control messages",
           );
         }
-        if (
-          run.threadId !== thread.id ||
-          run.status !== "running" ||
-          thread.currentRunId !== run.id
-        ) {
+        if (run.status !== "running" || thread.currentRunId !== run.id) {
           throw new Error("Run control message requires the active Thread Run");
         }
         if (
@@ -70,11 +95,6 @@ export class RunControlRepository {
             "The demo model does not accept live Run control messages",
           );
         }
-        const currentEvents = this.host.requireLedger().listEvents(thread.id);
-        const currentMessages = projectRunControlMessages(
-          currentEvents,
-          run.id,
-        );
         if (currentMessages.length >= MAX_TOTAL_RUN_CONTROL_MESSAGES) {
           throw new Error(
             `Run control message total limit reached (${MAX_TOTAL_RUN_CONTROL_MESSAGES})`,
@@ -88,11 +108,6 @@ export class RunControlRepository {
             `Run control message pending limit reached (${MAX_PENDING_RUN_CONTROL_MESSAGES})`,
           );
         }
-        const payload = createRunControlMessageQueuedPayload({
-          controlMessageId: createId("control"),
-          mode: input.mode,
-          text: input.text,
-        });
         const [queuedEvent] = this.host.appendEventsToThread(thread, [
           {
             threadId: thread.id,

@@ -391,6 +391,7 @@ export async function generateManagementOpenApi(options = {}) {
           properties: {
             mode: { $ref: "#/components/schemas/RunControlMessageMode" },
             text: { type: "string", minLength: 1, maxLength: 16384 },
+            clientMessageId: { type: "string", pattern: "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$", maxLength: 128 },
           },
         },
         RunControlMessage: {
@@ -412,6 +413,7 @@ export async function generateManagementOpenApi(options = {}) {
           additionalProperties: false,
           properties: {
             kind: { const: "napier.run-control-message" },
+            clientMessageId: { type: "string", pattern: "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$", maxLength: 128 },
             schemaVersion: { const: 1 },
             id: {
               type: "string",

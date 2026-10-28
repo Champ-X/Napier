@@ -169,12 +169,15 @@ export type RunControlMessageStatus = "queued" | "delivered" | "cancelled";
 export type RunControlMessageCancellationReason = "operator_cancelled" | "run_completed_before_delivery" | "run_failed_before_delivery" | "run_cancelled_before_delivery" | "run_interrupted_before_delivery";
 
 export interface QueueRunControlMessageRequest {
+  /** Stable retry identity, scoped to the addressed Thread and Run. */
+  clientMessageId?: string;
   mode: RunControlMessageMode;
   text: string;
 }
 
 export interface RunControlMessage {
   kind: "napier.run-control-message";
+  clientMessageId?: string;
   schemaVersion: 1;
   id: string;
   threadId: string;

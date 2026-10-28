@@ -107,6 +107,15 @@
 - 收据：[operator-decision-ui-2026-10-29.json](docs/artifacts/operator-decision-ui-2026-10-29.json)，绑定相关源码、实际服务构建摘要和七张截图；复现：[check-operator-decision-ui.mjs](scripts/check-operator-decision-ui.mjs)。详细边界见 [operator-decision-ui.md](docs/operator-decision-ui.md)。不将脚本模型当作 live-model 质量证据。
 - API 决策职责移至已有 thread-run-api 模块，主 ViewModel 从本轮开始前 2317 行降至 2238；API 行数预算随实际职责提取从 1204 降至 1180。架构仍为原 11 项，未提高任何预算。问答草稿仅在挂载期间跨会话保留，刷新持久化、普通 Composer 干预队列、浏览器确认隔离、统一恢复区仍待后续；G01–G07 保持 active。
 
+### 后续推进：G06-A 干预消息稳定身份
+
+- 实际检查确认原 queueRunControlMessage 每次都生成新 control ID，HTTP 也不接受客户端身份；不能仅凭前端保留输入保证断网重试不重复排队。本轮先补服务端边界，普通 Composer 和发件箱前端接入仍待后续。
+- QueueRunControlMessageRequest 增加可选 clientMessageId；Thread/Run/clientMessageId 共同确定稳定 control ID，规范化文本与 mode 同时核对。相同请求返回原 queued/delivered/cancelled 收据，不追加事件；即使 Run 已终止或队列已满也只返回既有状态。内容或 mode 冲突返回 HTTP 409，非法身份返回 400；新请求仍受 active Run、Workflow/demo、数量和文本大小限制。旧客户端不传身份时保持原行为。
+- 真实子进程在入队持久化后、响应前 process.exit(73)，重启对账返回原 interrupted-run cancellation，没有新排队。并发重试只投递一个用户消息；模型集成确认同一 follow_up 只出现一次、两轮对话加一次记忆抽取，共 3 次 faux 模型调用。严格进度投影最初拒绝新字段的兼容缺口已修复，继续验证身份格式和内容摘要，不放宽未知字段。
+- 最终 10 文件共 101 个实际执行测试通过（Runtime 61、Server 40，未运行的过滤用例不计入）。Contracts build、Runtime typecheck/build:compile、Server typecheck/build、当前 OpenAPI 生成检查、292/292 历史 HTTP operation 兼容检查和 diff check 通过。架构仍为原 11 项，公开 API 仍为原 1897/1896 与 compatibility digest 问题；没有提高预算或改写历史兼容收据。
+- 绑定源码的收据：[run-control-idempotency-2026-10-29.json](docs/artifacts/run-control-idempotency-2026-10-29.json)；复现：[check-run-control-idempotency.mjs](scripts/check-run-control-idempotency.mjs)；协议说明：[run-control-idempotency.md](docs/run-control-idempotency.md)。HTTP 检查使用真实 Hono app.request 路由，不宣称是浏览器或 TCP 故障注入；0 外部模型请求。
+- G06-A 的草稿刷新持久化、附件生命周期、客户端身份保存、发件箱状态/撤回/编辑、跨线程异步归属仍未整体完成，因此不勾选该目标实施项。G01–G07 总目标保持 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：

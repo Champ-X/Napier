@@ -7,11 +7,16 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { parseQueuedPayload } from "./run-control-message-queue.js";
+export {
+  createRunControlMessageQueuedPayload,
+  MAX_RUN_CONTROL_MESSAGE_BYTES,
+} from "./run-control-message-queue.js";
+export type { RunControlMessageQueuedPayload } from "./run-control-message-queue.js";
 
 export const RUN_CONTROL_MESSAGE_QUEUED_EVENT = "run.control.queued";
 export const RUN_CONTROL_MESSAGE_DELIVERED_EVENT = "run.control.delivered";
 export const RUN_CONTROL_MESSAGE_CANCELLED_EVENT = "run.control.cancelled";
-export const MAX_RUN_CONTROL_MESSAGE_BYTES = 16 * 1024;
 export const MAX_PENDING_RUN_CONTROL_MESSAGES = 16;
 export const MAX_TOTAL_RUN_CONTROL_MESSAGES = 64;
 
@@ -25,20 +30,6 @@ const CANCELLATION_REASONS = new Set<RunControlMessageCancellationReason>([
   "run_cancelled_before_delivery",
   "run_interrupted_before_delivery",
 ]);
-
-export interface RunControlMessageQueuedPayload extends Record<
-  string,
-  JsonValue
-> {
-  kind: "napier.run-control-message-queued";
-  schemaVersion: 1;
-  controlMessageId: string;
-  mode: RunControlMessageMode;
-  text: string;
-  textSha256: string;
-  textBytes: number;
-  requestSha256: string;
-}
 
 export interface RunControlMessageDeliveredPayload extends Record<
   string,
@@ -71,39 +62,6 @@ export interface RunControlMessageCancelledPayload extends Record<
 export interface PendingRunControlMessage {
   message: RunControlMessage;
   text: string;
-}
-
-export function createRunControlMessageQueuedPayload(input: {
-  controlMessageId: string;
-  mode: RunControlMessageMode;
-  text: string;
-}): RunControlMessageQueuedPayload {
-  const text = normalizeControlMessageText(input.text);
-  const textBytes = Buffer.byteLength(text, "utf8");
-  if (!CONTROL_MESSAGE_ID.test(input.controlMessageId)) {
-    throw new Error("Run control message ID is invalid");
-  }
-  if (!MODES.has(input.mode)) {
-    throw new Error("Run control message mode is invalid");
-  }
-  if (textBytes === 0 || textBytes > MAX_RUN_CONTROL_MESSAGE_BYTES) {
-    throw new Error(
-      `Run control message must be 1-${MAX_RUN_CONTROL_MESSAGE_BYTES} UTF-8 bytes`,
-    );
-  }
-  const content = {
-    kind: "napier.run-control-message-queued" as const,
-    schemaVersion: 1 as const,
-    controlMessageId: input.controlMessageId,
-    mode: input.mode,
-    text,
-    textSha256: sha256(text),
-    textBytes,
-  };
-  return {
-    ...content,
-    requestSha256: sha256(canonicalJson(content)),
-  };
 }
 
 export function createRunControlMessageDeliveredPayload(input: {
@@ -190,6 +148,9 @@ export function projectRunControlMessages(
         threadId: event.threadId,
         runId: event.runId,
         mode: payload.mode,
+        ...(payload.clientMessageId
+          ? { clientMessageId: payload.clientMessageId }
+          : {}),
         status: "queued" as const,
         textSha256: payload.textSha256,
         textBytes: payload.textBytes,
@@ -290,51 +251,6 @@ export function nextPendingRunControlMessage(
     ? parseQueuedPayload(queuedEvent.payload)
     : undefined;
   return payload ? { message, text: payload.text } : undefined;
-}
-
-function parseQueuedPayload(
-  input: JsonValue,
-): RunControlMessageQueuedPayload | undefined {
-  if (!record(input)) return undefined;
-  const controlMessageId = input["controlMessageId"];
-  const mode = input["mode"];
-  const text = input["text"];
-  const textSha256 = input["textSha256"];
-  const textBytes = input["textBytes"];
-  const requestSha256 = input["requestSha256"];
-  if (
-    input["kind"] !== "napier.run-control-message-queued" ||
-    input["schemaVersion"] !== 1 ||
-    typeof controlMessageId !== "string" ||
-    !CONTROL_MESSAGE_ID.test(controlMessageId) ||
-    typeof mode !== "string" ||
-    !MODES.has(mode as RunControlMessageMode) ||
-    typeof text !== "string" ||
-    typeof textSha256 !== "string" ||
-    !SHA256.test(textSha256) ||
-    !positiveInteger(textBytes) ||
-    Number(textBytes) > MAX_RUN_CONTROL_MESSAGE_BYTES ||
-    typeof requestSha256 !== "string" ||
-    !SHA256.test(requestSha256)
-  ) {
-    return undefined;
-  }
-  const payload = {
-    kind: "napier.run-control-message-queued" as const,
-    schemaVersion: 1 as const,
-    controlMessageId,
-    mode: mode as RunControlMessageMode,
-    text,
-    textSha256,
-    textBytes: Number(textBytes),
-    requestSha256,
-  };
-  const { requestSha256: _requestSha256, ...content } = payload;
-  return sha256(text) === textSha256 &&
-    Buffer.byteLength(text, "utf8") === textBytes &&
-    sha256(canonicalJson(content)) === requestSha256
-    ? payload
-    : undefined;
 }
 
 function parseDeliveredPayload(
@@ -474,10 +390,6 @@ function withoutContentSha256(
 ): Omit<RunControlMessage, "contentSha256"> {
   const { contentSha256: _contentSha256, ...content } = message;
   return content;
-}
-
-function normalizeControlMessageText(value: string): string {
-  return value.trim();
 }
 
 function positiveInteger(value: unknown): boolean {

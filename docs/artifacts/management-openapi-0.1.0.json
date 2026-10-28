@@ -14496,6 +14496,11 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 16384
+          },
+          "clientMessageId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$",
+            "maxLength": 128
           }
         }
       },
@@ -14519,6 +14524,11 @@
         "properties": {
           "kind": {
             "const": "napier.run-control-message"
+          },
+          "clientMessageId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$",
+            "maxLength": 128
           },
           "schemaVersion": {
             "const": 1
@@ -16999,7 +17009,7 @@
     "apps/server/src/workspace-process-http.ts",
     "apps/server/src/workspace-root-http.ts"
   ],
-  "x-napier-source-sha256": "2a2bcc23a91d9160fb1297535ed3c878a45690e7dc22d308416637c3cafc826d",
+  "x-napier-source-sha256": "c03c271bd3c503f71f3563f78072466acb3a93d5ff4b35e0d6f3187b34cb195f",
   "x-napier-route-count": 305,
   "x-napier-route-set-sha256": "1ceb6838e1e99579692013088da8e4cfd226d9b32a83b313f68c4e00cf191fb2"
 }
