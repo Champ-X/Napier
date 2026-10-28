@@ -29,6 +29,7 @@ const DESCRIPTOR_KEYS = [
   "contribution",
   "resourceKeySha256",
   "failureBindings",
+  "failureDefinitionSha256",
   "failureDomainKeySha256",
   "descriptorSha256",
 ] as const;

@@ -71,6 +71,15 @@
 - 验证：Runtime 2 文件 17 测试、Web 7 文件 53 测试通过，Runtime/Web typecheck 及 Contracts/Runtime/Server/Web 构建通过。当前构建的正式产物、无计划/计划工具失败候选两个场景各在 1440/320px 下完成 1/2 次点击打开、正文与摘要链验证、草稿保留和焦点恢复；0 page error、0 横向溢出、0 模型请求。新收据：[task-deliverable-review-ui-2026-10-29.json](docs/artifacts/task-deliverable-review-ui-2026-10-29.json)，旧收据未覆盖。Web design contract 为 84 CSS 文件，0 色值/小字债；架构仍为原 11 项失败。
 - G01 仍未整体通过：工具账本对部分路径作了隐私裁剪，尚未新增 tool-only 成果源；独立目标验收生产者、manifest 覆写的完整版本历史、超出候选发现限额的明确处理仍待补齐。G02 分区与 G03–G07 全部保留，未宣称全目标完成。
 
+### 后续推进：G04 已结算补丁与后置条件检查
+
+- 启动时核对 `main @ caf37eaf` 和 5 个本地提交，保留已有用户改动及 G01 未跟踪文件中的 narrative 集成行，未 push。当前先完成 G04 一种本地写工具的纵向切片，G01/G02 的剩余项及 G03/G05–G07 全部保留。
+- 自动恢复不再仅按“出现过 apply_patch”阻断：要求唯一调用、完整 execution authority 日志、成功结算与终态、结果摘要及私有路径绑定。复用私有胶囊存储；恢复创建新 Run 前核对工作区、调用/input、文件后置条件和同文件连续版本链，拒绝漂移、符号链接、证据缺失或篡改。仍只允许原有 safe_read_only continuation，不扩大写权限。
+- 真实进程断点暴露并修复旧 effect_indeterminate 恢复记录遗漏 `failureDefinitionSha256`、导致 descriptor hash 校验失败的问题。副作用已发生但尚未结算时仍明确为 blocked_safety，不把不确定结果当作成功。
+- 当前 Runtime/SQLite/文件系统的 8 个独立进程场景通过，外部模型请求 0。固定旧 `caf37eaf` 评估器在同一实际事件流上仍因 unsafe_tool_effect 拒绝；当前已落账补丁恢复成功，内容/inode/mtime 未变、0 重复写入。四类 claim 后漂移均在模型请求前停止；另外三个早期断点仍明确停止，未冒充全矩阵自动恢复通过。单次重启/续跑耗时及源码摘要见 [settled-patch-recovery-2026-10-29.json](docs/artifacts/settled-patch-recovery-2026-10-29.json)，实现与边界见 [operation-recovery.md](docs/operation-recovery.md)。
+- 相关 6 文件合计 38 个不同测试通过；Runtime typecheck、build:compile、diff check 通过。操作观测独立职责提取后将 automatic-recovery 行数预算从 807 下调为 710，架构仍为原有 11 项；公开 API 仍为 1897/1896 与 compatibility digest 不匹配。完整 Runtime build 被 release source manifest 不匹配拦截，未重写旧 manifest，也不将编译通过称为发布验收。
+- G04 仍需：确认未执行的操作自动继续、未结算写操作的对账、结算后响应丢失的完整结果复用、答案/审批 continuation 幂等衔接，以及统一恢复操作区。该切片不代表 G04 或全目标完成。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -214,7 +223,7 @@
 **实施任务**
 
 - [ ] 基于现有 operation 记录区分：尚未执行、已确认完成、结果待对账、不可自动重放。
-- [ ] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。
+- [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态与私有绑定齐备时，重查后置条件并继续原有只读恢复；8 场景进程故障证据已留存，其他断点仍待完成。）
 - [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。
 - [ ] 对环境漂移、权限变化、证据缺失和不可对账操作保留明确停止原因。
 - [ ] 将恢复建议与用户操作区接通，说明保留了什么、从哪里继续、哪些结果仍不确定。

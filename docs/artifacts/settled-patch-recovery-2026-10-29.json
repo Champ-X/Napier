@@ -1,0 +1,163 @@
+{
+  "kind": "napier.settled-patch-recovery-evidence",
+  "schemaVersion": 1,
+  "evidenceClass": "deterministic_process_fault_injection",
+  "capturedAt": "2026-10-28T17:56:20.667Z",
+  "sourceHead": "caf37eaf5e5a1ab1fae55b4a644d2ee460ed54d1",
+  "sourceState": "dirty worktree including preserved user changes; relevant sources bound below",
+  "externalModelRequests": 0,
+  "modelProvider": "faux-patch-recovery",
+  "faultMechanism": "process.exit(73) at awaited Runtime checkpoints, without graceful shutdown",
+  "baselineCommit": "caf37eaf5e5a1ab1fae55b4a644d2ee460ed54d1",
+  "observations": [
+    {
+      "checkpoint": "after-terminal",
+      "baselineEligible": false,
+      "baselineBlockReasons": [
+        "unsafe_tool_effect"
+      ],
+      "runStatus": "completed",
+      "restartMs": 35.85466699999961,
+      "continuationMs": 160.37233300000025,
+      "recoveryModelFixtureCalls": 1,
+      "externalModelRequests": 0,
+      "fileContentPreserved": true,
+      "fileIdentityAndMtimePreserved": true,
+      "repeatedWriteCalls": 0,
+      "manualInterventions": 0,
+      "retainedOperations": 1
+    },
+    {
+      "checkpoint": "after-claim:changed",
+      "stoppedBeforeContinuation": true,
+      "restartMs": 16.886500000000524,
+      "reconciliationMs": 5.618249999999534,
+      "recoveryModelFixtureCalls": 0,
+      "externalModelRequests": 0,
+      "repeatedWriteCalls": 0,
+      "requiresManualReview": true
+    },
+    {
+      "checkpoint": "after-claim:missing",
+      "stoppedBeforeContinuation": true,
+      "restartMs": 19.41937499999949,
+      "reconciliationMs": 2.174750000000131,
+      "recoveryModelFixtureCalls": 0,
+      "externalModelRequests": 0,
+      "repeatedWriteCalls": 0,
+      "requiresManualReview": true
+    },
+    {
+      "checkpoint": "after-claim:symlink",
+      "stoppedBeforeContinuation": true,
+      "restartMs": 19.36066700000083,
+      "reconciliationMs": 7.2640420000007,
+      "recoveryModelFixtureCalls": 0,
+      "externalModelRequests": 0,
+      "repeatedWriteCalls": 0,
+      "requiresManualReview": true
+    },
+    {
+      "checkpoint": "after-claim:missing-capsule",
+      "stoppedBeforeContinuation": true,
+      "restartMs": 18.97674999999981,
+      "reconciliationMs": 2.3697919999995065,
+      "recoveryModelFixtureCalls": 0,
+      "externalModelRequests": 0,
+      "repeatedWriteCalls": 0,
+      "requiresManualReview": true
+    },
+    {
+      "checkpoint": "before-effect",
+      "runStatus": "interrupted",
+      "restartMs": 19.823041999999987,
+      "automaticallyContinued": false,
+      "fileState": "absent",
+      "repeatedWriteCalls": 0,
+      "externalModelRequests": 0,
+      "requiresManualReview": true
+    },
+    {
+      "checkpoint": "after-effect",
+      "runStatus": "failed",
+      "outcome": "blocked_safety",
+      "restartMs": 19.4320000000007,
+      "automaticallyContinued": false,
+      "fileState": "committed_content_retained",
+      "repeatedWriteCalls": 0,
+      "externalModelRequests": 0,
+      "requiresManualReview": true
+    },
+    {
+      "checkpoint": "after-settlement",
+      "runStatus": "interrupted",
+      "restartMs": 18.009916999999405,
+      "automaticallyContinued": false,
+      "fileState": "committed_content_retained",
+      "repeatedWriteCalls": 0,
+      "externalModelRequests": 0,
+      "requiresManualReview": true
+    }
+  ],
+  "tests": {
+    "passed": 8,
+    "failed": 0
+  },
+  "sourceDigests": [
+    {
+      "path": "packages/runtime/src/agent-run-recovery.ts",
+      "sha256": "e3c06ce09560e2f6dd22f7465ddf99d990da11baa25d12219d6f7e9c30bebfb0"
+    },
+    {
+      "path": "packages/runtime/src/automatic-recovery.ts",
+      "sha256": "94ebb32293728178b0bdd80c7e905d398edc9e354f1d3d6096a7fb4c1831b782"
+    },
+    {
+      "path": "packages/runtime/src/run-tool-effect-observations.ts",
+      "sha256": "b35660694960be5f90430b57bf848d2f341f5b446a46ea58bb98776ac339a673"
+    },
+    {
+      "path": "packages/runtime/src/run-patch-recovery-evidence.ts",
+      "sha256": "69cd0ebce3cfb4f5153bb26c78d02033302107cfd11de0dd5acb67f9a3b9a32b"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-tool.ts",
+      "sha256": "59e9a7849dd6dd350ef3a34838afd6b0225b1dbefa760e6265cdb6018d943df5"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-recovery-capsule.ts",
+      "sha256": "90247adde5682fdb2e638dbae28cdd739f33a24877a7af3fe4d07af092e75e64"
+    },
+    {
+      "path": "packages/runtime/src/workspace-patch-reconciliation.ts",
+      "sha256": "75766e821d150cf86b7616b823ff63c8f673a3dcbf3240a8011cbe825a5f3087"
+    },
+    {
+      "path": "packages/runtime/src/tool-effect-indeterminate-event.ts",
+      "sha256": "96207a9e0b109c095d903f00c6e90134822425404a35b7e1b50ece8ce15b7065"
+    },
+    {
+      "path": "packages/runtime/test/settled-patch-recovery.test.ts",
+      "sha256": "62d8618adbd4e01aa7d10987a85bbf8fb079e08efa6fe46861be8817f5667b36"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/patch-recovery-crash.ts",
+      "sha256": "1bd990d12864a2927ffad1e0e959e1133c2c5f9eedb276b8a1313fd7b14e0520"
+    },
+    {
+      "path": "packages/runtime/test/fixtures/patch-recovery-baseline.ts",
+      "sha256": "d3bbd0aae0f5e11552ca05ed258baf8a7e6fc057f5c6997e1dad12bd7ae75d4f"
+    },
+    {
+      "path": "scripts/check-settled-patch-recovery.mjs",
+      "sha256": "31676c83bd9ce31de1a687aacb92df539ec1277cf2b41f5668b2abb287814314"
+    }
+  ],
+  "limitations": [
+    "Only settled apply_patch with a terminal receipt is eligible for postcondition inspection.",
+    "Before-effect, effect-before-settlement and settlement-before-terminal remain stopped; full G04 recovery is not accepted.",
+    "Continuation retains the existing safe_read_only policy; no new write authority.",
+    "Single deterministic observations are timing baselines, not live-model recovery-rate claims.",
+    "No saved-answer/approval continuation or UI acceptance in this receipt."
+  ]
+}

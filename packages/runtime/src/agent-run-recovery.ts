@@ -26,6 +26,9 @@ import {
 import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import { isWorkflowRunSource } from "./workflow-node-execution.js";
 import { inheritedHarnessPolicyOptions } from "./harness-run-policy.js";
+import { assessAutomaticRecovery } from "./automatic-recovery.js";
+import { settledPatchRecoveryEvidence } from "./run-patch-recovery-evidence.js";
+import { reconcileSettledWorkspacePatches } from "./workspace-patch-reconciliation.js";
 
 type RunPrompt = (options: RunPromptOptions) => Promise<RunRecord>;
 
@@ -36,6 +39,7 @@ interface AgentRunRecoveryHost {
 
 interface AgentRunRecoveryStore {
   readonly workspaceRoot: string;
+  readonly dataRoot: string;
   getThread(threadId: string): ThreadRecord;
   listRuns(threadId: string): RunRecord[];
   listRunEvents(runId: string): Promise<RunEvent[]>;
@@ -159,15 +163,35 @@ export async function resumeInterruptedAgentRunAutomatically(
   }
 
   const events = await host.store.listRunEvents(interrupted.id);
+  // A claim is a scheduling decision. Recheck durable operations and live
+  // postconditions before starting another Run, including reclaimed claims.
+  const fresh = assessAutomaticRecovery({
+    run: interrupted,
+    events,
+    rootRunId: assessment.rootRunId,
+    priorAttempts: assessment.priorAttempts,
+  });
+  if (!fresh.eligible)
+    throw new Error("Automatic recovery operation evidence changed");
+  const patches = settledPatchRecoveryEvidence(events);
+  await reconcileSettledWorkspacePatches(
+    host.store.workspaceRoot,
+    host.store.dataRoot,
+    patches,
+  );
   const recoveryOptions: RunPromptOptions = {
     ...inheritedHarnessPolicyOptions(events, interrupted.id),
     threadId: thread.id,
-    text: buildRunRecoveryPrompt(
-      interrupted,
-      thread.goal?.status === "active" ? thread.goal.objective : undefined,
-      events,
-      "automatic",
-    ),
+    text:
+      buildRunRecoveryPrompt(
+        interrupted,
+        thread.goal?.status === "active" ? thread.goal.objective : undefined,
+        events,
+        "automatic",
+      ) +
+      (patches.length
+        ? `\n${patches.length} settled patch operation(s) were retained. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify(patches)}</retained-patch-evidence>`
+        : ""),
     model: interrupted.configuration.model,
     agentRevision: interrupted.configuration.agentRevision,
     executionMode: "safe_read_only_recovery",

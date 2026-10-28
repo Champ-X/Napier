@@ -31,7 +31,7 @@
     "apps/web/test/tool-event-view.test.ts": 1690,
     "packages/runtime/src/agent-runtime.ts": 3137,
     "packages/runtime/src/agents.ts": 735,
-    "packages/runtime/src/automatic-recovery.ts": 807,
+    "packages/runtime/src/automatic-recovery.ts": 710,
     "packages/runtime/src/evaluation-casebooks.ts": 727,
     "packages/runtime/src/extension-packages.ts": 3720,
     "packages/runtime/src/inbound-dead-letters.ts": 1108,

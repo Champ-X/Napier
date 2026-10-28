@@ -8,6 +8,7 @@ import { Type, type Static } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { WorkspacePatchInputError } from "./workspace-patch-input-error.js";
+import { WorkspacePatchRecoveryCapsules } from "./workspace-patch-recovery-capsule.js";
 import type {
   WorkspacePatchInput,
   WorkspacePatchResult,
@@ -101,6 +102,7 @@ export interface WorkspacePatchToolDetails extends Omit<
   diagnostics?: WorkspacePatchDiagnosticsDetails;
   tests?: WriteLinkedTestVerificationDetails;
   resultSha256: string;
+  recoveryCapsuleSha256?: string;
 }
 
 export interface WorkspacePatchToolOptions {
@@ -128,13 +130,14 @@ export interface CreateWorkspaceToolsOptions {
 export function createWorkspacePatchTool(
   options: WorkspacePatchToolOptions,
 ): AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> {
+  const recoveryCapsules = new WorkspacePatchRecoveryCapsules(options.dataRoot);
   const tool: AgentTool<typeof applyPatchSchema, WorkspacePatchToolDetails> = {
     name: "apply_patch",
     label: "Apply patch",
     description:
       "Atomically create/edit one workspace-relative UTF-8 file. create requires expectedSha256=null, root content, and optional parent directories. Existing-file operations require expectedSha256 and edits[] entries: replace {oldText,newText}; hashline_replace {line?,anchorSha256,newText}; hashrange_replace {startLine,endLine,rangeSha256,newText}. Never put edit content or anchors at the root. An empty newText deletes the match/range. Enabled LSP diagnostics run before/after supported writes; verification selects bounded reverse-dependent tests.",
     parameters: applyPatchSchema,
-    async execute(_toolCallId, rawInput, signal) {
+    async execute(toolCallId, rawInput, signal) {
       const input = parseWorkspacePatchInput(rawInput);
       if (signal?.aborted) {
         throw new Error("Workspace patch was aborted before session cleanup");
@@ -186,6 +189,9 @@ export function createWorkspacePatchTool(
         result,
         observation?.details,
         observation?.tests,
+        await recoveryCapsules
+          .put(options.workspaceRoot, toolCallId, rawInput, result)
+          .catch(() => undefined),
       );
       return {
         content: [
@@ -296,6 +302,7 @@ function workspacePatchToolDetails(
   result: WorkspacePatchResult,
   diagnostics?: WorkspacePatchDiagnosticsDetails,
   tests?: WriteLinkedTestVerificationDetails,
+  recoveryCapsuleSha256?: string,
 ): WorkspacePatchToolDetails {
   const base = {
     kind: "napier.workspace-patch" as const,
@@ -320,6 +327,7 @@ function workspacePatchToolDetails(
       : {}),
     ...(diagnostics ? { diagnostics } : {}),
     ...(tests ? { tests } : {}),
+    ...(recoveryCapsuleSha256 ? { recoveryCapsuleSha256 } : {}),
   };
   return {
     ...base,
@@ -456,7 +464,9 @@ function parseWorkspacePatchInput(
   };
 }
 
-function invalidPatchFields(operation: WorkspacePatchInput["operation"]): never {
+function invalidPatchFields(
+  operation: WorkspacePatchInput["operation"],
+): never {
   throw new WorkspacePatchInputError(operation);
 }
 
