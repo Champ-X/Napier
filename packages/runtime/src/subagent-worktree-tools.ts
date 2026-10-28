@@ -17,6 +17,7 @@ import type { SubagentWorktreeOperationCoordinator } from "./subagent-worktree-v
 import { createTypescriptAstTools } from "./typescript-ast-tool.js";
 import { createWorkspaceTools } from "./tools.js";
 import { createVerificationTool } from "./verification.js";
+import { trackWorktreeReads } from "./subagent-worktree-read-set.js";
 
 export function createSubagentWorktreeTools(options: {
   session: SubagentWorktreeSession;
@@ -42,7 +43,7 @@ export function createSubagentWorktreeTools(options: {
       options.operations.runMutation.bind(options.operations),
     ),
   ];
-  if (!options.sandbox) return tools;
+  if (!options.sandbox) return trackWorktreeReads(tools, options.session);
   const verifyToolchain = options.toolchain
     ? () => assertSubagentWorktreeToolchainStable(options.toolchain!)
     : undefined;
@@ -109,5 +110,5 @@ export function createSubagentWorktreeTools(options: {
       ),
     );
   }
-  return tools;
+  return trackWorktreeReads(tools, options.session);
 }

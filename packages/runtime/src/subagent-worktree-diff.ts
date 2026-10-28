@@ -10,11 +10,12 @@ export interface SubagentWorktreeFile {
   fileSha256: string;
   sizeBytes: number;
   mode: number;
-  buffer: Buffer;
+  buffer?: Buffer;
 }
 
 export interface SubagentWorktreeSnapshot {
   files: SubagentWorktreeFile[];
+  directories?: string[];
   fileCount: number;
   bytes: number;
   contentSha256: string;
@@ -29,6 +30,7 @@ export interface SubagentWorktreeChange {
   beforeSha256: string | null;
   afterSha256: string | null;
   beforeText?: string;
+  beforeMode?: number;
   afterText?: string;
   mode?: number;
 }
@@ -56,6 +58,14 @@ export function createSubagentWorktreeCandidate(input: {
     input.candidate.files.map((file) => [file.path, file]),
   );
   const writePaths = new Set(input.writePaths);
+  // chmod is not part of the current transactional text-edit protocol. Refuse
+  // it explicitly instead of dropping mode-only changes from the diff.
+  for (const file of input.candidate.files) {
+    const before = baselineByPath.get(file.path);
+    if (before && before.mode !== file.mode) {
+      throw new Error("Subagent worktree candidate changed a file mode");
+    }
+  }
   const changedPaths = [
     ...new Set([...baselineByPath.keys(), ...candidateByPath.keys()]),
   ]
@@ -95,6 +105,8 @@ export function createSubagentWorktreeCandidate(input: {
           pathSha256: change.pathSha256,
           beforeSha256: change.beforeSha256,
           afterSha256: change.afterSha256,
+          beforeMode: change.beforeMode ?? null,
+          mode: change.mode ?? null,
         })),
       ),
     ),
@@ -166,6 +178,7 @@ function createChange(
       beforeSha256: null,
       afterSha256: after!.fileSha256,
       afterText: decodeUtf8(after!.buffer, "Subagent worktree addition"),
+      mode: after!.mode,
     };
   }
   if (!after) {
@@ -176,6 +189,7 @@ function createChange(
       beforeSha256: before.fileSha256,
       afterSha256: null,
       beforeText: decodeUtf8(before.buffer, "Subagent worktree deletion"),
+      beforeMode: before.mode,
       mode: before.mode,
     };
   }
@@ -186,6 +200,7 @@ function createChange(
     beforeSha256: before.fileSha256,
     afterSha256: after.fileSha256,
     beforeText: decodeUtf8(before.buffer, "Subagent worktree baseline"),
+    beforeMode: before.mode,
     afterText: decodeUtf8(after.buffer, "Subagent worktree candidate"),
   };
 }
@@ -226,7 +241,8 @@ function applyRenameModes(changes: SubagentWorktreeChange[]): number {
   return count;
 }
 
-function decodeUtf8(buffer: Buffer, label: string): string {
+function decodeUtf8(buffer: Buffer | undefined, label: string): string {
+  if (!buffer) throw new Error(`${label} content was not retained`);
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
   } catch {

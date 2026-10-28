@@ -202,7 +202,7 @@
     "packages/runtime/src/stateless-agent-tools.ts": 117,
     "packages/runtime/src/store-repository-host.ts": 155,
     "packages/runtime/src/store.ts": 10000,
-    "packages/runtime/src/subagent-worktree-mutation.ts": 140,
+    "packages/runtime/src/subagent-worktree-mutation.ts": 126,
     "packages/runtime/src/thread-bundles.ts": 108,
     "packages/runtime/src/workflow-ledger.ts": 528,
     "packages/runtime/src/workflow-runtime.ts": 114,

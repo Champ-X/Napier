@@ -1,8 +1,13 @@
+import type {
+  SubagentCandidateCommandSummary,
+  SubagentCandidateVerificationSummary,
+} from "./subagent-worktree-verification.js";
 import type { SubagentWorktreeApplyDetails } from "@napier/contracts";
 
 import type { LspRenameFile } from "./lsp-rename-workspace-edit.js";
 import type { LspWorkspaceEditPreviewSource } from "./lsp-workspace-edit-mutation.js";
 import type { SubagentWorktreeChange } from "./subagent-worktree-diff.js";
+import type { WorktreeReadDependency } from "./subagent-worktree-read-set.js";
 
 export interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
   taskId: string;
@@ -33,6 +38,9 @@ export interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
   renamedFileCount: number;
   changes: SubagentWorktreeChange[];
   files: LspRenameFile[];
+  readDependencies: WorktreeReadDependency[];
+  mergePrepared?: boolean;
+  candidateId?: string;
 }
 
 export interface SubagentWorktreeApplyResult {
@@ -45,4 +53,23 @@ export interface SubagentWorktreeApplyManager {
     previewId: string,
     signal?: AbortSignal,
   ): Promise<SubagentWorktreeApplyResult>;
+}
+
+export interface SubagentWorktreePreview {
+  id: string;
+  expiresAt: string;
+  taskId: string;
+  changedPaths: string[];
+  changedFileCount: number;
+  changedFileSetSha256: string;
+  addedFileCount: number;
+  modifiedFileCount: number;
+  deletedFileCount: number;
+  renamedFileCount: number;
+  sourceSnapshotSha256: string;
+  review: string;
+  reviewTruncated: boolean;
+  candidateVerification: SubagentCandidateVerificationSummary;
+  candidateCommands: SubagentCandidateCommandSummary;
+  candidateToolchainSha256?: string;
 }

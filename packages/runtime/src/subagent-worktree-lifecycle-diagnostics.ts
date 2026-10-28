@@ -1,3 +1,4 @@
+import { SUBAGENT_WORKTREE_POLICY } from "./subagent-worktree-policy.js";
 import type {
   LspRenameApplyDiagnosticsDetails,
   WorkspacePatchDiagnosticsStatus,
@@ -14,7 +15,8 @@ import {
 import { createLspPatchObservation } from "./lsp-patch-diagnostics.js";
 import type { SubagentWorktreeChange } from "./subagent-worktree-diff.js";
 
-export const MAX_SUBAGENT_LIFECYCLE_DIAGNOSTIC_FILES = 8;
+export const MAX_SUBAGENT_LIFECYCLE_DIAGNOSTIC_FILES =
+  SUBAGENT_WORKTREE_POLICY.maxWriteFiles;
 
 export interface SubagentWorktreeLifecycleDiagnosticsState {
   entries: Array<{

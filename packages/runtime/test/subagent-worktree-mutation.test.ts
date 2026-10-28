@@ -231,12 +231,10 @@ describe("Subagent worktree mutation manager", () => {
     expect(
       await readFile(path.join(harness.workspaceRoot, "src/first.ts"), "utf8"),
     ).toContain("first = 10");
-    await expect(manager.apply(preview.id)).rejects.toThrow(
-      "preview not found",
-    );
+    expect((await manager.apply(preview.id)).summary).toContain("Stored merge receipt reused");
   });
 
-  it("consumes a stale preview without changing any candidate file", async () => {
+  it("preserves unrelated changes while merging the retained candidate", async () => {
     const harness = await createHarness();
     const manager = createManager(harness);
     const source = "export const value = 1;\n";
@@ -259,15 +257,10 @@ describe("Subagent worktree mutation manager", () => {
       "external drift\n",
     );
 
-    await expect(manager.apply(preview.id)).rejects.toThrow(
-      "conflicts with workspace drift",
-    );
-    expect(
-      await readFile(path.join(harness.workspaceRoot, "src/value.ts"), "utf8"),
-    ).toBe(source);
-    await expect(manager.apply(preview.id)).rejects.toThrow(
-      "preview not found",
-    );
+    expect((await manager.apply(preview.id)).details.status).toBe("applied");
+    expect(await readFile(path.join(harness.workspaceRoot, "src/value.ts"), "utf8")).toBe("export const value = 2;\n");
+    expect(await readFile(path.join(harness.workspaceRoot, "unrelated.txt"), "utf8")).toBe("external drift\n");
+    expect((await manager.apply(preview.id)).summary).toContain("Stored merge receipt reused");
   });
 
   it("merges authorized add, delete, and rename lifecycle changes once", async () => {
@@ -383,12 +376,12 @@ describe("Subagent worktree mutation manager", () => {
     ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
-  it("rechecks complete source freshness after diagnostics and before commit", async () => {
+  it("rechecks exact target freshness after diagnostics and before commit", async () => {
     const harness = await createHarness();
     const diagnostics = lifecycleDiagnosticsAdapter();
     diagnostics.observeBefore = async (changes) => {
       await writeFile(
-        path.join(harness.workspaceRoot, "unrelated.txt"),
+        path.join(harness.workspaceRoot, "src/value.ts"),
         "drift during diagnostics\n",
       );
       return {
@@ -422,7 +415,7 @@ describe("Subagent worktree mutation manager", () => {
     );
     expect(
       await readFile(path.join(harness.workspaceRoot, "src/value.ts"), "utf8"),
-    ).toBe(source);
+    ).toBe("drift during diagnostics\n");
   });
 
   it("returns a durable rolled-back outcome when commit fails before mutation", async () => {
@@ -472,7 +465,7 @@ describe("Subagent worktree mutation manager", () => {
     ).toBe(source);
   });
 
-  it("isolates concurrent candidates and invalidates previews across restart", async () => {
+  it("isolates concurrent candidates and retains previews across restart", async () => {
     const harness = await createHarness();
     const manager = createManager(harness);
     const source = "export const value = 1;\n";
@@ -501,9 +494,7 @@ describe("Subagent worktree mutation manager", () => {
       manager.storePreview(right, "e".repeat(64)),
     ]);
 
-    await expect(createManager(harness).apply(rightPreview.id)).rejects.toThrow(
-      "preview not found",
-    );
+    expect((await createManager(harness).inspectPreview(rightPreview.id)).source.taskId).toBe(right.taskId);
     await expect(manager.apply(leftPreview.id)).resolves.toEqual(
       expect.objectContaining({
         details: expect.objectContaining({ status: "applied" }),

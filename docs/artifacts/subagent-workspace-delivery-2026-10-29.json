@@ -1,0 +1,646 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-28T23:04:09.327Z",
+  "baseCommit": "3ba5bda77f69fa0f6e61ad572cfa123e1c0b8479",
+  "workspaceRoot": "/Users/champ/orca/Napier",
+  "status": "passed_with_stated_boundaries",
+  "goal": "G05-A",
+  "distinctTests": 64,
+  "testFiles": 13,
+  "modelRequests": 0,
+  "sources": [
+    {
+      "path": "packages/runtime/src/local-private-capsule-store.ts",
+      "sha256": "266722ac35d49c9463a828527322ef4224d4756141523f9ba9b09ed9d69e8ee4"
+    },
+    {
+      "path": "packages/runtime/src/lsp-workspace-edit-mutation.ts",
+      "sha256": "fa7447f30ba958b4b87adc115b54489905880a7723125f49137df88352ad3d92"
+    },
+    {
+      "path": "packages/runtime/src/subagent-candidate-store.ts",
+      "sha256": "a3a9f84a3b29f82f8ebc00c94b006793c5e841ac0aec040d1e44b02874287bc5"
+    },
+    {
+      "path": "packages/runtime/src/subagent-replay-validation.ts",
+      "sha256": "297197c36ba8a28eb844e371972063f6661c7eb7ba88f4af25c6d8e26ea8b75a"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-apply-result.ts",
+      "sha256": "99c654c601124780315c27b9696d3a99609548885bbc9adb836c8573b53483af"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-baseline.ts",
+      "sha256": "f9110a3133a97e52215d2ccce25bb491ffee3dda71a150c2e0cd592d37d9047f"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-commit.ts",
+      "sha256": "b10c2a0229d506c2e890dbc6477b1e17ae8c2aa790f056c94ef79cf6a691f001"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-delivery.ts",
+      "sha256": "39bd9d87b2b848e1042b81fd21da24a83759f8d222fd7b144d23bfb9165b7724"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-diff.ts",
+      "sha256": "722d52248407fd0196933a40b41eb29759c1986f9f26ee45724a0896855bcf5e"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-files.ts",
+      "sha256": "085e8f8afb357a06dc97345c81b790cbcbd5c6e9ea55ea6352aa599fab3d5998"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-lifecycle-diagnostics.ts",
+      "sha256": "2e24668a11c2637e5a98e401e025d512cf191100e0dd62a333470af7eed0da77"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-merge.ts",
+      "sha256": "c9dd3c74c7a7bb150a7a916df96bcb869f96cdf803ecd576ee37282276071dc1"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-mutation-model.ts",
+      "sha256": "df0380391cc94da60d94b272c2405f73429748fbb9c5042a54ff89708a966987"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-mutation.ts",
+      "sha256": "354ead2b646b9e0ea34261dddbde2123a2319069395a818e455b23f816d81d1d"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-policy.ts",
+      "sha256": "6e0ad070cec7204dfbdf1e4cbfbd47cd11230c9bec737fd87113ede4ca509b69"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-read-set.ts",
+      "sha256": "b6e69fde05a3898ab36ab2690c59bf804690a5ada9a898260152b53b5885bcb3"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-snapshot.ts",
+      "sha256": "cf40092f5eaf301aa6b9c71e346ebae3ab31dff10f2090cd4fd3e8f862c33457"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-storage.ts",
+      "sha256": "94bfe944008aa164e84fa78157ed0859ad04c067abe7cce5b3e446693375f157"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-tool.ts",
+      "sha256": "da37b61a3b4cab6f7728ac89d6b6fa0406ada1865b84751ab933ac7c7c7f83bc"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-toolchain.ts",
+      "sha256": "dedfd4b583ed7808f87c0029dffb989fe5b1d27b807c45b590046aa6f353bb06"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-tools.ts",
+      "sha256": "f302a3a072b54154e63329962ca85922197904732118a04b609189e24fe25d03"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-verification.ts",
+      "sha256": "5c7e4e9b9c5b67e9a2104e82b93de99b5c5a8fc6ae0d9a5cd9952acc3f83cb26"
+    },
+    {
+      "path": "packages/runtime/src/subagents.ts",
+      "sha256": "93f61d6ed70bd4d96c0058613ff7b751e29143f7aaa7f6c3a923eeda3b52c28b"
+    },
+    {
+      "path": "packages/runtime/src/workspace-change-commit.ts",
+      "sha256": "d6508d3f147c2e7768905fbd3a5772d739524a0388df248596308ae917723597"
+    },
+    {
+      "path": "packages/runtime/src/workspace-change-files.ts",
+      "sha256": "b2dbe86562d222547e00ec26e5a97d85d0d84e71e39aa1f960ff8fd049377888"
+    },
+    {
+      "path": "packages/runtime/src/workspace-change-model.ts",
+      "sha256": "6f19c82797b1004748036435d454a39986cb38894e128368c87b9be0ada63cb3"
+    },
+    {
+      "path": "packages/runtime/src/workspace-write-lock.ts",
+      "sha256": "57044cea798487c963f0287b14ee249327be28faa10c104b970c6f8183aacf7b"
+    },
+    {
+      "path": "packages/runtime/test/active-run-test-fixture.ts",
+      "sha256": "8851ece5ccd11460b04b127fe8ef8f1bd309401389edf4dadf5fa747e5452da4"
+    },
+    {
+      "path": "packages/runtime/test/live-coder-subagent-smoke.test.ts",
+      "sha256": "06da0eb25dc46cc173797f3acd76f9712e96d9564f2da07076cfe87a6281316c"
+    },
+    {
+      "path": "packages/runtime/test/subagent-worktree-delivery-child.ts",
+      "sha256": "d3d0f0aaf1196ada65e1f3d082f6a6cd4976501b7bea0034f1faa9c8fb0ab2d1"
+    },
+    {
+      "path": "packages/runtime/test/subagent-worktree-delivery-fixture.ts",
+      "sha256": "4f814285d3de67e719fc09572585fd86d084388c1e90a02cc15b74c1fc84ff51"
+    },
+    {
+      "path": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+      "sha256": "d0c8096b9509f8fc779af414aaf31a74a472b7983a79ba906bf1b45de67a6f1e"
+    },
+    {
+      "path": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+      "sha256": "785405869a9652f18ce4dd2a3f80e9d99e8c45d5d9e6a9e7b824667039d322d1"
+    }
+  ],
+  "sourceBoundary": "Final inspected source hashes. Cumulative test executions and their ordering boundaries are listed per suite; this is not a release manifest or model-quality experiment.",
+  "suites": [
+    {
+      "label": "regressions",
+      "boundary": "Baseline 12-file regression run; includes the initial 19 delivery cases.",
+      "startedAt": "2026-10-28T22:53:45.055Z",
+      "fileCount": 12,
+      "testCount": 61,
+      "passed": 61,
+      "reportPath": "benchmark-results/subagent-workspace/regressions.json",
+      "reportSha256": "53d24d4693d82b0ddaaf854b9a5dc8f23241ab5ecc9cc439a6c36907b15e64f4",
+      "tests": [
+        {
+          "file": "packages/runtime/test/provider-tool-schema.test.ts",
+          "name": "Provider tool schema compatibility publishes the exact provider-safe skill_load schema",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/provider-tool-schema.test.ts",
+          "name": "Provider tool schema compatibility publishes the exact provider-safe skill_resource schema",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/provider-tool-schema.test.ts",
+          "name": "Provider tool schema compatibility publishes object-rooted JSON Schemas for action-union tools",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-supervisor.test.ts",
+          "name": "SubagentSupervisor delivers durable steering at the next assistant boundary",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-supervisor.test.ts",
+          "name": "SubagentSupervisor repairs and persists a caller-provided typed output once",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-supervisor.test.ts",
+          "name": "SubagentSupervisor uses a role-specific immutable child route plan",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-supervisor.test.ts",
+          "name": "SubagentSupervisor cancels an active child and rejects a tampered handle",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-debugger.test.ts",
+          "name": "Subagent worktree debugger debugs, steps, verifies, and merges unmerged candidate behavior",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-debugger.test.ts",
+          "name": "Subagent worktree debugger settles a paused debugger before issuing a candidate preview",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-debugger.test.ts",
+          "name": "Subagent worktree debugger invalidates settlement when a debug target changes candidate bytes",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-debugger.test.ts",
+          "name": "Subagent worktree debugger cancels a paused debugger before rejecting toolchain drift",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery delivers two disjoint coders from dirty Git bytes while preserving unrelated changes",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery three-way merges disjoint lines and binds diagnostics to the new before and after hashes",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery retains overlapping candidates across restart and permits retry after conflict resolution",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery refuses changed dependencies recorded by read_file",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery refuses changed dependencies recorded by search_files",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery refuses changed dependencies recorded by list_symbols",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery tracks missing-file reads and directory names without treating listed file contents as reads",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rejects changed discovery evidence: missing-file",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rejects changed discovery evidence: directory-name",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rejects changed discovery evidence: symlink-ancestor",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery conservatively tracks unknown tools over the complete visible source",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rechecks a read dependency after diagnostics without consuming the retained candidate",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery handles non-Git copy fallback and detects baseline tampering and chmod",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery probes unsupported reflinks once per source/destination filesystem pair",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rejects candidate copying into another workspace or data root and tampered content",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery retains expired results for inspection and reclaims them only after the retention window",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery does not replay after independent process SIGKILL at before_commit",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery does not replay after independent process SIGKILL at after_commit",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery serializes independent processes and returns a persisted receipt after a lost response",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-diff.test.ts",
+          "name": "Subagent worktree lifecycle diff rejects ambiguous same-content rename pairing",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-file-tool.test.ts",
+          "name": "coder candidate file tool deletes and moves only explicitly authorized private files",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-file-tool.test.ts",
+          "name": "coder candidate file tool rejects undeclared, stale, occupied, and non-canonical targets",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-files.test.ts",
+          "name": "Subagent worktree files forks current bytes and returns only declared multi-file changes",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-files.test.ts",
+          "name": "Subagent worktree files rejects undeclared writes, source drift, symlinks, and oversized files",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-files.test.ts",
+          "name": "Subagent worktree files derives authorized add, delete, and rename lifecycle changes",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-files.test.ts",
+          "name": "Subagent worktree files removes stale prior-worker directories before creating a new fork",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-lifecycle-diagnostics.test.ts",
+          "name": "Subagent worktree lifecycle diagnostics observes before-present and after-present lifecycle paths",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-lifecycle-diagnostics.test.ts",
+          "name": "Subagent worktree lifecycle diagnostics bounds supported lifecycle files without claiming completeness",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager inherits semantic LSP tools and requires paired apply capabilities",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager refuses a semantic rename that targets an ungranted candidate file",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager keeps candidate writes isolated until one-use coordinated apply",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager preserves unrelated changes while merging the retained candidate",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager merges authorized add, delete, and rename lifecycle changes once",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager rechecks exact target freshness after diagnostics and before commit",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager returns a durable rolled-back outcome when commit fails before mutation",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager isolates concurrent candidates and retains previews across restart",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-review.test.ts",
+          "name": "Subagent worktree review renders a bounded live change window with safe control characters",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-review.test.ts",
+          "name": "Subagent worktree review caps aggregate UTF-8 review bytes and marks omitted candidate data",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-toolchain.test.ts",
+          "name": "Subagent worktree toolchain links external dependencies and redirects workspace packages",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-toolchain.test.ts",
+          "name": "Subagent worktree toolchain rejects dependency links that escape both workspace and node_modules",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification serializes mutation before verification and marks later edits stale",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification records failed verification without persisting its diagnostic",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification records cancelled verification as fresh failed evidence without its reason",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification records candidate command success independently and later marks it stale",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification records failed and cancelled commands without exposing output or reasons",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification blocks preview settlement after a command violates read-only access",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification invalidates a candidate when a semantic read changes bytes",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification allows a failed no-write semantic apply but blocks indeterminate results",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification caps serialized candidate commands at eight attempts",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-verification.test.ts",
+          "name": "Subagent worktree verification keeps timeout and output-cap outcomes as failed command evidence",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "label": "delivery-ordered",
+      "boundary": "Final 21 delivery and 8 mutation tests after canonical path-lock and commit ordering fixes.",
+      "startedAt": "2026-10-28T23:02:24.867Z",
+      "fileCount": 2,
+      "testCount": 29,
+      "passed": 29,
+      "reportPath": "benchmark-results/subagent-workspace/delivery-ordered.json",
+      "reportSha256": "49d54ed91bcb3d7fd2be3c9b79254f4232292cfc74661272d6ab4382e9df65d1",
+      "tests": [
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery delivers two disjoint coders from dirty Git bytes while preserving unrelated changes",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery commits mixed-case paths in the transaction's canonical order",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery three-way merges disjoint lines and binds diagnostics to the new before and after hashes",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery retains overlapping candidates across restart and permits retry after conflict resolution",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery refuses changed dependencies recorded by read_file",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery refuses changed dependencies recorded by search_files",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery refuses changed dependencies recorded by list_symbols",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery tracks missing-file reads and directory names without treating listed file contents as reads",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rejects changed discovery evidence: missing-file",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rejects changed discovery evidence: directory-name",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rejects changed discovery evidence: symlink-ancestor",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery conservatively tracks unknown tools over the complete visible source",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rechecks a read dependency after diagnostics without consuming the retained candidate",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery handles non-Git copy fallback and detects baseline tampering and chmod",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery probes unsupported reflinks once per source/destination filesystem pair",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery rejects candidate copying into another workspace or data root and tampered content",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery retains expired results for inspection and reclaims them only after the retention window",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery does not replay after independent process SIGKILL at before_commit",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery does not replay after independent process SIGKILL at after_commit",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery uses the same apply lock through data-root path aliases",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-delivery.test.ts",
+          "name": "retained coder delivery serializes independent processes and returns a persisted receipt after a lost response",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager inherits semantic LSP tools and requires paired apply capabilities",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager refuses a semantic rename that targets an ungranted candidate file",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager keeps candidate writes isolated until one-use coordinated apply",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager preserves unrelated changes while merging the retained candidate",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager merges authorized add, delete, and rename lifecycle changes once",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager rechecks exact target freshness after diagnostics and before commit",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager returns a durable rolled-back outcome when commit fails before mutation",
+          "status": "passed"
+        },
+        {
+          "file": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+          "name": "Subagent worktree mutation manager isolates concurrent candidates and retains previews across restart",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "label": "live-toolchain",
+      "boundary": "Two concurrent real-repository candidate snapshots and real LSP/debugger/Vitest; direct process adapter, no OS-sandbox enforcement claim. Completed before the ordering-only commit adapter fix, which is covered in the final focused run.",
+      "startedAt": "2026-10-28T22:57:50.678Z",
+      "fileCount": 1,
+      "testCount": 1,
+      "passed": 1,
+      "reportPath": "benchmark-results/subagent-workspace/live-toolchain.json",
+      "reportSha256": "a6bcc2443f9e3ae3ca6b06532052e3994adbc37e9a3d49554f9a84b4dddc2449",
+      "tests": [
+        {
+          "file": "packages/runtime/test/live-coder-subagent-smoke.test.ts",
+          "name": "live coder Subagent smoke merges two disjoint real-repository candidates with TypeScript diagnostics and selected Vitest",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Commands, semantic LSP, debuggers and unknown tools conservatively depend on the complete visible source tree.",
+    "Interrupted merge attempts are retained and blocked pending reconciliation; they are not blindly replayed.",
+    "Missing destination parent directories are not created by the reused filesystem transaction.",
+    "The local Node COW interface returned ENOSYS; only automatic fallback and forced copying were exercised."
+  ],
+  "performanceReceipt": "docs/artifacts/subagent-workspace-scale-2026-10-29.json"
+}

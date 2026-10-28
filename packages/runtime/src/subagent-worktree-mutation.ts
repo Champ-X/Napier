@@ -1,7 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { LspRenameApplyDiagnosticsDetails } from "@napier/contracts";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
 import type {
   LspRenameDiagnosticsObservation,
   LspRenameDiagnosticsState,
@@ -26,29 +25,23 @@ import {
 import {
   createSubagentWorktree,
   finalizeSubagentWorktree,
-  observeSubagentWorktreeSource,
   removeSubagentWorktree,
   type SubagentWorktreeSession,
 } from "./subagent-worktree-files.js";
-import { subagentWorktreeModifiedLspFiles } from "./subagent-worktree-diff.js";
 import {
   SubagentWorktreeLifecycleDiagnostics,
   type SubagentWorktreeLifecycleDiagnosticsAdapter,
 } from "./subagent-worktree-lifecycle-diagnostics.js";
-import { createSubagentWorktreeReview } from "./subagent-worktree-review.js";
 import {
   assertSubagentWorktreeToolchainStable,
   prepareSubagentWorktreeToolchain,
   type SubagentWorktreeToolchain,
 } from "./subagent-worktree-toolchain.js";
 import { createSubagentWorktreeTools } from "./subagent-worktree-tools.js";
-import {
-  type SubagentCandidateCommandSummary,
-  type SubagentCandidateVerificationSummary,
-  SubagentWorktreeOperationCoordinator,
-} from "./subagent-worktree-verification.js";
+import { SubagentWorktreeOperationCoordinator } from "./subagent-worktree-verification.js";
 import type {
   SubagentWorktreeApplyResult,
+  SubagentWorktreePreview,
   WorktreePreviewSource,
 } from "./subagent-worktree-mutation-model.js";
 import {
@@ -57,6 +50,7 @@ import {
 } from "./workspace-change-commit.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import type { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
+import { SubagentWorktreeDelivery } from "./subagent-worktree-delivery.js";
 
 export {
   createSubagentWorktreeApplyTool,
@@ -69,24 +63,7 @@ export type {
   WorktreePreviewSource,
 } from "./subagent-worktree-mutation-model.js";
 
-export interface SubagentWorktreePreview {
-  id: string;
-  expiresAt: string;
-  taskId: string;
-  changedPaths: string[];
-  changedFileCount: number;
-  changedFileSetSha256: string;
-  addedFileCount: number;
-  modifiedFileCount: number;
-  deletedFileCount: number;
-  renamedFileCount: number;
-  sourceSnapshotSha256: string;
-  review: string;
-  reviewTruncated: boolean;
-  candidateVerification: SubagentCandidateVerificationSummary;
-  candidateCommands: SubagentCandidateCommandSummary;
-  candidateToolchainSha256?: string;
-}
+export type { SubagentWorktreePreview } from "./subagent-worktree-mutation-model.js";
 
 export interface SubagentWorktreeMutationManagerOptions {
   workspaceRoot: string;
@@ -127,6 +104,7 @@ interface SubagentWorktreeContext {
 }
 
 export class SubagentWorktreeMutationManager {
+  private readonly candidates: SubagentWorktreeDelivery;
   private readonly contexts = new WeakMap<
     SubagentWorktreeSession,
     SubagentWorktreeContext
@@ -141,6 +119,7 @@ export class SubagentWorktreeMutationManager {
   constructor(
     private readonly options: SubagentWorktreeMutationManagerOptions,
   ) {
+    this.candidates = new SubagentWorktreeDelivery(options);
     const lifecycleDiagnostics =
       options.lifecycleDiagnostics ??
       (options.sandbox
@@ -166,11 +145,11 @@ export class SubagentWorktreeMutationManager {
       ...(sourceVerification
         ? { sourceVerification }
         : { diagnostics: options.diagnostics! }),
-      preflight: (source, signal) =>
-        observeSubagentWorktreeSource(source, signal),
+      preflight: (source, signal) => this.candidates.prepare(source, signal),
       changeCount: (source) => source.changes.length,
-      commitSource: (source, signal) =>
-        commitSubagentWorktreeChanges({
+      commitSource: async (source, signal) => {
+        await this.candidates.beginCommit(source);
+        return commitSubagentWorktreeChanges({
           workspaceRoot: options.workspaceRoot,
           dataRoot: options.dataRoot,
           source,
@@ -181,7 +160,8 @@ export class SubagentWorktreeMutationManager {
           ...(options.commitOptions
             ? { commitOptions: options.commitOptions }
             : {}),
-        }),
+        });
+      },
       ...(!sourceVerification && options.tests ? { tests: options.tests } : {}),
       ...(options.now ? { now: options.now } : {}),
     });
@@ -278,102 +258,23 @@ export class SubagentWorktreeMutationManager {
       await assertSubagentWorktreeToolchainStable(context.toolchain);
     }
     const candidate = await finalizeSubagentWorktree(session, signal);
-    const review = createSubagentWorktreeReview(candidate.changes);
-    const modifiedFiles = subagentWorktreeModifiedLspFiles(candidate.changes);
     const candidateVerification = context.operations.summarize(
       candidate.candidateSnapshotSha256,
     );
     const candidateCommands = context.operations.summarizeCommands(
       candidate.candidateSnapshotSha256,
     );
-    const receipt = {
-      taskId: session.taskId,
+    const preview = await this.candidates.deliver(
+      session,
       outcomeSha256,
-      sourceSnapshotSha256: session.sourceSnapshotSha256,
-      sourceFileCount: session.sourceFileCount,
-      sourceBytes: session.sourceBytes,
-      writeScopeCount: session.writePaths.length,
-      writeScopeSetSha256: session.writeScopeSetSha256,
-      changedFileCount: candidate.changes.length,
-      changedFileSetSha256: candidate.changedFileSetSha256,
-      addedFileCount: candidate.addedFileCount,
-      modifiedFileCount: candidate.modifiedFileCount,
-      deletedFileCount: candidate.deletedFileCount,
-      renamedFileCount: candidate.renamedFileCount,
-      candidateVerificationAttemptCount: candidateVerification.attemptCount,
-      candidateVerificationFreshCount: candidateVerification.freshCount,
-      candidateVerificationPassedCount: candidateVerification.passedCount,
-      candidateVerificationFailedCount: candidateVerification.failedCount,
-      candidateVerificationStaleCount: candidateVerification.staleCount,
-      candidateVerificationSetSha256: candidateVerification.setSha256,
-      candidateCommandAttemptCount: candidateCommands.attemptCount,
-      candidateCommandFreshCount: candidateCommands.freshCount,
-      candidateCommandSucceededCount: candidateCommands.succeededCount,
-      candidateCommandFailedCount: candidateCommands.failedCount,
-      candidateCommandStaleCount: candidateCommands.staleCount,
-      candidateCommandSetSha256: candidateCommands.setSha256,
-      ...(context.toolchain
-        ? { candidateToolchainSha256: context.toolchain.contentSha256 }
-        : {}),
-    };
-    await removeSubagentWorktree(session.root);
-    this.contexts.delete(session);
-    const stored = this.coordinator.storePreview({
-      sourcePreviewResultSha256: sha256(canonicalJson(receipt)),
-      taskId: session.taskId,
-      outcomeSha256,
-      sourceRoot: session.sourceRoot,
-      sourceSnapshotSha256: session.sourceSnapshotSha256,
-      sourceFileCount: session.sourceFileCount,
-      sourceBytes: session.sourceBytes,
-      writeScopeCount: session.writePaths.length,
-      writeScopeSetSha256: session.writeScopeSetSha256,
-      changedFileSetSha256: candidate.changedFileSetSha256,
-      addedFileCount: candidate.addedFileCount,
-      modifiedFileCount: candidate.modifiedFileCount,
-      deletedFileCount: candidate.deletedFileCount,
-      renamedFileCount: candidate.renamedFileCount,
-      candidateVerificationAttemptCount: candidateVerification.attemptCount,
-      candidateVerificationFreshCount: candidateVerification.freshCount,
-      candidateVerificationPassedCount: candidateVerification.passedCount,
-      candidateVerificationFailedCount: candidateVerification.failedCount,
-      candidateVerificationStaleCount: candidateVerification.staleCount,
-      candidateVerificationSetSha256: candidateVerification.setSha256,
-      candidateCommandAttemptCount: candidateCommands.attemptCount,
-      candidateCommandFreshCount: candidateCommands.freshCount,
-      candidateCommandSucceededCount: candidateCommands.succeededCount,
-      candidateCommandFailedCount: candidateCommands.failedCount,
-      candidateCommandStaleCount: candidateCommands.staleCount,
-      candidateCommandSetSha256: candidateCommands.setSha256,
-      ...(context.toolchain
-        ? { candidateToolchainSha256: context.toolchain.contentSha256 }
-        : {}),
-      changes: candidate.changes,
-      files: modifiedFiles,
-    });
-    if (!stored) {
-      throw new Error("Subagent worktree merge preview could not be stored");
-    }
-    return {
-      id: stored.id,
-      expiresAt: stored.expiresAt,
-      taskId: session.taskId,
-      changedPaths: candidate.changedPaths,
-      changedFileCount: candidate.changes.length,
-      changedFileSetSha256: candidate.changedFileSetSha256,
-      addedFileCount: candidate.addedFileCount,
-      modifiedFileCount: candidate.modifiedFileCount,
-      deletedFileCount: candidate.deletedFileCount,
-      renamedFileCount: candidate.renamedFileCount,
-      sourceSnapshotSha256: session.sourceSnapshotSha256,
-      review: review.text,
-      reviewTruncated: review.truncated,
+      candidate,
       candidateVerification,
       candidateCommands,
-      ...(context.toolchain
-        ? { candidateToolchainSha256: context.toolchain.contentSha256 }
-        : {}),
-    };
+      context.toolchain,
+    );
+    await removeSubagentWorktree(session.root);
+    this.contexts.delete(session);
+    return preview;
   }
 
   async cleanup(session: SubagentWorktreeSession): Promise<void> {
@@ -393,12 +294,24 @@ export class SubagentWorktreeMutationManager {
     }
   }
 
+  inspectPreview(previewId: string) {
+    return this.candidates.inspect(previewId);
+  }
+
+  prunePreviews(previewIds: string[]): Promise<number> {
+    return this.candidates.prune(previewIds);
+  }
+
   async apply(
     previewId: string,
     signal?: AbortSignal,
   ): Promise<SubagentWorktreeApplyResult> {
-    const execution = await this.coordinator.apply(previewId, signal);
-    return createSubagentWorktreeApplyResult(execution);
+    return this.candidates.apply(previewId, async (source) => {
+      const transient = this.coordinator.storePreview(source);
+      if (!transient) throw new Error("Subagent candidate has no changes");
+      const execution = await this.coordinator.apply(transient.id, signal);
+      return createSubagentWorktreeApplyResult(execution);
+    });
   }
 }
 

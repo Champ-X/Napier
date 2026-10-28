@@ -286,7 +286,7 @@ export class SubagentCoordinator {
         `Roles: ${[...this.enabledRoles].join(", ")}.`,
         `Run budget: at most ${this.limits.maxTotal} total and ${this.limits.maxConcurrent} concurrent delegations.`,
         "description is a short ledger label; task must be self-contained with paths, constraints, and evidence.",
-        "Only coder uses writePaths listing every created, changed, deleted, or moved endpoint; returns an isolated unmerged one-use worktree preview.",
+        "Only coder uses writePaths listing every created, changed, deleted, or moved endpoint; returns an isolated unmerged durable worktree preview.",
       ].join(" "),
       parameters: delegateTaskSchema,
       [TOOL_MINIMUM_DEADLINE_MS]: this.delegationDeadlineMs(),

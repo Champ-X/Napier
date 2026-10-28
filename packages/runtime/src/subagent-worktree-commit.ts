@@ -26,14 +26,18 @@ export async function commitSubagentWorktreeChanges(input: {
     workspaceRoot: input.workspaceRoot,
     dataRoot: input.dataRoot,
     sourcePreviewResultSha256: input.source.sourcePreviewResultSha256,
-    changes: input.source.changes.map((change) => ({
-      path: change.path,
-      pathSha256: change.pathSha256,
-      beforeSha256: change.beforeSha256,
-      afterSha256: change.afterSha256,
-      ...(change.afterText !== undefined ? { content: change.afterText } : {}),
-      ...(change.mode !== undefined ? { mode: change.mode } : {}),
-    })),
+    changes: input.source.changes
+      .map((change) => ({
+        path: change.path,
+        pathSha256: change.pathSha256,
+        beforeSha256: change.beforeSha256,
+        afterSha256: change.afterSha256,
+        ...(change.afterText !== undefined
+          ? { content: change.afterText }
+          : {}),
+        ...(change.mode !== undefined ? { mode: change.mode } : {}),
+      }))
+      .sort((left, right) => left.path.localeCompare(right.path)),
     ...(input.signal ? { signal: input.signal } : {}),
     ...(input.commitOptions ?? {}),
   });

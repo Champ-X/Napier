@@ -82,7 +82,7 @@ export function createSubagentWorktreeApplyResult(
       appliedMessage:
         "The reviewed coder candidate is committed. Diagnostics and related-test evidence above describe the merged workspace.",
       rolledBackMessage:
-        "The candidate commit failed and every changed file was restored. Delegate or preview again before retrying.",
+        "The candidate commit failed and every changed file was restored. The retained candidate can be retried after a verified durable rollback; its dependencies will be checked again.",
       indeterminateMessage:
         "Workspace state is indeterminate. Inspect every candidate path before another write.",
     }),

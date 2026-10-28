@@ -1,3 +1,4 @@
+import { SUBAGENT_WORKTREE_POLICY } from "./subagent-worktree-policy.js";
 import { assertSubagentFailureContext } from "./subagent-failure-context.js";
 import {
   normalizeSubagentOutputSchema,
@@ -49,7 +50,7 @@ export function validateSubagentSupervisorReplayTask(
     if (
       !Array.isArray(writePaths) ||
       writePaths.length < 1 ||
-      writePaths.length > 8 ||
+      writePaths.length > SUBAGENT_WORKTREE_POLICY.maxWriteFiles ||
       writePaths.some(
         (value) =>
           typeof value !== "string" || !value.trim() || value.length > 500,

@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
+import { createActiveTestRun } from "./active-run-test-fixture.js";
 
 import type { OsSandboxAdapter } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
@@ -40,7 +41,7 @@ afterEach(async () => {
 });
 
 describeLive("live coder Subagent smoke", () => {
-  it("merges a real TypeScript candidate with diagnostics and selected Vitest", async () => {
+  it("merges two disjoint real-repository candidates with TypeScript diagnostics and selected Vitest", async () => {
     const workspaceRoot = await realpath(path.resolve(process.cwd(), "../.."));
     const suffix = randomBytes(5).toString("hex");
     const fixtureName = `subagent-coder-live-${suffix}`;
@@ -57,6 +58,9 @@ describeLive("live coder Subagent smoke", () => {
     const consumerPath = `${fixtureName}/src/consumer.ts`;
     const debugPath = `${fixtureName}/src/debug-target.mjs`;
     const testPath = `${fixtureName}/test/value.test.ts`;
+    const parallelPath = `${fixtureName}/src/parallel.ts`;
+    const notesPath = `${fixtureName}/notes.txt`;
+    const parallelSource = "export const parallelValue = 1; // dirty fixture\n";
     const api = [
       "export function currentName(value: number): number {",
       "  const adjusted = value + 1;",
@@ -101,6 +105,8 @@ describeLive("live coder Subagent smoke", () => {
       writeFile(path.join(workspaceRoot, apiPath), api),
       writeFile(path.join(workspaceRoot, consumerPath), consumer),
       writeFile(path.join(workspaceRoot, debugPath), debugSource),
+      writeFile(path.join(workspaceRoot, parallelPath), parallelSource),
+      writeFile(path.join(workspaceRoot, notesPath), "original notes\n"),
       writeFile(
         path.join(workspaceRoot, testPath),
         [
@@ -122,8 +128,10 @@ describeLive("live coder Subagent smoke", () => {
     });
     await processes.initialize();
     openProcesses.push(processes);
-    const thread = store.listThreads()[0]!;
-    const run = store.listRuns(thread.id)[0]!;
+    const { thread, run } = await createActiveTestRun(
+      store,
+      "Live coder candidate smoke",
+    );
     const manager = new SubagentWorktreeMutationManager({
       workspaceRoot,
       dataRoot,
@@ -148,11 +156,26 @@ describeLive("live coder Subagent smoke", () => {
         sandbox,
       }),
     });
-    const worktree = await manager.createWorktree("task_livecoder1", [
-      apiPath,
-      consumerPath,
-      debugPath,
+    const [worktree, parallelWorktree] = await Promise.all([
+      manager.createWorktree("task_livecoder1", [
+        apiPath,
+        consumerPath,
+        debugPath,
+      ]),
+      manager.createWorktree("task_livecoder2", [parallelPath]),
     ]);
+    const parallelTools = manager.createCoderTools(parallelWorktree);
+    await parallelTools
+      .find((tool) => tool.name === "read_file")!
+      .execute("parallel-read", { path: parallelPath });
+    await parallelTools
+      .find((tool) => tool.name === "apply_patch")!
+      .execute("parallel-patch", {
+        operation: "replace",
+        path: parallelPath,
+        expectedSha256: sha256(parallelSource),
+        edits: [{ oldText: "parallelValue = 1", newText: "parallelValue = 2" }],
+      });
     const tools = manager.createCoderTools(worktree);
     const lsp = tools.find((tool) => tool.name === "lsp_diagnostics")!;
     const verify = tools.find((tool) => tool.name === "verify_workspace")!;
@@ -387,6 +410,29 @@ describeLive("live coder Subagent smoke", () => {
     expect(JSON.stringify(applied.details)).not.toContain(apiPath);
     expect(JSON.stringify(applied.details)).not.toContain(debugPath);
     expect(JSON.stringify(applied.details)).not.toContain(preview.id);
+    // The second candidate was created before the first merge. Source drift
+    // and a later unrelated edit must not replace or invalidate its baseline.
+    await writeFile(
+      path.join(workspaceRoot, notesPath),
+      "unrelated user edit\n",
+    );
+    const parallelPreview = await manager.storePreview(
+      parallelWorktree,
+      "e".repeat(64),
+    );
+    const parallelApplied = await manager.apply(parallelPreview.id);
+    expect(parallelApplied.details).toEqual(
+      expect.objectContaining({
+        status: "applied",
+        diagnostics: expect.objectContaining({ status: "clean" }),
+      }),
+    );
+    expect(await readFile(path.join(workspaceRoot, parallelPath), "utf8")).toBe(
+      parallelSource.replace("parallelValue = 1", "parallelValue = 2"),
+    );
+    expect(await readFile(path.join(workspaceRoot, notesPath), "utf8")).toBe(
+      "unrelated user edit\n",
+    );
     expect(
       (await processes.list(thread.id)).filter(
         (session) => session.status === "running",

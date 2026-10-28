@@ -20,7 +20,7 @@ const applySchema = Type.Object(
       minLength: 1,
       maxLength: 120,
       description:
-        "Opaque one-use preview ID returned by a completed coder delegation.",
+        "Durable candidate preview ID returned by a completed coder delegation.",
     }),
   },
   { additionalProperties: false },
@@ -34,7 +34,7 @@ export function createSubagentWorktreeApplyTool(
       name: "subagent_worktree_apply",
       label: "Apply coder worktree",
       description:
-        "Apply one reviewed coder Subagent worktree through its opaque one-use preview. The source workspace must still match the complete fork snapshot; multi-file commit, rollback, diagnostics, and enabled related tests are coordinated by Napier.",
+        "Merge a reviewed coder candidate against its retained dirty baseline and read dependencies. Unrelated changes are preserved; overlapping edits stop with the candidate retained. Settled retries return the saved receipt without writing again. Multi-file commit, rollback, diagnostics, and enabled related tests are coordinated by Napier.",
       parameters: applySchema,
       async execute(_toolCallId, input, signal) {
         const applied = await manager.apply(input.previewId, signal);
@@ -48,7 +48,12 @@ export function createSubagentWorktreeApplyTool(
       schemaVersion: 1,
       classificationVersion: "1.0.0",
       modes: [
-        { modeId: "apply_workspace", operation: "mutate", scope: "workspace", contribution: "product" },
+        {
+          modeId: "apply_workspace",
+          operation: "mutate",
+          scope: "workspace",
+          contribution: "product",
+        },
       ],
       resolve: (input) => ({
         semantics: progressSemantics("mutate", "workspace", "product"),

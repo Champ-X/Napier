@@ -1,0 +1,698 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-28T22:55:54.222Z",
+  "host": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "release": "27.0.0",
+    "node": "v24.19.0",
+    "git": "git version 2.54.0 (Apple Git-157)"
+  },
+  "legacy": {
+    "commit": "3ba5bda77f69fa0f6e61ad572cfa123e1c0b8479",
+    "forkSourceSha256": "33f9a1ffa1ed44ced257e3606ee310f36b4ee863a2c0a7d919d6098a0b2726af",
+    "boundary": "Fixed historical fork function transpiled with current helper modules; not a complete old release benchmark. Legacy RSS includes the TypeScript transpiler and is not comparable to successful new preparations."
+  },
+  "method": {
+    "syntheticFileBytes": 4096,
+    "trials": 3,
+    "independentProcesses": true,
+    "gcBeforePreparation": true,
+    "rssSampleIntervalMs": 10,
+    "diskBoundary": "stat.blocks reports allocated blocks, including shared COW extents; this is not exclusive physical disk usage. Directory blocks omitted.",
+    "gitOverlay": "Real detached worktree with no checkout, HEAD index, same streamed dirty-content overlay and baseline verification as COW; includes Git registration and baseline capture.",
+    "qualityBoundary": "No model requests or task-quality claims. Small synthetic files and warm OS caches; repeated host measurements only."
+  },
+  "sources": [
+    {
+      "path": "packages/runtime/dist/ed25519.js",
+      "sha256": "ac2e2d9e5efbcd0105d87bbad7852ebfe2ddfccd83b6e7ed0c693677c8149330"
+    },
+    {
+      "path": "packages/runtime/dist/subagent-worktree-baseline.js",
+      "sha256": "35274a8a84ef20ba7d3acae08136cc1a189fb803dded98ae9e1dc00ef6e4cc30"
+    },
+    {
+      "path": "packages/runtime/dist/subagent-worktree-diff.js",
+      "sha256": "737fd3351e2e1f84a6fb12bc5d475bf6c9725af300244f695baaedfcb00734fd"
+    },
+    {
+      "path": "packages/runtime/dist/subagent-worktree-files.js",
+      "sha256": "5465156abb58593b1ce834d4d6a849845a37a61d3438796abc0b4cf68e2e5c6a"
+    },
+    {
+      "path": "packages/runtime/dist/subagent-worktree-policy.js",
+      "sha256": "b83b33ca0bc22a08dd9594ddfe34f5133cbb9f01b5e463b5409c58779dbe8549"
+    },
+    {
+      "path": "packages/runtime/dist/subagent-worktree-snapshot.js",
+      "sha256": "757ba95ad830c59cdee34007588bce7579b0fce6c805f13ef0fef8515d399a23"
+    },
+    {
+      "path": "packages/runtime/dist/subagent-worktree-storage.js",
+      "sha256": "f1c1a78380529d441db2f079c59e07a884c17b7e8fa570f26e5e10a489ba8c86"
+    },
+    {
+      "path": "packages/runtime/dist/workspace-file-scope.js",
+      "sha256": "41b024bb4cf6bb9c122513bccbd6017f4ed9f465533d644e60a5448984490e97"
+    },
+    {
+      "path": "packages/runtime/src/ed25519.ts",
+      "sha256": "55aa78c1547ac65b5f2e3ca6a5c003ce326aa79293fbcae6b42fb81a6624333c"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-baseline.ts",
+      "sha256": "f9110a3133a97e52215d2ccce25bb491ffee3dda71a150c2e0cd592d37d9047f"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-diff.ts",
+      "sha256": "722d52248407fd0196933a40b41eb29759c1986f9f26ee45724a0896855bcf5e"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-files.ts",
+      "sha256": "085e8f8afb357a06dc97345c81b790cbcbd5c6e9ea55ea6352aa599fab3d5998"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-policy.ts",
+      "sha256": "6e0ad070cec7204dfbdf1e4cbfbd47cd11230c9bec737fd87113ede4ca509b69"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-snapshot.ts",
+      "sha256": "cf40092f5eaf301aa6b9c71e346ebae3ab31dff10f2090cd4fd3e8f862c33457"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-storage.ts",
+      "sha256": "94bfe944008aa164e84fa78157ed0859ad04c067abe7cce5b3e446693375f157"
+    },
+    {
+      "path": "packages/runtime/src/workspace-file-scope.ts",
+      "sha256": "fde4307079fd23906ae04797c6a99aa030ff094ad2519997eb9a1e7a4e9c6bb0"
+    },
+    {
+      "path": "scripts/benchmark-subagent-workspace.mjs",
+      "sha256": "b65563297408f7b1540836c2ab7dc80fc2eae862c035b8cd615c91c33973c9f8"
+    }
+  ],
+  "measurements": [
+    {
+      "mode": "legacy",
+      "fileCount": 5000,
+      "trial": 0,
+      "prepareMs": 337.778,
+      "startRssBytes": 141656064,
+      "sampledPeakRssBytes": 162185216,
+      "sampledRssGrowthBytes": 20529152,
+      "processHighWaterRssBytes": 162185216,
+      "status": "rejected",
+      "error": "Subagent worktree file limit exceeded"
+    },
+    {
+      "mode": "cow",
+      "fileCount": 5000,
+      "trial": 0,
+      "prepareMs": 3601.501083,
+      "startRssBytes": 56279040,
+      "sampledPeakRssBytes": 99418112,
+      "sampledRssGrowthBytes": 43139072,
+      "processHighWaterRssBytes": 99434496,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20475953,
+        "reportedAllocatedBytes": 20484096,
+        "files": 5000
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      }
+    },
+    {
+      "mode": "copy",
+      "fileCount": 5000,
+      "trial": 0,
+      "prepareMs": 2978.764125,
+      "startRssBytes": 56098816,
+      "sampledPeakRssBytes": 99418112,
+      "sampledRssGrowthBytes": 43319296,
+      "processHighWaterRssBytes": 99418112,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20475953,
+        "reportedAllocatedBytes": 20484096,
+        "files": 5000
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      }
+    },
+    {
+      "mode": "git_overlay",
+      "fileCount": 5000,
+      "trial": 0,
+      "prepareMs": 2962.258708,
+      "startRssBytes": 56082432,
+      "sampledPeakRssBytes": 99385344,
+      "sampledRssGrowthBytes": 43302912,
+      "processHighWaterRssBytes": 99385344,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20476089,
+        "reportedAllocatedBytes": 20488192,
+        "files": 5001
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      },
+      "gitAdministrativeDisk": {
+        "logicalBytes": 441862,
+        "reportedAllocatedBytes": 458752,
+        "files": 5
+      }
+    },
+    {
+      "mode": "git_overlay",
+      "fileCount": 5000,
+      "trial": 1,
+      "prepareMs": 2345.945083,
+      "startRssBytes": 56033280,
+      "sampledPeakRssBytes": 99106816,
+      "sampledRssGrowthBytes": 43073536,
+      "processHighWaterRssBytes": 99106816,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20476089,
+        "reportedAllocatedBytes": 20488192,
+        "files": 5001
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      },
+      "gitAdministrativeDisk": {
+        "logicalBytes": 441862,
+        "reportedAllocatedBytes": 458752,
+        "files": 5
+      }
+    },
+    {
+      "mode": "copy",
+      "fileCount": 5000,
+      "trial": 1,
+      "prepareMs": 2399.347291,
+      "startRssBytes": 56066048,
+      "sampledPeakRssBytes": 99483648,
+      "sampledRssGrowthBytes": 43417600,
+      "processHighWaterRssBytes": 99483648,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20475953,
+        "reportedAllocatedBytes": 20484096,
+        "files": 5000
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      }
+    },
+    {
+      "mode": "cow",
+      "fileCount": 5000,
+      "trial": 1,
+      "prepareMs": 2444.239042,
+      "startRssBytes": 56098816,
+      "sampledPeakRssBytes": 99418112,
+      "sampledRssGrowthBytes": 43319296,
+      "processHighWaterRssBytes": 99418112,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20475953,
+        "reportedAllocatedBytes": 20484096,
+        "files": 5000
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      }
+    },
+    {
+      "mode": "cow",
+      "fileCount": 5000,
+      "trial": 2,
+      "prepareMs": 2347.1114580000003,
+      "startRssBytes": 56164352,
+      "sampledPeakRssBytes": 99319808,
+      "sampledRssGrowthBytes": 43155456,
+      "processHighWaterRssBytes": 99319808,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20475953,
+        "reportedAllocatedBytes": 20484096,
+        "files": 5000
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      }
+    },
+    {
+      "mode": "copy",
+      "fileCount": 5000,
+      "trial": 2,
+      "prepareMs": 2264.012041,
+      "startRssBytes": 56115200,
+      "sampledPeakRssBytes": 99565568,
+      "sampledRssGrowthBytes": 43450368,
+      "processHighWaterRssBytes": 99565568,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20475953,
+        "reportedAllocatedBytes": 20484096,
+        "files": 5000
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      }
+    },
+    {
+      "mode": "git_overlay",
+      "fileCount": 5000,
+      "trial": 2,
+      "prepareMs": 2184.265291,
+      "startRssBytes": 56033280,
+      "sampledPeakRssBytes": 99270656,
+      "sampledRssGrowthBytes": 43237376,
+      "processHighWaterRssBytes": 99270656,
+      "status": "prepared",
+      "sourceBytes": 20475953,
+      "sourceSnapshotSha256": "a222e49afb03420f351d169083cbc79ff2a97f37afdd5e2e0e7e3240fdb6d1da",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 5000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 20476089,
+        "reportedAllocatedBytes": 20488192,
+        "files": 5001
+      },
+      "baselineDisk": {
+        "logicalBytes": 1111191,
+        "reportedAllocatedBytes": 1114112,
+        "files": 1
+      },
+      "gitAdministrativeDisk": {
+        "logicalBytes": 441862,
+        "reportedAllocatedBytes": 458752,
+        "files": 5
+      }
+    },
+    {
+      "mode": "legacy",
+      "fileCount": 20000,
+      "trial": 0,
+      "prepareMs": 283.66204200000004,
+      "startRssBytes": 136790016,
+      "sampledPeakRssBytes": 159694848,
+      "sampledRssGrowthBytes": 22904832,
+      "processHighWaterRssBytes": 159694848,
+      "status": "rejected",
+      "error": "Subagent worktree file limit exceeded"
+    },
+    {
+      "mode": "cow",
+      "fileCount": 20000,
+      "trial": 0,
+      "prepareMs": 9410.686749999999,
+      "startRssBytes": 55934976,
+      "sampledPeakRssBytes": 185335808,
+      "sampledRssGrowthBytes": 129400832,
+      "processHighWaterRssBytes": 188481536,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81915953,
+        "reportedAllocatedBytes": 81924096,
+        "files": 20000
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      }
+    },
+    {
+      "mode": "copy",
+      "fileCount": 20000,
+      "trial": 0,
+      "prepareMs": 9611.362583,
+      "startRssBytes": 56082432,
+      "sampledPeakRssBytes": 187023360,
+      "sampledRssGrowthBytes": 130940928,
+      "processHighWaterRssBytes": 190201856,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81915953,
+        "reportedAllocatedBytes": 81924096,
+        "files": 20000
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      }
+    },
+    {
+      "mode": "git_overlay",
+      "fileCount": 20000,
+      "trial": 0,
+      "prepareMs": 8887.357667,
+      "startRssBytes": 56311808,
+      "sampledPeakRssBytes": 185548800,
+      "sampledRssGrowthBytes": 129236992,
+      "processHighWaterRssBytes": 188612608,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81916090,
+        "reportedAllocatedBytes": 81928192,
+        "files": 20001
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      },
+      "gitAdministrativeDisk": {
+        "logicalBytes": 1766516,
+        "reportedAllocatedBytes": 1785856,
+        "files": 5
+      }
+    },
+    {
+      "mode": "git_overlay",
+      "fileCount": 20000,
+      "trial": 1,
+      "prepareMs": 9164.098916,
+      "startRssBytes": 56180736,
+      "sampledPeakRssBytes": 180436992,
+      "sampledRssGrowthBytes": 124256256,
+      "processHighWaterRssBytes": 183484416,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81916090,
+        "reportedAllocatedBytes": 81928192,
+        "files": 20001
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      },
+      "gitAdministrativeDisk": {
+        "logicalBytes": 1766516,
+        "reportedAllocatedBytes": 1785856,
+        "files": 5
+      }
+    },
+    {
+      "mode": "copy",
+      "fileCount": 20000,
+      "trial": 1,
+      "prepareMs": 9816.701833,
+      "startRssBytes": 56033280,
+      "sampledPeakRssBytes": 187973632,
+      "sampledRssGrowthBytes": 131940352,
+      "processHighWaterRssBytes": 190857216,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81915953,
+        "reportedAllocatedBytes": 81924096,
+        "files": 20000
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      }
+    },
+    {
+      "mode": "cow",
+      "fileCount": 20000,
+      "trial": 1,
+      "prepareMs": 9127.018125,
+      "startRssBytes": 56098816,
+      "sampledPeakRssBytes": 187596800,
+      "sampledRssGrowthBytes": 131497984,
+      "processHighWaterRssBytes": 190824448,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81915953,
+        "reportedAllocatedBytes": 81924096,
+        "files": 20000
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      }
+    },
+    {
+      "mode": "cow",
+      "fileCount": 20000,
+      "trial": 2,
+      "prepareMs": 8941.629208,
+      "startRssBytes": 56131584,
+      "sampledPeakRssBytes": 187432960,
+      "sampledRssGrowthBytes": 131301376,
+      "processHighWaterRssBytes": 190644224,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81915953,
+        "reportedAllocatedBytes": 81924096,
+        "files": 20000
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      }
+    },
+    {
+      "mode": "copy",
+      "fileCount": 20000,
+      "trial": 2,
+      "prepareMs": 11796.248540999999,
+      "startRssBytes": 56164352,
+      "sampledPeakRssBytes": 181534720,
+      "sampledRssGrowthBytes": 125370368,
+      "processHighWaterRssBytes": 184647680,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81915953,
+        "reportedAllocatedBytes": 81924096,
+        "files": 20000
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      }
+    },
+    {
+      "mode": "git_overlay",
+      "fileCount": 20000,
+      "trial": 2,
+      "prepareMs": 8857.217499999999,
+      "startRssBytes": 56000512,
+      "sampledPeakRssBytes": 185892864,
+      "sampledRssGrowthBytes": 129892352,
+      "processHighWaterRssBytes": 189120512,
+      "status": "prepared",
+      "sourceBytes": 81915953,
+      "sourceSnapshotSha256": "c9d9c9ba4001a859114abe40d7c9bf2d679ee27947e86d03b74926eb6c9e5e4b",
+      "copyReceipt": {
+        "clonedFiles": 0,
+        "copiedFiles": 20000,
+        "cloneAttempts": 1,
+        "cloneFallbackCode": "ENOSYS"
+      },
+      "dirtyAndUntrackedPreserved": true,
+      "candidateWriteIsolated": true,
+      "disk": {
+        "logicalBytes": 81916090,
+        "reportedAllocatedBytes": 81928192,
+        "files": 20001
+      },
+      "baselineDisk": {
+        "logicalBytes": 4427842,
+        "reportedAllocatedBytes": 4431872,
+        "files": 1
+      },
+      "gitAdministrativeDisk": {
+        "logicalBytes": 1766516,
+        "reportedAllocatedBytes": 1785856,
+        "files": 5
+      }
+    }
+  ]
+}
