@@ -1,13 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useRef, type RefObject } from "react";
+
+import { restoreWorkbenchOverlayFocus } from "./workbench-overlay-focus";
 
 /** Isolate custom overlays after their opener has been captured for restoration. */
-export function useWorkbenchOverlay(open: boolean): void {
+export function useWorkbenchOverlay(
+  open: boolean,
+  returnFocusRef: RefObject<HTMLElement | null>,
+): void {
+  const currentOpen = useRef(open);
+  const overlayGeneration = useRef(0);
+  currentOpen.current = open;
   useEffect(() => {
     if (!open) return;
-    const opener =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+    const generation = ++overlayGeneration.current;
+    const opener = returnFocusRef.current;
     const surfaces = Array.from(
       document.querySelectorAll<HTMLElement>(
         ".workspace-navigation-shell, #main-workspace",
@@ -19,7 +25,12 @@ export function useWorkbenchOverlay(open: boolean): void {
       surfaces.forEach((surface, index) => {
         surface.inert = previous[index] ?? false;
       });
-      if (opener?.isConnected) opener.focus();
+      // Rail layout effects may run while the old main is still inert. Restore
+      // only after the entire overlay transition has released its isolation.
+      requestAnimationFrame(() => {
+        if (!currentOpen.current && generation === overlayGeneration.current)
+          restoreWorkbenchOverlayFocus(opener);
+      });
     };
-  }, [open]);
+  }, [open, returnFocusRef]);
 }

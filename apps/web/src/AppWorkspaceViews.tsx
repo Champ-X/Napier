@@ -39,6 +39,7 @@ import {
   WorkbenchDeferredNotices,
 } from "./WorkbenchDeferredPanels";
 import { WelcomeStarterPrompts } from "./WelcomePanel";
+import { restoreWorkbenchOverlayFocus } from "./workbench-overlay-focus";
 
 const LazyTaskWorkspace = lazy(() =>
   import("./TaskWorkspace").then(({ TaskWorkspace }) => ({
@@ -88,6 +89,10 @@ export function AppWorkspaceViews({
   const [skillResourceInspection, setSkillResourceInspection] =
     useState<MessageSkillResourceLink>();
   const [dismissedBrowserRunId, setDismissedBrowserRunId] = useState<string>();
+  const evidenceSuspended =
+    shell.settingsOpen ||
+    shell.developerWorkbenchOpen ||
+    layout.mobileNavigationOpen;
   const inspectionOpen = Boolean(
     artifactInspection || workspaceFilePath || skillResourceInspection,
   );
@@ -157,7 +162,9 @@ export function AppWorkspaceViews({
   const closeWorkspaceRail = useCallback(() => {
     shell.setWorkspaceRailOpen(false);
     requestAnimationFrame(() =>
-      document.getElementById("workspace-rail-toggle")?.focus(),
+      restoreWorkbenchOverlayFocus(
+        document.getElementById("workspace-rail-toggle"),
+      ),
     );
   }, [shell.setWorkspaceRailOpen]);
   const closeArtifact = useCallback(() => setArtifactInspection(undefined), []);
@@ -173,13 +180,15 @@ export function AppWorkspaceViews({
     () => setDismissedBrowserRunId(vm.activeRunId),
     [vm.activeRunId],
   );
-  const evidenceOverlay =
-    !layout.workspaceRailAvailable &&
-    (inspectionOpen || showBrowserRail || showWorkspaceRail);
-
   return (
     <div
-      className={`workspace-primary-surface${inspectionOpen ? " has-artifact-inspector" : ""}${showBrowserRail ? " has-browser-rail" : ""}${showWorkspaceRail ? " has-workspace-rail" : ""}${evidenceOverlay ? " has-evidence-overlay" : ""}`}
+      className={evidenceLayoutClassName(
+        evidenceSuspended,
+        layout.workspaceRailAvailable,
+        inspectionOpen,
+        showBrowserRail,
+        showWorkspaceRail,
+      )}
     >
       {shell.workspaceView === "conversation" ? (
         <section
@@ -268,6 +277,7 @@ export function AppWorkspaceViews({
         vm={vm}
         bootstrap={bootstrap}
         layout={layout}
+        suspended={evidenceSuspended}
         artifactInspection={artifactInspection}
         workspaceFilePath={workspaceFilePath}
         workspaceFileSha256={workspaceFileSha256}
@@ -285,10 +295,31 @@ export function AppWorkspaceViews({
   );
 }
 
+/** Evidence state stays mounted; only the currently presented rail owns space. */
+function evidenceLayoutClassName(
+  suspended: boolean,
+  inline: boolean,
+  inspection: boolean,
+  browser: boolean,
+  workspace: boolean,
+): string {
+  const surface = suspended
+    ? undefined
+    : inspection
+      ? "artifact-inspector"
+      : browser
+        ? "browser-rail"
+        : workspace
+          ? "workspace-rail"
+          : undefined;
+  return `workspace-primary-surface${surface ? ` has-${surface}` : ""}${surface && !inline ? " has-evidence-overlay" : ""}`;
+}
+
 interface AppWorkspaceEvidenceSurfacesProps {
   vm: WorkspaceViewModel;
   bootstrap: BootstrapResponse;
   layout: WorkspaceLayoutControls;
+  suspended: boolean;
   artifactInspection: ArtifactInspection | undefined;
   workspaceFilePath: string | undefined;
   workspaceFileSha256: string | undefined;
@@ -307,6 +338,7 @@ function AppWorkspaceEvidenceSurfaces({
   vm,
   bootstrap,
   layout,
+  suspended,
   artifactInspection,
   workspaceFilePath,
   workspaceFileSha256,
@@ -337,6 +369,7 @@ function AppWorkspaceEvidenceSurfaces({
     );
   };
   const showResizableRail =
+    !suspended &&
     layout.workspaceRailAvailable &&
     (Boolean(artifactInspection) ||
       Boolean(workspaceFilePath) ||
@@ -358,6 +391,7 @@ function AppWorkspaceEvidenceSurfaces({
       ) : null}
       {artifactInspection ? (
         <ArtifactInspector
+          suspended={suspended}
           inspection={artifactInspection}
           onContinueEditing={continueEditing}
           onLedgerChanged={vm.refreshActiveThread}
@@ -366,6 +400,7 @@ function AppWorkspaceEvidenceSurfaces({
       ) : null}
       {workspaceFilePath ? (
         <WorkspaceFileInspector
+          suspended={suspended}
           path={workspaceFilePath}
           onContinueEditing={continueEditing}
           {...(workspaceFileSha256
@@ -377,13 +412,14 @@ function AppWorkspaceEvidenceSurfaces({
       ) : null}
       {skillResourceInspection ? (
         <SkillResourceInspector
+          suspended={suspended}
           reference={skillResourceInspection}
           onClose={onCloseSkillResource}
         />
       ) : null}
       {showBrowserRail && vm.activeRunId && vm.detail ? (
         <>
-          {!layout.workspaceRailAvailable ? (
+          {!suspended && !layout.workspaceRailAvailable ? (
             <button
               type="button"
               className="workspace-evidence-backdrop is-browser"
@@ -393,6 +429,7 @@ function AppWorkspaceEvidenceSurfaces({
             />
           ) : null}
           <WorkbenchBrowserRail
+            suspended={suspended}
             threadId={vm.detail.thread.id}
             runId={vm.activeRunId}
             events={vm.detail.events}
@@ -403,7 +440,7 @@ function AppWorkspaceEvidenceSurfaces({
           />
         </>
       ) : null}
-      {showWorkspaceRail && !layout.workspaceRailAvailable ? (
+      {showWorkspaceRail && !suspended && !layout.workspaceRailAvailable ? (
         <button
           type="button"
           className="workspace-evidence-backdrop"
@@ -415,8 +452,8 @@ function AppWorkspaceEvidenceSurfaces({
       <WorkspaceEvidenceRail
         workspace={bootstrap.workspace}
         detail={vm.detail}
-        open={showWorkspaceRail}
-        overlay={!layout.workspaceRailAvailable}
+        open={showWorkspaceRail && !suspended}
+        overlay={!layout.workspaceRailAvailable && !suspended}
         onLedgerChanged={vm.refreshActiveThread}
         onOpenArtifact={onOpenArtifact}
         onClose={onCloseWorkspaceRail}

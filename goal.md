@@ -244,6 +244,15 @@
 - 最终 [sandbox-execution-lifetime-final-2026-10-29.json](docs/artifacts/sandbox-execution-lifetime-final-2026-10-29.json) 的 7 项源码／构建绑定已复核；保留清理加固前的初始收据。额外注入断言失败和输出 EEXIST，两种路径均确认清理。零网络／模型请求；单次进程观测不是性能统计。
 - 下一片 Sandbox execution-slot 必须区分句柄生命周期和所有 OS 后代；启动前失败与清理未知需类型化证据，跨进程资源恢复需持久目标／容器身份与清理凭证。不能照搬模型 owner 死亡后释放容量，也不能用 child.exit 成功证明全部后代结束。此边界仍属 G05-B 未完成部分，其余 G01–G07 目标不变。
 
+### 后续推进：G06-B 浮层挂起与审阅状态保留
+
+- 上一轮为 **progress**：现场核对 `b9b4f1b2`、`c6eaa084`、`b326e7e5` 三个本地提交，启动时 `main` 为 0 behind / 25 ahead，未 push。继续完整 G01–G07；此次修复审批隔离浏览器验收已记录的窄屏双浮层缺陷。
+- Settings／Developer Workbench 打开时挂起证据、文件／产物／Skill 预览和浏览器 rail，保留组件挂载、源码选择、iframe 与接管表单状态；关闭后先解除 inert，再恢复前景内有效焦点。背景 Escape 不再关闭证据或导航，旧延迟恢复不能抢走新浮层焦点。保留用户 CSS、WorkspaceEvidenceRail 与 Composer 改动。
+- 首轮真实浏览器暴露移动导航搜索框在挂起时被卸载：草稿保留，但焦点落到首个按钮。保留 [失败收据](docs/artifacts/workspace-overlay-capture-failure-2026-10-29.json)，修复为隐藏导航而不改变其折叠偏好；未削弱原搜索焦点断言。
+- 最终生产浏览器 5 场景、17 张 1440／320px 截图通过：两类 shell 的单层 Escape／Tab 循环、恢复后再次关闭证据、Raw source／HTML Step 2 保留、快捷键导航和搜索焦点。0 横向溢出／page error／外部浏览器请求，全局模型账本 invocation 为 0。9 个 source/build/script 树及截图摘要复核一致，28 个用户文件保持原摘要；[最终收据](docs/artifacts/workspace-overlay-ui-2026-10-29.json) 原字节保存。
+- 5 文件／30 测试通过，新增 2 文件在 fixture 类型修正后再次 21／21；Web typecheck、严格 TSX、build、design contract 与 diff check 通过。新增复杂度／行数超限已修回，架构仍为原 10 项；未提高预算。本片未改 Runtime API，未重复运行其既有失败检查。
+- 这是 G06-B 的 overlay 交互切片，未勾选整个 overlay／inspector 或 G06-B 验收。浏览器接管／Skill 只完成真实组件＋模拟 API 状态验证；主 iframe 点击仍使用已有 DOM helper。下一步继续 G05-B 的持久执行／浏览器容量及清理证据，并保留共享执行、成果版本、恢复操作区、深链接、分区和测量消融全部待办。说明见 [workspace-overlay-coordination.md](docs/workspace-overlay-coordination.md)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -427,7 +436,7 @@
 **实施任务**
 
 - [x] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。（生产 host 已接入；持久身份、自定义账本与恢复失败重试已实现。）
-- [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 ID、预览资源与后台自动化已覆盖；Workflow 审批／扩展信任 review 已验证功能隔离，其他 review 流程及窄屏双弹窗仍有边界。）
+- [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 ID、预览资源与后台自动化已覆盖；Workflow 审批／扩展信任 review 已验证功能隔离，窄屏双弹窗已另修复并验证；其他 review 流程仍有边界。）
 - [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度和模型／进程／BrowserTask 生命周期保护已验证；全局物理进程／浏览器容量仍待完成。）
 - [ ] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。
 
@@ -463,7 +472,7 @@
 - [ ] 恢复说明优先解释下一步行为，hash / run ID 等技术字段放详情，不增加普遍审批门槛。
 - [ ] 保留阅读布局，增加可固定的预览、diff 和来源面板；宽屏空间用于审阅，不单纯拉宽正文。
 - [ ] 支持定位任务、产物及版本的深链接，并恢复审阅位置。
-- [ ] 延续键盘、焦点、读屏与窄窗口验证，统一 overlay / inspector 的交互原语。
+- [ ] 延续键盘、焦点、读屏与窄窗口验证，统一 overlay / inspector 的交互原语。（Settings／Developer 对证据和导航的挂起、Escape 与焦点恢复已完成真实浏览器验收；更广泛的 inspector 交互一致性仍待完成。）
 
 **验收**：用户能区分结束、等待选择、预算暂停和故障恢复；回答失败时保留输入且不重复 continuation；主成果可持续预览和比较版本；以真实浏览器任务测量找成果耗时、恢复成功率、干预反馈时间和误操作率。
 

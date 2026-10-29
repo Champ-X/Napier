@@ -5,7 +5,10 @@ workspace graphs and other hosts using the same state home. Model invocations
 have durable quotas and physical-call concurrency limits. Runtime reclamation
 also retains unsettled model calls, workspace process sessions, and browser-task
 preparation/settlement. This is a G05-B slice: global process/browser capacity and
-approval/review browser acceptance remain pending.
+broader review acceptance remain pending. Workflow approval and extension trust
+review isolation have separate browser evidence in goal.md; the associated
+overlapping overlays were fixed in
+[workbench overlay coordination](workspace-overlay-coordination.md).
 
 ## Model admission and accounting
 

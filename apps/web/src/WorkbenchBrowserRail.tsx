@@ -7,6 +7,7 @@ import { workspaceEvidenceCopy as copy } from "./workspace-evidence-copy";
 
 interface WorkbenchBrowserRailProps extends BrowserLiveViewPanelProps {
   onClose(): void;
+  suspended?: boolean;
 }
 
 export function WorkbenchBrowserRail({
@@ -14,13 +15,20 @@ export function WorkbenchBrowserRail({
   runId,
   events,
   confirmationAction,
+  suspended = false,
   onClose,
 }: WorkbenchBrowserRailProps) {
   if (!browserLiveViewExpected(events, runId)) {
     return null;
   }
   return (
-    <aside className="workbench-browser-rail" aria-label={copy.browserPreview}>
+    <aside
+      className="workbench-browser-rail"
+      aria-label={copy.browserPreview}
+      hidden={suspended}
+      inert={suspended}
+      style={suspended ? { display: "none" } : undefined}
+    >
       <header className="workbench-browser-rail-heading">
         <span>
           <Globe2 size={14} aria-hidden="true" />

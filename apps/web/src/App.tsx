@@ -24,7 +24,10 @@ export function App() {
   const vm = useWorkspaceViewModel(),
     shell = useWorkspaceShell(vm.setInspectorTab),
     layout = useWorkspaceLayout();
-  useWorkbenchOverlay(shell.settingsOpen || shell.developerWorkbenchOpen);
+  useWorkbenchOverlay(
+    shell.settingsOpen || shell.developerWorkbenchOpen,
+    shell.overlayReturnFocusRef,
+  );
   const taskControls = useTaskControlNavigation({
     activeRunId: vm.activeRunId,
     events: vm.detail?.events ?? [],

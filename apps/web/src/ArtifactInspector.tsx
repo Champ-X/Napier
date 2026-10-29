@@ -26,9 +26,14 @@ import { artifactInspectorCopy as copy } from "./artifact-inspector-copy";
 import { ArtifactInspectionContent } from "./ArtifactInspectionContent";
 import { previewWorkspaceFile } from "./workspace-directory-api";
 import { useArtifactInspectorView } from "./use-artifact-inspector-view";
+import {
+  inactiveWorkbenchSurface,
+  restoreWorkbenchOverlayFocus,
+} from "./workbench-overlay-focus";
 
 export interface ArtifactInspectorProps {
   inspection: ArtifactInspection;
+  suspended?: boolean;
   onClose(): void;
   onContinueEditing?(path: string): void;
   onLedgerChanged?(): void | Promise<void>;
@@ -40,6 +45,7 @@ export interface ArtifactInspectorProps {
 
 export function ArtifactInspector({
   inspection,
+  suspended = false,
   onClose,
   onContinueEditing,
   onLedgerChanged,
@@ -50,6 +56,8 @@ export function ArtifactInspector({
 }: ArtifactInspectorProps) {
   const inspectorRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const suspendedRef = useRef(suspended);
+  suspendedRef.current = suspended;
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string>();
   const { diff, error, load, loadingView, preview, supportsText, view } =
@@ -62,13 +70,19 @@ export function ArtifactInspector({
     });
 
   useEffect(() => {
+    if (suspended) return;
     const restoreFocus =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-    closeRef.current?.focus();
+    if (!inactiveWorkbenchSurface(closeRef.current)) closeRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        inactiveWorkbenchSurface(closeRef.current)
+      )
+        return;
       event.preventDefault();
       event.stopPropagation();
       onClose();
@@ -76,12 +90,9 @@ export function ArtifactInspector({
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      if (suspendedRef.current) return;
       const restorePreviousFocus = () => {
-        if (restoreFocus?.isConnected && restoreFocus.getClientRects().length) {
-          restoreFocus.focus();
-          return;
-        }
-        document.getElementById("workspace-rail-toggle")?.focus();
+        restoreWorkbenchOverlayFocus(restoreFocus);
       };
       if (typeof window.requestAnimationFrame === "function") {
         window.requestAnimationFrame(restorePreviousFocus);
@@ -89,7 +100,7 @@ export function ArtifactInspector({
         restorePreviousFocus();
       }
     };
-  }, [onClose]);
+  }, [onClose, suspended]);
 
   const download = async () => {
     if (downloading) return;
@@ -115,6 +126,9 @@ export function ArtifactInspector({
   return (
     <aside
       ref={inspectorRef}
+      hidden={suspended}
+      inert={suspended}
+      style={suspended ? { display: "none" } : undefined}
       className={`artifact-inspector${onContinueEditing ? " has-review-actions" : ""}`}
       aria-label={`${copy.preview}: ${inspection.artifact.path}`}
     >

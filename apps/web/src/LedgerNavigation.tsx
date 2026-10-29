@@ -14,6 +14,7 @@ import { copy } from "./copy";
 import type { WorkspaceLayoutControls } from "./use-workspace-layout";
 import { WorkspaceTree } from "./WorkspaceTree";
 import { workspaceTreeCopy as t } from "./workspace-tree-copy";
+import { inactiveWorkbenchSurface } from "./workbench-overlay-focus";
 
 export interface LedgerNavigationProps {
   bootstrap: LiveReadyBootstrapResponse;
@@ -27,6 +28,7 @@ export interface LedgerNavigationProps {
   onOpenDeveloperWorkbench(): void;
   onOpenSettings(): void;
   layout: WorkspaceLayoutControls;
+  suspended?: boolean;
 }
 
 export const LedgerNavigation = memo(function LedgerNavigation({
@@ -41,6 +43,7 @@ export const LedgerNavigation = memo(function LedgerNavigation({
   onOpenDeveloperWorkbench,
   onOpenSettings,
   layout,
+  suspended = false,
 }: LedgerNavigationProps) {
   const {
     collapsed,
@@ -49,24 +52,34 @@ export const LedgerNavigation = memo(function LedgerNavigation({
     openSidebar,
     toggleSidebar,
   } = layout;
+  const visibleMobileNavigation = mobileNavigationOpen && !suspended;
   const visuallyCollapsed = collapsed && !mobileNavigationOpen;
+  const hiddenMobileNavigation = mobileNavigationOpen && suspended;
   const [searchQuery, setSearchQuery] = useState("");
+  const navigationRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const openSearch = () => {
     if (visuallyCollapsed) openSidebar();
     requestAnimationFrame(() => searchRef.current?.focus());
   };
   useEffect(() => {
-    if (!mobileNavigationOpen) return;
+    if (!visibleMobileNavigation) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeSidebar();
+      if (
+        event.key === "Escape" &&
+        !event.defaultPrevented &&
+        !inactiveWorkbenchSurface(navigationRef.current)
+      ) {
+        event.preventDefault();
+        closeSidebar();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [closeSidebar, mobileNavigationOpen]);
+  }, [closeSidebar, visibleMobileNavigation]);
   return (
     <Fragment>
-      {mobileNavigationOpen ? (
+      {visibleMobileNavigation ? (
         <button
           type="button"
           className="ledger-nav-backdrop"
@@ -76,6 +89,10 @@ export const LedgerNavigation = memo(function LedgerNavigation({
         />
       ) : null}
       <nav
+        ref={navigationRef}
+        hidden={hiddenMobileNavigation}
+        inert={suspended}
+        style={hiddenMobileNavigation ? { display: "none" } : undefined}
         className={`ledger-nav${visuallyCollapsed ? " is-collapsed" : ""}${mobileNavigationOpen ? " is-mobile-open" : ""}`}
         aria-label={copy.recentThreads}
       >
@@ -210,6 +227,7 @@ function sameLedgerNavigationProps(
     previous.onWorkspaceSwitch === next.onWorkspaceSwitch &&
     previous.onOpenDeveloperWorkbench === next.onOpenDeveloperWorkbench &&
     previous.onOpenSettings === next.onOpenSettings &&
+    previous.suspended === next.suspended &&
     previous.layout.collapsed === next.layout.collapsed &&
     previous.layout.mobileNavigationOpen === next.layout.mobileNavigationOpen &&
     previous.layout.toggleSidebar === next.layout.toggleSidebar &&

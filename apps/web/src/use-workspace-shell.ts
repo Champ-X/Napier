@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { TaskSection } from "./TaskWorkspace";
 import type { DeveloperWorkbenchSection } from "./developer-workbench-section-registry";
@@ -58,6 +58,15 @@ export function useWorkspaceShell(
   const [settingsSection, setSettingsSectionState] =
     useState<SettingsSection>("context");
   const [developerWorkbenchOpen, setDeveloperWorkbenchOpen] = useState(false);
+  const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
+  const captureOverlayOpener = useCallback(() => {
+    if (!settingsOpen && !developerWorkbenchOpen) {
+      overlayReturnFocusRef.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+    }
+  }, [settingsOpen, developerWorkbenchOpen]);
   const [workspaceRailOpen, setWorkspaceRailOpen] = useState(
     () => typeof window === "undefined" || window.innerWidth > 1_100,
   );
@@ -83,6 +92,7 @@ export function useWorkspaceShell(
       }
       const settings = SETTINGS_TAB[tab];
       if (settings) {
+        captureOverlayOpener();
         setSettingsSectionState(settings);
         setSettingsOpen(true);
         setDeveloperWorkbenchOpen(false);
@@ -90,25 +100,28 @@ export function useWorkspaceShell(
       }
       const developer = DEVELOPER_TAB[tab];
       if (developer) {
+        captureOverlayOpener();
         setDeveloperWorkbenchSectionState(developer);
         setDeveloperWorkbenchOpen(true);
         setSettingsOpen(false);
       }
     },
-    [setInspectorTab],
+    [setInspectorTab, captureOverlayOpener],
   );
   const openSettings = useCallback(() => {
+    captureOverlayOpener();
     const tab = inspectorTabForSection(settingsSection);
     if (tab) setInspectorTab(tab);
     setSettingsOpen(true);
     setDeveloperWorkbenchOpen(false);
-  }, [setInspectorTab, settingsSection]);
+  }, [setInspectorTab, settingsSection, captureOverlayOpener]);
   const openDeveloperWorkbench = useCallback(() => {
+    captureOverlayOpener();
     const tab = inspectorTabForDeveloperSection(developerWorkbenchSection);
     if (tab) setInspectorTab(tab);
     setDeveloperWorkbenchOpen(true);
     setSettingsOpen(false);
-  }, [developerWorkbenchSection, setInspectorTab]);
+  }, [developerWorkbenchSection, setInspectorTab, captureOverlayOpener]);
   const setTaskSection = useCallback(
     (section: TaskSection) => {
       setTaskSectionState(section);
@@ -190,6 +203,7 @@ export function useWorkspaceShell(
     routeInspector,
     openSettings,
     workspaceRailOpen,
+    overlayReturnFocusRef,
     setWorkspaceRailOpen,
     toggleWorkspaceRail,
   };

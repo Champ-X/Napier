@@ -25,6 +25,7 @@ export function AppLedgerNavigation({
       onWorkspaceSwitch={vm.switchWorkspaceRoot}
       onOpenDeveloperWorkbench={shell.openDeveloperWorkbench}
       onOpenSettings={shell.openSettings}
+      suspended={shell.settingsOpen || shell.developerWorkbenchOpen}
       layout={layout}
     />
   );

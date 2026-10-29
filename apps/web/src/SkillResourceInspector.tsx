@@ -6,11 +6,13 @@ import { WorkspaceFileInspector } from "./WorkspaceFileInspector";
 
 export interface SkillResourceInspectorProps {
   reference: MessageSkillResourceLink;
+  suspended?: boolean;
   onClose(): void;
 }
 
 export function SkillResourceInspector({
   reference,
+  suspended = false,
   onClose,
 }: SkillResourceInspectorProps) {
   const previewFile = useCallback(
@@ -26,6 +28,7 @@ export function SkillResourceInspector({
   );
   return (
     <WorkspaceFileInspector
+      suspended={suspended}
       path={reference.virtualPath}
       onClose={onClose}
       previewFile={previewFile}

@@ -1,0 +1,208 @@
+{
+  "receipt": {
+    "kind": "napier.workspace-overlay-coordination",
+    "schemaVersion": 1,
+    "sourceHead": "b326e7e543a9c65b297065748dde7fb3daefc115",
+    "externalModelRequests": 0,
+    "externalBrowserRequests": [],
+    "pageErrors": [],
+    "scenarios": [
+      {
+        "name": "Settings: resize with evidence open",
+        "topOnlyEscape": true,
+        "underlyingRailPreserved": true,
+        "focusRestoredToRail": true,
+        "secondEscapeClosesRail": true,
+        "composerPreserved": true,
+        "settingsInputPreservedAcrossResize": true
+      },
+      {
+        "name": "Settings: artifact suspension",
+        "mountedNodePreserved": true,
+        "sourceViewPreserved": true,
+        "iframeStatePreserved": true,
+        "focusRestored": true
+      },
+      {
+        "name": "Developer Workbench: resize with evidence open",
+        "topOnlyEscape": true,
+        "underlyingRailPreserved": true,
+        "focusRestoredToRail": true,
+        "secondEscapeClosesRail": true,
+        "composerPreserved": true
+      },
+      {
+        "name": "Developer Workbench: artifact suspension",
+        "mountedNodePreserved": true,
+        "sourceViewPreserved": true,
+        "iframeStatePreserved": true,
+        "focusRestored": true
+      }
+    ],
+    "screenshots": [
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Settings-wide-evidence-1440.png",
+        "width": 1440,
+        "overflowPx": 0,
+        "sha256": "f05fca545fcaf9e461707e86e4abfaf8572c0ce3648c23594112029568f48357"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Settings-narrow-evidence-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "a578c7c086ca84fcf5a9d3049fd39a3813828b6c7230add447b2f2a29e1da5fa"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Settings-evidence-restored-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "8f87d70614f0ddeb02fe4828b3936e1ce925abc0ecaa4c42978ba1a14d0e34cd"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Settings-artifact-wide-1440.png",
+        "width": 1440,
+        "overflowPx": 0,
+        "sha256": "059beaf4e65093cbb910c03950e6177b54c625990b2eefeee4b215cbcf995b6d"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Settings-artifact-narrow-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "7c0dc5d1ebba9972dc0f7d9a91319907731aa2f1bea902826cff8732a7b9ac1d"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Settings-artifact-restored-320-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "6b67b037b54d5793ec1a5b7934fde6010571c8de95cbd5a8bdc759a9f866478a"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Settings-live-preview-1440.png",
+        "width": 1440,
+        "overflowPx": 0,
+        "sha256": "059beaf4e65093cbb910c03950e6177b54c625990b2eefeee4b215cbcf995b6d"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Developer-Workbench-wide-evidence-1440.png",
+        "width": 1440,
+        "overflowPx": 0,
+        "sha256": "d65a16f740c97c534c1c6314d768a892bce654dee61a9344a131f0d319c1c98d"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Developer-Workbench-narrow-evidence-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "aa5c0db2a702fc276d97f028b30e890670329f3eaf275e8cc3f06f9b9e7b0255"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Developer-Workbench-evidence-restored-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "7098dc1f7a8cf4d1bdc7dfdfccd3a1c2c9afa6563ebe0e3571591f3d7f51cf0d"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Developer-Workbench-artifact-wide-1440.png",
+        "width": 1440,
+        "overflowPx": 0,
+        "sha256": "d06393a0103a2081e956dc57121947716445245845bd9a985f50446b1cae7915"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Developer-Workbench-artifact-narrow-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "e8667ca2d561515d6a0c7bbd6afd4a6ccd372a1c0a349a810e53fd838ed325d5"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Developer-Workbench-artifact-restored-320-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "986170ef52aa1e168250e84efa7bf177c9b08e0a5136be0d95a1ec5a2597c562"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/Developer-Workbench-live-preview-1440.png",
+        "width": 1440,
+        "overflowPx": 0,
+        "sha256": "ea692b8e86932f1efc0514b0de1ef51ca888b497d7377bf1ed630da2ad066277"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/keyboard-over-evidence-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "69f77ed0763a60998df6704f0441f6a4d9a3c2e660c83d316ecdd7206a03a965"
+      },
+      {
+        "path": "/Users/champ/orca/Napier/benchmark-results/workspace-overlay/napier-workspace-overlay-ui-2026-10-29.json/keyboard-over-navigation-320.png",
+        "width": 320,
+        "overflowPx": 0,
+        "sha256": "3a6bd84a99ec8e5f3571a1ac7f9c3277e310a09d754e50aa5aea9b258893fc0b"
+      }
+    ],
+    "production": {
+      "loopbackOnly": true,
+      "ephemeralPort": true,
+      "healthReady": true,
+      "startupDurationMs": 650
+    },
+    "browser": {
+      "transport": "playwright-launch",
+      "freshProfile": true,
+      "profilePersistent": false,
+      "osIsolationClaimed": false,
+      "executableSha256": "a596b1cfc6353e987fcec8d71a23a28cd6a9e7a6b4e20b908e4c4fcffe51158e",
+      "startupDurationMs": 1821
+    }
+  },
+  "error": "TimeoutError: page.waitForFunction: Timeout 15000ms exceeded.",
+  "stack": "page.waitForFunction: Timeout 15000ms exceeded.\n    at /Users/champ/orca/Napier/scripts/check-workspace-overlay-ui.mjs:128:14",
+  "fixture": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-web-ui-e2e-sxD3GN",
+  "bindingsBefore": {
+    "trees": [
+      {
+        "root": "apps/server/src",
+        "fileCount": 159,
+        "sha256": "182d3acc8c311331db43fea055a41de727575550dcc567c8949618ce9c9dbb8d"
+      },
+      {
+        "root": "packages/contracts/src",
+        "fileCount": 87,
+        "sha256": "ff203ef23ecb972a6b2ad9bf02189bfa0542ffc44a3c552c6e90a727ba0a5a88"
+      },
+      {
+        "root": "packages/runtime/src",
+        "fileCount": 1228,
+        "sha256": "ce504aa1c5394410cd6c8d7d38cfd2669030e65a54dd1030c4362d95bb1f58ab"
+      },
+      {
+        "root": "apps/web/src",
+        "fileCount": 867,
+        "sha256": "6a28b9cf14854876d89e5347d7086fe441fd324d242cfcf86590d838de2c83ac"
+      },
+      {
+        "root": "apps/server/dist",
+        "fileCount": 478,
+        "sha256": "08fe90edd31c8842d2d33156ba02b9fc720b147cd0561336d9c89868ab4c7948"
+      },
+      {
+        "root": "packages/contracts/dist",
+        "fileCount": 262,
+        "sha256": "c18de4c186e5b7e2b41e799ff0e601f49379cf8832273d1f26f1cb1cba969c78"
+      },
+      {
+        "root": "packages/runtime/dist",
+        "fileCount": 3696,
+        "sha256": "6dd4e42932ffdbe4aec3860b7a64676dc1704db8dd05b419bbb553f1920618f5"
+      },
+      {
+        "root": "apps/web/dist",
+        "fileCount": 335,
+        "sha256": "c20f2906015ed8a47d488ebc326f26d7339f28e4e38f969048d8da9aa941d88e"
+      },
+      {
+        "root": "scripts",
+        "fileCount": 399,
+        "sha256": "2bf129ea0be3c327782394275c6190738839e04bb88e33fe51a5417d1c4b513f"
+      }
+    ],
+    "packageLock": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041"
+  }
+}

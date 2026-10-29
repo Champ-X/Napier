@@ -18,9 +18,14 @@ import {
   type WorkspaceFilePreview,
 } from "./workspace-directory-api";
 import { workspaceEvidenceCopy as workspaceCopy } from "./workspace-evidence-copy";
+import {
+  inactiveWorkbenchSurface,
+  restoreWorkbenchOverlayFocus,
+} from "./workbench-overlay-focus";
 
 export interface WorkspaceFileInspectorProps {
   path: string;
+  suspended?: boolean;
   threadId?: string;
   expectedSha256?: string;
   onClose(): void;
@@ -32,6 +37,7 @@ type WorkspaceFileView = "preview" | "source";
 
 export function WorkspaceFileInspector({
   path,
+  suspended = false,
   threadId,
   expectedSha256,
   onClose,
@@ -39,6 +45,8 @@ export function WorkspaceFileInspector({
   previewFile = previewWorkspaceFile,
 }: WorkspaceFileInspectorProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const suspendedRef = useRef(suspended);
+  suspendedRef.current = suspended;
   const [loadedPreview, setLoadedPreview] = useState<{
     requestedPath: string;
     threadId: string | undefined;
@@ -93,9 +101,15 @@ export function WorkspaceFileInspector({
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-    closeRef.current?.focus();
+    if (suspended) return;
+    if (!inactiveWorkbenchSurface(closeRef.current)) closeRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        inactiveWorkbenchSurface(closeRef.current)
+      )
+        return;
       event.preventDefault();
       event.stopPropagation();
       onClose();
@@ -103,12 +117,9 @@ export function WorkspaceFileInspector({
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      if (suspendedRef.current) return;
       const restorePreviousFocus = () => {
-        if (restoreFocus?.isConnected && restoreFocus.getClientRects().length) {
-          restoreFocus.focus();
-          return;
-        }
-        document.getElementById("workspace-rail-toggle")?.focus();
+        restoreWorkbenchOverlayFocus(restoreFocus);
       };
       if (typeof window.requestAnimationFrame === "function") {
         window.requestAnimationFrame(restorePreviousFocus);
@@ -116,7 +127,7 @@ export function WorkspaceFileInspector({
         restorePreviousFocus();
       }
     };
-  }, [onClose]);
+  }, [onClose, suspended]);
 
   const download = useCallback(() => {
     if (!preview) return;
@@ -133,6 +144,9 @@ export function WorkspaceFileInspector({
 
   return (
     <aside
+      hidden={suspended}
+      inert={suspended}
+      style={suspended ? { display: "none" } : undefined}
       className={`artifact-inspector workspace-file-inspector${onContinueEditing ? " has-review-actions" : ""}`}
       aria-label={`${workspaceCopy.previewFile}: ${path}`}
     >
