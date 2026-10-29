@@ -1,5 +1,4 @@
-import { randomUUID } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -66,12 +65,12 @@ import type { BrowserSessionOwner } from "./browser-session-model.js";
 import { BrowserAllowedUrls } from "./browser-allowed-url.js";
 import { BrowserConsoleRecorder } from "./browser-console-observation.js";
 import { performBrowserConsoleOperation } from "./browser-console-operation.js";
-import { abortBrowserSessionOperation } from "./browser-session-abort.js";
 import { BrowserWorkspacePreview } from "./browser-workspace-preview.js";
 import { performBrowserWorkspacePreview } from "./browser-workspace-preview-operation.js";
+import { abortBrowserSessionOperation, BrowserSessionResourceOwner } from "./browser-session-cleanup.js";
 
 export class PersistentBrowserSession {
-  readonly idSha256 = sha256(`browser-session:${randomUUID()}`);
+  readonly idSha256: string;
   operationCount = 0;
   private readonly tabs: BrowserSessionTabs;
   private readonly navigation = new BrowserSessionNavigation();
@@ -82,6 +81,7 @@ export class PersistentBrowserSession {
   private closing = false;
   private closed = false;
   private disconnected = false;
+  private closePromise: Promise<void> | undefined;
 
   get healthy(): boolean {
     return (
@@ -103,7 +103,9 @@ export class PersistentBrowserSession {
     page: Page,
     private readonly browserVersionSha256: string,
     private readonly runtimeRoot: string,
+    private readonly resources: BrowserSessionResourceOwner,
   ) {
+    this.idSha256 = resources.idSha256;
     this.tabs = new BrowserSessionTabs(context, page);
     this.configurePage(page);
   }
@@ -111,28 +113,43 @@ export class PersistentBrowserSession {
   static async start(
     options: RunBrowserSessionManagerOptions,
     owner: BrowserSessionOwner,
+    signal?: AbortSignal,
+    prepare?: () => Promise<void>,
   ): Promise<PersistentBrowserSession> {
-    const runtime = await (options.resolveRuntime
-      ? options.resolveRuntime()
-      : resolveBrowserRuntime(options.executablePath));
-    const proxy =
-      options.createProxy?.() ??
-      new FixedIpHttpProxy({
-        ...(options.lookup ? { lookup: options.lookup } : {}),
-      });
-    const runtimeRoot = await mkdtemp(
-      path.join(tmpdir(), "napier-browser-session-"),
-    );
+    signal?.throwIfAborted();
+    const resources = new BrowserSessionResourceOwner(options.resourceAdmission);
+    let proxy: BrowserNetworkProxy | undefined;
+    let runtimeRoot: string | undefined;
     let browser: Browser | undefined;
     let context: BrowserContext | undefined;
     try {
+      await prepare?.();
+      signal?.throwIfAborted();
+      const runtime = await (options.resolveRuntime
+        ? options.resolveRuntime()
+        : resolveBrowserRuntime(options.executablePath));
+      signal?.throwIfAborted();
+      resources.dispatched();
+      resources.attemptingResource();
+      proxy = options.createProxy?.() ?? new FixedIpHttpProxy({
+        ...(options.lookup ? { lookup: options.lookup } : {}),
+      });
+      resources.identifiedResource();
+      runtimeRoot = await mkdtemp(path.join(tmpdir(), "napier-browser-session-"));
+      signal?.throwIfAborted();
       const binding = await proxy.start();
       await assertBrowserRuntimeCurrent(runtime);
+      signal?.throwIfAborted();
+      resources.attemptingResource();
       browser = await (
         options.launchBrowser ?? ((launch) => chromium.launch(launch))
       )(browserLaunchOptions(runtime, binding, runtimeRoot));
+      resources.identifiedResource();
+      signal?.throwIfAborted();
       await assertBrowserRuntimeCurrent(runtime);
+      signal?.throwIfAborted();
       context = await browser.newContext(browserContextOptions());
+      signal?.throwIfAborted();
       context.setDefaultTimeout(BROWSER_ACTION_TIMEOUT_MS);
       context.setDefaultNavigationTimeout(BROWSER_NAVIGATION_TIMEOUT_MS);
       const page = await context.newPage();
@@ -150,6 +167,7 @@ export class PersistentBrowserSession {
         page,
         sha256(browser.version()),
         runtimeRoot,
+        resources,
       );
       browser.on("disconnected", () => {
         session.disconnected = true;
@@ -158,14 +176,13 @@ export class PersistentBrowserSession {
       context.on("page", (candidate) => {
         session.tabs.rejectUnmanaged(candidate);
       });
+      signal?.throwIfAborted();
       return session;
     } catch (error) {
-      await Promise.allSettled([
-        ...(context ? [context.close()] : []),
-        ...(browser ? [browser.close()] : []),
-        proxy.close(),
-      ]);
-      await rm(runtimeRoot, { recursive: true, force: true });
+      await resources.close({
+        ...(context ? { context } : {}), ...(browser ? { browser } : {}),
+        ...(proxy ? { proxy } : {}), ...(runtimeRoot ? { runtimeRoot } : {}), cause: error,
+      });
       throw error;
     }
   }
@@ -222,19 +239,15 @@ export class PersistentBrowserSession {
       ...(signal ? { signal } : {}),
     });
   }
-  async close(): Promise<void> {
-    if (this.closed || this.closing) return;
-    this.closing = true;
-    await Promise.allSettled([
-      this.context.close(),
-      this.browser.close(),
-      this.proxy.close(),
-    ]);
-    await rm(this.runtimeRoot, { recursive: true, force: true }).catch(
-      () => undefined,
-    );
-    this.closed = true;
-    this.closing = false;
+  close(): Promise<void> {
+    if (!this.closePromise) {
+      this.closing = true;
+      this.closePromise = this.resources.close({
+        context: this.context, browser: this.browser, proxy: this.proxy,
+        runtimeRoot: this.runtimeRoot,
+      }).then(() => { this.closed = true; });
+    }
+    return this.closePromise;
   }
 
   private async perform(

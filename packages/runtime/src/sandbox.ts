@@ -11,6 +11,8 @@ import { HostDirectSandboxAdapter } from "./sandbox-host-direct.js";
 import {
   scopedWorkspaceWritePaths,
   validateNonContainerLaunchRequest,
+  beforeSandboxDispatch,
+  sandboxBeforeLaunchFailure,
 } from "./sandbox-launch-policy.js";
 import { OciContainerSandboxAdapter } from "./sandbox-oci.js";
 import { launchSandboxProcess } from "./sandbox-process-lifecycle.js";
@@ -83,16 +85,22 @@ export class MacOsSandboxAdapter implements OsSandboxAdapter {
     try {
       await access(this.executable);
     } catch {
-      throw new Error(
-        `macOS process sandbox requires sandbox-exec at ${this.executable}`,
+      throw sandboxBeforeLaunchFailure(
+        new Error(
+          `macOS process sandbox requires sandbox-exec at ${this.executable}`,
+        ),
       );
     }
-    this.availability ??= this.availabilityCheck();
-    await this.availability;
-    const sandboxHome = await mkdtemp(
-      path.join(tmpdir(), "napier-process-sandbox-"),
+    await beforeSandboxDispatch(async () => {
+      this.availability ??= this.availabilityCheck();
+      await this.availability;
+    });
+    const sandboxHome = await beforeSandboxDispatch(() =>
+      mkdtemp(path.join(tmpdir(), "napier-process-sandbox-")),
     );
-    const profile = buildMacOsSandboxProfile(request, sandboxHome);
+    const profile = await beforeSandboxDispatch(() =>
+      buildMacOsSandboxProfile(request, sandboxHome),
+    );
     const target = {
       command: this.executable,
       args: ["-p", profile, "--", request.command, ...request.args],
@@ -136,14 +144,18 @@ export class LinuxBubblewrapSandboxAdapter implements OsSandboxAdapter {
     try {
       await access(this.executable);
     } catch {
-      throw new Error(
-        `Linux process sandbox requires Bubblewrap at ${this.executable}`,
+      throw sandboxBeforeLaunchFailure(
+        new Error(
+          `Linux process sandbox requires Bubblewrap at ${this.executable}`,
+        ),
       );
     }
-    const sandboxHome = await mkdtemp(
-      path.join(tmpdir(), "napier-process-sandbox-"),
+    const sandboxHome = await beforeSandboxDispatch(() =>
+      mkdtemp(path.join(tmpdir(), "napier-process-sandbox-")),
     );
-    const args = buildLinuxBubblewrapArgs(request, sandboxHome);
+    const args = await beforeSandboxDispatch(() =>
+      buildLinuxBubblewrapArgs(request, sandboxHome),
+    );
     const target = {
       command: this.executable,
       args,

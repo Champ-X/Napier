@@ -6,12 +6,38 @@ import {
   validateSandboxLocalService,
 } from "./sandbox-local-service-policy.js";
 import { validateTerminalDimensions } from "./sandbox-terminal.js";
+import {
+  sandboxCleanup,
+  sandboxLaunchFailure,
+} from "./sandbox-execution-evidence.js";
+export { beforeSandboxDispatch } from "./sandbox-execution-evidence.js";
+
+export function sandboxBeforeLaunchFailure(error: unknown) {
+  return sandboxLaunchFailure(
+    error,
+    sandboxCleanup("not_started", "pre_dispatch_failed"),
+  );
+}
 
 const MAX_SANDBOX_PATHS = 8;
 
 export function validateLaunchRequest(
   request: SandboxLaunchRequest,
   platform: NodeJS.Platform = process.platform,
+): void {
+  try {
+    validateBeforeLaunch(request, platform);
+  } catch (error) {
+    throw sandboxLaunchFailure(
+      error,
+      sandboxCleanup("not_started", "launch_validation_failed"),
+    );
+  }
+}
+
+function validateBeforeLaunch(
+  request: SandboxLaunchRequest,
+  platform: NodeJS.Platform,
 ): void {
   const hostPath = platformPath(platform);
   if (request.signal?.aborted) {
@@ -70,7 +96,14 @@ export function validateNonContainerLaunchRequest(
   providerId: string,
 ): void {
   validateLaunchRequest(request);
-  rejectLocalServiceForProvider(request, providerId);
+  try {
+    rejectLocalServiceForProvider(request, providerId);
+  } catch (error) {
+    throw sandboxLaunchFailure(
+      error,
+      sandboxCleanup("not_started", "launch_validation_failed"),
+    );
+  }
 }
 
 export function scopedWorkspaceWritePaths(

@@ -9,10 +9,14 @@ export class BrowserTasks extends BrowserTaskService {
     dataRoot: string,
     credentials?: CredentialReferenceStore,
     env: Readonly<Record<string, string | undefined>> = process.env,
+    resourceAdmission?: ConstructorParameters<
+      typeof BrowserTaskService
+    >[0]["resourceAdmission"],
   ) {
     super({
       dataRoot,
       env,
+      ...(resourceAdmission ? { resourceAdmission } : {}),
       ...(credentials
         ? {
             resolveCredential: async (providerId: string) => {
@@ -31,7 +35,15 @@ export class BrowserTasks extends BrowserTaskService {
   }
 
   async shutdownWith(shutdown: () => Promise<void>): Promise<void> {
-    await this.shutdown();
-    await shutdown();
+    const failures: unknown[] = [];
+    for (const drain of [() => this.shutdown(), shutdown]) {
+      try {
+        await drain();
+      } catch (error) {
+        failures.push(error);
+      }
+    }
+    if (failures.length)
+      throw new AggregateError(failures, "Browser and local shutdown failed");
   }
 }

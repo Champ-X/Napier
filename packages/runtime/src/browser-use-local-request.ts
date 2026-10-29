@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import path from "node:path";
 
 const ALLOWED_MODEL_PROVIDERS = new Set([
   "openai",
@@ -78,4 +79,48 @@ function domainAllowed(hostname: string, domains: string[]): boolean {
       ? hostname === domain.slice(2) || hostname.endsWith(domain.slice(1))
       : hostname === domain,
   );
+}
+
+export function browserUseLocalBridgeEnvironment(
+  input: Readonly<Record<string, string | undefined>>,
+  runtimeRoot: string,
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {
+    PATH: input["PATH"],
+    SYSTEMROOT: input["SYSTEMROOT"],
+    TMPDIR: runtimeRoot,
+    TEMP: runtimeRoot,
+    TMP: runtimeRoot,
+    // Browser Use's macOS CDP core requires the real host HOME to route
+    // browser responses. Chrome still receives an explicit fresh profile
+    // rooted in the task artifact directory below.
+    HOME: input["HOME"] ?? process.env["HOME"] ?? runtimeRoot,
+    XDG_CACHE_HOME: path.join(runtimeRoot, "cache"),
+    XDG_CONFIG_HOME: path.join(runtimeRoot, "config"),
+    BROWSER_USE_CONFIG_DIR: path.join(runtimeRoot, "config", "browseruse"),
+    BROWSER_USE_SETUP_LOGGING: "false",
+    BROWSER_USE_LOGGING_LEVEL: "critical",
+    BROWSER_USE_VERSION_CHECK: "false",
+    BROWSER_USE_CLOUD_SYNC: "false",
+    ANONYMIZED_TELEMETRY: "false",
+    NAPIER_BROWSER_USE_CREDENTIAL: input["NAPIER_BROWSER_USE_CREDENTIAL"],
+  };
+  for (const name of [
+    "ALL_PROXY",
+    "APPDATA",
+    "HTTPS_PROXY",
+    "HTTP_PROXY",
+    "LANG",
+    "LC_ALL",
+    "LOCALAPPDATA",
+    "LOGNAME",
+    "NO_PROXY",
+    "SSL_CERT_DIR",
+    "SSL_CERT_FILE",
+    "USER",
+    "USERPROFILE",
+  ]) {
+    if (input[name]) env[name] = input[name];
+  }
+  return env;
 }

@@ -253,6 +253,16 @@
 - 5 文件／30 测试通过，新增 2 文件在 fixture 类型修正后再次 21／21；Web typecheck、严格 TSX、build、design contract 与 diff check 通过。新增复杂度／行数超限已修回，架构仍为原 10 项；未提高预算。本片未改 Runtime API，未重复运行其既有失败检查。
 - 这是 G06-B 的 overlay 交互切片，未勾选整个 overlay／inspector 或 G06-B 验收。浏览器接管／Skill 只完成真实组件＋模拟 API 状态验证；主 iframe 点击仍使用已有 DOM helper。下一步继续 G05-B 的持久执行／浏览器容量及清理证据，并保留共享执行、成果版本、恢复操作区、深链接、分区和测量消融全部待办。说明见 [workspace-overlay-coordination.md](docs/workspace-overlay-coordination.md)。
 
+### 后续推进：G05-B 持久执行与浏览器资源准入
+
+- 从本地 `faf9d777` 继续，未 push。新增 `execution-resources.sqlite`，以 Sandbox execution handle、原生 browser session、BrowserUse task 为明确计量单位；默认容量分别 32／4／4，同一 stateHome 的 Host 遵守各类最小 live-host 配额。同步准入先于异步准备／物理 dispatch；所有未 released 状态占槽，已 dispatch 的 owner 死亡只能 quarantine。
+- Sandbox 等待 child exit 与独立 cleanup 证据后释放；Guardian 私有 ACK、PTY nonce 回执、进程组检查、scratch／projection 清理和 OCI 补偿均参与。原生浏览器保留启动／操作／关闭生命周期，复用不多占槽；BrowserUse local 要求 bridge 关闭 ACK 加 child close，cloud 要求独立 GET 确认同一 task terminal。未知启动、错误凭证、缺失 ACK、未确认 stop 和持久化失败均不释放。
+- 真实并发首次打开暴露的 WAL 初始化锁冲突已以有界幂等初始化重试修复；真实 Guardian 强杀暴露的继承输出管道滞留已改为等待私有状态管道。BrowserTask 无效 scope／status 在进入账本前抛错导致 drain 挂起的问题已修复为持久 unknown；新增真实 Local Runtime／SQLite 用例验证有界拒绝且 store 仍可查询。随后三个账本反例确认 regex 隐式转换会接受非字符串 reason，已修复并保留失败报告引用。
+- [广泛回归快照](docs/artifacts/execution-resource-unit-regression-2026-10-29.json) 为 42 文件／296 测试；它在最后两项校验修复前运行，原字节保留。[最终针对性回归](docs/artifacts/execution-resource-final-regression-2026-10-29.json) 在最终源码上通过 4 文件／44 测试，含两真实进程竞争、错误凭证和关闭后账本边界；不将旧快照冒充最终全套重跑。Runtime compile、Server build、严格测试 TS、diff check 通过；架构降为 9 项既有失败，public API 保留原 2 项，未增加预算／root exports。
+- [最终物理收据 v2](docs/artifacts/execution-resource-physical-coordination-2026-10-29-v2.json) 在两个实际 WorkspaceRuntimeHost、真实 Guardian 目标及安装的 Chromium 上通过 11 项断言：跨 Host 容量 1 的 dispatch 前拒绝、清理后释放、浏览器复用、活跃资源防 LRU、Host shutdown、SIGKILL 后目标停止及重开账本 quarantine 保留。3 张 A／B／A 预览截图已检查；6 个 source/build 树与脚本独立绑定，无运行中漂移，28 个用户文件摘要保留。模型 invocation 0；Chromium 向本地代理的 22 次后台请求全部拒绝，关闭后的 destination／成功 CONNECT／传输字节均为 0，不宣称系统级网络抓包。
+- 首次捕获误将 proxy requestCount 当作实际外连，保留 [失败收据](docs/artifacts/execution-resource-physical-coordination-2026-10-29.json.failure-ed910cc3-9893-479e-85f2-d66d075dd8fc.json)。[v1](docs/artifacts/execution-resource-physical-coordination-2026-10-29.json) 已通过资源断言，但网络快照早于 close；v2 增加每个真实代理 close 后最终计数与全部被动请求日志对账，不覆盖旧证据。
+- 本片不声称全 OS 后代、CPU／RSS、真实 OCI／BrowserUse provider 或跨机器容量验收；HostDirect 无 OS 隔离。跨重启资源自动对账尚未实现，unknown 必须持续占槽。下一片推进 rotation 后台义务与受控空闲回收，再验证资源释放→回收→冷启动；G01／G02／G03／G04／G06／G07 的剩余目标全部保留，总目标 active。实现和复现说明见 [workspace-resource-admission.md](docs/workspace-resource-admission.md)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -437,7 +447,7 @@
 
 - [x] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。（生产 host 已接入；持久身份、自定义账本与恢复失败重试已实现。）
 - [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 ID、预览资源与后台自动化已覆盖；Workflow 审批／扩展信任 review 已验证功能隔离，窄屏双弹窗已另修复并验证；其他 review 流程仍有边界。）
-- [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度和模型／进程／BrowserTask 生命周期保护已验证；全局物理进程／浏览器容量仍待完成。）
+- [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度、执行／浏览器资源容量和活跃生命周期保护已有真实证据；跨重启资源对账及 rotation 回收义务仍待完成。）
 - [ ] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。
 
 **验收**：A 项目长任务运行时可切到 B 提交新任务；A 后台任务和自动化继续；SSE、权限和成果无串线；重启后各工作区恢复；空闲资源能够释放。

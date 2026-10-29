@@ -1,3 +1,5 @@
+import { PROCESS_GUARDIAN_CLEANUP_SOURCE } from "./process-guardian-cleanup-source.js";
+
 export const PROCESS_GUARDIAN_SPEC_ENV = "NAPIER_PRIVATE_PROCESS_GUARDIAN_SPEC";
 
 export const PROCESS_GUARDIAN_WORKER_SOURCE = String.raw`
@@ -15,6 +17,7 @@ import {
   renameSync,
   rmdirSync,
   unlinkSync,
+  writeFileSync,
   writeSync,
 } from "node:fs";
 
@@ -32,13 +35,20 @@ let targetExit;
 let parentWatch;
 let descendantWatch;
 let closing = false;
+let targetSpawned = false;
 const trackedProcesses = new Map();
 
 function report(value, statusFd) {
-  if (statusFd === undefined) return;
-  try {
-    writeSync(statusFd, JSON.stringify(value) + "\n");
-  } catch {}
+  if (statusFd !== undefined) {
+    try { writeSync(statusFd, JSON.stringify(value) + "\n"); } catch {}
+  }
+  if (value.type === "exit" && spec?.cleanupReceipt) {
+    try {
+      writeFileSync(spec.cleanupReceipt.path,
+        JSON.stringify({ nonce: spec.cleanupReceipt.nonce, ...value }),
+        { flag: "wx", mode: 0o600 });
+    } catch {}
+  }
 }
 
 function validSpec(value) {
@@ -60,42 +70,15 @@ function validSpec(value) {
       ([key, item]) => typeof key === "string" && typeof item === "string",
     ) &&
     (value.cleanup === undefined || validCleanup(value.cleanup, value.command)) &&
-    (value.statusFd === undefined || value.statusFd === 4)
+    (value.statusFd === undefined || value.statusFd === 4) &&
+    (value.cleanupReceipt === undefined || (
+      value.cleanupReceipt && isAbsolute(value.cleanupReceipt.path) &&
+      basename(value.cleanupReceipt.path) === "cleanup.json" &&
+      /^[a-f0-9]{48}$/.test(value.cleanupReceipt.nonce)
+    ))
   );
 }
 
-function validCleanup(value, targetCommand) {
-  return (
-    value &&
-    typeof value === "object" &&
-    value.kind === "oci-container" &&
-    value.command === targetCommand &&
-    isAbsolute(value.command) &&
-    typeof value.commandSha256 === "string" &&
-    /^[a-f0-9]{64}$/.test(value.commandSha256) &&
-    typeof value.containerName === "string" &&
-    /^napier-[a-f0-9]{32}$/.test(value.containerName) &&
-    (value.networkName === undefined ||
-      (typeof value.networkName === "string" &&
-        /^napier-network-[a-f0-9]{32}$/.test(value.networkName))) &&
-    typeof value.scratchHome === "string" &&
-    isAbsolute(value.scratchHome) &&
-    /^napier-process-sandbox-[A-Za-z0-9]{6}$/.test(
-      basename(value.scratchHome),
-    ) &&
-    typeof value.environmentSha256 === "string" &&
-    /^[a-f0-9]{64}$/.test(value.environmentSha256) &&
-    value.env &&
-    typeof value.env === "object" &&
-    !Array.isArray(value.env) &&
-    Object.entries(value.env).every(
-      ([key, item]) =>
-        /^[A-Z_][A-Z0-9_]{0,127}$/.test(key) &&
-        typeof item === "string" &&
-        !/[\u0000-\u001f\u007f]/.test(item),
-    )
-  );
-}
 
 function readSpec() {
   const encoded = process.env[SPEC_ENV];
@@ -246,161 +229,42 @@ async function waitForTrackedStop(signal) {
 }
 
 async function stopTarget() {
-  if (!target || !targetExit) return;
+  if (!target || !targetExit) return true;
   const snapshot = refreshTrackedProcesses();
   if (snapshot) signalTracked("SIGTERM", snapshot);
   signalTargetGroup("SIGTERM", snapshot);
-  const stopped = await waitForTrackedStop("SIGTERM");
+  let stopped = await waitForTrackedStop("SIGTERM");
   if (!stopped) {
     const finalSnapshot = refreshTrackedProcesses();
     if (finalSnapshot) signalTracked("SIGKILL", finalSnapshot);
     signalTargetGroup("SIGKILL", finalSnapshot);
-    await waitForTrackedStop("SIGKILL");
+    stopped = await waitForTrackedStop("SIGKILL");
   }
   await targetExit;
+  return stopped;
 }
 
-function cleanupTargetResource() {
-  if (!spec.cleanup) return true;
-  let executableSha256;
-  try {
-    executableSha256 = createHash("sha256")
-      .update(readFileSync(spec.cleanup.command))
-      .digest("hex");
-  } catch {
-    cleanupScratchHome();
-    return false;
-  }
-  if (executableSha256 !== spec.cleanup.commandSha256) {
-    return cleanupScratchHome() && false;
-  }
-  const remove = spawnSync(
-    spec.cleanup.command,
-    ["container", "rm", "--force", spec.cleanup.containerName],
-    cleanupOptions(spec.cleanup.env),
-  );
-  const containerClean = successfulCleanupCommand(remove) || containerMissing();
-  const networkClean = !spec.cleanup.networkName || cleanupNetworkResource();
-  const scratchClean = cleanupScratchHome();
-  return containerClean && networkClean && scratchClean;
-}
-
-function cleanupNetworkResource() {
-  const networkRemove = spawnSync(
-    spec.cleanup.command,
-    ["network", "rm", spec.cleanup.networkName],
-    cleanupOptions(spec.cleanup.env),
-  );
-  return successfulCleanupCommand(networkRemove) || networkMissing();
-}
-
-function cleanupScratchHome() {
-  const scratchHome = spec.cleanup.scratchHome;
-  const environmentPath = join(scratchHome, "environment.list");
-  const tombstone =
-    scratchHome + "." + randomBytes(8).toString("hex") + ".guardian-remove";
-  try {
-    if (!validScratchHome(scratchHome, environmentPath)) return false;
-    renameSync(scratchHome, tombstone);
-    const tombstoneEnvironment = join(tombstone, "environment.list");
-    if (!validScratchHome(tombstone, tombstoneEnvironment)) return false;
-    unlinkSync(tombstoneEnvironment);
-    rmdirSync(tombstone);
-    return true;
-  } catch (error) {
-    return error && typeof error === "object" && error.code === "ENOENT";
-  }
-}
-
-function validScratchHome(directoryPath, environmentPath) {
-  const directory = lstatSync(directoryPath);
-  if (
-    !directory.isDirectory() ||
-    directory.isSymbolicLink() ||
-    (directory.mode & 0o777) !== 0o700 ||
-    readdirSync(directoryPath).join("\n") !== "environment.list"
-  ) {
-    return false;
-  }
-  let descriptor;
-  try {
-    descriptor = openSync(
-      environmentPath,
-      constants.O_RDONLY | constants.O_NOFOLLOW,
-    );
-    const environment = fstatSync(descriptor);
-    if (
-      !environment.isFile() ||
-      (environment.mode & 0o777) !== 0o600 ||
-      environment.size < 0 ||
-      environment.size > 64 * 1024
-    ) {
-      return false;
-    }
-    return (
-      createHash("sha256").update(readFileSync(descriptor)).digest("hex") ===
-      spec.cleanup.environmentSha256
-    );
-  } finally {
-    if (descriptor !== undefined) closeSync(descriptor);
-  }
-}
-
-function containerMissing() {
-  const remaining = spawnSync(
-    spec.cleanup.command,
-    [
-      "container",
-      "ls",
-      "--all",
-      "--filter",
-      "name=^/" + spec.cleanup.containerName + "$",
-      "--format",
-      "{{.ID}}",
-    ],
-    cleanupOptions(spec.cleanup.env),
-  );
-  return successfulCleanupCommand(remaining) && remaining.stdout.trim() === "";
-}
-
-function networkMissing() {
-  const remaining = spawnSync(
-    spec.cleanup.command,
-    [
-      "network",
-      "ls",
-      "--filter",
-      "name=^" + spec.cleanup.networkName + "$",
-      "--format",
-      "{{.ID}}",
-    ],
-    cleanupOptions(spec.cleanup.env),
-  );
-  return successfulCleanupCommand(remaining) && remaining.stdout.trim() === "";
-}
-
-function cleanupOptions(env) {
-  return {
-    encoding: "utf8",
-    env,
-    timeout: CLEANUP_TIMEOUT_MS,
-    killSignal: "SIGKILL",
-    maxBuffer: CLEANUP_MAX_BYTES,
-    windowsHide: true,
-  };
-}
-
-function successfulCleanupCommand(result) {
-  return !result.error && result.status === 0 && result.signal === null;
-}
+${PROCESS_GUARDIAN_CLEANUP_SOURCE}
 
 async function shutdown(exitCode = 0) {
   if (closing) return;
   closing = true;
   if (parentWatch) clearInterval(parentWatch);
   if (descendantWatch) clearInterval(descendantWatch);
-  await stopTarget();
-  process.exit(cleanupTargetResource() ? exitCode : 75);
+  const stopped = await stopTarget();
+  const resourcesCleaned = cleanupTargetResource();
+  const cleaned = stopped && resourcesCleaned;
+  const code = cleaned ? exitCode : (exitCode || 75);
+  report({ type: "exit", code, signal: null, cleanup: cleanupEvidence(cleaned) }, spec.statusFd);
+  process.exit(code);
+}
+
+function cleanupEvidence(cleaned) {
+  return {
+    status: cleaned ? (targetSpawned ? "released" : "not_started") : "unknown",
+    scope: "sandbox_execution",
+    reason: cleaned ? "guardian_cleanup_acknowledged" : "guardian_cleanup_unconfirmed",
+  };
 }
 
 for (const signal of ["SIGHUP", "SIGINT", "SIGTERM"]) {
@@ -419,7 +283,7 @@ try {
 
 if (process.ppid !== spec.parentPid) {
   report({ type: "error", code: "parent_lost" }, spec.statusFd);
-  process.exit(71);
+  await shutdown(71);
 }
 
 try {
@@ -433,7 +297,7 @@ try {
   });
 } catch {
   report({ type: "error", code: "target_spawn_failed" }, spec.statusFd);
-  process.exit(72);
+  await shutdown(72);
 }
 
 targetExit = new Promise((resolve) => {
@@ -453,6 +317,7 @@ target.once("error", () => {
 });
 
 target.once("spawn", () => {
+  targetSpawned = true;
   if (!refreshTrackedProcesses()) {
     report({ type: "error", code: "descendant_scan_failed" }, spec.statusFd);
     void shutdown(74);
@@ -476,13 +341,15 @@ const exit = await targetExit;
 if (!closing) {
   clearInterval(parentWatch);
   clearInterval(descendantWatch);
-  await stopTarget();
-  const cleaned = cleanupTargetResource();
+  const stopped = await stopTarget();
+  const resourcesCleaned = cleanupTargetResource();
+  const cleaned = stopped && resourcesCleaned;
   report(
     {
       type: "exit",
       code: cleaned ? exit.code : 75,
       signal: cleaned ? exit.signal : null,
+      cleanup: cleanupEvidence(cleaned),
     },
     spec.statusFd,
   );

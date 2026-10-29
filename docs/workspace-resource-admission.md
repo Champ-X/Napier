@@ -4,7 +4,8 @@ The production workspace host shares a model admission ledger across all its
 workspace graphs and other hosts using the same state home. Model invocations
 have durable quotas and physical-call concurrency limits. Runtime reclamation
 also retains unsettled model calls, workspace process sessions, and browser-task
-preparation/settlement. This is a G05-B slice: global process/browser capacity and
+preparation/settlement. Owned execution and browser resources now have a separate durable capacity
+ledger. This remains a G05-B slice: cross-restart cleanup reconciliation and
 broader review acceptance remain pending. Workflow approval and extension trust
 review isolation have separate browser evidence in goal.md; the associated
 overlapping overlays were fixed in
@@ -93,8 +94,67 @@ prevents backend launch after cancellation during the initial journal write, and
 persists cancellation while waking waiters. The local BrowserUse backend checks
 abort after asynchronous preparation and again around listener registration;
 terminal listeners are installed before cancellation can terminate the child.
-These changes protect lifecycle obligations. They do not impose host-wide CPU,
-RSS, subprocess, browser-session or browser-task concurrency limits.
+These changes protect lifecycle obligations. The execution-resource ledger below
+adds host-shared execution/session/task counts, but does not impose host-wide
+CPU, RSS or all-descendant subprocess limits.
+
+## Owned execution resource admission
+
+`execution-resources.sqlite` shares capacity across production workspace graphs
+and hosts using the same state home. WAL, FULL synchronous writes, atomic
+transactions and private new files preserve ownership. Concurrent cold-open
+schema initialization has bounded retries for SQLite lock contention; resource
+launches and settlement mutations are never automatically replayed.
+
+| Variable | Default | Capacity unit |
+| --- | --- | --- |
+| `NAPIER_SANDBOX_MAX_CONCURRENT` | `32` | Owned Sandbox execution handle |
+| `NAPIER_BROWSER_SESSION_MAX_CONCURRENT` | `4` | Native Playwright-owned session |
+| `NAPIER_BROWSER_TASK_MAX_CONCURRENT` | `4` | BrowserUse local/cloud task |
+
+Each limit is an integer from 1 to 256. Hosts sharing state home obey the
+smallest live-host limit for each kind. A synchronous reservation precedes
+asynchronous preparation and physical dispatch; exhaustion rejects before the
+adapter/backend starts. No waiting queue is introduced. The existing resources
+endpoint retains its model fields and adds `executionResources`, including
+configured/effective capacity and preparing/active/quarantined counts.
+
+The durable path is `reserved → dispatching → active → released | quarantined`.
+Every state except `released` consumes capacity. A validated `not_started` or
+`released` proof releases it; absent, malformed or unknown proof never does.
+Binding a resource identity is immutable. Repeating the same settlement is
+idempotent, and a live lease may replace unknown cleanup with affirmative
+cleanup evidence. Dead owners release only reservations that never reached
+dispatch. Dispatched ownership is quarantined even if the PID has disappeared.
+PID-only liveness cannot prove identity across reboot and errs toward retaining
+capacity. Cross-restart reconciliation is not implemented; do not manually reset
+this ledger to turn unknown ownership into success.
+
+Switchable Sandbox captures the adapter at launch, keeps admission on adapter
+replacement, and waits for both child exit and owned cleanup before settling.
+Guardian cleanup uses a private acknowledgement; PTY receipts are nonce-bound;
+plain process cleanup checks the owned process group. Scratch/projection cleanup
+and OCI compensation participate in the proof. A custom spawner exception is
+unknown unless it carries affirmative no-start evidence. This counts handles and
+observed owned cleanup, **not every escaped descendant**. The retained baseline
+counterexample below remains relevant.
+
+Native browser sessions retain a slot through URL/runtime preparation, launch,
+reuse, shutdown and cleanup persistence. Queued starts/operations drain before
+shutdown finishes; failed cleanup retains the session and its slot. Local
+BrowserUse requires its bridge's nonce-bound acknowledgement after `agent.close()`
+and child close. Cloud BrowserUse requires an independent matching task GET to
+confirm terminal state; accepting a stop PATCH alone is insufficient. Lost create
+responses, mismatched identities and unconfirmed stops remain unknown. These
+local/cloud behaviors have deterministic fixtures, not live provider acceptance.
+
+Shutdown attempts each resource owner, then drains admission before closing the
+workspace store. Unknown cleanup or accounting failure rejects shutdown while
+leaving the event database available for inspection; compatibility projections
+are still flushed. BrowserTask shutdown also attempts Runtime cleanup after a
+task-drain failure. Invalid task cleanup proof is converted to scoped unknown
+proof so the durable drain rejects instead of hanging; validation and persistence
+errors are retained together if both fail.
 
 ## Reproduction and evidence
 
@@ -134,7 +194,57 @@ now waits for both durable outcomes; production scheduling was unchanged. The
 [failed capture record](artifacts/workspace-resource-coordination-capture-failure-2026-10-29.json)
 preserves the assertion and source bindings, and points to retained raw diagnostics.
 
-## Sandbox lifetime baseline for the next capacity slice
+## Execution resource verification
+
+The [unit snapshot](artifacts/execution-resource-unit-regression-2026-10-29.json)
+records 296 passed tests across 42 files (237 Runtime, 59 Server) before the final
+malformed-proof fixes. It is preserved unchanged. The
+[final targeted regression](artifacts/execution-resource-final-regression-2026-10-29.json)
+records 44 passed tests across four Server files after those fixes, including
+real SQLite shutdown, two-process capacity contention and malformed evidence.
+Three added cases failed on the earlier source: regular-expression coercion
+accepted numeric, missing or object-valued cleanup reasons. Explicit string
+validation now rejects them without freeing the resource. The first full snapshot
+is not described as a rerun on this final source.
+
+Runtime compilation, Server build and strict TypeScript checks passed. The
+architecture audit has nine existing failures after removing the old browser
+session violation; its model coupling budget was lowered from 180 to 135. The
+public API audit retains the two existing root-export/digest failures. No budget
+or historical compatibility receipt was raised or rewritten.
+
+The physical verifier uses two actual production hosts sharing state home, real
+HostDirect Guardian targets and installed native Chromium. It checks capacity one
+before dispatch, release after cleanup, reuse, active-resource LRU retention,
+host shutdown, and SIGKILL followed by independent target observation and durable
+quarantine after reopen. HostDirect supplies no OS isolation. BrowserUse local
+and cloud tasks have no live physical/provider acceptance in this capture.
+
+The [final physical v2 receipt](artifacts/execution-resource-physical-coordination-2026-10-29-v2.json)
+records 11 passed assertions and three inspected A/B/A preview screenshots, with
+six source/build trees bound independently and unchanged. It observes 22 Chromium
+background attempts at the local proxy, all 22 rejected. After all three proxies
+close, the final destination count, successful CONNECT count and transferred
+bytes are zero; model invocations are zero. This is production proxy evidence,
+not a system-wide packet trace. Targets were Chromium time/account/search
+background endpoints; they were not workspace asset requests.
+
+The [first failed capture](artifacts/execution-resource-physical-coordination-2026-10-29.json.failure-ed910cc3-9893-479e-85f2-d66d075dd8fc.json)
+used an incorrect total-proxy-request-equals-zero assertion; the exact attempted
+targets were not returned before that helper failure. The
+[first successful capture](artifacts/execution-resource-physical-coordination-2026-10-29.json)
+passed the physical resource assertions but sampled network counters before
+close. V2 adds final post-close accounting of every passively recorded request;
+all prior receipts and raw diagnostics remain unchanged.
+
+Run it after compiling Runtime and Server; output paths must be new:
+
+```sh
+node scripts/check-execution-resource-coordination.mjs \
+  docs/artifacts/<new-physical-receipt>.json
+```
+
+## Retained Sandbox lifetime baseline
 
 `node scripts/check-sandbox-execution-lifetime.mjs <new-output-path>` captures an
 existing POSIX Guardian boundary. The direct target exits with code zero while
@@ -149,11 +259,12 @@ final verifier was also checked with an injected post-observation assertion
 failure and an existing output path; both cleaned up the owned descendant.
 
 This is evidence about existing direct Guardian behavior, not a new regression
-or an implementation of global process admission. A future Sandbox execution-slot
-pool must distinguish returned handle lifetime from all descendant processes.
+or an implementation of global process admission. The current Sandbox execution-slot
+pool distinguishes returned handle lifetime from all descendant processes.
 Launch failures need typed no-start/cleanup evidence; unknown cleanup cannot
 release physical capacity merely because an owner PID died. Cross-process
-capacity recovery also needs durable target/container identities and cleanup
-receipts, which generic `SandboxedProcess` does not currently expose. Browser,
+capacity recovery still needs independently verifiable target/container identity
+and cleanup receipts. The new handle identity and cleanup protocol is not an
+automatic recovery implementation. Browser,
 container and OS containment were not exercised by this baseline; network/model
 requests were zero.

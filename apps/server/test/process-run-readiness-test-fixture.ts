@@ -33,6 +33,7 @@ function settledProcess(): SandboxedProcess {
     stdout,
     stderr,
     exit: Promise.resolve({ code: 0, signal: null }),
+    cleanup: Promise.resolve({ status: "released", scope: "sandbox_execution", reason: "fixture_streams_settled" }),
     terminate: async () => undefined,
   };
 }

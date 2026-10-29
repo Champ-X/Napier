@@ -1,0 +1,1900 @@
+{
+  "kind": "napier.execution-resource-unit-regression",
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-29T10:51:39.006Z",
+  "sourceHead": "faf9d777d4b6dc407533e77c5659ee7dc376e90a",
+  "externalModelRequests": 0,
+  "sourceState": "dirty worktree with independent source/build/test tree bindings",
+  "groups": [
+    {
+      "name": "runtime",
+      "directory": "packages/runtime",
+      "tests": [
+        "test/process-guardian.test.ts",
+        "test/sandbox-terminal.test.ts",
+        "test/sandbox-execution-cleanup.test.ts",
+        "test/process-guardian-terminal-evidence.test.ts",
+        "test/sandbox-oci-cleanup-evidence.test.ts",
+        "test/sandbox.test.ts",
+        "test/sandbox-host-direct.test.ts",
+        "test/oci-command-runtime.test.ts",
+        "test/oci-local-service.test.ts",
+        "test/sandbox-resource-admission.test.ts",
+        "test/local-agent-runtime.test.ts",
+        "test/browser-session.test.ts",
+        "test/browser-session-pause.test.ts",
+        "test/browser-session-control.test.ts",
+        "test/browser-session-recovery.test.ts",
+        "test/browser-session-lifetime.test.ts",
+        "test/browser-session-admission.test.ts",
+        "test/browser-use-cloud-backend.test.ts",
+        "test/browser-use-cloud-resource.test.ts",
+        "test/browser-use-local-backend.test.ts",
+        "test/browser-use-local-abort.test.ts",
+        "test/browser-use-local-resource.test.ts",
+        "test/browser-use-local-observation-process.test.ts",
+        "test/browser-runtime.test.ts",
+        "test/browser-local-service-lease.test.ts",
+        "test/browser-navigation-strategy.test.ts",
+        "test/browser-takeover.test.ts",
+        "test/browser-confirmed-session.test.ts",
+        "test/browser-fallback-session-isolation.test.ts",
+        "test/browser-prepared-upload-session.test.ts",
+        "test/browser-target-timeout.test.ts",
+        "test/browser-tool-output.test.ts",
+        "test/browser-tool.test.ts"
+      ],
+      "passed": 237,
+      "rawReport": {
+        "path": "/tmp/napier-execution-runtime-tests-20261029.json",
+        "sha256": "7182cf0daba741be66321913c9017be3bb55d26b6b451d329d37b0c30e7d22c7"
+      },
+      "files": [
+        {
+          "path": "packages/runtime/test/browser-confirmed-session.test.ts",
+          "status": "passed",
+          "durationMs": 11.32275390625,
+          "assertions": [
+            {
+              "name": "confirmed Browser Session action executes against the unchanged page state",
+              "status": "passed",
+              "durationMs": 9.370332999999988
+            },
+            {
+              "name": "confirmed Browser Session action rejects page drift before action and keeps the Session retryable",
+              "status": "passed",
+              "durationMs": 2.3228750000000105
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-fallback-session-isolation.test.ts",
+          "status": "passed",
+          "durationMs": 17.51806640625,
+          "assertions": [
+            {
+              "name": "Web Fetch browser fallback session isolation isolates the fallback lane from the interactive Session",
+              "status": "passed",
+              "durationMs": 10.952416
+            },
+            {
+              "name": "Web Fetch browser fallback session isolation serializes complete fallback captures within their lane",
+              "status": "passed",
+              "durationMs": 4.960166000000015
+            },
+            {
+              "name": "Web Fetch browser fallback session isolation keeps a healthy Session after an ordinary navigation timeout",
+              "status": "passed",
+              "durationMs": 1.5180000000000007
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-local-service-lease.test.ts",
+          "status": "passed",
+          "durationMs": 43.3779296875,
+          "assertions": [
+            {
+              "name": "Browser local-service lease allows only the owning Run's exact active origin",
+              "status": "passed",
+              "durationMs": 43.377999999999986
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-navigation-strategy.test.ts",
+          "status": "passed",
+          "durationMs": 1.071533203125,
+          "assertions": [
+            {
+              "name": "Browser navigation strategy does not wait for DOMContentLoaded on direct raster assets",
+              "status": "passed",
+              "durationMs": 0.7580829999999992
+            },
+            {
+              "name": "Browser navigation strategy retains document readiness for ordinary pages",
+              "status": "passed",
+              "durationMs": 0.07158400000000142
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-prepared-upload-session.test.ts",
+          "status": "passed",
+          "durationMs": 10.42431640625,
+          "assertions": [
+            {
+              "name": "prepared Browser upload Session uploads exact prepared bytes after the workspace path changes",
+              "status": "passed",
+              "durationMs": 9.272500000000008
+            },
+            {
+              "name": "prepared Browser upload Session rejects tampered prepared bytes before Browser execution",
+              "status": "passed",
+              "durationMs": 1.424334000000016
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-runtime.test.ts",
+          "status": "passed",
+          "durationMs": 73.446044921875,
+          "assertions": [
+            {
+              "name": "browser runtime binding binds an allowlisted executable and rejects later identity drift",
+              "status": "passed",
+              "durationMs": 3.3125840000000153
+            },
+            {
+              "name": "browser runtime binding rejects an executable outside the Chrome, Chromium, or Edge names",
+              "status": "passed",
+              "durationMs": 0.7111670000000174
+            },
+            {
+              "name": "browser runtime binding discovers the exact Playwright-pinned Chromium target",
+              "status": "passed",
+              "durationMs": 1.5868750000000205
+            },
+            {
+              "name": "browser runtime binding installs only the exact previewed runtime through an allowlisted environment",
+              "status": "passed",
+              "durationMs": 1.8730000000000189
+            },
+            {
+              "name": "browser runtime binding bounds installer output and cancels the detached process group",
+              "status": "passed",
+              "durationMs": 56.24570800000001
+            },
+            {
+              "name": "browser runtime binding admits a pinned runtime only after a valid marker and rejects drift",
+              "status": "passed",
+              "durationMs": 9.446082999999987
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-session-admission.test.ts",
+          "status": "passed",
+          "durationMs": 284.03662109375,
+          "assertions": [
+            {
+              "name": "shared Browser Session resource admission retains one shared permit through delayed runtime preparation, reuse and awaited cleanup",
+              "status": "passed",
+              "durationMs": 108.693083
+            },
+            {
+              "name": "shared Browser Session resource admission retains one shared permit through delayed browser launch, reuse and awaited cleanup",
+              "status": "passed",
+              "durationMs": 105.99649999999997
+            },
+            {
+              "name": "shared Browser Session resource admission releases affirmed pre-dispatch failure without creating a proxy or launching a browser",
+              "status": "passed",
+              "durationMs": 0.9817919999999845
+            },
+            {
+              "name": "shared Browser Session resource admission holds admission during URL preflight and settles no-start when that preparation is cancelled",
+              "status": "passed",
+              "durationMs": 59.40220800000003
+            },
+            {
+              "name": "shared Browser Session resource admission quarantines an invoked launch that rejects without a browser handle",
+              "status": "passed",
+              "durationMs": 3.396874999999966
+            },
+            {
+              "name": "shared Browser Session resource admission retains a session's shared capacity when owned browser cleanup fails",
+              "status": "passed",
+              "durationMs": 4.298125000000027
+            },
+            {
+              "name": "shared Browser Session resource admission does not replace a physically closed session whose durable release failed",
+              "status": "passed",
+              "durationMs": 1.0365419999999972
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-session-control.test.ts",
+          "status": "passed",
+          "durationMs": 157.81005859375,
+          "assertions": [
+            {
+              "name": "Browser Session control service controls only an active user Run with an active Browser Session",
+              "status": "passed",
+              "durationMs": 36.33387499999992
+            },
+            {
+              "name": "Browser Session control service fails closed for non-user, inactive Run, and missing Browser Session",
+              "status": "passed",
+              "durationMs": 84.070833
+            },
+            {
+              "name": "Browser Session control service cancels a pause if active ownership disappears during persistence",
+              "status": "passed",
+              "durationMs": 36.81004200000007
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-session-lifetime.test.ts",
+          "status": "passed",
+          "durationMs": 278.1923828125,
+          "assertions": [
+            {
+              "name": "owned Browser Session lifetime shares a close promise and waits for context, browser and proxy cleanup before removing private files",
+              "status": "passed",
+              "durationMs": 5.941584000000006
+            },
+            {
+              "name": "owned Browser Session lifetime retains every cleanup failure and the private directory instead of reporting a closed session",
+              "status": "passed",
+              "durationMs": 3.6597919999999817
+            },
+            {
+              "name": "owned Browser Session lifetime preserves the startup error when closing a partially prepared session also fails",
+              "status": "passed",
+              "durationMs": 0.5966249999999889
+            },
+            {
+              "name": "owned Browser Session lifetime drains an admitted launch during shutdown, closes the late browser and rejects queued or new operations",
+              "status": "passed",
+              "durationMs": 105.35899999999998
+            },
+            {
+              "name": "owned Browser Session lifetime does not dispatch a browser after shutdown interrupts runtime preparation",
+              "status": "passed",
+              "durationMs": 52.52479199999999
+            },
+            {
+              "name": "owned Browser Session lifetime waits for an admitted operation even after browser cleanup completes",
+              "status": "passed",
+              "durationMs": 107.504459
+            },
+            {
+              "name": "owned Browser Session lifetime retains failed cancellation cleanup for later operations and shutdown",
+              "status": "passed",
+              "durationMs": 1.322917000000018
+            },
+            {
+              "name": "owned Browser Session lifetime keeps uncertain startup cleanup in the local bound and rejects shutdown",
+              "status": "passed",
+              "durationMs": 0.9977089999999862
+            },
+            {
+              "name": "owned Browser Session lifetime propagates abort cleanup failure without an unhandled rejection",
+              "status": "passed",
+              "durationMs": 0.19237499999997
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-session-pause.test.ts",
+          "status": "passed",
+          "durationMs": 308.75341796875,
+          "assertions": [
+            {
+              "name": "Browser Session pause manager activates before Ledger I/O and resumes only the exact pause state",
+              "status": "passed",
+              "durationMs": 2.09050000000002
+            },
+            {
+              "name": "Browser Session pause manager rolls back failed pause evidence and rejects blocked Browser actions",
+              "status": "passed",
+              "durationMs": 0.2508750000000646
+            },
+            {
+              "name": "Browser Session pause manager records hash-only cancellation and rejects all waiters",
+              "status": "passed",
+              "durationMs": 31.45562499999994
+            },
+            {
+              "name": "Browser Session pause manager cancels the pause when the Browser Session closes while waiting",
+              "status": "passed",
+              "durationMs": 274.7534999999999
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-session-recovery.test.ts",
+          "status": "passed",
+          "durationMs": 8.3359375,
+          "assertions": [
+            {
+              "name": "Browser Session recovery treats repeated start as navigation in the healthy Run Session",
+              "status": "passed",
+              "durationMs": 7.285792000000015
+            },
+            {
+              "name": "Browser Session recovery keeps a healthy Session after a cross-origin preflight denial",
+              "status": "passed",
+              "durationMs": 1.335958000000005
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-session.test.ts",
+          "status": "passed",
+          "durationMs": 61.538818359375,
+          "assertions": [
+            {
+              "name": "RunBrowserSessionManager reuses one isolated Session and returns bounded snapshots and screenshots",
+              "status": "passed",
+              "durationMs": 11.492707999999993
+            },
+            {
+              "name": "RunBrowserSessionManager routes login and challenge structures to privacy-safe human handoff",
+              "status": "passed",
+              "durationMs": 2.4142089999999996
+            },
+            {
+              "name": "RunBrowserSessionManager does not diagnose article text that merely discusses login or CAPTCHA",
+              "status": "passed",
+              "durationMs": 1.0754999999999768
+            },
+            {
+              "name": "RunBrowserSessionManager captures bounded normalized page text without reopening network access",
+              "status": "passed",
+              "durationMs": 1.0273750000000064
+            },
+            {
+              "name": "RunBrowserSessionManager captures accessible control labels without input values",
+              "status": "passed",
+              "durationMs": 1.4391250000000184
+            },
+            {
+              "name": "RunBrowserSessionManager finds and scrolls long pages without reopening network access",
+              "status": "passed",
+              "durationMs": 1.1606250000000102
+            },
+            {
+              "name": "RunBrowserSessionManager rejects invalid find and scroll bounds before page evaluation",
+              "status": "passed",
+              "durationMs": 1.4520829999999876
+            },
+            {
+              "name": "RunBrowserSessionManager closes an uncertain Session when the page URL drifts during capture",
+              "status": "passed",
+              "durationMs": 0.818916999999999
+            },
+            {
+              "name": "RunBrowserSessionManager denies cross-origin redirects unless the current action authorizes them",
+              "status": "passed",
+              "durationMs": 1.1136669999999924
+            },
+            {
+              "name": "RunBrowserSessionManager rejects private DNS before creating a proxy or browser",
+              "status": "passed",
+              "durationMs": 0.3497500000000002
+            },
+            {
+              "name": "RunBrowserSessionManager binds explicit uploads and downloads to workspace files",
+              "status": "passed",
+              "durationMs": 9.024166000000008
+            },
+            {
+              "name": "RunBrowserSessionManager rejects an unsafe download target before clicking the page",
+              "status": "passed",
+              "durationMs": 0.8083750000000123
+            },
+            {
+              "name": "RunBrowserSessionManager executes navigate, select, click, and back through one Session",
+              "status": "passed",
+              "durationMs": 1.0297919999999863
+            },
+            {
+              "name": "RunBrowserSessionManager owns bounded explicit tabs with independent history and selected-tab capture",
+              "status": "passed",
+              "durationMs": 1.4636659999999893
+            },
+            {
+              "name": "RunBrowserSessionManager closes unsolicited popups and denies inactive-tab network requests",
+              "status": "passed",
+              "durationMs": 1.1432079999999871
+            },
+            {
+              "name": "RunBrowserSessionManager rejects takeover capture when tab metadata drifts after snapshot",
+              "status": "passed",
+              "durationMs": 0.8137920000000065
+            },
+            {
+              "name": "RunBrowserSessionManager enforces the four-tab bound and preserves a final tab",
+              "status": "passed",
+              "durationMs": 1.482042000000007
+            },
+            {
+              "name": "RunBrowserSessionManager allows exact screenshot save normally but keeps visual and keyboard takeover-only",
+              "status": "passed",
+              "durationMs": 13.917166000000009
+            },
+            {
+              "name": "RunBrowserSessionManager rejects a stale screenshot image before creating the workspace file",
+              "status": "passed",
+              "durationMs": 1.0000830000000178
+            },
+            {
+              "name": "RunBrowserSessionManager rejects an ordinary stale screenshot save before creating the workspace file",
+              "status": "passed",
+              "durationMs": 0.8365420000000086
+            },
+            {
+              "name": "RunBrowserSessionManager rejects invalid visual coordinates and key names",
+              "status": "passed",
+              "durationMs": 1.1767080000000192
+            },
+            {
+              "name": "RunBrowserSessionManager closes the Session when its bounded operation budget is exhausted",
+              "status": "passed",
+              "durationMs": 3.8951659999999606
+            },
+            {
+              "name": "RunBrowserSessionManager isolates Runs, enforces the active bound, and closes on cancellation",
+              "status": "passed",
+              "durationMs": 2.538832999999954
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-takeover.test.ts",
+          "status": "passed",
+          "durationMs": 368.35986328125,
+          "assertions": [
+            {
+              "name": "Browser takeover uses a paused fresh snapshot and records type values by hash only",
+              "status": "passed",
+              "durationMs": 41.88945799999999
+            },
+            {
+              "name": "Browser takeover serializes resume behind an in-flight takeover action",
+              "status": "passed",
+              "durationMs": 77.23962499999999
+            },
+            {
+              "name": "Browser takeover validates exact tab lifecycle transitions and stale tab bindings",
+              "status": "passed",
+              "durationMs": 39.92641599999996
+            },
+            {
+              "name": "Browser takeover rejects an inactive-tab close that changes the active tab",
+              "status": "passed",
+              "durationMs": 48.061916999999994
+            },
+            {
+              "name": "Browser takeover binds visual clicks to the exact live image and hashes coordinates",
+              "status": "passed",
+              "durationMs": 22.38220899999999
+            },
+            {
+              "name": "Browser takeover rejects a visual click when the displayed live image is stale",
+              "status": "passed",
+              "durationMs": 21.934957999999938
+            },
+            {
+              "name": "Browser takeover records screenshot output by path and file hash without the raw path",
+              "status": "passed",
+              "durationMs": 78.74341600000002
+            },
+            {
+              "name": "Browser takeover records downloaded file evidence without target path or content",
+              "status": "passed",
+              "durationMs": 38.359833000000094
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-target-timeout.test.ts",
+          "status": "passed",
+          "durationMs": 19.3935546875,
+          "assertions": [
+            {
+              "name": "Browser target timeout recovery keeps the healthy session available after click times out",
+              "status": "passed",
+              "durationMs": 9.901875000000018
+            },
+            {
+              "name": "Browser target timeout recovery keeps the healthy session available after fill times out",
+              "status": "passed",
+              "durationMs": 1.764916999999997
+            },
+            {
+              "name": "Browser target timeout recovery keeps the healthy session available after selectOption times out",
+              "status": "passed",
+              "durationMs": 1.6074170000000265
+            },
+            {
+              "name": "Browser target timeout recovery keeps the healthy session available after setInputFiles times out",
+              "status": "passed",
+              "durationMs": 2.1945829999999944
+            },
+            {
+              "name": "Browser target timeout recovery also preserves a confirmed action's session for observation without replaying it",
+              "status": "passed",
+              "durationMs": 2.8075000000000045
+            },
+            {
+              "name": "Browser target timeout recovery does not turn unrelated errors into recoverable target failures: Error: locator.click: Timeout 15000ms exceeded; target_timeout",
+              "status": "passed",
+              "durationMs": 0.08962500000001228
+            },
+            {
+              "name": "Browser target timeout recovery does not turn unrelated errors into recoverable target failures: Error: target_timeout",
+              "status": "passed",
+              "durationMs": 0.049083999999993466
+            },
+            {
+              "name": "Browser target timeout recovery does not turn unrelated errors into recoverable target failures: Error: target_timeout",
+              "status": "passed",
+              "durationMs": 0.04291699999998855
+            },
+            {
+              "name": "Browser target timeout recovery does not turn unrelated errors into recoverable target failures: AbortError: target_timeout",
+              "status": "passed",
+              "durationMs": 0.04775000000000773
+            },
+            {
+              "name": "Browser target timeout recovery binds failures to the same private target as progress, keeping other controls separate",
+              "status": "passed",
+              "durationMs": 0.3935419999999965
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-tool-output.test.ts",
+          "status": "passed",
+          "durationMs": 2.249267578125,
+          "assertions": [
+            {
+              "name": "Browser Agent file output settlement registers confirmed downloads and reports standard Plan settlement",
+              "status": "passed",
+              "durationMs": 1.3304170000000042
+            },
+            {
+              "name": "Browser Agent file output settlement keeps output bytes successful when registration skips or fails",
+              "status": "passed",
+              "durationMs": 0.24933300000000003
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-tool.test.ts",
+          "status": "passed",
+          "durationMs": 11.1845703125,
+          "assertions": [
+            {
+              "name": "browser Agent tool allows read-only Browser actions by default and confines interactive actions",
+              "status": "passed",
+              "durationMs": 2.912167000000011
+            },
+            {
+              "name": "browser Agent tool redacts URLs, selectors, text, paths, values, and live output",
+              "status": "passed",
+              "durationMs": 0.4879579999999919
+            },
+            {
+              "name": "browser Agent tool runs Browser calls sequentially and previews interaction effects by hash",
+              "status": "passed",
+              "durationMs": 2.656749999999988
+            },
+            {
+              "name": "browser Agent tool returns screenshots as live image content while details remain bounded",
+              "status": "passed",
+              "durationMs": 1.6041659999999922
+            },
+            {
+              "name": "browser Agent tool tells the model when exact one-use Browser approval was consumed",
+              "status": "passed",
+              "durationMs": 1.7796669999999892
+            },
+            {
+              "name": "browser Agent tool registers confirmed Browser file outputs through the standard Plan path",
+              "status": "passed",
+              "durationMs": 1.3332079999999848
+            },
+            {
+              "name": "browser Agent tool classifies navigation/read lifecycle separately from interaction",
+              "status": "passed",
+              "durationMs": 0.1846659999999929
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-use-cloud-backend.test.ts",
+          "status": "passed",
+          "durationMs": 6.71044921875,
+          "assertions": [
+            {
+              "name": "Browser Use Cloud backend boundary creates an isolated read-only v2 task and returns streamed evidence",
+              "status": "passed",
+              "durationMs": 5.674582999999984
+            },
+            {
+              "name": "Browser Use Cloud backend boundary stops the provider task when reported spend reaches the explicit ceiling",
+              "status": "passed",
+              "durationMs": 0.7105000000000246
+            },
+            {
+              "name": "Browser Use Cloud backend boundary rejects private or out-of-policy targets before sending data",
+              "status": "passed",
+              "durationMs": 0.61099999999999
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-use-cloud-resource.test.ts",
+          "status": "passed",
+          "durationMs": 97.425537109375,
+          "assertions": [
+            {
+              "name": "Browser Use Cloud remote task resource lifetime retains capacity after stop acknowledgement until a matching provider terminal is observed",
+              "status": "passed",
+              "durationMs": 59.43954099999999
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime quarantines when stop was still running instead of claiming cleanup",
+              "status": "passed",
+              "durationMs": 27.65704199999999
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime quarantines when stop was stop failed instead of claiming cleanup",
+              "status": "passed",
+              "durationMs": 1.5379590000000007
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime retains an unknown task after the POST response is lost",
+              "status": "passed",
+              "durationMs": 1.284292000000022
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime preserves confirmed terminal cleanup when observation persistence subsequently fails",
+              "status": "passed",
+              "durationMs": 1.3015419999999835
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime stops and confirms a known task when its initial observation fails",
+              "status": "passed",
+              "durationMs": 1.308209000000005
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime uses a separate bounded cleanup signal after cancellation",
+              "status": "passed",
+              "durationMs": 1.3780000000000143
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime settles validation failure without dispatch and rejects reuse of a supplied lease",
+              "status": "passed",
+              "durationMs": 0.5847499999999854
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime does not accept a different task's terminal status as cleanup evidence",
+              "status": "passed",
+              "durationMs": 1.6040830000000028
+            },
+            {
+              "name": "Browser Use Cloud remote task resource lifetime propagates failed resource accounting after a verified provider terminal",
+              "status": "passed",
+              "durationMs": 1.4256249999999966
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-use-local-abort.test.ts",
+          "status": "passed",
+          "durationMs": 222.257080078125,
+          "assertions": [
+            {
+              "name": "Browser Use local cancellation admission never spawns after cancellation during inspection preparation",
+              "status": "passed",
+              "durationMs": 4.455832999999998
+            },
+            {
+              "name": "Browser Use local cancellation admission never spawns after cancellation during artifact directory preparation",
+              "status": "passed",
+              "durationMs": 0.4379159999999942
+            },
+            {
+              "name": "Browser Use local cancellation admission terminates an abort between spawn and listener attachment without writing or settling twice",
+              "status": "passed",
+              "durationMs": 1.6529999999999987
+            },
+            {
+              "name": "Browser Use local cancellation admission drains a cancelled process when stdin also reports a broken pipe",
+              "status": "passed",
+              "durationMs": 0.9627920000000003
+            },
+            {
+              "name": "Browser Use local cancellation admission handles a spawn failure that has no process identity",
+              "status": "passed",
+              "durationMs": 0.4567920000000001
+            },
+            {
+              "name": "Browser Use local observation failures stops malformed output and retains its task reservation until the child closes",
+              "status": "passed",
+              "durationMs": 53.500959
+            },
+            {
+              "name": "Browser Use local observation failures drains an observer rejection while the agent is running",
+              "status": "passed",
+              "durationMs": 53.324416
+            },
+            {
+              "name": "Browser Use local observation failures drains an observer rejection while the agent is takeover",
+              "status": "passed",
+              "durationMs": 52.321833
+            },
+            {
+              "name": "Browser Use local observation failures settles a late observer rejection after close without signalling the old process identity",
+              "status": "passed",
+              "durationMs": 3.774957999999998
+            },
+            {
+              "name": "Browser Use local observation failures does not swallow failed persistence of automatic takeover",
+              "status": "passed",
+              "durationMs": 51.257000000000005
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-use-local-backend.test.ts",
+          "status": "passed",
+          "durationMs": 3.48876953125,
+          "assertions": [
+            {
+              "name": "Browser Use local backend boundary rejects private browser targets before inspecting or starting Python",
+              "status": "passed",
+              "durationMs": 2.5563339999999926
+            },
+            {
+              "name": "Browser Use local backend boundary pins deterministic first navigation and a public read-only action policy",
+              "status": "passed",
+              "durationMs": 0.2366660000000138
+            },
+            {
+              "name": "Browser Use local backend boundary keeps DeepSeek thinking models on validated actions without forcing tool choice",
+              "status": "passed",
+              "durationMs": 0.11508300000002691
+            },
+            {
+              "name": "Browser Use local backend boundary attributes only the current Browser Use step error",
+              "status": "passed",
+              "durationMs": 0.08933300000001054
+            },
+            {
+              "name": "Browser Use local backend boundary pauses only the agent, resumes it, and stops the isolated process group",
+              "status": "passed",
+              "durationMs": 0.4887499999999818
+            },
+            {
+              "name": "Browser Use local backend boundary reports local takeover unavailable where agent-only suspension is unsupported",
+              "status": "passed",
+              "durationMs": 0.11458400000003621
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-use-local-observation-process.test.ts",
+          "status": "passed",
+          "durationMs": 187.098388671875,
+          "assertions": [
+            {
+              "name": "Browser Use local owned child cleanup waits for a real fixture process to close after malformed event",
+              "status": "passed",
+              "durationMs": 30.352792000000008
+            },
+            {
+              "name": "Browser Use local owned child cleanup waits for a real fixture process to close after observer rejection",
+              "status": "passed",
+              "durationMs": 25.974917000000005
+            },
+            {
+              "name": "Browser Use local Python cleanup acknowledgement runs the real bridge protocol around a stub Agent with delayed successful cleanup",
+              "status": "passed",
+              "durationMs": 64.41654199999999
+            },
+            {
+              "name": "Browser Use local Python cleanup acknowledgement runs the real bridge protocol around a stub Agent with delayed failed cleanup",
+              "status": "passed",
+              "durationMs": 66.09841599999999
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/browser-use-local-resource.test.ts",
+          "status": "passed",
+          "durationMs": 321.48291015625,
+          "assertions": [
+            {
+              "name": "Browser Use local resource cleanup evidence requires both the nonce-bound cleanup ACK and child close after a business terminal",
+              "status": "passed",
+              "durationMs": 5.775959
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence keeps a completed business result separate from missing cleanup evidence",
+              "status": "passed",
+              "durationMs": 0.36929100000000403
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence quarantines an explicit failed cleanup and preserves the bridge error",
+              "status": "passed",
+              "durationMs": 0.430499999999995
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence rejects malformed cleanup evidence {\"runNonce\":\"stale_run\"} and cannot release through a later valid ACK",
+              "status": "passed",
+              "durationMs": 53.09516599999999
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence rejects malformed cleanup evidence {\"schemaVersion\":2} and cannot release through a later valid ACK",
+              "status": "passed",
+              "durationMs": 53.10725000000001
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence rejects malformed cleanup evidence {\"backend\":\"wrong_backend\"} and cannot release through a later valid ACK",
+              "status": "passed",
+              "durationMs": 52.716583000000014
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence rejects malformed cleanup evidence {\"status\":\"completed\"} and cannot release through a later valid ACK",
+              "status": "passed",
+              "durationMs": 51.268125000000026
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence rejects malformed cleanup evidence {\"unexpected\":true} and cannot release through a later valid ACK",
+              "status": "passed",
+              "durationMs": 51.73162500000001
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence retains cleanup capacity when cancellation closes the bridge without its ACK",
+              "status": "passed",
+              "durationMs": 0.6662079999999833
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence still accepts cleanup proof after an observation persistence failure",
+              "status": "passed",
+              "durationMs": 50.657624999999996
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence settles invalid request as not-started without dispatch",
+              "status": "passed",
+              "durationMs": 0.2681249999999977
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence settles inspection failure as not-started without dispatch",
+              "status": "passed",
+              "durationMs": 0.1356670000000122
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence settles pre-aborted as not-started without dispatch",
+              "status": "passed",
+              "durationMs": 0.1008340000000203
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence treats an arbitrary spawn throw as unknown but a child with no PID as not-started",
+              "status": "passed",
+              "durationMs": 0.4830000000000041
+            },
+            {
+              "name": "Browser Use local resource cleanup evidence does not spawn if durable dispatch fails, and does not report success if durable settlement fails",
+              "status": "passed",
+              "durationMs": 0.3020840000000362
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/local-agent-runtime.test.ts",
+          "status": "passed",
+          "durationMs": 1082.035400390625,
+          "assertions": [
+            {
+              "name": "local Agent Runtime bootstrap shares shutdown completion and keeps the store open until resource teardown finishes",
+              "status": "passed",
+              "durationMs": 44.216249999999945
+            },
+            {
+              "name": "local Agent Runtime bootstrap attempts all owned cleanup but retains the store when any resource cleanup fails",
+              "status": "passed",
+              "durationMs": 48.866165999999794
+            },
+            {
+              "name": "local Agent Runtime bootstrap exposes the resolved base Kernel profile",
+              "status": "passed",
+              "durationMs": 29.809166000000005
+            },
+            {
+              "name": "local Agent Runtime bootstrap exposes the resolved web Kernel profile",
+              "status": "passed",
+              "durationMs": 37.765625
+            },
+            {
+              "name": "local Agent Runtime bootstrap exposes the resolved cli Kernel profile",
+              "status": "passed",
+              "durationMs": 31.985041000000365
+            },
+            {
+              "name": "local Agent Runtime bootstrap runs one Agent through shared services and shuts down idempotently",
+              "status": "passed",
+              "durationMs": 697.0611670000003
+            },
+            {
+              "name": "local Agent Runtime bootstrap reconciles persisted optional plugin state across Runtime restarts",
+              "status": "passed",
+              "durationMs": 60.644250000000284
+            },
+            {
+              "name": "local Agent Runtime bootstrap fails startup closed when persisted plugin state is invalid",
+              "status": "passed",
+              "durationMs": 14.974833000000217
+            },
+            {
+              "name": "local Agent Runtime bootstrap flushes retained compatibility state without closing the ledger after resource cleanup failure",
+              "status": "passed",
+              "durationMs": 47.5151249999999
+            },
+            {
+              "name": "local Agent Runtime bootstrap interrupts an unexpired orphan Run lease before exposing the workspace",
+              "status": "passed",
+              "durationMs": 69.03529200000003
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/oci-command-runtime.test.ts",
+          "status": "passed",
+          "durationMs": 5085.885009765625,
+          "assertions": [
+            {
+              "name": "OCI image-bound command runtime accepts only hashed local daemon endpoints",
+              "status": "passed",
+              "durationMs": 2.0238330000000246
+            },
+            {
+              "name": "OCI image-bound command runtime validates and hashes the numeric host user identity",
+              "status": "passed",
+              "durationMs": 0.3916250000000332
+            },
+            {
+              "name": "OCI image-bound command runtime binds a supported image platform into the immutable runtime identity",
+              "status": "passed",
+              "durationMs": 216.6125
+            },
+            {
+              "name": "OCI image-bound command runtime rejects daemon or host user drift before reusing an image identity",
+              "status": "passed",
+              "durationMs": 208.73908300000005
+            },
+            {
+              "name": "OCI image-bound command runtime rejects an installed Sandbox identity that no longer matches setup",
+              "status": "passed",
+              "durationMs": 65.23754099999996
+            },
+            {
+              "name": "OCI image-bound command runtime pins a mutable tag and runs Node argv with container runtime identity",
+              "status": "passed",
+              "durationMs": 335.25879199999986
+            },
+            {
+              "name": "OCI image-bound command runtime changes the runtime receipt when the numeric execution user changes",
+              "status": "passed",
+              "durationMs": 421.579125
+            },
+            {
+              "name": "OCI image-bound command runtime runs Python argv through the image-bound interpreter identity",
+              "status": "passed",
+              "durationMs": 333.0860829999999
+            },
+            {
+              "name": "OCI image-bound command runtime fails closed when the immutable image has no Python runtime",
+              "status": "passed",
+              "durationMs": 398.2260839999999
+            },
+            {
+              "name": "OCI image-bound command runtime lets Doctor verify the production Python path against the pinned image",
+              "status": "passed",
+              "durationMs": 329.5720419999998
+            },
+            {
+              "name": "OCI image-bound command runtime executes the image-bound Python argv through the production pipe lifecycle",
+              "status": "passed",
+              "durationMs": 561.2253329999999
+            },
+            {
+              "name": "OCI image-bound command runtime runs the production Shell PTY through a cleanup-bound guardian",
+              "status": "passed",
+              "durationMs": 272.32116700000006
+            },
+            {
+              "name": "OCI image-bound command runtime lets Doctor verify the production Node pipe path against the pinned image",
+              "status": "passed",
+              "durationMs": 342.14575000000013
+            },
+            {
+              "name": "OCI image-bound command runtime fails closed when image inspection does not return an immutable ID",
+              "status": "passed",
+              "durationMs": 67.40050000000019
+            },
+            {
+              "name": "OCI image-bound command runtime fails closed when a stopped container resource is still present",
+              "status": "passed",
+              "durationMs": 310.5921250000001
+            },
+            {
+              "name": "OCI image-bound command runtime completes the real host PTY and guardian cleanup path without an external daemon",
+              "status": "passed",
+              "durationMs": 356.0209169999998
+            },
+            {
+              "name": "OCI image-bound command runtime forwards PTY resize to the guarded container client process",
+              "status": "passed",
+              "durationMs": 562.7520000000004
+            },
+            {
+              "name": "OCI image-bound command runtime maps a scoped writable mount to the host numeric owner",
+              "status": "passed",
+              "durationMs": 301.8850000000002
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/oci-local-service.test.ts",
+          "status": "passed",
+          "durationMs": 637.724365234375,
+          "assertions": [
+            {
+              "name": "OCI local service policy keeps a local service on an internal network without Docker port publishing",
+              "status": "passed",
+              "durationMs": 2.5062500000000085
+            },
+            {
+              "name": "OCI local service policy rejects privileged ports, cross-origin health paths, outbound access, and PTY mode",
+              "status": "passed",
+              "durationMs": 3.61604100000001
+            },
+            {
+              "name": "OCI local service policy fails closed on a non-container provider",
+              "status": "passed",
+              "durationMs": 0.613749999999996
+            },
+            {
+              "name": "OCI local service policy creates an internal network and returns only a health-verified loopback binding",
+              "status": "passed",
+              "durationMs": 214.650958
+            },
+            {
+              "name": "OCI local service policy runs a real HTTP child through the OCI lifecycle and cleans up its container and network",
+              "status": "passed",
+              "durationMs": 415.72445799999997
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/process-guardian-terminal-evidence.test.ts",
+          "status": "passed",
+          "durationMs": 4.551513671875,
+          "assertions": [
+            {
+              "name": "Guardian PTY final receipt integrity rejects a stale final ACK with a different launch nonce",
+              "status": "passed",
+              "durationMs": 2.914959000000003
+            },
+            {
+              "name": "Guardian PTY final receipt integrity rejects a symlink receipt without reading or changing its target",
+              "status": "passed",
+              "durationMs": 1.2012500000000017
+            },
+            {
+              "name": "Guardian PTY final receipt integrity does not infer an ACK from an absent final receipt",
+              "status": "passed",
+              "durationMs": 0.5515419999999978
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/process-guardian.test.ts",
+          "status": "passed",
+          "durationMs": 2204.798583984375,
+          "assertions": [
+            {
+              "name": "process guardian binds parent-loss protection into Workspace Process resource evidence",
+              "status": "passed",
+              "durationMs": 0.8451249999999959
+            },
+            {
+              "name": "process guardian proxies bounded process IO without forwarding its private specification",
+              "status": "passed",
+              "durationMs": 81.525209
+            },
+            {
+              "name": "process guardian keeps terminal target arguments out of the guardian command line",
+              "status": "passed",
+              "durationMs": 0.4306669999999997
+            },
+            {
+              "name": "process guardian fails closed without exposing a rejected target path or arguments",
+              "status": "passed",
+              "durationMs": 60.617290999999994
+            },
+            {
+              "name": "process guardian preserves a fast target failure instead of reporting guardian success",
+              "status": "passed",
+              "durationMs": 80.07525000000001
+            },
+            {
+              "name": "process guardian fails closed when descendant identity scanning is unavailable",
+              "status": "passed",
+              "durationMs": 26.490250000000003
+            },
+            {
+              "name": "process guardian terminates the complete target process group after an ungraceful parent exit",
+              "status": "passed",
+              "durationMs": 301.83408299999996
+            },
+            {
+              "name": "process guardian removes a cleanup-bound OCI resource after an ungraceful parent exit",
+              "status": "passed",
+              "durationMs": 385.928541
+            },
+            {
+              "name": "process guardian reports a cleanup failure instead of claiming target success",
+              "status": "passed",
+              "durationMs": 321.2976249999999
+            },
+            {
+              "name": "process guardian fails closed without deleting a drifted guardian environment file",
+              "status": "passed",
+              "durationMs": 323.7368749999998
+            },
+            {
+              "name": "process guardian tracks and terminates an observed detached descendant after parent loss",
+              "status": "passed",
+              "durationMs": 621.7986659999999
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/sandbox-execution-cleanup.test.ts",
+          "status": "passed",
+          "durationMs": 2699.03759765625,
+          "assertions": [
+            {
+              "name": "Sandbox execution cleanup evidence preserves a cleanup rejection whose thrown value is undefined",
+              "status": "passed",
+              "durationMs": 1.2338749999999976
+            },
+            {
+              "name": "Sandbox execution cleanup evidence separates a normal Guardian target failure from acknowledged cleanup",
+              "status": "passed",
+              "durationMs": 92.598459
+            },
+            {
+              "name": "Sandbox execution cleanup evidence requires a final ACK even when the Guardian itself exits zero",
+              "status": "passed",
+              "durationMs": 86.26162499999998
+            },
+            {
+              "name": "Sandbox execution cleanup evidence quarantines cleanup when the Guardian is killed before target cleanup",
+              "status": "passed",
+              "durationMs": 97.86454099999997
+            },
+            {
+              "name": "Sandbox execution cleanup evidence records affirmative no-start evidence for a rejected Guardian target",
+              "status": "passed",
+              "durationMs": 71.11408399999999
+            },
+            {
+              "name": "Sandbox execution cleanup evidence returns a nonce-bound cleanup ACK from a real Guardian PTY",
+              "status": "passed",
+              "durationMs": 85.63041600000003
+            },
+            {
+              "name": "Sandbox execution cleanup evidence does not release a Guardian PTY killed before its private cleanup receipt",
+              "status": "passed",
+              "durationMs": 105.60525000000001
+            },
+            {
+              "name": "Sandbox execution cleanup evidence keeps scratch cleanup failure separate from successful target exit",
+              "status": "passed",
+              "durationMs": 26.962208999999916
+            },
+            {
+              "name": "Sandbox execution cleanup evidence acknowledges direct process exit only after observing its owned group absent",
+              "status": "passed",
+              "durationMs": 22.930625000000077
+            },
+            {
+              "name": "Sandbox execution cleanup evidence does not release a direct handle while a known group member ignores termination",
+              "status": "passed",
+              "durationMs": 2098.233541
+            },
+            {
+              "name": "Sandbox execution cleanup evidence keeps unexpected injected dispatch failure unknown",
+              "status": "passed",
+              "durationMs": 1.5507079999997586
+            },
+            {
+              "name": "Sandbox execution cleanup evidence compensates a custom child whose spawn acknowledgement is lost without claiming no-start",
+              "status": "passed",
+              "durationMs": 3.8501249999999345
+            },
+            {
+              "name": "Sandbox execution cleanup evidence does not trust a custom Guardian spawn hook before specification delivery",
+              "status": "passed",
+              "durationMs": 2.2572500000001128
+            },
+            {
+              "name": "Sandbox execution cleanup evidence keeps built-in OS spawn rejection before PID allocation as affirmative no-start",
+              "status": "passed",
+              "durationMs": 1.4386250000002292
+            },
+            {
+              "name": "Sandbox execution cleanup evidence classifies explicit validation and unsupported-provider rejection before dispatch",
+              "status": "passed",
+              "durationMs": 1.0376249999999345
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/sandbox-host-direct.test.ts",
+          "status": "passed",
+          "durationMs": 28.623291015625,
+          "assertions": [
+            {
+              "name": "host-direct sandbox adapter activates only on explicit opt-in",
+              "status": "passed",
+              "durationMs": 0.6385830000000112
+            },
+            {
+              "name": "host-direct sandbox adapter is not selected by default and takes precedence over native adapters when opted in",
+              "status": "passed",
+              "durationMs": 0.13870800000000827
+            },
+            {
+              "name": "host-direct sandbox adapter honestly reports no isolation",
+              "status": "passed",
+              "durationMs": 0.12924999999998477
+            },
+            {
+              "name": "host-direct sandbox adapter runs a real command directly on the host",
+              "status": "passed",
+              "durationMs": 27.623249999999985
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/sandbox-oci-cleanup-evidence.test.ts",
+          "status": "passed",
+          "durationMs": 598.135498046875,
+          "assertions": [
+            {
+              "name": "OCI Sandbox cleanup evidence retains unknown dispatch despite successful named container compensation",
+              "status": "passed",
+              "durationMs": 210.00066700000002
+            },
+            {
+              "name": "OCI Sandbox cleanup evidence does not preserve no-start classification when owned OCI cleanup fails",
+              "status": "passed",
+              "durationMs": 198.90187500000002
+            },
+            {
+              "name": "OCI Sandbox cleanup evidence preserves no-start only after named OCI compensation succeeds",
+              "status": "passed",
+              "durationMs": 189.13550000000004
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/sandbox-resource-admission.test.ts",
+          "status": "passed",
+          "durationMs": 5.195068359375,
+          "assertions": [
+            {
+              "name": "switchable Sandbox resource lifetime holds capacity past target exit until cleanup settles, even without an exit consumer",
+              "status": "passed",
+              "durationMs": 1.914166999999999
+            },
+            {
+              "name": "switchable Sandbox resource lifetime requires target termination as well as a cleanup promise and survives backend replacement",
+              "status": "passed",
+              "durationMs": 0.3471669999999989
+            },
+            {
+              "name": "switchable Sandbox resource lifetime quarantines missing cleanup instead of trusting a zero exit",
+              "status": "passed",
+              "durationMs": 0.5555839999999961
+            },
+            {
+              "name": "switchable Sandbox resource lifetime quarantines rejected cleanup instead of trusting a zero exit",
+              "status": "passed",
+              "durationMs": 0.1806659999999951
+            },
+            {
+              "name": "switchable Sandbox resource lifetime quarantines unknown cleanup instead of trusting a zero exit",
+              "status": "passed",
+              "durationMs": 0.19770899999999614
+            },
+            {
+              "name": "switchable Sandbox resource lifetime distinguishes typed pre-start evidence from arbitrary launch errors",
+              "status": "passed",
+              "durationMs": 0.19983400000000273
+            },
+            {
+              "name": "switchable Sandbox resource lifetime stops before dispatch on cancellation or failed admission persistence",
+              "status": "passed",
+              "durationMs": 0.2688750000000013
+            },
+            {
+              "name": "switchable Sandbox resource lifetime terminates an owned child if identity persistence fails",
+              "status": "passed",
+              "durationMs": 0.18283299999999514
+            },
+            {
+              "name": "switchable Sandbox resource lifetime surfaces accounting failure and does not free a physically finished invocation",
+              "status": "passed",
+              "durationMs": 0.1950829999999968
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/sandbox-terminal.test.ts",
+          "status": "passed",
+          "durationMs": 113.33837890625,
+          "assertions": [
+            {
+              "name": "node-pty process adapter allocates, resizes, writes, and merges a real terminal stream",
+              "status": "passed",
+              "durationMs": 111.52012500000001
+            },
+            {
+              "name": "node-pty process adapter terminates a real terminal process group",
+              "status": "passed",
+              "durationMs": 1.3384169999999926
+            }
+          ]
+        },
+        {
+          "path": "packages/runtime/test/sandbox.test.ts",
+          "status": "passed",
+          "durationMs": 316.923828125,
+          "assertions": [
+            {
+              "name": "OS sandbox adapters denies network and workspace access unless separately approved",
+              "status": "passed",
+              "durationMs": 4.937457999999992
+            },
+            {
+              "name": "OS sandbox adapters fails closed on platforms without an implemented adapter",
+              "status": "passed",
+              "durationMs": 0.5665419999999983
+            },
+            {
+              "name": "OS sandbox adapters selects a fail-closed bubblewrap adapter on Linux",
+              "status": "passed",
+              "durationMs": 0.10816699999999457
+            },
+            {
+              "name": "OS sandbox adapters selects an OCI container adapter when Windows has an explicit image",
+              "status": "passed",
+              "durationMs": 0.09095799999998633
+            },
+            {
+              "name": "OS sandbox adapters falls back to the OCI container adapter on macOS and Linux when an image is configured",
+              "status": "passed",
+              "durationMs": 0.0819580000000002
+            },
+            {
+              "name": "OS sandbox adapters resolves a container executable from PATH and rejects missing ones",
+              "status": "passed",
+              "durationMs": 1.3051250000000039
+            },
+            {
+              "name": "OS sandbox adapters resolves only the Docker executable form on Windows PATH",
+              "status": "passed",
+              "durationMs": 1.0935410000000019
+            },
+            {
+              "name": "OS sandbox adapters passes only Docker and supported host bootstrap variables to the client",
+              "status": "passed",
+              "durationMs": 0.26891699999998764
+            },
+            {
+              "name": "OS sandbox adapters distinguishes a reachable container server from a CLI-only install",
+              "status": "passed",
+              "durationMs": 292.896209
+            },
+            {
+              "name": "OS sandbox adapters fails closed when Bubblewrap is not installed",
+              "status": "passed",
+              "durationMs": 0.5690829999999778
+            },
+            {
+              "name": "OS sandbox adapters fails closed when the OCI runtime executable is missing",
+              "status": "passed",
+              "durationMs": 0.5167089999999916
+            },
+            {
+              "name": "OS sandbox adapters detects a host that denies macOS sandbox profiles",
+              "status": "passed",
+              "durationMs": 1.2275840000000358
+            },
+            {
+              "name": "OS sandbox adapters accepts a usable macOS sandbox profile",
+              "status": "passed",
+              "durationMs": 0.2384169999999699
+            },
+            {
+              "name": "OS sandbox adapters bounds a stalled macOS sandbox availability probe",
+              "status": "passed",
+              "durationMs": 7.042834000000028
+            },
+            {
+              "name": "OS sandbox adapters launches sandbox wrappers in an isolated process group",
+              "status": "passed",
+              "durationMs": 2.7425830000000246
+            },
+            {
+              "name": "OS sandbox adapters derives Linux namespaces and mounts from approved capabilities",
+              "status": "passed",
+              "durationMs": 1.097709000000009
+            },
+            {
+              "name": "OS sandbox adapters derives OCI container arguments without leaking env values",
+              "status": "passed",
+              "durationMs": 1.0392500000000382
+            },
+            {
+              "name": "OS sandbox adapters rejects relative executables and write-only workspace access",
+              "status": "passed",
+              "durationMs": 0.9237500000000409
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "server",
+      "directory": "apps/server",
+      "tests": [
+        "test/workspace-resource-admission.test.ts",
+        "test/workspace-resource-shutdown.test.ts",
+        "test/workspace-runtime-host.test.ts",
+        "test/workspace-model-host.test.ts",
+        "test/workspace-runtime-process-lifetime.test.ts",
+        "test/workspace-runtime-registry.test.ts",
+        "test/workspace-runtime-live-http.test.ts",
+        "test/browser-task.test.ts",
+        "test/browser-task-resource.test.ts"
+      ],
+      "passed": 59,
+      "rawReport": {
+        "path": "/tmp/napier-execution-server-tests-20261029.json",
+        "sha256": "279ca34c44c3085bab2b0e93d419df4f59b7d35da566ec3f22f1ef1bd688aea2"
+      },
+      "files": [
+        {
+          "path": "apps/server/test/browser-task-resource.test.ts",
+          "status": "passed",
+          "durationMs": 121.515869140625,
+          "assertions": [
+            {
+              "name": "BrowserTask shared resource lifecycle holds one global slot through preparation and cleanup and rejects another service before credential or runner work",
+              "status": "passed",
+              "durationMs": 59.103999999999985
+            },
+            {
+              "name": "BrowserTask shared resource lifecycle shares its shutdown promise and releases pending preparation without dispatching a backend",
+              "status": "passed",
+              "durationMs": 51.5985
+            },
+            {
+              "name": "BrowserTask shared resource lifecycle replaces a generic runner's business completion with unconfirmed cleanup and retains the resource",
+              "status": "passed",
+              "durationMs": 2.247374999999977
+            },
+            {
+              "name": "BrowserTask shared resource lifecycle retains a backend's business error while explicit no-start evidence releases capacity",
+              "status": "passed",
+              "durationMs": 1.784249999999986
+            },
+            {
+              "name": "BrowserTask shared resource lifecycle does not downgrade affirmed release when later observation persistence fails",
+              "status": "passed",
+              "durationMs": 1.9510839999999803
+            },
+            {
+              "name": "BrowserTask shared resource lifecycle retains failed durable settlement instead of freeing capacity or hanging shutdown",
+              "status": "passed",
+              "durationMs": 1.5442500000000337
+            },
+            {
+              "name": "BrowserTask shared resource lifecycle retains failed terminal persistence after physical release and reports unavailable task history",
+              "status": "passed",
+              "durationMs": 1.3266660000000456
+            },
+            {
+              "name": "BrowserTask shared resource lifecycle publishes no terminal or new control while the final journal save is pending",
+              "status": "passed",
+              "durationMs": 1.6207919999999945
+            },
+            {
+              "name": "BrowserTask shared resource lifecycle awaits task draining before local shutdown and attempts both even when they fail",
+              "status": "passed",
+              "durationMs": 0.5159580000000119
+            }
+          ]
+        },
+        {
+          "path": "apps/server/test/browser-task.test.ts",
+          "status": "passed",
+          "durationMs": 39.75244140625,
+          "assertions": [
+            {
+              "name": "Browser Use local task HTTP reserves the only task slot before concurrent credential resolution",
+              "status": "passed",
+              "durationMs": 4.663917000000083
+            },
+            {
+              "name": "Browser Use local task HTTP releases task admission after missing credentials",
+              "status": "passed",
+              "durationMs": 1.5958749999999782
+            },
+            {
+              "name": "Browser Use local task HTTP releases task admission after rejected credentials",
+              "status": "passed",
+              "durationMs": 1.2867919999999913
+            },
+            {
+              "name": "Browser Use local task HTTP closes admission and drains a credential lookup before shutting down",
+              "status": "passed",
+              "durationMs": 0.4780829999999696
+            },
+            {
+              "name": "Browser Use local task HTTP retains task occupancy and drains terminal journal persistence",
+              "status": "passed",
+              "durationMs": 1.491125000000011
+            },
+            {
+              "name": "Browser Use local task HTTP cancels without launching when shutdown starts during the initial journal write",
+              "status": "passed",
+              "durationMs": 1.836334000000079
+            },
+            {
+              "name": "Browser Use local task HTTP streams replayable steps, serves screenshot evidence, and returns a result",
+              "status": "passed",
+              "durationMs": 14.382375000000025
+            },
+            {
+              "name": "Browser Use local task HTTP stops an active browser process and streams a privacy-safe terminal error",
+              "status": "passed",
+              "durationMs": 4.858624999999961
+            },
+            {
+              "name": "Browser Use local task HTTP rejects invalid and missing task requests before opening a stream",
+              "status": "passed",
+              "durationMs": 0.504415999999992
+            },
+            {
+              "name": "Browser Use local task HTTP resolves the active provider credential without sending a locator through the Web client",
+              "status": "passed",
+              "durationMs": 1.3637089999999716
+            },
+            {
+              "name": "Browser Use local task HTTP returns an actionable recovery when the active credential reference cannot resolve",
+              "status": "passed",
+              "durationMs": 0.47775000000001455
+            },
+            {
+              "name": "Browser Use local task HTTP keeps cloud credentials server-side and exposes provider policy, cost, and screenshots",
+              "status": "passed",
+              "durationMs": 3.2613750000000437
+            },
+            {
+              "name": "Browser Use local task HTTP restores terminal evidence and retry input after restart without persisting the credential",
+              "status": "passed",
+              "durationMs": 2.348292000000015
+            },
+            {
+              "name": "Browser Use local task HTTP settles an interrupted journal as retryable history on restart",
+              "status": "passed",
+              "durationMs": 1.752375000000029
+            }
+          ]
+        },
+        {
+          "path": "apps/server/test/workspace-model-host.test.ts",
+          "status": "passed",
+          "durationMs": 978.164306640625,
+          "assertions": [
+            {
+              "name": "production host model resource ownership lets a parent and delegated child finish with one global model slot and counts physical calls once",
+              "status": "passed",
+              "durationMs": 499.154042
+            },
+            {
+              "name": "production host model resource ownership retains physical A calls after Run cancellation and refuses B before provider dispatch",
+              "status": "passed",
+              "durationMs": 479.16437500000006
+            }
+          ]
+        },
+        {
+          "path": "apps/server/test/workspace-resource-admission.test.ts",
+          "status": "passed",
+          "durationMs": 256.225341796875,
+          "assertions": [
+            {
+              "name": "durable owned execution resource admission shares independent resource capacities across workspaces and connections",
+              "status": "passed",
+              "durationMs": 6.405124999999998
+            },
+            {
+              "name": "durable owned execution resource admission retains a slot and blocks drain after unknown cleanup until affirmative cleanup arrives",
+              "status": "passed",
+              "durationMs": 3.018082999999997
+            },
+            {
+              "name": "durable owned execution resource admission accepts affirmative no-start evidence and preserves immutable identities and terminal receipts",
+              "status": "passed",
+              "durationMs": 2.6273750000000007
+            },
+            {
+              "name": "durable owned execution resource admission does not release durable capacity when settlement persistence fails",
+              "status": "passed",
+              "durationMs": 2.8442079999999947
+            },
+            {
+              "name": "durable owned execution resource admission recovers owner death at reserved without inferring post-dispatch cleanup",
+              "status": "passed",
+              "durationMs": 52.288084
+            },
+            {
+              "name": "durable owned execution resource admission recovers owner death at dispatched without inferring post-dispatch cleanup",
+              "status": "passed",
+              "durationMs": 50.97866599999999
+            },
+            {
+              "name": "durable owned execution resource admission recovers owner death at bound without inferring post-dispatch cleanup",
+              "status": "passed",
+              "durationMs": 51.07050000000001
+            },
+            {
+              "name": "durable owned execution resource admission admits exactly one of two independent host processes racing for the same slot",
+              "status": "passed",
+              "durationMs": 79.482833
+            },
+            {
+              "name": "durable owned execution resource admission validates capacity, scope and identity before accepting release evidence",
+              "status": "passed",
+              "durationMs": 2.4226249999999823
+            },
+            {
+              "name": "durable owned execution resource admission rejects drain after malformed cleanup evidence while retaining capacity",
+              "status": "passed",
+              "durationMs": 2.6067500000000337
+            },
+            {
+              "name": "durable owned execution resource admission rejects drain after malformed identity evidence while retaining capacity",
+              "status": "passed",
+              "durationMs": 2.225332999999978
+            }
+          ]
+        },
+        {
+          "path": "apps/server/test/workspace-resource-shutdown.test.ts",
+          "status": "passed",
+          "durationMs": 94.3134765625,
+          "assertions": [
+            {
+              "name": "workspace resource shutdown with a real event store shares cleanup failure and preserves the SQLite store after an unknown launch",
+              "status": "passed",
+              "durationMs": 58.993582999999944
+            },
+            {
+              "name": "workspace resource shutdown with a real event store waits for affirmative lease settlement before closing the SQLite store",
+              "status": "passed",
+              "durationMs": 34.313458999999966
+            }
+          ]
+        },
+        {
+          "path": "apps/server/test/workspace-runtime-host.test.ts",
+          "status": "passed",
+          "durationMs": 1323.6318359375,
+          "assertions": [
+            {
+              "name": "production workspace host reclaims idle graphs but retains future automation until it is paused",
+              "status": "passed",
+              "durationMs": 219.7594170000001
+            },
+            {
+              "name": "production workspace host closes its catalog if registry policy validation fails",
+              "status": "passed",
+              "durationMs": 17.093374999999924
+            },
+            {
+              "name": "production workspace host keeps recent navigation in the explicitly configured state home",
+              "status": "passed",
+              "durationMs": 56.02337499999999
+            },
+            {
+              "name": "production workspace host opens B while A streams, keeps the legacy address on A, scopes HTML assets, and restores custom roots",
+              "status": "passed",
+              "durationMs": 1030.631916
+            }
+          ]
+        },
+        {
+          "path": "apps/server/test/workspace-runtime-live-http.test.ts",
+          "status": "passed",
+          "durationMs": 6301.697021484375,
+          "assertions": [
+            {
+              "name": "workspace registry with real HTTP and Runtime ledgers runs B and A automation while A is detached, scopes controls/files, then reopens both ledgers",
+              "status": "passed",
+              "durationMs": 6301.697
+            }
+          ]
+        },
+        {
+          "path": "apps/server/test/workspace-runtime-process-lifetime.test.ts",
+          "status": "passed",
+          "durationMs": 1961.675048828125,
+          "assertions": [
+            {
+              "name": "workspace process lifetime and idle reclamation retains a browser start awaiting credentials even before it has a task ID",
+              "status": "passed",
+              "durationMs": 168.60341700000004
+            },
+            {
+              "name": "workspace process lifetime and idle reclamation retains preparation, a live OS process, and terminal persistence before reclaiming historical sessions",
+              "status": "passed",
+              "durationMs": 503.9075419999999
+            },
+            {
+              "name": "workspace process lifetime and idle reclamation retains and drains compensation after a real failed writer has exited",
+              "status": "passed",
+              "durationMs": 542.3916669999999
+            },
+            {
+              "name": "workspace process lifetime and idle reclamation terminates a launched process that registers only after shutdown starts",
+              "status": "passed",
+              "durationMs": 500.56233399999974
+            },
+            {
+              "name": "workspace process lifetime and idle reclamation releases the lifecycle reservation after a rejected launch",
+              "status": "passed",
+              "durationMs": 245.67512499999975
+            }
+          ]
+        },
+        {
+          "path": "apps/server/test/workspace-runtime-registry.test.ts",
+          "status": "passed",
+          "durationMs": 38.19580078125,
+          "assertions": [
+            {
+              "name": "workspace runtime registry deduplicates concurrent preparation and keeps leases independently pinned",
+              "status": "passed",
+              "durationMs": 5.183707999999996
+            },
+            {
+              "name": "workspace runtime registry retains active/background work under capacity pressure and evicts only idle runtimes",
+              "status": "passed",
+              "durationMs": 4.108167000000002
+            },
+            {
+              "name": "workspace runtime registry counts pending cold starts toward capacity and recovers after preparation fails",
+              "status": "passed",
+              "durationMs": 3.046915999999996
+            },
+            {
+              "name": "workspace runtime registry waits for disposal before preparing the same workspace again",
+              "status": "passed",
+              "durationMs": 3.0108749999999986
+            },
+            {
+              "name": "workspace runtime registry rechecks other candidates after an awaited disposal",
+              "status": "passed",
+              "durationMs": 3.1215410000000077
+            },
+            {
+              "name": "workspace runtime registry quarantines a partially disposed runtime and preserves ownership",
+              "status": "passed",
+              "durationMs": 3.314667
+            },
+            {
+              "name": "workspace runtime registry drains request leases during shutdown and rejects new admission",
+              "status": "passed",
+              "durationMs": 2.88683300000001
+            },
+            {
+              "name": "workspace runtime registry restores all workspace identities and custom ledgers after reopening",
+              "status": "passed",
+              "durationMs": 3.6725840000000005
+            },
+            {
+              "name": "workspace runtime registry deduplicates aliases and rejects a different ledger or reused data root",
+              "status": "passed",
+              "durationMs": 3.1125830000000008
+            },
+            {
+              "name": "workspace runtime registry fails closed on a missing or retargeted data root without affecting other workspaces",
+              "status": "passed",
+              "durationMs": 3.200708000000006
+            },
+            {
+              "name": "workspace runtime registry does not let another live catalog owner initialize the same ledger",
+              "status": "passed",
+              "durationMs": 3.195875000000001
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "directory": "packages/contracts/src",
+      "fileCount": 87,
+      "sha256": "ff203ef23ecb972a6b2ad9bf02189bfa0542ffc44a3c552c6e90a727ba0a5a88"
+    },
+    {
+      "directory": "packages/contracts/dist",
+      "fileCount": 262,
+      "sha256": "c18de4c186e5b7e2b41e799ff0e601f49379cf8832273d1f26f1cb1cba969c78"
+    },
+    {
+      "directory": "packages/runtime/src",
+      "fileCount": 1238,
+      "sha256": "f7de30fe721e3253f355db798c6162b89005345b98ac857a234add5ea440bca3"
+    },
+    {
+      "directory": "packages/runtime/dist",
+      "fileCount": 3726,
+      "sha256": "0c8500d74dd5b7d24e10b6ef40403e8d247c14aeaa4f8d188198243f46600540"
+    },
+    {
+      "directory": "apps/server/src",
+      "fileCount": 163,
+      "sha256": "55a315aefc2b4201573f1d283ac43361c1e6b652b917eb87133dd738584e754c"
+    },
+    {
+      "directory": "apps/server/dist",
+      "fileCount": 490,
+      "sha256": "87cc98fe53f7efe5dc1cfe499f8ee6f136f649dfa0ddd2f7281679149c7c133f"
+    },
+    {
+      "directory": "packages/runtime/test",
+      "fileCount": 623,
+      "sha256": "0f6fcb23f361ea96c03e77ba38825e57f0f89bf1fc31d0078f648939c9bbff54"
+    },
+    {
+      "directory": "apps/server/test",
+      "fileCount": 128,
+      "sha256": "cc73aa867b219ee0b2ddfe517f302ebe5d412d971401fb115c16628ad887416d"
+    }
+  ],
+  "limits": [
+    "Deterministic unit/integration fixtures, fake cloud providers and local owned-child processes; not live cloud provider/model acceptance.",
+    "Native real Chromium and two-host physical integration have a separate receipt.",
+    "Host-direct execution fixture provides no OS isolation.",
+    "No full release, full operating-system matrix or complete G01-G07 claim."
+  ]
+}

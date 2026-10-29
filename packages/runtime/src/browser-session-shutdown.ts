@@ -1,13 +1,3 @@
-export async function shutdownBrowserSessions(
-  sessions: Map<string, { close(): Promise<void> }>,
-  tails: Map<string, Promise<void>>,
-): Promise<void> {
-  const active = [...sessions.values()];
-  sessions.clear();
-  tails.clear();
-  await Promise.allSettled(active.map((session) => session.close()));
-}
-
 export async function waitForBrowserSessionTurn(
   previous: Promise<void>,
   signal?: AbortSignal,

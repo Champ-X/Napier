@@ -280,8 +280,13 @@ async def main():
 			'recovery': 'Rerun the same command after operator takeover' if captcha else 'Inspect the last step failure, then rerun with a reachable provider and target' if status == 'failed' else None,
 		})
 	finally:
-		if agent is not None:
-			await agent.close()
+		cleanup_status = 'unknown'
+		try:
+			if agent is not None:
+				await agent.close()
+				cleanup_status = 'released'
+		finally:
+			emit({'type':'cleanup','backend':'browser_use_local','schemaVersion':1,'runNonce':request['runNonce'],'status':cleanup_status})
 
 try:
 	asyncio.run(main())

@@ -51,6 +51,12 @@ import type {
   SandboxLaunchRequest,
 } from "./sandbox-types.js";
 import { launchTerminalSandboxWrapper } from "./sandbox-terminal.js";
+import {
+  beforeSandboxDispatch,
+  failedLaunchCleanup,
+  sandboxCleanup,
+  sandboxLaunchFailure,
+} from "./sandbox-execution-evidence.js";
 
 export { buildOciContainerArgs } from "./sandbox-oci-launch-arguments.js";
 
@@ -192,12 +198,17 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
 
   async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
     validateLaunchRequest(request);
-    validateContainerImage(this.image);
-    const executable = await resolveContainerLaunchExecutable(this.executable);
-    const identity = await this.resolveImage(executable);
-    const sandboxHome = await mkdtemp(
-      path.join(await containerScratchBaseDir(), "napier-process-sandbox-"),
-    );
+    const { identity, sandboxHome } = await beforeSandboxDispatch(async () => {
+      validateContainerImage(this.image);
+      const executable = await resolveContainerLaunchExecutable(
+        this.executable,
+      );
+      const identity = await this.resolveImage(executable);
+      const sandboxHome = await mkdtemp(
+        path.join(await containerScratchBaseDir(), "napier-process-sandbox-"),
+      );
+      return { identity, sandboxHome };
+    });
     const containerName = createContainerName();
     const networkName = request.localService
       ? createContainerServiceNetworkName()
@@ -214,6 +225,11 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       env: clientEnvironment,
     };
     let child: SandboxedProcess | undefined;
+    let dispatched = false;
+    const resourceIdentity = {
+      resourceId: containerName,
+      identitySha256: identity.identitySha256,
+    };
     let closeLocalServiceProjection: (() => Promise<void>) | undefined;
     try {
       const pathMapping = createOciContainerPathMapping(request, identity.user);
@@ -258,13 +274,16 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       };
       if (request.terminal) {
         const guarded = createParentGuardedTerminalLaunch(target);
-        return await this.terminalLauncher({
+        dispatched = true;
+        child = await this.terminalLauncher({
           ...guarded,
           columns: request.terminal.columns,
           rows: request.terminal.rows,
           sandboxHome,
         });
+        return { ...child, resourceIdentity };
       }
+      dispatched = true;
       child = await launchSandboxProcess({
         ...target,
         sandboxHome,
@@ -293,6 +312,7 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
           : {}),
         spawnProcess: this.spawnProcess,
       });
+      child = { ...child, resourceIdentity };
       if (!request.localService || !networkName) return child;
       const projection = await resolveContainerLocalService({
         identity,
@@ -312,20 +332,41 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
       closeLocalServiceProjection = projection.close;
       return { ...child, localService: projection.binding };
     } catch (error) {
+      let evidence = dispatched
+        ? failedLaunchCleanup(error)
+        : sandboxCleanup("not_started", "oci_target_not_dispatched");
+      let cleanupFailed = false;
       if (child) {
-        await child.terminate().catch(() => undefined);
-      } else if (networkName) {
-        await removeContainerLaunchResources(
-          identity,
-          containerName,
-          networkName,
-          this.containerClient,
-          this.userIds,
-          this.daemonEndpoint,
-        ).catch(() => undefined);
+        try {
+          await child.terminate();
+          evidence =
+            (await child.cleanup) ??
+            sandboxCleanup("unknown", "oci_child_cleanup_missing");
+        } catch {
+          cleanupFailed = true;
+        }
+      } else {
+        try {
+          await removeContainerLaunchResources(
+            identity,
+            containerName,
+            networkName,
+            this.containerClient,
+            this.userIds,
+            this.daemonEndpoint,
+          );
+        } catch {
+          cleanupFailed = true;
+        }
       }
-      await rm(sandboxHome, { recursive: true, force: true });
-      throw error;
+      try {
+        await rm(sandboxHome, { recursive: true, force: true });
+      } catch {
+        cleanupFailed = true;
+      }
+      if (cleanupFailed)
+        evidence = sandboxCleanup("unknown", "oci_launch_cleanup_failed");
+      throw sandboxLaunchFailure(error, evidence, resourceIdentity);
     }
   }
 

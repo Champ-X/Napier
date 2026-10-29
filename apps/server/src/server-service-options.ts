@@ -5,6 +5,7 @@ import type { SandboxSetupServiceDependencies } from "@napier/runtime/sandbox-se
 
 import type { ReceiptTrustAnchorDirectoryDiscoveryOptions } from "./receipt-trust-directory-discovery.js";
 import type { ReceiptTrustAnchorDirectorySubscriptionServiceOptions } from "./receipt-trust-directory-subscriptions.js";
+import type { ResourceAdmission } from "./workspace-resource-policy.js";
 
 export interface ServerServiceOptions {
   dataRoot?: string;
@@ -12,6 +13,7 @@ export interface ServerServiceOptions {
   env?: Readonly<Record<string, string | undefined>>;
   startAutomation?: boolean;
   modelCallAdmission?: NonNullable<ConstructorParameters<typeof ModelRegistry>[1]>;
+  resourceAdmission?: ResourceAdmission;
   keychain?: KeychainSecretStore;
   sandbox?: OsSandboxAdapter;
   sandboxSetup?: SandboxSetupServiceDependencies;

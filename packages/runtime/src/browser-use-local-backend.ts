@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -17,7 +17,9 @@ import {
   browserUseLocalRuntimeRoot,
   inspectBrowserUseLocalRuntime,
 } from "./browser-use-local-setup.js";
-import { validateBrowserUseLocalTaskRequest } from "./browser-use-local-request.js";
+import { browserUseLocalBridgeEnvironment, validateBrowserUseLocalTaskRequest } from "./browser-use-local-request.js";
+import type { ExecutionResourceLease } from "./execution-resource-admission.js";
+import { BrowserUseLocalResource, type BrowserUseLocalCleanupAck } from "./browser-use-local-resource.js";
 
 const MAX_EVENT_LINE_BYTES = 128 * 1024;
 const MAX_PROCESS_OUTPUT_BYTES = 2 * 1024 * 1024;
@@ -85,14 +87,17 @@ export class BrowserUseLocalBackend implements BrowserBackend<
   readonly #options: {
     dataRoot: string;
     env: Readonly<Record<string, string | undefined>>;
+    resourceLease?: ExecutionResourceLease;
   };
   readonly #control: BrowserUseLocalProcessControl;
   #running = false;
+  #resourceUsed = false;
 
   constructor(options: {
     dataRoot: string;
     env: Readonly<Record<string, string | undefined>>;
     control?: BrowserUseLocalControlDependencies;
+    resourceLease?: ExecutionResourceLease;
   }) {
     this.#options = options;
     this.#control = new BrowserUseLocalProcessControl(options.control);
@@ -117,19 +122,22 @@ export class BrowserUseLocalBackend implements BrowserBackend<
     ) => void | Promise<void>,
     signal?: AbortSignal,
   ): Promise<BrowserUseLocalTaskResult> {
-    validateBrowserUseLocalTaskRequest(request);
-    if (this.#running) {
+    if (this.#running || (this.#options.resourceLease && this.#resourceUsed)) {
       throw publicError(
         "A Browser Use local task is already active",
         "browser_task_busy",
         "Stop the active local task before starting another",
       );
     }
-    if (!this.#options.env["NAPIER_BROWSER_USE_CREDENTIAL"]?.trim()) {
-      throw new Error("Browser Use local model credential is unavailable");
-    }
+    this.#resourceUsed = true;
     this.#running = true;
+    const resource = new BrowserUseLocalResource(this.#options.resourceLease);
+    let failure: { error: unknown } | undefined;
     try {
+      validateBrowserUseLocalTaskRequest(request);
+      if (!this.#options.env["NAPIER_BROWSER_USE_CREDENTIAL"]?.trim()) {
+        throw new Error("Browser Use local model credential is unavailable");
+      }
       signal?.throwIfAborted();
       const inspection = await inspectBrowserUseLocalRuntime(
         this.#options.dataRoot,
@@ -147,11 +155,10 @@ export class BrowserUseLocalBackend implements BrowserBackend<
           `Install or update Chrome, then run napier setup --workspace 'WORKSPACE_PATH' --component browser-use-local`,
         );
       }
-      const runId = randomUUID().replaceAll("-", "");
       const artifactDirectory = path.join(
         browserUseLocalRuntimeRoot(this.#options.dataRoot),
         "runs",
-        runId,
+        resource.runNonce,
       );
       await mkdir(artifactDirectory, { recursive: true, mode: 0o700 });
       return await executeBridge({
@@ -163,13 +170,18 @@ export class BrowserUseLocalBackend implements BrowserBackend<
           browserVersion: inspection.browserVersion,
         },
         artifactDirectory,
-        env: bridgeEnvironment(this.#options.env, artifactDirectory),
+        env: browserUseLocalBridgeEnvironment(this.#options.env, artifactDirectory),
         control: this.#control,
+        resource,
         onObservation,
         ...(signal ? { signal } : {}),
       });
+    } catch (error) {
+      failure = { error };
+      throw error;
     } finally {
       this.#running = false;
+      resource.settle(failure?.error);
     }
   }
 }
@@ -184,6 +196,7 @@ async function executeBridge(input: {
   artifactDirectory: string;
   env: NodeJS.ProcessEnv;
   control: BrowserUseLocalProcessControl;
+  resource: BrowserUseLocalResource;
   onObservation: (
     observation: BrowserUseLocalObservation,
   ) => void | Promise<void>;
@@ -191,6 +204,7 @@ async function executeBridge(input: {
 }): Promise<BrowserUseLocalTaskResult> {
   input.signal?.throwIfAborted();
   return await new Promise((resolve, reject) => {
+    input.resource.dispatch();
     const child = spawn(
       input.pythonExecutable,
       ["-c", BROWSER_USE_LOCAL_BRIDGE],
@@ -208,9 +222,13 @@ async function executeBridge(input: {
     let stderrSha256 = createHash("sha256");
     let result: BrowserUseLocalTaskResult | undefined;
     let bridgeError: BrowserUseLocalError | undefined;
+    let observationFailure: { error: unknown } | undefined;
+    let processFailure: { error: Error } | undefined;
     let chain = Promise.resolve();
     let settled = false;
+    let childClosed = false;
     if (!child.pid) {
+      input.resource.notStarted();
       child.once("error", () => undefined);
       reject(new Error("Browser Use local process did not expose an identity"));
       return;
@@ -237,6 +255,15 @@ async function executeBridge(input: {
         }
         chain = chain.then(async () => {
           const event = parseBridgeEvent(line.toString("utf8"));
+          if (event.type === "cleanup") {
+            if (!input.resource.acknowledge(event)) throw publicError(
+              "Browser Use local emitted an invalid cleanup acknowledgement",
+              "backend_protocol_invalid",
+              "Inspect the local browser before starting another task",
+            );
+            return;
+          }
+          if (observationFailure) return;
           if (event.type === "error") {
             bridgeError = new BrowserUseLocalError(
               event.message,
@@ -252,13 +279,21 @@ async function executeBridge(input: {
               event.type === "step" &&
               event.errorCode === "captcha_handoff_required"
             ) {
+              let takeover: BrowserUseLocalControlObservation | undefined;
               try {
-                await input.onObservation(input.control.takeover());
+                takeover = input.control.takeover();
               } catch {
                 // The step still carries the challenge recovery if takeover raced exit.
               }
+              if (takeover) await input.onObservation(takeover);
             }
           }
+        }).catch((error: unknown) => {
+          observationFailure ??= { error };
+          // Parsing and observation persistence can fail while Python is still
+          // running. Stop its owned process group, but settle only on close.
+          // A late observer rejection must not signal an already closed PID.
+          if (!childClosed) input.control.terminate();
         });
       }
     });
@@ -268,8 +303,14 @@ async function executeBridge(input: {
       if (outputBytes > MAX_PROCESS_OUTPUT_BYTES) input.control.terminate();
     });
     child.stdin.once("error", () => input.control.terminate());
-    child.once("error", (error) => finish(() => reject(error)));
-    child.once("close", (code) =>
+    child.once("error", (error) => {
+      if (childClosed) return;
+      processFailure = { error };
+      input.control.terminate();
+    });
+    child.once("close", (code) => {
+      childClosed = true;
+      input.resource.closed();
       finish(() => {
         void chain.then(() => {
           if (input.signal?.aborted) {
@@ -280,6 +321,14 @@ async function executeBridge(input: {
                 "Rerun the same command to start a fresh local task",
               ),
             );
+            return;
+          }
+          if (observationFailure) {
+            reject(observationFailure.error);
+            return;
+          }
+          if (processFailure) {
+            reject(processFailure.error);
             return;
           }
           if (bridgeError) {
@@ -308,8 +357,8 @@ async function executeBridge(input: {
           }
           resolve(result);
         });
-      }),
-    );
+      });
+    });
     input.control.attach(childPid);
     input.signal?.addEventListener("abort", abort, { once: true });
     if (input.signal?.aborted) {
@@ -319,6 +368,7 @@ async function executeBridge(input: {
     child.stdin.end(
       `${JSON.stringify({
         task: input.request.task,
+        runNonce: input.resource.runNonce,
         ...(input.request.startUrl
           ? { initialUrl: input.request.startUrl }
           : {}),
@@ -348,6 +398,7 @@ async function executeBridge(input: {
 
 type BridgeEvent =
   | BrowserUseLocalObservation
+  | BrowserUseLocalCleanupAck
   | Omit<BrowserUseLocalTaskResult, "artifactDirectory">
   | {
       type: "error";
@@ -377,6 +428,8 @@ function parseBridgeEvent(line: string): BridgeEvent {
     );
   }
   const event = value as Record<string, unknown>;
+  // Cleanup has a stricter nonce-bound internal schema, checked by the owner.
+  if (event["type"] === "cleanup") return event as unknown as BrowserUseLocalCleanupAck;
   if (
     event["backend"] !== "browser_use_local" ||
     !["started", "step", "completed", "error"].includes(String(event["type"]))
@@ -390,49 +443,6 @@ function parseBridgeEvent(line: string): BridgeEvent {
   return event as BridgeEvent;
 }
 
-function bridgeEnvironment(
-  input: Readonly<Record<string, string | undefined>>,
-  runtimeRoot: string,
-): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = {
-    PATH: input["PATH"],
-    SYSTEMROOT: input["SYSTEMROOT"],
-    TMPDIR: runtimeRoot,
-    TEMP: runtimeRoot,
-    TMP: runtimeRoot,
-    // Browser Use's macOS CDP core requires the real host HOME to route
-    // browser responses. Chrome still receives an explicit fresh profile
-    // rooted in the task artifact directory below.
-    HOME: input["HOME"] ?? process.env["HOME"] ?? runtimeRoot,
-    XDG_CACHE_HOME: path.join(runtimeRoot, "cache"),
-    XDG_CONFIG_HOME: path.join(runtimeRoot, "config"),
-    BROWSER_USE_CONFIG_DIR: path.join(runtimeRoot, "config", "browseruse"),
-    BROWSER_USE_SETUP_LOGGING: "false",
-    BROWSER_USE_LOGGING_LEVEL: "critical",
-    BROWSER_USE_VERSION_CHECK: "false",
-    BROWSER_USE_CLOUD_SYNC: "false",
-    ANONYMIZED_TELEMETRY: "false",
-    NAPIER_BROWSER_USE_CREDENTIAL: input["NAPIER_BROWSER_USE_CREDENTIAL"],
-  };
-  for (const name of [
-    "ALL_PROXY",
-    "APPDATA",
-    "HTTPS_PROXY",
-    "HTTP_PROXY",
-    "LANG",
-    "LC_ALL",
-    "LOCALAPPDATA",
-    "LOGNAME",
-    "NO_PROXY",
-    "SSL_CERT_DIR",
-    "SSL_CERT_FILE",
-    "USER",
-    "USERPROFILE",
-  ]) {
-    if (input[name]) env[name] = input[name];
-  }
-  return env;
-}
 
 function publicError(
   message: string,

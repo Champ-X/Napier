@@ -385,6 +385,10 @@ describe("process guardian", () => {
         code: 75,
         signal: null,
       });
+      await expect(guarded.cleanup).resolves.toMatchObject({
+        status: "unknown",
+        reason: "guardian_cleanup_unconfirmed",
+      });
       await expect(access(scratch.scratchHome)).rejects.toThrow();
       livePids.delete(guarded.guardianPid);
       livePids.delete(guarded.targetPid);

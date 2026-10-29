@@ -197,7 +197,7 @@
     "packages/runtime/src/agent-capability-runtime.ts": 180,
     "packages/runtime/src/agent-runtime.ts": 819,
     "packages/runtime/src/agent-tool-ledger.ts": 147,
-    "packages/runtime/src/browser-session-model.ts": 180,
+    "packages/runtime/src/browser-session-model.ts": 135,
     "packages/runtime/src/sandbox.ts": 440,
     "packages/runtime/src/stateless-agent-tools.ts": 117,
     "packages/runtime/src/store-repository-host.ts": 155,

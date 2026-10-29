@@ -14,13 +14,16 @@ import { WorkspaceRuntimeRegistry } from "./workspace-runtime-registry.js";
 import { disposeWorkspaceRuntimeServices, workspaceRuntimeCanDispose } from "./workspace-runtime-services.js";
 import { WorkspaceModelAdmission } from "./workspace-model-admission.js";
 import type { WorkspaceModelBudgetOptions } from "./workspace-model-budget.js";
+import { WorkspaceResourceAdmission } from "./workspace-resource-admission.js";
+import type { WorkspaceResourceLimits } from "./workspace-resource-policy.js";
 
 interface WorkspaceRuntimeHostOptions {
   workspaceRoot: string;
   dataRoot?: string;
   stateHome?: string;
-  services?: Omit<ServerServiceOptions, "workspaceRoot" | "dataRoot" | "startAutomation" | "modelCallAdmission">;
+  services?: Omit<ServerServiceOptions, "workspaceRoot" | "dataRoot" | "startAutomation" | "modelCallAdmission" | "resourceAdmission">;
   modelBudget?: WorkspaceModelBudgetOptions;
+  resourceLimits?: Partial<WorkspaceResourceLimits>;
   maxResident?: number;
   maxIdle?: number;
   idleMs?: number;
@@ -38,6 +41,8 @@ export async function createWorkspaceRuntimeHost(
   const catalog = await WorkspaceRuntimeCatalog.open(stateHome);
   const modelAdmission = await WorkspaceModelAdmission.open(stateHome, options.modelBudget)
     .catch((error) => { catalog.close(); throw error; });
+  const resourceAdmission = await WorkspaceResourceAdmission.open(stateHome, options.resourceLimits)
+    .catch((error) => { modelAdmission.close(); catalog.close(); throw error; });
   const failures = new Map<string, string>();
   const registry = createRegistry();
 
@@ -52,6 +57,7 @@ export async function createWorkspaceRuntimeHost(
           const services = await prepareServices({
             ...options.services, workspaceRoot: identity.root, dataRoot: identity.dataRoot, startAutomation: true,
             modelCallAdmission: modelAdmission.forWorkspace(identity.workspaceId),
+            resourceAdmission: resourceAdmission.forWorkspace(identity.workspaceId),
           });
           try {
             const app = createApp(services, {
@@ -64,20 +70,27 @@ export async function createWorkspaceRuntimeHost(
               return context.json(response);
             });
             app.get("/api/workspace/resources", (context) => {
-              const response = modelAdmission.snapshot();
+              const response = { ...modelAdmission.snapshot(), executionResources: resourceAdmission.snapshot() };
               setBodyContentSha256Header(context, response);
               return context.json(response);
             });
             return { services, app, workspaceId: identity.workspaceId };
           } catch (error) {
-            await disposeWorkspaceRuntimeServices(services, () => modelAdmission.drainWorkspace(identity.workspaceId));
+            await disposeGraph(services, identity.workspaceId);
             throw error;
           }
         },
-        dispose: ({ services, workspaceId }) => disposeWorkspaceRuntimeServices(services, () => modelAdmission.drainWorkspace(workspaceId)),
-        canDispose: ({ services, workspaceId }) => !modelAdmission.hasPending(workspaceId) && workspaceRuntimeCanDispose(services),
+        dispose: ({ services, workspaceId }) => disposeGraph(services, workspaceId),
+        canDispose: ({ services, workspaceId }) => !modelAdmission.hasPending(workspaceId) && !resourceAdmission.hasPending(workspaceId) && workspaceRuntimeCanDispose(services),
       });
-    } catch (error) { modelAdmission.close(); catalog.close(); throw error; }
+    } catch (error) { resourceAdmission.close(); modelAdmission.close(); catalog.close(); throw error; }
+  }
+
+  async function disposeGraph(services: Awaited<ReturnType<typeof createServices>>, workspaceId: string): Promise<void> {
+    // Physical sessions close inside local shutdown; draining their leases before
+    // initiating close would deadlock an otherwise idle persistent session.
+    await disposeWorkspaceRuntimeServices(services, () => modelAdmission.drainWorkspace(workspaceId));
+    await resourceAdmission.drainWorkspace(workspaceId);
   }
 
   async function identityFor(root: string, dataRoot?: string) {
@@ -113,7 +126,7 @@ export async function createWorkspaceRuntimeHost(
       options.onWarning?.(failure.workspaceId, failure.error);
     }
   } catch (error) {
-    await registry.shutdown(); modelAdmission.close(); catalog.close(); throw error;
+    await registry.shutdown(); resourceAdmission.close(); modelAdmission.close(); catalog.close(); throw error;
   }
 
   let maintenance: Promise<void> | undefined;
@@ -143,6 +156,7 @@ export async function createWorkspaceRuntimeHost(
       shutdown ??= (async () => {
         await maintenance;
         await registry.shutdown();
+        resourceAdmission.close();
         modelAdmission.close();
         catalog.close();
       })();

@@ -1,4 +1,5 @@
 import { PersistentBrowserSession } from "./browser-page-session.js";
+import { BrowserSessionLifetime } from "./browser-session-lifetime.js";
 import { BrowserNavigationPolicyError } from "./browser-session-navigation.js";
 import {
   BrowserSessionInactiveError,
@@ -21,7 +22,6 @@ import {
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
-  MAX_ACTIVE_BROWSER_SESSIONS,
   BROWSER_VIEWPORT_HEIGHT,
   BROWSER_VIEWPORT_WIDTH,
   type BrowserPageSourceCapture,
@@ -32,22 +32,19 @@ import {
 } from "./browser-session-model.js";
 import {
   assertBrowserSessionNotAborted,
-  shutdownBrowserSessions,
-  waitForBrowserSessionTurn,
 } from "./browser-session-shutdown.js";
 
 export * from "./browser-session-model.js";
 export { resolveBrowserRuntime } from "./browser-runtime.js";
 
 export class RunBrowserSessionManager {
-  private readonly sessions = new Map<string, PersistentBrowserSession>();
-  private readonly tails = new Map<string, Promise<void>>();
+  private readonly lifetime = new BrowserSessionLifetime<PersistentBrowserSession>();
+  private readonly sessions = this.lifetime.sessions;
   private readonly confirmed = new BrowserConfirmedSessionExecutor(
     (owner, signal, operation) => this.withSession(owner, signal, operation),
     (key, session, request, signal, upload) =>
       this.runOperation(key, session, request, true, signal, upload),
   );
-  private startingSessions = 0;
 
   constructor(private readonly options: RunBrowserSessionManagerOptions) {}
 
@@ -68,7 +65,7 @@ export class RunBrowserSessionManager {
     signal?: AbortSignal,
   ): Promise<BrowserPageSourceCapture> {
     const key = browserSessionOwnerKey(owner);
-    return this.serialized(
+    return this.lifetime.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
@@ -79,9 +76,7 @@ export class RunBrowserSessionManager {
         try {
           return await session.capturePage(maxChars, signal);
         } catch (error) {
-          this.sessions.delete(key);
-          await session.close();
-          throw error;
+          return await this.lifetime.fail(key, session, error);
         }
       },
       signal,
@@ -93,7 +88,7 @@ export class RunBrowserSessionManager {
     signal?: AbortSignal,
   ): Promise<{ image: Buffer; receipt: BrowserLiveViewReceipt }> {
     const key = browserSessionOwnerKey(owner);
-    return this.serialized(
+    return this.lifetime.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
@@ -155,7 +150,7 @@ export class RunBrowserSessionManager {
     tabs: BrowserSessionOperationResult;
   }> {
     const key = browserSessionOwnerKey(owner);
-    return this.serialized(
+    return this.lifetime.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
@@ -202,9 +197,7 @@ export class RunBrowserSessionManager {
           }
           return { snapshot, tabs };
         } catch (error) {
-          this.sessions.delete(key);
-          await session.close();
-          throw error;
+          return await this.lifetime.fail(key, session, error);
         }
       },
       signal,
@@ -313,7 +306,7 @@ export class RunBrowserSessionManager {
     preparedUpload?: BrowserPreparedUpload,
   ): Promise<BrowserSessionOperationResult> {
     const key = browserSessionOwnerKey(owner);
-    return this.serialized(
+    return this.lifetime.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
@@ -326,28 +319,18 @@ export class RunBrowserSessionManager {
             return await this.runOperation(key, active, request, true, signal);
           }
           if (active) {
-            this.sessions.delete(key);
-            await active.close();
+            await this.lifetime.close(key, active);
           }
-          await this.pruneClosedSessions();
-          if (
-            this.sessions.size + this.startingSessions >=
-            MAX_ACTIVE_BROWSER_SESSIONS
-          ) {
-            throw new Error("Browser active Session limit reached");
-          }
-          this.startingSessions += 1;
-          let session: PersistentBrowserSession;
-          try {
-            if (request.action === "start") {
-              await preflightBrowserStartUrl(owner, request.url, this.options);
-            }
-            assertBrowserSessionNotAborted(signal);
-            session = await PersistentBrowserSession.start(this.options, owner);
-          } finally {
-            this.startingSessions -= 1;
-          }
-          this.sessions.set(key, session);
+          await this.lifetime.prune();
+          const startSignal = signal
+            ? AbortSignal.any([signal, this.lifetime.shutdownController.signal])
+            : this.lifetime.shutdownController.signal;
+          const session = await this.lifetime.start(key, () => PersistentBrowserSession.start(
+            this.options, owner, startSignal,
+            request.action === "start"
+              ? () => preflightBrowserStartUrl(owner, request.url, this.options)
+              : undefined,
+          ));
           try {
             return await this.runOperation(
               key,
@@ -360,16 +343,13 @@ export class RunBrowserSessionManager {
             if (session.healthy && isBrowserNavigationTimeout(request, error)) {
               throw error;
             }
-            this.sessions.delete(key);
-            await session.close();
-            throw error;
+            return await this.lifetime.fail(key, session, error);
           }
         }
         const session = this.sessions.get(key);
         if (!session || !session.healthy) {
           if (session) {
-            this.sessions.delete(key);
-            await session.close();
+            await this.lifetime.close(key, session);
           }
           throw new BrowserSessionInactiveError();
         }
@@ -393,16 +373,15 @@ export class RunBrowserSessionManager {
       : [...this.sessions.keys()].filter(
           (candidate) => candidate === key || candidate.startsWith(`${key}\0`),
         );
-    const sessions = keys.flatMap((candidate) => {
+    const sessions = keys.flatMap((candidate): Array<[string, PersistentBrowserSession]> => {
       const session = this.sessions.get(candidate);
-      this.sessions.delete(candidate);
-      return session ? [session] : [];
+      return session ? [[candidate, session]] : [];
     });
-    await Promise.allSettled(sessions.map((session) => session.close()));
+    await this.lifetime.closeEntries(sessions);
   }
 
-  async shutdown(): Promise<void> {
-    await shutdownBrowserSessions(this.sessions, this.tails);
+  shutdown(): Promise<void> {
+    return this.lifetime.shutdown();
   }
 
   private async runOperation(
@@ -422,8 +401,7 @@ export class RunBrowserSessionManager {
         preparedUpload,
       );
       if (request.action === "close") {
-        this.sessions.delete(key);
-        await session.close();
+        await this.lifetime.close(key, session);
       }
       return result;
     } catch (error) {
@@ -436,32 +414,7 @@ export class RunBrowserSessionManager {
       ) {
         throw error;
       }
-      this.sessions.delete(key);
-      await session.close();
-      throw error;
-    }
-  }
-
-  private async serialized<T>(
-    key: string,
-    operation: () => Promise<T>,
-    signal?: AbortSignal,
-  ): Promise<T> {
-    const previous = this.tails.get(key) ?? Promise.resolve();
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const tail = previous.catch(() => undefined).then(() => gate);
-    this.tails.set(key, tail);
-    void tail.finally(() => {
-      if (this.tails.get(key) === tail) this.tails.delete(key);
-    });
-    try {
-      await waitForBrowserSessionTurn(previous, signal);
-      return await operation();
-    } finally {
-      release();
+      return await this.lifetime.fail(key, session, error);
     }
   }
 
@@ -471,7 +424,7 @@ export class RunBrowserSessionManager {
     operation: (session: PersistentBrowserSession, key: string) => Promise<T>,
   ): Promise<T> {
     const key = browserSessionOwnerKey(owner);
-    return await this.serialized(
+    return await this.lifetime.serialized(
       key,
       async () => {
         assertBrowserSessionNotAborted(signal);
@@ -487,20 +440,11 @@ export class RunBrowserSessionManager {
             (session.healthy && error instanceof BrowserTargetTimeoutError)
           )
             throw error;
-          this.sessions.delete(key);
-          await session.close();
-          throw error;
+          return await this.lifetime.fail(key, session, error);
         }
       },
       signal,
     );
   }
 
-  private async pruneClosedSessions(): Promise<void> {
-    const closed = [...this.sessions.entries()].filter(
-      ([, session]) => !session.healthy,
-    );
-    for (const [key] of closed) this.sessions.delete(key);
-    await Promise.allSettled(closed.map(([, session]) => session.close()));
-  }
 }

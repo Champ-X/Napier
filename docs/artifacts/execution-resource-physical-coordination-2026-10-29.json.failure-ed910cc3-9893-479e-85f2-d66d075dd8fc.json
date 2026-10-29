@@ -1,0 +1,583 @@
+{
+  "kind": "napier.execution-resource-physical-coordination-evidence",
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-29T10:58:47.150Z",
+  "success": false,
+  "sourceHead": "faf9d777d4b6dc407533e77c5659ee7dc376e90a",
+  "platform": "darwin",
+  "arch": "arm64",
+  "nodeVersion": "v24.19.0",
+  "command": [
+    "node",
+    "scripts/check-execution-resource-coordination.mjs",
+    "/Users/champ/orca/Napier/docs/artifacts/execution-resource-physical-coordination-2026-10-29.json"
+  ],
+  "evidenceClass": "production_workspace_hosts_real_guarded_process_and_native_browser",
+  "rawEvidence": "/Users/champ/orca/Napier/docs/artifacts/execution-resource-physical-coordination-2026-10-29.json.raw-ed910cc3-9893-479e-85f2-d66d075dd8fc",
+  "temporaryFixture": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR",
+  "browserBinding": {
+    "path": "/Users/champ/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+    "sha256": "a596b1cfc6353e987fcec8d71a23a28cd6a9e7a6b4e20b908e4c4fcffe51158e",
+    "resolution": "installed playwright-core executable; no download"
+  },
+  "acceptance": [
+    {
+      "name": "cross_host_process_capacity_one_rejects_before_adapter_launch",
+      "status": "passed",
+      "observedAt": "2026-10-29T10:58:44.401Z"
+    },
+    {
+      "name": "lru_retains_graph_and_real_store_while_owned_process_is_active",
+      "status": "passed",
+      "observedAt": "2026-10-29T10:58:44.401Z"
+    },
+    {
+      "name": "process_cleanup_releases_capacity_for_the_other_host",
+      "status": "passed",
+      "observedAt": "2026-10-29T10:58:44.779Z"
+    }
+  ],
+  "observations": {
+    "fixtureBindings": [
+      {
+        "path": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/target.mjs",
+        "sha256": "7f352fbf4bd53ab4bdd9c092349e49e2b5478d1fbb33070901cb2a2ed02916e3"
+      },
+      {
+        "path": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/workspace-A/index.html",
+        "sha256": "d23987fa1661a12a2864a2b94718dbe0780bd81dcd1f5b3e9278de91a044b92d"
+      },
+      {
+        "path": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/workspace-B/index.html",
+        "sha256": "bf95b7b9c390f05755cf3afed21cf844ac532f9df19739f33009e6d7787f682f"
+      }
+    ],
+    "initial": {
+      "policy": {
+        "epoch": "default",
+        "maxConcurrent": 8,
+        "maxInvocations": null,
+        "maxTokens": null,
+        "maxCostNanos": null,
+        "zeroCostModels": []
+      },
+      "effectiveMaxConcurrent": 8,
+      "activeInvocations": 0,
+      "budgetInvocations": 0,
+      "uncertainInvocations": 0,
+      "unknownCostInvocations": 0,
+      "chargedTokens": 0,
+      "chargedCostUsd": 0,
+      "knownChargedCostUsd": 0,
+      "observedTokens": 0,
+      "observedCostUsd": 0,
+      "executionResources": [
+        {
+          "kind": "sandbox_execution",
+          "configuredCapacity": 1,
+          "effectiveCapacity": 1,
+          "occupied": 0,
+          "preparing": 0,
+          "active": 0,
+          "quarantined": 0
+        },
+        {
+          "kind": "browser_session",
+          "configuredCapacity": 1,
+          "effectiveCapacity": 1,
+          "occupied": 0,
+          "preparing": 0,
+          "active": 0,
+          "quarantined": 0
+        },
+        {
+          "kind": "browser_task",
+          "configuredCapacity": 1,
+          "effectiveCapacity": 1,
+          "occupied": 0,
+          "preparing": 0,
+          "active": 0,
+          "quarantined": 0
+        }
+      ]
+    },
+    "processCapacity": {
+      "admitted": {
+        "target": {
+          "nonce": "d4b32ce9-5eb9-4555-ae0d-62e205f2eb55",
+          "pid": 31722,
+          "receipt": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/records/target-d4b32ce9-5eb9-4555-ae0d-62e205f2eb55.json",
+          "script": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/target.mjs"
+        },
+        "resources": {
+          "policy": {
+            "epoch": "default",
+            "maxConcurrent": 8,
+            "maxInvocations": null,
+            "maxTokens": null,
+            "maxCostNanos": null,
+            "zeroCostModels": []
+          },
+          "effectiveMaxConcurrent": 8,
+          "activeInvocations": 0,
+          "budgetInvocations": 0,
+          "uncertainInvocations": 0,
+          "unknownCostInvocations": 0,
+          "chargedTokens": 0,
+          "chargedCostUsd": 0,
+          "knownChargedCostUsd": 0,
+          "observedTokens": 0,
+          "observedCostUsd": 0,
+          "executionResources": [
+            {
+              "kind": "sandbox_execution",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 1,
+              "preparing": 0,
+              "active": 1,
+              "quarantined": 0
+            },
+            {
+              "kind": "browser_session",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            },
+            {
+              "kind": "browser_task",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            }
+          ]
+        },
+        "counters": {
+          "physicalSandboxLaunches": 1,
+          "admission": {
+            "sandbox_execution": {
+              "attempts": 1,
+              "reserved": 1,
+              "dispatched": 1,
+              "settled": []
+            }
+          }
+        }
+      },
+      "identity": {
+        "pid": 31722,
+        "ppid": 31718,
+        "startedAt": "Thu Oct 29 18:58:44 2026",
+        "state": "Ss",
+        "command": "/Users/champ/.local/lib/node-v24.19.0/bin/node /private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/target.mjs d4b32ce9-5eb9-4555-ae0d-62e205f2eb55 /private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/records/target-d4b32ce9-5eb9-4555-ae0d-62e205f2eb55.json",
+        "commandSha256": "77ba0240823d988bd299569be67b74ff3505bb06898b830a9da627139ed5deed",
+        "nonce": "d4b32ce9-5eb9-4555-ae0d-62e205f2eb55"
+      },
+      "rejected": {
+        "error": "WorkspaceResourceAdmissionError: Workspace execution resource admission: capacity",
+        "code": "capacity",
+        "counters": {
+          "physicalSandboxLaunches": 0,
+          "admission": {
+            "sandbox_execution": {
+              "attempts": 1,
+              "reserved": 0,
+              "dispatched": 0,
+              "settled": []
+            }
+          }
+        },
+        "wallMs": 1
+      },
+      "retained": {
+        "reclaimed": [],
+        "realStoreReadSucceeded": true,
+        "graphCount": 1
+      }
+    },
+    "processRelease": {
+      "stoppedA": {
+        "target": {
+          "nonce": "d4b32ce9-5eb9-4555-ae0d-62e205f2eb55",
+          "pid": 31722
+        },
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "cleanup": {
+          "status": "released",
+          "scope": "sandbox_execution",
+          "reason": "guardian_cleanup_acknowledged"
+        },
+        "resources": {
+          "policy": {
+            "epoch": "default",
+            "maxConcurrent": 8,
+            "maxInvocations": null,
+            "maxTokens": null,
+            "maxCostNanos": null,
+            "zeroCostModels": []
+          },
+          "effectiveMaxConcurrent": 8,
+          "activeInvocations": 0,
+          "budgetInvocations": 0,
+          "uncertainInvocations": 0,
+          "unknownCostInvocations": 0,
+          "chargedTokens": 0,
+          "chargedCostUsd": 0,
+          "knownChargedCostUsd": 0,
+          "observedTokens": 0,
+          "observedCostUsd": 0,
+          "executionResources": [
+            {
+              "kind": "sandbox_execution",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            },
+            {
+              "kind": "browser_session",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            },
+            {
+              "kind": "browser_task",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            }
+          ]
+        },
+        "counters": {
+          "physicalSandboxLaunches": 1,
+          "admission": {
+            "sandbox_execution": {
+              "attempts": 1,
+              "reserved": 1,
+              "dispatched": 1,
+              "settled": [
+                {
+                  "status": "released",
+                  "scope": "sandbox_execution",
+                  "reason": "guardian_cleanup_acknowledged"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "absentA": {
+        "pid": 31722,
+        "running": false,
+        "finalState": "absent"
+      },
+      "admittedB": {
+        "target": {
+          "nonce": "5053b2ce-fec8-4a88-a2ba-5aab23919b33",
+          "pid": 31736,
+          "receipt": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/records/target-5053b2ce-fec8-4a88-a2ba-5aab23919b33.json",
+          "script": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-resource-ed910cc3-9893-479e-85f2-d66d075dd8fc-9C0HVR/target.mjs"
+        },
+        "resources": {
+          "policy": {
+            "epoch": "default",
+            "maxConcurrent": 8,
+            "maxInvocations": null,
+            "maxTokens": null,
+            "maxCostNanos": null,
+            "zeroCostModels": []
+          },
+          "effectiveMaxConcurrent": 8,
+          "activeInvocations": 0,
+          "budgetInvocations": 0,
+          "uncertainInvocations": 0,
+          "unknownCostInvocations": 0,
+          "chargedTokens": 0,
+          "chargedCostUsd": 0,
+          "knownChargedCostUsd": 0,
+          "observedTokens": 0,
+          "observedCostUsd": 0,
+          "executionResources": [
+            {
+              "kind": "sandbox_execution",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 1,
+              "preparing": 0,
+              "active": 1,
+              "quarantined": 0
+            },
+            {
+              "kind": "browser_session",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            },
+            {
+              "kind": "browser_task",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            }
+          ]
+        },
+        "counters": {
+          "physicalSandboxLaunches": 1,
+          "admission": {
+            "sandbox_execution": {
+              "attempts": 2,
+              "reserved": 1,
+              "dispatched": 1,
+              "settled": []
+            }
+          }
+        }
+      },
+      "stoppedB": {
+        "target": {
+          "nonce": "5053b2ce-fec8-4a88-a2ba-5aab23919b33",
+          "pid": 31736
+        },
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "cleanup": {
+          "status": "released",
+          "scope": "sandbox_execution",
+          "reason": "guardian_cleanup_acknowledged"
+        },
+        "resources": {
+          "policy": {
+            "epoch": "default",
+            "maxConcurrent": 8,
+            "maxInvocations": null,
+            "maxTokens": null,
+            "maxCostNanos": null,
+            "zeroCostModels": []
+          },
+          "effectiveMaxConcurrent": 8,
+          "activeInvocations": 0,
+          "budgetInvocations": 0,
+          "uncertainInvocations": 0,
+          "unknownCostInvocations": 0,
+          "chargedTokens": 0,
+          "chargedCostUsd": 0,
+          "knownChargedCostUsd": 0,
+          "observedTokens": 0,
+          "observedCostUsd": 0,
+          "executionResources": [
+            {
+              "kind": "sandbox_execution",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            },
+            {
+              "kind": "browser_session",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            },
+            {
+              "kind": "browser_task",
+              "configuredCapacity": 1,
+              "effectiveCapacity": 1,
+              "occupied": 0,
+              "preparing": 0,
+              "active": 0,
+              "quarantined": 0
+            }
+          ]
+        },
+        "counters": {
+          "physicalSandboxLaunches": 1,
+          "admission": {
+            "sandbox_execution": {
+              "attempts": 2,
+              "reserved": 1,
+              "dispatched": 1,
+              "settled": [
+                {
+                  "status": "released",
+                  "scope": "sandbox_execution",
+                  "reason": "guardian_cleanup_acknowledged"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "absentB": {
+        "pid": 31736,
+        "running": false,
+        "finalState": "absent"
+      }
+    }
+  },
+  "cleanup": [
+    {
+      "host": "A",
+      "exited": true,
+      "result": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "host": "B",
+      "exited": true,
+      "result": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "target": {
+        "nonce": "5053b2ce-fec8-4a88-a2ba-5aab23919b33",
+        "pid": 31736
+      },
+      "signalled": false,
+      "final": "absent"
+    },
+    {
+      "target": {
+        "nonce": "d4b32ce9-5eb9-4555-ae0d-62e205f2eb55",
+        "pid": 31722
+      },
+      "signalled": false,
+      "final": "absent"
+    }
+  ],
+  "sourceBindings": {
+    "files": [
+      {
+        "path": "scripts/check-execution-resource-coordination.mjs",
+        "sha256": "aa7e4081320c06e8271a1fdf390f3cd50c9fe72184b844f6af894f2927b42f00"
+      },
+      {
+        "path": "scripts/execution-resource-host-fixture.mjs",
+        "sha256": "668883183b4f22d292a367461fbc1ebc109642c9a5bdf5afcad7d40b4c8fafaf"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041"
+      },
+      {
+        "path": "package.json",
+        "sha256": "4a0b446aac957c711eb335dede9e188edc538b0fdfea975c89a6c455c7aa9577"
+      },
+      {
+        "path": "packages/contracts/package.json",
+        "sha256": "74de1f721d53e6039a35fbd92a6e92bceaceb2b2a96ac1b2a9fe4dbc60d9b850"
+      },
+      {
+        "path": "packages/runtime/package.json",
+        "sha256": "75f9af919d89385835fb5c32aa42197c53a3d0810c5f458d575c415a262b4fd1"
+      },
+      {
+        "path": "apps/server/package.json",
+        "sha256": "6cf5c08aa8134ce8bdeeed660517d4870c7c0955af0f61fdc701f95f3a4c4013"
+      },
+      {
+        "path": "node_modules/playwright-core/package.json",
+        "sha256": "07c47543631fef9508760365dee9fbe958c562093ec8d122543949ed231f233f"
+      },
+      {
+        "path": "node_modules/playwright-core/browsers.json",
+        "sha256": "f306eed529599b1eaf2f8a85db9de2b23e1a3fe36c2b66434b7c9434fb627a99"
+      }
+    ],
+    "trees": [
+      {
+        "directory": "packages/contracts/src",
+        "suffix": ".ts",
+        "fileCount": 87,
+        "sha256": "ff203ef23ecb972a6b2ad9bf02189bfa0542ffc44a3c552c6e90a727ba0a5a88"
+      },
+      {
+        "directory": "packages/runtime/src",
+        "suffix": ".ts",
+        "fileCount": 1238,
+        "sha256": "f7de30fe721e3253f355db798c6162b89005345b98ac857a234add5ea440bca3"
+      },
+      {
+        "directory": "apps/server/src",
+        "suffix": ".ts",
+        "fileCount": 163,
+        "sha256": "d3bd088a6ff868d60108258c2489fb7f4c76835353978f9a58e41120823d5ead"
+      },
+      {
+        "directory": "packages/contracts/dist",
+        "suffix": ".js",
+        "fileCount": 87,
+        "sha256": "b6961d6fe2261de68449a795214ca44c44988b42747e16c45dab62fb3afdfb27"
+      },
+      {
+        "directory": "packages/runtime/dist",
+        "suffix": ".js",
+        "fileCount": 1238,
+        "sha256": "1e93099456f08c062896313630ae86b5e0cac9d9ac8205a74b3c4d3217cddeb0"
+      },
+      {
+        "directory": "apps/server/dist",
+        "suffix": ".js",
+        "fileCount": 163,
+        "sha256": "87449830fbbb2fe060f868708b7a8b7e8b37d9833d657231c77c81d6cd86d882"
+      }
+    ]
+  },
+  "bindingsUnchanged": true,
+  "bindingFormat": "sha256 of UTF-8 JSON.stringify(sorted {path,sha256} entries); source .ts and consumed dist .js trees bound independently",
+  "scope": {
+    "capacityUnit": "owned sandbox execution handle or native browser session",
+    "hostProcesses": 2,
+    "perKindCapacity": 1,
+    "modelAdmissionInvocations": null,
+    "observedBrowserProxyRequests": null,
+    "browserTaskPhysicalEvidence": "not exercised"
+  },
+  "limitations": [
+    "Real HostDirectSandboxAdapter and production Guardian run without OS isolation. This is not an all-descendant, CPU, RSS or container containment claim.",
+    "Native Chromium uses the default browser port and a local workspace-only page. Zero requests describes its recorded outbound proxy count and model admission ledger, not all system network traffic.",
+    "Host death terminates the published guarded target but leaves its lease quarantined because the dead owner cannot persist affirmative cleanup. Reopen preserves that unknown boundary; no automatic resource reconciliation is claimed.",
+    "Observed browser process roots and their sampled descendants are checked after closure. No claim is made about unobserved escaped descendants or remote provider resources.",
+    "No browser-use local/cloud task, external service, paid model, multi-machine coordination or clean-release-build equivalence is exercised.",
+    "Source and consumed build trees remain separately bound. This local run does not establish statistical performance or complete G01-G07 acceptance."
+  ],
+  "error": {
+    "name": "Error",
+    "message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n6 !== 0\n",
+    "stack": "Error: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n6 !== 0\n\n    at rpc (file:///Users/champ/orca/Napier/scripts/check-execution-resource-coordination.mjs:319:37)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///Users/champ/orca/Napier/scripts/check-execution-resource-coordination.mjs:105:20",
+    "code": "ERR_ASSERTION"
+  }
+}

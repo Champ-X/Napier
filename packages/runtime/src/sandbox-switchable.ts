@@ -8,11 +8,13 @@ import type {
   SandboxNodeDebuggerRuntimeBinding,
   SandboxVerificationRuntimeBinding,
 } from "./sandbox-types.js";
+import { launchAdmittedSandbox } from "./sandbox-resource-admission.js";
+import type { ExecutionResourceAdmission } from "./execution-resource-admission.js";
 
 export class SwitchableSandboxAdapter implements OsSandboxAdapter {
   private version = 0;
 
-  constructor(private active: OsSandboxAdapter) {}
+  constructor(private active: OsSandboxAdapter, private readonly resourceAdmission?: ExecutionResourceAdmission) {}
 
   get id(): string {
     return this.active.id;
@@ -58,6 +60,9 @@ export class SwitchableSandboxAdapter implements OsSandboxAdapter {
   }
 
   launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
-    return this.active.launch(request);
+    const adapter = this.active;
+    return this.resourceAdmission
+      ? launchAdmittedSandbox(adapter, request, this.resourceAdmission)
+      : adapter.launch(request);
   }
 }

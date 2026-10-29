@@ -8,6 +8,16 @@ import { rm } from "node:fs/promises";
 import { launchParentGuardedProcess } from "./process-guardian.js";
 import type { ParentGuardedOciCleanup } from "./process-guardian.js";
 import type { SandboxedProcess } from "./sandbox-types.js";
+import {
+  failedLaunchCleanup,
+  sandboxCleanup,
+  sandboxExecutionIdentity,
+  sandboxLaunchFailure,
+} from "./sandbox-execution-evidence.js";
+import {
+  finalizeSandboxProcess,
+  observeSandboxGroupCleanup,
+} from "./sandbox-process-cleanup.js";
 
 const PROCESS_STOP_GRACE_MS = 2_000;
 
@@ -39,27 +49,17 @@ export async function launchSandboxProcess(input: {
         )
       : await launchDetachedProcess(input);
   } catch (error) {
-    await cleanupSandbox(input);
-    throw error;
+    try {
+      await cleanupSandbox(input);
+    } catch (cleanupError) {
+      throw sandboxLaunchFailure(
+        cleanupError,
+        sandboxCleanup("unknown", "sandbox_cleanup_failed"),
+      );
+    }
+    throw sandboxLaunchFailure(error, failedLaunchCleanup(error));
   }
-  const exit = child.exit.then(
-    async (result) => {
-      await cleanupSandbox(input);
-      return result;
-    },
-    async (error: unknown) => {
-      await cleanupSandbox(input);
-      throw error;
-    },
-  );
-  return {
-    ...child,
-    exit,
-    terminate: async () => {
-      await child.terminate();
-      await exit;
-    },
-  };
+  return finalizeSandboxProcess(child, () => cleanupSandbox(input));
 }
 
 async function cleanupSandbox(input: {
@@ -81,23 +81,51 @@ async function launchDetachedProcess(input: {
   spawnProcess?: typeof spawn;
 }): Promise<SandboxedProcess> {
   const spawnProcess = input.spawnProcess ?? spawn;
-  const child = spawnProcess(input.command, input.args, {
-    cwd: input.cwd,
-    env: input.env,
-    detached: true,
-    shell: false,
-    stdio: ["pipe", "pipe", "pipe"],
-    windowsHide: true,
-  });
-  await waitForSpawn(child);
+  let child: ChildProcessWithoutNullStreams;
+  try {
+    child = spawnProcess(input.command, input.args, {
+      cwd: input.cwd,
+      env: input.env,
+      detached: true,
+      shell: false,
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
+    });
+  } catch (error) {
+    throw sandboxLaunchFailure(
+      error,
+      sandboxCleanup(
+        spawnProcess === spawn ? "not_started" : "unknown",
+        "process_spawn_rejected",
+      ),
+    );
+  }
+  const resourceIdentity = sandboxExecutionIdentity("process", child.pid);
   const exit = childExit(child).finally(() => {
     signalProcessGroup(child, "SIGTERM");
   });
+  try {
+    await waitForSpawn(child);
+  } catch (error) {
+    const noStart = spawnProcess === spawn && child.pid === undefined;
+    if (!noStart) await compensateUnconfirmedSpawn(child, exit);
+    throw sandboxLaunchFailure(
+      error,
+      sandboxCleanup(
+        noStart ? "not_started" : "unknown",
+        "process_spawn_failed",
+      ),
+      resourceIdentity,
+    );
+  }
+  const cleanup = exit.then(() => observeSandboxGroupCleanup(child.pid));
   return {
     stdin: child.stdin,
     stdout: child.stdout,
     stderr: child.stderr,
     exit,
+    cleanup,
+    resourceIdentity,
     terminate: async () => {
       if (child.exitCode !== null || child.signalCode !== null) {
         await exit;
@@ -114,6 +142,35 @@ async function launchDetachedProcess(input: {
       await exit;
     },
   };
+}
+
+async function compensateUnconfirmedSpawn(
+  child: ChildProcess,
+  exit: Promise<unknown>,
+): Promise<void> {
+  if (
+    child.pid === undefined ||
+    child.exitCode !== null ||
+    child.signalCode !== null
+  )
+    return;
+  for (const signal of ["SIGTERM", "SIGKILL"] as const) {
+    try {
+      signalProcessGroup(child, signal);
+    } catch {
+      /* The slot remains unknown. */
+    }
+    const stopped = await Promise.race([
+      exit.then(
+        () => true,
+        () => true,
+      ),
+      new Promise<false>((resolve) =>
+        setTimeout(() => resolve(false), PROCESS_STOP_GRACE_MS),
+      ),
+    ]);
+    if (stopped) return;
+  }
 }
 
 function childExit(child: ChildProcess): Promise<{

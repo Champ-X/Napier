@@ -132,7 +132,7 @@ describe("Browser Use Cloud backend boundary", () => {
       costUsd: 0.5,
       recovery: expect.stringContaining("cost ceiling"),
     });
-    expect(methods).toEqual(["POST", "GET", "PATCH"]);
+    expect(methods).toEqual(["POST", "GET", "PATCH", "GET"]);
   });
 
   it("rejects private or out-of-policy targets before sending data", async () => {

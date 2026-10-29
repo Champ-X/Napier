@@ -129,6 +129,19 @@ export function browserTaskRestartFailure(
   };
 }
 
+export function browserTaskHistoryFailure(
+  backend: BrowserTaskBackend,
+): BrowserTaskErrorEvent {
+  return {
+    type: "error",
+    backend,
+    code: "task_history_unavailable",
+    message: "Browser task ended, but its history could not be saved",
+    diagnosticSha256: sha256(`${backend}_history_unavailable`),
+    recovery: "Inspect local storage before starting another task",
+  };
+}
+
 export function browserTaskShutdownFailure(
   backend: BrowserTaskBackend,
 ): BrowserTaskErrorEvent {

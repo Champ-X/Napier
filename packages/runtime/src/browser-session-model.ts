@@ -1,15 +1,12 @@
-import type { Browser, LaunchOptions } from "playwright-core";
 import { type BrowserPageDiagnosisEvidence } from "@napier/contracts/browser-live-view";
 import { type BrowserTakeoverKey } from "@napier/contracts/browser-takeover";
 
 import type {
-  FixedIpProxyBinding,
   FixedIpProxySnapshot,
 } from "./fixed-ip-http-proxy.js";
-import type { PublicHostLookup } from "./public-network.js";
-import type { RunLocalServiceLeaseRegistry } from "./run-local-service-leases.js";
 
 export * from "./browser-session-limits.js";
+export type { BrowserNetworkProxy, BrowserRuntimeBinding, RunBrowserSessionManagerOptions } from "./browser-session-runtime-options.js";
 
 export interface BrowserSessionOwner {
   threadId: string;
@@ -239,32 +236,4 @@ export interface BrowserPageSourceCapture {
   browserVersionSha256: string;
   limitsSha256: string;
   network: FixedIpProxySnapshot;
-}
-
-export interface BrowserNetworkProxy {
-  start(): Promise<FixedIpProxyBinding>;
-  setOutboundEnabled(enabled: boolean): void;
-  snapshot(): FixedIpProxySnapshot;
-  close(): Promise<void>;
-}
-
-export interface BrowserRuntimeBinding {
-  executablePath: string;
-  executableSha256: string;
-  identity?: {
-    device: number;
-    inode: number;
-    size: number;
-    modifiedAtMs: number;
-  };
-}
-
-export interface RunBrowserSessionManagerOptions {
-  workspaceRoot: string;
-  localServiceLeases?: RunLocalServiceLeaseRegistry;
-  executablePath?: string;
-  lookup?: PublicHostLookup;
-  createProxy?: () => BrowserNetworkProxy;
-  resolveRuntime?: () => Promise<BrowserRuntimeBinding>;
-  launchBrowser?: (options: LaunchOptions) => Promise<Browser>;
 }

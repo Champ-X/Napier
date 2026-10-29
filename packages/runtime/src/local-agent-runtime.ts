@@ -53,6 +53,7 @@ export interface LocalAgentRuntimeOptions {
   env?: Readonly<Record<string, string | undefined>>;
   keychain?: KeychainSecretStore;
   modelCallAdmission?: ConstructorParameters<typeof ModelRegistry>[1];
+  resourceAdmission?: ConstructorParameters<typeof SwitchableSandboxAdapter>[1];
   sandbox?: OsSandboxAdapter;
   sandboxSetup?: SandboxSetupServiceDependencies;
   browserSessions?: RunBrowserSessionManager;
@@ -109,6 +110,7 @@ export async function createLocalAgentRuntime(
   const store = new LocalStore({ dataRoot, workspaceRoot });
   let extensions: McpExtensionManager | undefined;
   let workspaceProcesses: WorkspaceProcessManager | undefined;
+  let initializedKernel: AgentKernel | undefined;
   try {
     await store.initialize(true);
     const credentials = new CredentialReferenceStore({
@@ -137,7 +139,7 @@ export async function createLocalAgentRuntime(
           });
     const initialSandbox =
       options.sandbox ?? configuredSandbox ?? fallbackSandbox;
-    const sandbox = new SwitchableSandboxAdapter(initialSandbox);
+    const sandbox = new SwitchableSandboxAdapter(initialSandbox, options.resourceAdmission);
     extensions = new McpExtensionManager({ store, sandbox });
     workspaceProcesses = new WorkspaceProcessManager({
       store,
@@ -186,6 +188,7 @@ export async function createLocalAgentRuntime(
       new RunBrowserSessionManager({
         workspaceRoot,
         localServiceLeases: initializedProcesses.localServiceLeases,
+        ...(options.resourceAdmission ? { resourceAdmission: options.resourceAdmission } : {}),
       });
     const browserSlot = new DynamicBrowserSessionPort();
     const network = {
@@ -240,6 +243,7 @@ export async function createLocalAgentRuntime(
       search: { slot: searchSlot, executor: searchExecutor },
       browser: { slot: browserSlot, manager: browserManager },
     });
+    initializedKernel = kernel;
     const embeddedAgents = new EmbeddedAgentService(store, kernel);
     const agentMessageExperiments = new AgentMessageExperimentRuntime(
       store,
@@ -261,7 +265,7 @@ export async function createLocalAgentRuntime(
       store,
       workflows,
     );
-    let closed = false;
+    let shutdown: Promise<void> | undefined;
     return {
       workspaceRoot,
       dataRoot,
@@ -290,23 +294,37 @@ export async function createLocalAgentRuntime(
       workflows,
       embeddedWorkflows,
       workflowExperiments,
-      async shutdown() {
-        if (closed) return;
-        closed = true;
-        await settleShutdownSteps([
-          () => kernel.shutdown(),
-          () => initializedProcesses.shutdown(),
-          () => initializedExtensions.shutdown(),
-          () => store.shutdown(),
-        ]);
+      shutdown() {
+        shutdown ??= (async () => {
+          try {
+            await settleShutdownSteps([
+              () => kernel.shutdown(),
+              () => initializedProcesses.shutdown(),
+              () => initializedExtensions.shutdown(),
+              () => options.resourceAdmission?.drain?.(),
+            ]);
+          } catch (cleanup) {
+            try { await store.flushCompatibilityProjections(); }
+            catch (projection) { throw new AggregateError([cleanup, projection], "Resource cleanup and compatibility projection failed"); }
+            throw cleanup;
+          }
+          await store.shutdown();
+        })();
+        return shutdown;
       },
     };
   } catch (error) {
-    await settleShutdownSteps([
-      () => workspaceProcesses?.shutdown(),
-      () => extensions?.shutdown(),
-      () => store.close(),
-    ]).catch(() => undefined);
+    try {
+      await settleShutdownSteps([
+        () => initializedKernel?.shutdown(),
+        () => workspaceProcesses?.shutdown(),
+        () => extensions?.shutdown(),
+        () => options.resourceAdmission?.drain?.(),
+      ]);
+    } catch (cleanup) {
+      throw new AggregateError([error, cleanup], "Local Runtime initialization and resource cleanup failed", { cause: error });
+    }
+    await store.close();
     throw error;
   }
 }

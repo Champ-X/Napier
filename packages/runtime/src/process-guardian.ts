@@ -6,6 +6,12 @@ import {
 import type { Readable, Writable } from "node:stream";
 
 import type { SandboxedProcess } from "./sandbox-types.js";
+import type { ExecutionResourceCleanup } from "./execution-resource-admission.js";
+import {
+  sandboxCleanup,
+  sandboxExecutionIdentity,
+  sandboxLaunchFailure,
+} from "./sandbox-execution-evidence.js";
 import {
   PROCESS_GUARDIAN_SPEC_ENV,
   PROCESS_GUARDIAN_WORKER_SOURCE,
@@ -46,35 +52,57 @@ interface GuardianSpec extends ParentGuardedProcessLaunch {
 
 type GuardianStatus =
   | { type: "ready"; pid: number }
-  | { type: "exit"; code: number | null; signal: NodeJS.Signals | null }
+  | {
+      type: "exit";
+      code: number | null;
+      signal: NodeJS.Signals | null;
+      cleanup: ExecutionResourceCleanup;
+    }
   | { type: "error"; code: string };
 
 interface GuardianStatusChannel {
   ready: Promise<number>;
   exit: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
+  cleanup: Promise<ExecutionResourceCleanup>;
 }
 
 export async function launchParentGuardedProcess(
   request: ParentGuardedProcessLaunch,
   spawnProcess: typeof spawn = spawn,
 ): Promise<ParentGuardedProcess> {
-  const guardian = spawnProcess(
-    process.execPath,
-    ["--input-type=module", "--eval", PROCESS_GUARDIAN_WORKER_SOURCE],
-    {
-      cwd: request.cwd,
-      env: guardianEnvironment(),
-      detached: true,
-      shell: false,
-      stdio: ["pipe", "pipe", "pipe", "pipe", "pipe"],
-      windowsHide: true,
-    },
-  );
-  const streams = guardianStreams(guardian);
-  const guardianExit = childExit(guardian);
-  const statuses = createGuardianStatusChannel(streams.status, guardianExit);
+  let guardian: ChildProcess;
   try {
+    guardian = spawnProcess(
+      process.execPath,
+      ["--input-type=module", "--eval", PROCESS_GUARDIAN_WORKER_SOURCE],
+      {
+        cwd: request.cwd,
+        env: guardianEnvironment(),
+        detached: true,
+        shell: false,
+        stdio: ["pipe", "pipe", "pipe", "pipe", "pipe"],
+        windowsHide: true,
+      },
+    );
+  } catch (error) {
+    throw sandboxLaunchFailure(
+      error,
+      sandboxCleanup(
+        spawnProcess === spawn ? "not_started" : "unknown",
+        "guardian_spawn_rejected",
+      ),
+    );
+  }
+  const resourceIdentity = sandboxExecutionIdentity("guardian", guardian.pid);
+  const guardianExit = childExit(guardian);
+  let streams: ReturnType<typeof guardianStreams> | undefined;
+  let statuses: GuardianStatusChannel | undefined;
+  let dispatched = false;
+  try {
+    streams = guardianStreams(guardian);
+    statuses = createGuardianStatusChannel(streams.status, guardianExit);
     await waitForSpawn(guardian);
+    dispatched = true;
     streams.specification.end(
       JSON.stringify(guardianSpec(request, { statusFd: 4 })),
     );
@@ -98,13 +126,33 @@ export async function launchParentGuardedProcess(
       stdout: streams.stdout,
       stderr: streams.stderr,
       exit,
+      resourceIdentity,
+      cleanup: statuses.cleanup.then(async (evidence) => {
+        await guardianExit;
+        return evidence;
+      }),
       terminate: () => terminateGuardian(guardian, guardianExit, exit),
     };
   } catch (error) {
-    streams.specification.destroy();
-    streams.status.destroy();
-    await terminateGuardian(guardian, guardianExit).catch(() => undefined);
-    throw error;
+    streams?.specification.destroy();
+    let stopped = false;
+    try {
+      await terminateGuardian(guardian, guardianExit);
+      stopped = true;
+    } catch {
+      /* Cleanup remains unknown. */
+    }
+    const cleanup = !stopped
+      ? sandboxCleanup("unknown", "guardian_stop_unconfirmed")
+      : dispatched
+        ? ((await statuses?.cleanup) ??
+          sandboxCleanup("unknown", "guardian_status_unavailable"))
+        : sandboxCleanup(
+            spawnProcess === spawn ? "not_started" : "unknown",
+            "guardian_target_not_dispatched",
+          );
+    streams?.status.destroy();
+    throw sandboxLaunchFailure(error, cleanup, resourceIdentity);
   }
 }
 
@@ -199,6 +247,18 @@ function createGuardianStatusChannel(
   let buffer = "";
   let readySettled = false;
   let exitSettled = false;
+  let statusFailed = false;
+  let resolveCleanup!: (cleanup: ExecutionResourceCleanup) => void;
+  const cleanup = new Promise<ExecutionResourceCleanup>((resolve) => {
+    resolveCleanup = resolve;
+  });
+  // Target stdout/stderr can survive a dead guardian; only this private pipe
+  // must drain before deciding whether the final ACK was received.
+  const statusClosed = new Promise<void>((resolve) => {
+    stream.once("end", resolve);
+    stream.once("close", resolve);
+    stream.once("error", resolve);
+  });
   let resolveReady!: (pid: number) => void;
   let rejectReady!: (error: Error) => void;
   let resolveExit!: (value: {
@@ -219,6 +279,7 @@ function createGuardianStatusChannel(
   stream.on("data", (chunk: string) => {
     buffer += chunk;
     if (Buffer.byteLength(buffer, "utf8") > MAX_GUARDIAN_STATUS_BYTES) {
+      statusFailed = true;
       failReady("Process guardian emitted invalid status");
       return;
     }
@@ -230,12 +291,16 @@ function createGuardianStatusChannel(
       newline = buffer.indexOf("\n");
     }
   });
-  stream.once("error", () => failReady("Process guardian status failed"));
-  void guardianExit.then((result) => {
+  stream.once("error", () => {
+    statusFailed = true;
+    failReady("Process guardian status failed");
+  });
+  void Promise.all([guardianExit, statusClosed]).then(([result]) => {
     failReady("Process guardian exited before its sandbox target started");
     if (!exitSettled) {
       exitSettled = true;
       resolveExit(result);
+      resolveCleanup(sandboxCleanup("unknown", "guardian_cleanup_ack_missing"));
     }
   });
   function failReady(message: string): void {
@@ -245,6 +310,7 @@ function createGuardianStatusChannel(
   }
   function acceptStatus(status: GuardianStatus | undefined): void {
     if (!status) {
+      statusFailed = true;
       failReady("Process guardian emitted invalid status");
       return;
     }
@@ -261,9 +327,14 @@ function createGuardianStatusChannel(
     if (!exitSettled) {
       exitSettled = true;
       resolveExit({ code: status.code, signal: status.signal });
+      resolveCleanup(
+        statusFailed
+          ? sandboxCleanup("unknown", "guardian_status_invalid")
+          : status.cleanup,
+      );
     }
   }
-  return { ready, exit };
+  return { ready, exit, cleanup };
 }
 
 function parseGuardianStatus(line: string): GuardianStatus | undefined {
@@ -289,12 +360,29 @@ function parseGuardianStatus(line: string): GuardianStatus | undefined {
         code: value["code"] === null ? null : Number(value["code"]),
         signal:
           value["signal"] === null ? null : (value["signal"] as NodeJS.Signals),
+        cleanup: parseGuardianCleanup(value["cleanup"]),
       };
     }
   } catch {
     return undefined;
   }
   return undefined;
+}
+
+function parseGuardianCleanup(value: unknown): ExecutionResourceCleanup {
+  if (value && typeof value === "object") {
+    const cleanup = value as Record<string, unknown>;
+    if (
+      cleanup["scope"] === "sandbox_execution" &&
+      ["not_started", "released", "unknown"].includes(
+        String(cleanup["status"]),
+      ) &&
+      typeof cleanup["reason"] === "string" &&
+      /^[a-z_]{1,80}$/.test(cleanup["reason"])
+    )
+      return cleanup as unknown as ExecutionResourceCleanup;
+  }
+  return sandboxCleanup("unknown", "guardian_cleanup_ack_invalid");
 }
 
 function childExit(child: ChildProcess): Promise<{
@@ -312,6 +400,7 @@ function childExit(child: ChildProcess): Promise<{
       resolve({ code, signal });
     };
     child.once("close", finish);
+    child.once("exit", finish);
     child.once("error", () => finish(null, null));
   });
 }

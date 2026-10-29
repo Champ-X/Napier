@@ -5,6 +5,18 @@ import { PassThrough, Writable } from "node:stream";
 import type { IPty } from "@lydell/node-pty";
 
 import type { SandboxedProcess } from "./sandbox-types.js";
+import { prepareTerminalGuardianReceipt } from "./process-guardian-terminal-evidence.js";
+import {
+  beforeSandboxDispatch,
+  failedLaunchCleanup,
+  sandboxCleanup,
+  sandboxExecutionIdentity,
+  sandboxLaunchFailure,
+} from "./sandbox-execution-evidence.js";
+import {
+  finalizeSandboxProcess,
+  observeSandboxGroupCleanup,
+} from "./sandbox-process-cleanup.js";
 
 const PROCESS_STOP_GRACE_MS = 2_000;
 export const MIN_TERMINAL_COLUMNS = 20;
@@ -24,7 +36,11 @@ export interface TerminalProcessLaunch {
 export async function launchTerminalProcess(
   request: TerminalProcessLaunch,
 ): Promise<SandboxedProcess> {
-  const nodePty = await import("@lydell/node-pty");
+  const nodePty = await beforeSandboxDispatch(() => import("@lydell/node-pty"));
+  const guardianReceipt = await beforeSandboxDispatch(() =>
+    prepareTerminalGuardianReceipt(request),
+  );
+  request = guardianReceipt?.launch ?? request;
   let terminal: IPty;
   try {
     terminal = nodePty.spawn(request.command, request.args, {
@@ -36,15 +52,22 @@ export async function launchTerminalProcess(
       encoding: "utf8",
     });
   } catch (error) {
+    await guardianReceipt?.discard();
     if (
       error instanceof Error &&
       error.message.includes("posix_spawnp failed")
     ) {
-      throw new Error(
-        "PTY launch failed because the current-platform helper is not executable; reinstall dependencies so the Napier postinstall check can repair it",
+      throw sandboxLaunchFailure(
+        new Error(
+          "PTY launch failed because the current-platform helper is not executable; reinstall dependencies so the Napier postinstall check can repair it",
+        ),
+        sandboxCleanup("not_started", "pty_posix_spawn_failed"),
       );
     }
-    throw error;
+    throw sandboxLaunchFailure(
+      error,
+      sandboxCleanup("unknown", "pty_launch_unconfirmed"),
+    );
   }
 
   const stdout = new PassThrough();
@@ -80,12 +103,22 @@ export async function launchTerminalProcess(
       }
     },
   });
+  const cleanup = exit.then(() =>
+    guardianReceipt
+      ? guardianReceipt.cleanup()
+      : observeSandboxGroupCleanup(terminal.pid),
+  );
 
   return {
     stdin,
     stdout,
     stderr,
     exit,
+    cleanup,
+    resourceIdentity: sandboxExecutionIdentity(
+      guardianReceipt ? "guardian-pty" : "pty",
+      terminal.pid,
+    ),
     resize: async (columns, rows) => {
       terminal.resize(columns, rows);
     },
@@ -114,20 +147,19 @@ export async function launchTerminalSandboxWrapper(
   try {
     child = await launchTerminalProcess(request);
   } catch (error) {
-    await rm(request.sandboxHome, { recursive: true, force: true });
-    throw error;
+    try {
+      await rm(request.sandboxHome, { recursive: true, force: true });
+    } catch (cleanupError) {
+      throw sandboxLaunchFailure(
+        cleanupError,
+        sandboxCleanup("unknown", "sandbox_cleanup_failed"),
+      );
+    }
+    throw sandboxLaunchFailure(error, failedLaunchCleanup(error));
   }
-  const exit = child.exit.finally(async () => {
-    await rm(request.sandboxHome, { recursive: true, force: true });
-  });
-  return {
-    ...child,
-    exit,
-    terminate: async () => {
-      await child.terminate();
-      await exit;
-    },
-  };
+  return finalizeSandboxProcess(child, () =>
+    rm(request.sandboxHome, { recursive: true, force: true }),
+  );
 }
 
 export function validateTerminalDimensions(

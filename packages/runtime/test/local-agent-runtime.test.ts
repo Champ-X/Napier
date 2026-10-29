@@ -23,6 +23,48 @@ afterEach(async () => {
 });
 
 describe("local Agent Runtime bootstrap", () => {
+  it("shares shutdown completion and keeps the store open until resource teardown finishes", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-drain-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const services = await createLocalAgentRuntime({ workspaceRoot, dataRoot: path.join(root, "state"), sandbox: new UnsupportedSandboxAdapter("drain-test") });
+    let finish!: () => void;
+    const gate = new Promise<void>((resolve) => { finish = resolve; });
+    const closeKernel = services.kernel.shutdown.bind(services.kernel);
+    vi.spyOn(services.kernel, "shutdown").mockImplementation(async () => { await gate; await closeKernel(); });
+    const closeStore = vi.spyOn(services.store, "shutdown");
+    const first = services.shutdown();
+    const second = services.shutdown();
+    try {
+      expect(second).toBe(first);
+      expect(closeStore).not.toHaveBeenCalled();
+      expect(services.store.listAgents().length).toBeGreaterThan(0);
+    } finally { finish(); await first; }
+    expect(closeStore).toHaveBeenCalledOnce();
+  });
+
+  it("attempts all owned cleanup but retains the store when any resource cleanup fails", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-cleanup-failure-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot);
+    const services = await createLocalAgentRuntime({ workspaceRoot, dataRoot: path.join(root, "state"), sandbox: new UnsupportedSandboxAdapter("failed-drain-test") });
+    const closeKernel = services.kernel.shutdown.bind(services.kernel);
+    vi.spyOn(services.kernel, "shutdown").mockImplementation(async () => { await closeKernel(); throw new Error("owned cleanup unconfirmed"); });
+    const closeProcesses = vi.spyOn(services.workspaceProcesses, "shutdown");
+    const closeExtensions = vi.spyOn(services.extensions, "shutdown");
+    const closeStore = vi.spyOn(services.store, "shutdown");
+    try {
+      await expect(services.shutdown()).rejects.toThrow("owned cleanup unconfirmed");
+      await expect(services.shutdown()).rejects.toThrow("owned cleanup unconfirmed");
+      expect(closeProcesses).toHaveBeenCalledOnce();
+      expect(closeExtensions).toHaveBeenCalledOnce();
+      expect(closeStore).not.toHaveBeenCalled();
+      expect(services.store.listAgents().length).toBeGreaterThan(0);
+    } finally { await services.store.shutdown(); }
+  });
+
   it.each(["base", "web", "cli"] as const)(
     "exposes the resolved %s Kernel profile",
     async (kernelProfile) => {
@@ -175,7 +217,7 @@ describe("local Agent Runtime bootstrap", () => {
     ).rejects.toThrow("desired state");
   });
 
-  it("attempts every shutdown step before reporting a cleanup failure", async () => {
+  it("flushes retained compatibility state without closing the ledger after resource cleanup failure", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-local-shutdown-"));
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
@@ -210,17 +252,19 @@ describe("local Agent Runtime bootstrap", () => {
     const extensionShutdown = vi.spyOn(services.extensions, "shutdown");
     const storeClose = vi.spyOn(services.store, "close");
 
-    await expect(services.shutdown()).rejects.toThrow("process cleanup failed");
-
-    expect(extensionShutdown).toHaveBeenCalledOnce();
-    expect(storeClose).toHaveBeenCalledOnce();
-    expect(
-      projectedThreadEventCount(await readFile(statePath, "utf8"), thread.id),
-    ).toBe(1);
-    await expect(services.store.listEvents(thread.id)).rejects.toThrow(
-      "SQLite ledger is not initialized",
-    );
-    await expect(services.shutdown()).resolves.toBeUndefined();
+    try {
+      await expect(services.shutdown()).rejects.toThrow("process cleanup failed");
+      expect(extensionShutdown).toHaveBeenCalledOnce();
+      expect(storeClose).not.toHaveBeenCalled();
+      expect(
+        projectedThreadEventCount(await readFile(statePath, "utf8"), thread.id),
+      ).toBe(1);
+      expect(await services.store.listEvents(thread.id)).toHaveLength(1);
+      await expect(services.shutdown()).rejects.toThrow("process cleanup failed");
+    } finally {
+      await services.workspaceProcesses.shutdown();
+      await services.store.shutdown();
+    }
   });
 
   it("interrupts an unexpired orphan Run lease before exposing the workspace", async () => {

@@ -1,6 +1,10 @@
 import type { Readable, Writable } from "node:stream";
 
 import type { ExtensionCapability } from "@napier/contracts";
+import type {
+  ExecutionResourceCleanup,
+  ExecutionResourceIdentity,
+} from "./execution-resource-admission.js";
 
 export interface SandboxLaunchRequest {
   command: string;
@@ -43,6 +47,9 @@ export interface SandboxedProcess {
   stdout: Readable;
   stderr: Readable;
   exit: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
+  /** Separate from target exit: only backend cleanup evidence can release capacity. */
+  cleanup?: Promise<ExecutionResourceCleanup>;
+  resourceIdentity?: ExecutionResourceIdentity;
   localService?: SandboxLocalServiceBinding;
   resize?(columns: number, rows: number): Promise<void>;
   terminate(): Promise<void>;

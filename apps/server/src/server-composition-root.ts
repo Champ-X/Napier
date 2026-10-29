@@ -76,6 +76,7 @@ export async function createServices(
     env: options?.env ?? process.env,
     browserInteractionConfirmation: { available: true },
     ...(options?.modelCallAdmission ? { modelCallAdmission: options.modelCallAdmission } : {}),
+    ...(options?.resourceAdmission ? { resourceAdmission: options.resourceAdmission } : {}),
     ...(options?.keychain ? { keychain: options.keychain } : {}),
     ...(options?.sandbox ? { sandbox: options.sandbox } : {}),
     ...(options?.sandboxSetup ? { sandboxSetup: options.sandboxSetup } : {}),
@@ -110,7 +111,7 @@ export async function createServices(
   const automation = new AutomationService(store, kernel);
   const channels = new ChannelService(store, kernel);
   const recovery = new RecoveryService(store, kernel);
-  const browserTasks = new BrowserTasks(dataRoot, credentials, options?.env);
+  const browserTasks = new BrowserTasks(dataRoot, credentials, options?.env, options?.resourceAdmission);
   const { receiptTrustDirectories, receiptTrustDirectorySubscriptions } =
     createReceiptTrustServices(store, options);
   if (options?.startAutomation) {

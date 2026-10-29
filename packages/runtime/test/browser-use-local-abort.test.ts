@@ -135,3 +135,105 @@ describe("Browser Use local cancellation admission", () => {
     expect(() => child.emit("error", new Error("fixture spawn failed"))).not.toThrow();
   });
 });
+
+describe("Browser Use local observation failures", () => {
+  it("stops malformed output and retains its task reservation until the child closes", async () => {
+    const harness = await runningBridge();
+    const observe = vi.fn();
+    const execution = harness.backend.run(request, observe);
+    const rejected = expect(execution).rejects.toMatchObject({ code: "backend_protocol_invalid" });
+    let settled = false;
+    void execution.then(() => { settled = true; }, () => { settled = true; });
+    await harness.started;
+    harness.child.stdout.emit("data", Buffer.from(`not json\n${JSON.stringify(step())}\n`));
+    await vi.waitFor(() => expect(harness.kill).toHaveBeenCalledExactlyOnceWith(-731, "SIGTERM"));
+    expect(settled).toBe(false);
+    expect(observe).not.toHaveBeenCalled();
+    await expect(harness.backend.run(request, observe)).rejects.toMatchObject({ code: "browser_task_busy" });
+    harness.child.emit("close", null, "SIGTERM");
+    await rejected;
+    expect(harness.detach).toHaveBeenCalledExactlyOnceWith(731);
+    // The failed observation releases the logical task only after child close.
+    const reason = new Error("stopped before a second launch");
+    await expect(harness.backend.run(request, observe, AbortSignal.abort(reason))).rejects.toBe(reason);
+  });
+
+  it.each(["running", "takeover"] as const)("drains an observer rejection while the agent is %s", async (state) => {
+    const harness = await runningBridge();
+    const failure = new Error("fixture observation persistence failed");
+    const observe = vi.fn(async () => { throw failure; });
+    const execution = harness.backend.run(request, observe);
+    const rejected = expect(execution).rejects.toBe(failure);
+    let settled = false;
+    void execution.then(() => { settled = true; }, () => { settled = true; });
+    await harness.started;
+    if (state === "takeover") harness.backend.takeover();
+    harness.child.stdout.emit("data", Buffer.from(`${JSON.stringify(step())}\n${JSON.stringify(step())}\n`));
+    await vi.waitFor(() => expect(harness.kill).toHaveBeenCalledWith(-731, "SIGTERM"));
+    harness.child.emit("error", new Error("fixture process error during cleanup"));
+    expect(settled).toBe(false);
+    expect(observe).toHaveBeenCalledOnce();
+    if (state === "takeover") {
+      expect(harness.kill.mock.calls).toEqual([[731, "SIGSTOP"], [731, "SIGCONT"], [-731, "SIGTERM"]]);
+    }
+    harness.child.emit("close", null, "SIGTERM");
+    await rejected;
+  });
+
+  it("settles a late observer rejection after close without signalling the old process identity", async () => {
+    const harness = await runningBridge();
+    const entered = gate();
+    const release = gate();
+    const failure = new Error("fixture late observation failure");
+    const execution = harness.backend.run(request, async () => {
+      entered.resolve();
+      await release.promise;
+      throw failure;
+    });
+    const rejected = expect(execution).rejects.toBe(failure);
+    await harness.started;
+    harness.child.stdout.emit("data", Buffer.from(`${JSON.stringify(step())}\n`));
+    await entered.promise;
+    harness.child.emit("close", 0, null);
+    release.resolve();
+    await rejected;
+    expect(harness.kill).not.toHaveBeenCalled();
+    expect(harness.detach).toHaveBeenCalledExactlyOnceWith(731);
+  });
+
+  it("does not swallow failed persistence of automatic takeover", async () => {
+    const harness = await runningBridge();
+    const failure = new Error("fixture takeover observation failure");
+    const observe = vi.fn(async (event) => {
+      if (event.type === "control") throw failure;
+    });
+    const execution = harness.backend.run(request, observe);
+    const rejected = expect(execution).rejects.toBe(failure);
+    await harness.started;
+    harness.child.stdout.emit("data", Buffer.from(`${JSON.stringify({ ...step(), errorCode: "captcha_handoff_required" })}\n`));
+    await vi.waitFor(() => expect(harness.kill).toHaveBeenCalledWith(-731, "SIGTERM"));
+    expect(harness.kill.mock.calls).toEqual([[731, "SIGSTOP"], [731, "SIGCONT"], [-731, "SIGTERM"]]);
+    harness.child.emit("close", null, "SIGTERM");
+    await rejected;
+    expect(observe).toHaveBeenCalledTimes(2);
+  });
+});
+
+async function runningBridge() {
+  const child = childProcess();
+  vi.mocked(spawn).mockReturnValueOnce(child);
+  const started = gate();
+  const end = child.stdin.end.bind(child.stdin);
+  vi.spyOn(child.stdin, "end").mockImplementation(() => { started.resolve(); return end(); });
+  const kill = vi.fn<(pid: number, signal: NodeJS.Signals) => void>();
+  const detach = vi.spyOn(BrowserUseLocalProcessControl.prototype, "detach");
+  const backend = new BrowserUseLocalBackend({
+    dataRoot: await dataRoot(), env: { NAPIER_BROWSER_USE_CREDENTIAL: "unused" },
+    control: { platform: "darwin", kill, schedule: () => undefined },
+  });
+  return { child, started: started.promise, kill, detach, backend };
+}
+
+function step() {
+  return { type: "step", backend: "browser_use_local", step: 1, url: "https://example.com", title: "Fixture", actionNames: [] };
+}

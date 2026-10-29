@@ -6,6 +6,8 @@ import path from "node:path";
 import type { ModelRef } from "@napier/contracts";
 
 import type { BrowserBackend } from "./browser-backend.js";
+import type { ExecutionResourceLease } from "./execution-resource-admission.js";
+import { BrowserUseCloudLifetime } from "./browser-use-cloud-lifetime.js";
 import {
   BrowserUseCloudClient,
   browserUseCloudPublicError,
@@ -85,6 +87,7 @@ export class BrowserUseCloudBackend implements BrowserBackend<
   readonly id = "browser_use_cloud" as const;
   readonly #client: BrowserUseCloudClient;
   readonly #pollIntervalMs: number;
+  #leaseUsed = false;
 
   constructor(
     private readonly options: {
@@ -92,6 +95,8 @@ export class BrowserUseCloudBackend implements BrowserBackend<
       apiKey: string;
       fetch?: typeof fetch;
       pollIntervalMs?: number;
+      cleanupTimeoutMs?: number;
+      resourceLease?: ExecutionResourceLease;
       downloadScreenshot?: (
         url: string,
         destination: string,
@@ -110,6 +115,41 @@ export class BrowserUseCloudBackend implements BrowserBackend<
     ) => void | Promise<void>,
     signal?: AbortSignal,
   ): Promise<BrowserUseCloudTaskResult> {
+    if (this.options.resourceLease && this.#leaseUsed)
+      throw new Error("Browser task resource lease was already used");
+    this.#leaseUsed = true;
+    const lifetime = new BrowserUseCloudLifetime(
+      this.#client,
+      this.options.resourceLease,
+      this.#pollIntervalMs,
+      this.options.cleanupTimeoutMs,
+    );
+    let failure: unknown;
+    try {
+      return await this.#run(request, onObservation, lifetime, signal);
+    } catch (error) {
+      failure = error;
+      if (signal?.aborted)
+        throw browserUseCloudPublicError(
+          "Browser Use Cloud cancellation was requested",
+          "cancelled",
+          "Start a fresh task after the provider task is stopped",
+          { cause: error },
+        );
+      throw error;
+    } finally {
+      await lifetime.finish(failure);
+    }
+  }
+
+  async #run(
+    request: BrowserUseCloudTaskRequest,
+    onObservation: (
+      observation: BrowserUseCloudObservation,
+    ) => void | Promise<void>,
+    lifetime: BrowserUseCloudLifetime,
+    signal?: AbortSignal,
+  ): Promise<BrowserUseCloudTaskResult> {
     validateRequest(request);
     if (!this.options.apiKey.trim()) {
       throw browserUseCloudPublicError(
@@ -125,56 +165,47 @@ export class BrowserUseCloudBackend implements BrowserBackend<
       randomUUID().replaceAll("-", ""),
     );
     await mkdir(artifactDirectory, { recursive: true, mode: 0o700 });
-    let providerTaskId: string | undefined;
-    try {
-      providerTaskId = await this.#client.createTask(
-        {
-          task: request.task,
-          modelId: request.model.id,
-          startUrl: request.startUrl,
-          maxSteps: request.maxSteps,
-          allowedDomains: request.allowedDomains,
-        },
-        signal,
-      );
-      await onObservation({
-        type: "started",
-        backend: "browser_use_cloud",
-        model: request.model.id,
-        allowedDomainCount: request.allowedDomains.length,
-        costStatus: "unknown",
-        interactionPolicy: "public_read_only",
+    signal?.throwIfAborted();
+    lifetime.dispatch();
+    const providerTaskId = await this.#client.createTask(
+      {
+        task: request.task,
+        modelId: request.model.id,
         startUrl: request.startUrl,
-        dataFlow: "task_url_domains_and_page_data_to_browser_use_cloud",
-        workspaceAccess: "none",
-        secretForwarding: "browser_use_api_key_only",
-        recording: "disabled",
-        retentionPolicy: "provider_plan",
-        costLimitMode: "napier_poll_stop",
-        maxCostUsd: request.maxCostUsd,
-        credentialStatus: "configured",
-        pauseAvailable: false,
-        takeoverAvailable: false,
-        cancelMode: "stop_task_and_session",
-      });
-      return await this.#pollTask(
-        providerTaskId,
-        request,
-        artifactDirectory,
-        onObservation,
-        signal,
-      );
-    } catch (error) {
-      if (signal?.aborted) {
-        if (providerTaskId) await this.#client.stopTask(providerTaskId);
-        throw browserUseCloudPublicError(
-          "Browser Use Cloud task was stopped",
-          "cancelled",
-          "Rerun the task to create a fresh one-off cloud session",
-        );
-      }
-      throw error;
-    }
+        maxSteps: request.maxSteps,
+        allowedDomains: request.allowedDomains,
+      },
+      signal,
+    );
+    lifetime.bind(providerTaskId);
+    await onObservation({
+      type: "started",
+      backend: "browser_use_cloud",
+      model: request.model.id,
+      allowedDomainCount: request.allowedDomains.length,
+      costStatus: "unknown",
+      interactionPolicy: "public_read_only",
+      startUrl: request.startUrl,
+      dataFlow: "task_url_domains_and_page_data_to_browser_use_cloud",
+      workspaceAccess: "none",
+      secretForwarding: "browser_use_api_key_only",
+      recording: "disabled",
+      retentionPolicy: "provider_plan",
+      costLimitMode: "napier_poll_stop",
+      maxCostUsd: request.maxCostUsd,
+      credentialStatus: "configured",
+      pauseAvailable: false,
+      takeoverAvailable: false,
+      cancelMode: "stop_task_and_session",
+    });
+    return await this.#pollTask(
+      providerTaskId,
+      request,
+      artifactDirectory,
+      onObservation,
+      lifetime,
+      signal,
+    );
   }
 
   async #pollTask(
@@ -184,12 +215,14 @@ export class BrowserUseCloudBackend implements BrowserBackend<
     onObservation: (
       observation: BrowserUseCloudObservation,
     ) => void | Promise<void>,
+    lifetime: BrowserUseCloudLifetime,
     signal?: AbortSignal,
   ): Promise<BrowserUseCloudTaskResult> {
     const emittedSteps = new Set<number>();
     while (true) {
       signal?.throwIfAborted();
       const task = await this.#client.getTask(providerTaskId, signal);
+      lifetime.observe(task);
       for (const step of task.steps.sort(
         (left, right) => left.number - right.number,
       )) {
@@ -222,7 +255,7 @@ export class BrowserUseCloudBackend implements BrowserBackend<
         });
         emittedSteps.add(step.number);
         if (requiresHumanHandoff(step.nextGoal)) {
-          await this.#client.stopTask(providerTaskId);
+          await lifetime.stop();
           return result({
             providerTaskId,
             artifactDirectory,
@@ -241,6 +274,7 @@ export class BrowserUseCloudBackend implements BrowserBackend<
         providerTaskId,
         artifactDirectory,
         emittedSteps.size,
+        lifetime,
       );
       if (budgetResult) return budgetResult;
       if (isTerminal(task.status)) {
@@ -288,9 +322,10 @@ export class BrowserUseCloudBackend implements BrowserBackend<
     providerTaskId: string,
     artifactDirectory: string,
     stepCount: number,
+    lifetime: BrowserUseCloudLifetime,
   ): Promise<BrowserUseCloudTaskResult | undefined> {
     if (task.cost === undefined || task.cost < maxCostUsd) return undefined;
-    if (!isTerminal(task.status)) await this.#client.stopTask(providerTaskId);
+    if (!isTerminal(task.status)) await lifetime.stop();
     return result({
       providerTaskId,
       artifactDirectory,

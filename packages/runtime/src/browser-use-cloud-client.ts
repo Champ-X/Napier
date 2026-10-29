@@ -35,8 +35,9 @@ export class BrowserUseCloudError extends Error {
     readonly code: string,
     readonly diagnosticSha256: string,
     readonly recovery: string,
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
     this.name = "BrowserUseCloudError";
   }
 }
@@ -100,26 +101,28 @@ export class BrowserUseCloudClient {
     providerTaskId: string,
     signal?: AbortSignal,
   ): Promise<BrowserUseCloudProviderTask> {
-    return parseProviderTask(
+    const task = parseProviderTask(
       await this.#requestJson(
         `/api/v2/tasks/${encodeURIComponent(providerTaskId)}`,
         { method: "GET", ...(signal ? { signal } : {}) },
       ),
     );
+    if (task.id !== providerTaskId)
+      throw browserUseCloudProtocolError(
+        "Browser Use Cloud task identity changed",
+      );
+    return task;
   }
 
-  async stopTask(providerTaskId: string): Promise<void> {
-    try {
-      await this.#requestJson(
-        `/api/v2/tasks/${encodeURIComponent(providerTaskId)}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ action: "stop_task_and_session" }),
-        },
-      );
-    } catch {
-      // Preserve cancellation/budget outcomes even if remote cleanup fails.
-    }
+  async stopTask(providerTaskId: string, signal?: AbortSignal): Promise<void> {
+    await this.#requestJson(
+      `/api/v2/tasks/${encodeURIComponent(providerTaskId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ action: "stop_task_and_session" }),
+        ...(signal ? { signal } : {}),
+      },
+    );
   }
 
   async saveScreenshot(
@@ -312,12 +315,14 @@ export function browserUseCloudPublicError(
   message: string,
   code: string,
   recovery: string,
+  options?: ErrorOptions,
 ): BrowserUseCloudError {
   return new BrowserUseCloudError(
     message,
     code,
     createHash("sha256").update(message).digest("hex"),
     recovery,
+    options,
   );
 }
 
