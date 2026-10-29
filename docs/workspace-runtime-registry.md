@@ -3,8 +3,9 @@
 Status: the production `index.ts` and Web client now use the registry. Current
 HTTP/Runtime and browser evidence covers independent A/B execution, navigation,
 background automation, preview resources, and reopening completed histories in a
-new production process. **G05-B remains incomplete: global resource/budget
-coordination and broader operation/review isolation still need acceptance.**
+new production process. Shared model admission/budgets and process/browser lifetime
+draining are now implemented. **G05-B remains incomplete: global physical
+process/browser capacity and broader operation/review isolation still need acceptance.**
 
 ## Identity and ownership
 
@@ -124,8 +125,9 @@ recovery. The source-bound receipt is
 
 ## Remaining G05-B integration
 
-- Add shared admission and budget/resource coordination across all execution
-  entry points, including automation/recovery and experiments.
+- Extend shared ModelRegistry admission/budgets with global physical process and
+  browser capacity. See [workspace-resource-admission.md](workspace-resource-admission.md)
+  for the implemented boundaries and configuration.
 - Extend active execution recovery evidence beyond pre-dispatch interruptions,
   including blocked/unsafe operations and the unmodified production entry.
 - Replace conservative rotation retention with a complete pending-work index.

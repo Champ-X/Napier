@@ -7,9 +7,11 @@ import { Hono } from "hono";
 
 import { inferWorkspaceRoot } from "./workspace-root.js";
 import { createWorkspaceRuntimeHost } from "./workspace-runtime-host.js";
+import { workspaceModelBudgetFromEnvironment } from "./workspace-model-budget.js";
 
 const webRoot = path.resolve(import.meta.dirname, "../../web/dist");
 const host = await createWorkspaceRuntimeHost({
+  modelBudget: workspaceModelBudgetFromEnvironment(process.env),
   workspaceRoot: path.resolve(process.env["NAPIER_WORKSPACE"] ?? inferWorkspaceRoot(process.cwd())),
   ...(process.env["NAPIER_HOME"] ? { dataRoot: path.resolve(process.env["NAPIER_HOME"]) } : {}),
   onWarning: (workspaceId, error) => {

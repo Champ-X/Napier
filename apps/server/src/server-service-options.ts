@@ -1,5 +1,6 @@
 import type { KeychainSecretStore } from "@napier/runtime/governance";
 import type { OsSandboxAdapter } from "@napier/runtime/code";
+import type { ModelRegistry } from "@napier/runtime/model";
 import type { SandboxSetupServiceDependencies } from "@napier/runtime/sandbox-setup-service";
 
 import type { ReceiptTrustAnchorDirectoryDiscoveryOptions } from "./receipt-trust-directory-discovery.js";
@@ -10,6 +11,7 @@ export interface ServerServiceOptions {
   workspaceRoot?: string;
   env?: Readonly<Record<string, string | undefined>>;
   startAutomation?: boolean;
+  modelCallAdmission?: NonNullable<ConstructorParameters<typeof ModelRegistry>[1]>;
   keychain?: KeychainSecretStore;
   sandbox?: OsSandboxAdapter;
   sandboxSetup?: SandboxSetupServiceDependencies;

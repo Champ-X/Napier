@@ -2767,9 +2767,9 @@ describe("Workspace Process Manager", () => {
     const harness = await createHarness({ sandbox: delayedSandbox });
     const starting = startProcess(harness);
     await launchEntered;
-    await harness.manager.shutdown();
+    const stopping = harness.manager.shutdown();
     releaseLaunch!();
-    await expect(starting).rejects.toThrow("shutting down");
+    await expect(starting).rejects.toThrow("shutting down"); await stopping;
     expect(controlled.processes[0]?.terminate).toHaveBeenCalledOnce();
     expect(await harness.manager.list(harness.thread.id)).toEqual([]);
     harness.store.close();

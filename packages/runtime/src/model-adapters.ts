@@ -8,6 +8,7 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { recordCompatibilityHit } from "./compatibility-telemetry.js";
 import { applyProviderWireCompatibility } from "./model-provider-wire-compatibility.js";
+import { createAdmittedModels, type ModelCallAdmission } from "./model-call-admission.js";
 
 export type ModelAdapterId =
   | "napier.anthropic-messages.v1"
@@ -217,8 +218,8 @@ function recordLegacyModelAdapterReceiptHit(schemaVersion: number): void {
   if (schemaVersion === 1) recordCompatibilityHit("compat.receipt.legacy_read");
 }
 
-export function createModelAdapterModels(models: MutableModels): MutableModels {
-  return new Proxy(models, {
+export function createModelAdapterModels(models: MutableModels, admission?: ModelCallAdmission): MutableModels {
+  return new Proxy(createAdmittedModels(models, admission), {
     get(target, property) {
       if (
         property === "stream" ||

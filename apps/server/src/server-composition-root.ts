@@ -75,6 +75,7 @@ export async function createServices(
     dataRoot,
     env: options?.env ?? process.env,
     browserInteractionConfirmation: { available: true },
+    ...(options?.modelCallAdmission ? { modelCallAdmission: options.modelCallAdmission } : {}),
     ...(options?.keychain ? { keychain: options.keychain } : {}),
     ...(options?.sandbox ? { sandbox: options.sandbox } : {}),
     ...(options?.sandboxSetup ? { sandboxSetup: options.sandboxSetup } : {}),

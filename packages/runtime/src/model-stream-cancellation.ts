@@ -17,6 +17,7 @@ import type { LocalStore } from "./store.js";
 import type { RunRecord } from "@napier/contracts";
 import type { RunBudgetTracker } from "./run-budget.js";
 import { attestHostModelAbort } from "./model-abort-provenance.js";
+import { preserveModelAdmissionFailure } from "./model-call-admission.js";
 import {
   createModelTurnDeadline,
   isModelTurnWatchdogError,
@@ -161,9 +162,10 @@ function attachAbortIsolation(
   });
   let iterator: AsyncIterator<AssistantMessageEvent> | undefined;
   let sourceSettled = source === undefined;
-  void source?.result().then(() => {
-    sourceSettled = true;
-  });
+  void source?.result().then(
+    () => { sourceSettled = true; },
+    () => { sourceSettled = true; },
+  );
   let abortedEvent:
     | Extract<AssistantMessageEvent, { type: "error" }>
     | undefined;
@@ -218,7 +220,7 @@ function attachAbortIsolation(
     const event = {
       type: "error",
       reason: "error",
-      error: terminalMessage(model, "error", errorText(error)),
+      error: preserveModelAdmissionFailure(error, terminalMessage(model, "error", errorText(error))),
     } as const;
     settle(event.error);
     return event;
@@ -282,7 +284,7 @@ function terminalErrorStream(
   model: Model<Api>,
   error: unknown,
 ): AssistantMessageEventStream {
-  const message = terminalMessage(model, "error", errorText(error));
+  const message = preserveModelAdmissionFailure(error, terminalMessage(model, "error", errorText(error)));
   const stream = createAssistantMessageEventStream();
   stream.push({ type: "error", reason: "error", error: message });
   return stream;

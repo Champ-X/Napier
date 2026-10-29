@@ -19,9 +19,11 @@ import {
   browserTaskEnvironment,
   browserTaskFailure,
   browserTaskRestartFailure,
+  browserTaskShutdownFailure,
   boundedBrowserTaskEvents,
   createdBrowserTask,
   restoredBrowserTaskRecord,
+  resolveBrowserTaskCredential,
   streamTaskEvents,
   wakeTaskListeners,
 } from "./browser-task-service-support.js";
@@ -119,8 +121,8 @@ export class BrowserTaskService {
     dataRoot: string;
     apiKey: string;
   }) => BrowserUseCloudRunner;
-  #activeTaskId: string | undefined;
-  #starting = false;
+  #starting: Promise<BrowserTaskCreated> | undefined;
+  #shuttingDown = false;
   #historyError = false;
   #initialization: Promise<void> | undefined;
 
@@ -157,8 +159,8 @@ export class BrowserTaskService {
   }
 
   async create(input: BrowserTaskCreateInput): Promise<BrowserTaskCreated> {
-    await this.initialize();
-    if (this.#starting || this.#activeTaskId) {
+    this.#assertOpen();
+    if (this.hasPendingWork()) {
       throw new BrowserTaskServiceError(
         "A browser task is already active",
         "browser_task_busy",
@@ -166,69 +168,60 @@ export class BrowserTaskService {
         "Stop the active task before starting another browser task",
       );
     }
-    const credentialEnv = input.credentialEnv.trim();
-    let credential: string | undefined;
+    const starting = this.#create(input);
+    this.#starting = starting;
     try {
-      credential = (
-        credentialEnv
-          ? this.#env[credentialEnv]
-          : await this.#resolveCredential?.(input.model.provider)
-      )?.trim();
-    } catch {
-      throw new BrowserTaskServiceError(
-        "The selected browser task credential reference is unavailable",
-        "credential_reference_unavailable",
-        409,
-        `Open Context → Credentials, repair the active ${input.model.provider} credential, then retry`,
-      );
-    }
-    if (!credential) {
-      throw new BrowserTaskServiceError(
-        "The selected browser task credential is missing",
-        "credential_missing",
-        409,
-        credentialEnv
-          ? `Set ${credentialEnv} in the server environment, then restart Napier`
-          : `Open Context → Credentials, add an active ${input.model.provider} credential, then retry`,
-      );
-    }
-    this.#starting = true;
-    try {
-      const runner = await this.#runner(input, credential);
-      const id = `browser_task_${randomUUID().replaceAll("-", "")}`;
-      const record: BrowserTaskRecord = {
-        id,
-        backend: input.backend,
-        screenshotRoot: path.join(
-          input.backend === "browser_use_local"
-            ? browserUseLocalRuntimeRoot(this.#dataRoot)
-            : browserUseCloudRuntimeRoot(this.#dataRoot),
-          "runs",
-        ),
-        createdAt: Date.now(),
-        status: "running",
-        controller: new AbortController(),
-        events: [],
-        listeners: new Set(),
-        timedOut: false,
-        runner,
-        input: structuredClone(input),
-      };
-      this.#tasks.set(id, record);
-      this.#activeTaskId = id;
-      this.#prune();
-      try {
-        await this.#persist(record);
-      } catch (error) {
-        this.#tasks.delete(id);
-        this.#activeTaskId = undefined;
-        throw error;
-      }
-      record.execution = this.#execute(record, runner);
-      return createdBrowserTask(record);
+      return await starting;
     } finally {
-      this.#starting = false;
+      this.#starting = undefined;
     }
+  }
+
+  async #create(input: BrowserTaskCreateInput): Promise<BrowserTaskCreated> {
+    await this.initialize();
+    const credential = await resolveBrowserTaskCredential(
+      input,
+      this.#env,
+      this.#resolveCredential,
+    );
+    this.#assertOpen();
+    const runner = this.#runner(input, credential);
+    const id = `browser_task_${randomUUID().replaceAll("-", "")}`;
+    const record: BrowserTaskRecord = {
+      id,
+      backend: input.backend,
+      screenshotRoot: path.join(
+        input.backend === "browser_use_local"
+          ? browserUseLocalRuntimeRoot(this.#dataRoot)
+          : browserUseCloudRuntimeRoot(this.#dataRoot),
+        "runs",
+      ),
+      createdAt: Date.now(),
+      status: "running",
+      controller: new AbortController(),
+      events: [],
+      listeners: new Set(),
+      timedOut: false,
+      runner,
+      input: structuredClone(input),
+    };
+    this.#tasks.set(id, record);
+    this.#prune();
+    try {
+      await this.#persist(record);
+    } catch (error) {
+      this.#tasks.delete(id);
+      throw error;
+    }
+    if (this.#shuttingDown) {
+      record.events.push(browserTaskShutdownFailure(record.backend));
+      record.status = "terminal";
+      await this.#persist(record).catch(() => undefined);
+      wakeTaskListeners(record);
+      this.#assertOpen();
+    }
+    record.execution = this.#execute(record, runner);
+    return createdBrowserTask(record);
   }
 
   events(
@@ -244,8 +237,15 @@ export class BrowserTaskService {
   }
 
   active(): BrowserTaskCreated | undefined {
-    if (!this.#activeTaskId) return undefined;
-    return createdBrowserTask(this.#task(this.#activeTaskId));
+    const active = [...this.#tasks.values()].find(
+      (record) => record.status !== "terminal",
+    );
+    return active ? createdBrowserTask(active) : undefined;
+  }
+
+  /** Pending starts have no task ID yet, but still keep the workspace resident. */
+  hasPendingWork(): boolean {
+    return Boolean(this.#starting) || Boolean(this.active());
   }
 
   async latest(): Promise<BrowserTaskSnapshot | undefined> {
@@ -337,8 +337,10 @@ export class BrowserTaskService {
   }
 
   async shutdown(): Promise<void> {
+    this.#shuttingDown = true;
     const initialization = this.#initialization;
     if (initialization) await initialization.catch(() => undefined);
+    await this.#starting?.catch(() => undefined);
     const executions: Promise<void>[] = [];
     for (const record of this.#tasks.values()) {
       if (record.status !== "terminal") record.controller.abort();
@@ -368,7 +370,6 @@ export class BrowserTaskService {
       record.events.push(terminal);
       await this.#persist(record, "terminal").catch(() => undefined);
       record.status = "terminal";
-      if (this.#activeTaskId === record.id) this.#activeTaskId = undefined;
       wakeTaskListeners(record);
     }
   }
@@ -410,10 +411,10 @@ export class BrowserTaskService {
     this.#historyError = false;
   }
 
-  async #runner(
+  #runner(
     input: BrowserTaskCreateInput,
     credential: string,
-  ): Promise<BrowserTaskRunner> {
+  ): BrowserTaskRunner {
     if (input.backend === "browser_use_cloud") {
       const backend = this.#createCloudBackend({
         dataRoot: this.#dataRoot,
@@ -453,6 +454,16 @@ export class BrowserTaskService {
   #emit(record: BrowserTaskRecord, event: BrowserTaskEvent): void {
     record.events.push(event);
     wakeTaskListeners(record);
+  }
+
+  #assertOpen(): void {
+    if (this.#shuttingDown) {
+      throw new BrowserTaskServiceError(
+        "Browser task service is shutting down",
+        "browser_task_shutting_down",
+        409,
+      );
+    }
   }
 
   #task(taskId: string): BrowserTaskRecord {

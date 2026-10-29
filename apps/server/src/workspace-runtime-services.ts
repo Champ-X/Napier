@@ -8,7 +8,8 @@ export function workspaceRuntimeCanDispose(services: NapierServices): boolean {
   const runs = threads.flatMap((thread) => store.listRuns(thread.id));
   const waiting = new Set(threads.filter((thread) => thread.status === "waiting" && !store.getThread(thread.id).currentRunId).map((thread) => thread.id));
   if (runs.some((run) => run.status === "queued" || run.status === "running")) return false;
-  if (services.browserTasks.active()) return false;
+  if (services.workspaceProcesses.hasPendingWork()) return false;
+  if (services.browserTasks.hasPendingWork()) return false;
   if (store.listSchedules().some((schedule) => schedule.status === "active" || schedule.claim)) return false;
   if (store.listInboundChannels().some((channel) => channel.status === "active")) return false;
   if (store.listInboundDeliveries().some((delivery) =>
@@ -30,7 +31,10 @@ export function workspaceRuntimeCanDispose(services: NapierServices): boolean {
   return true;
 }
 
-export async function disposeWorkspaceRuntimeServices(services: NapierServices): Promise<void> {
+export async function disposeWorkspaceRuntimeServices(
+  services: NapierServices,
+  beforeRuntimeShutdown?: () => Promise<void>,
+): Promise<void> {
   // Invoke every stop before awaiting: no worker can schedule its next tick
   // while another worker is draining. Never close its ledger before it settles.
   const stopped = await Promise.allSettled([
@@ -39,5 +43,6 @@ export async function disposeWorkspaceRuntimeServices(services: NapierServices):
   ]);
   const failures = stopped.filter((entry) => entry.status === "rejected");
   if (failures.length) throw new AggregateError(failures.map((entry) => entry.reason), "Workspace workers did not drain");
+  await beforeRuntimeShutdown?.();
   await services.shutdownLocalRuntime();
 }

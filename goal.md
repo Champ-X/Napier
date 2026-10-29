@@ -220,6 +220,16 @@
 - 复现脚本 `node scripts/check-workspace-runtime-recovery.mjs <new-output-path>`：1 个真实进程场景通过，严格测试类型检查及 diff check 通过。单次 SIGKILL 至 A/B 完成观测 3209 ms，不作为统计性能或成功率结论。源码／实际使用的 Contracts/Runtime 构建树绑定收据：[workspace-runtime-recovery-2026-10-29.json](docs/artifacts/workspace-runtime-recovery-2026-10-29.json)。
 - 生产 host／recovery worker 真实执行，但 provider 和 readiness sandbox 是本地 fixture；断点在模型分派和工具副作用前，外部模型请求 0。尚不覆盖任意写操作、原样 index 活动恢复或审批 UI 隔离。全局资源／预算协调继续推进，G05-B 和总目标保持未完成。
 
+### 后续推进：G05-B 模型额度与后台生命周期
+
+- 从 `a057890c` 继续，保留用户 Web／文档／启动脚本改动，未 push。生产 host 新增同 stateHome 跨工作区／进程的 SQLite 模型准入，默认最多 8 个物理模型调用；可配置持久 invocation/token/名义 USD 额度和显式 epoch。预算不因重启或空闲回收重置，epoch 内策略不可静默改变，活跃 host 使用最小容量。
+- 在 ModelRegistry 原始四方法处准入，主／子代理、compaction、review 与实验复用；不持有整 Run 许可，容量 1 下父子仍可完成。背压同步拒绝且不触发 provider fallback；外部 BrowserUse 或扩展自建网络不在此模型额度范围。invocation 不等于 HTTP 重试次数，冻结 SDK 价格只作名义估算，不保证外部账单上限。
+- 成功、正数且一致的用量才释放预留差额；中断、缺失、零用量或不一致记录保留完整预留及更高观测。部分字段缺失不丢弃其余有效计数，cost 缺失仍记录冻结价格估算并保留不确定状态。未知费用为 null；超用变成债务。已结束 Run 的 provider 若忽略取消，物理调用仍占容量且 graph 不可回收；结算写入失败保留隔离并使 drain 明确拒绝。
+- WorkspaceProcessManager 的 pending 覆盖准备、OS 执行、终态落账和补偿清理；shutdown 排空准备、终止晚注册进程并等待结算。BrowserTask 在首次 await 前预留，取消发生于凭据或初始落账阶段时不再启动后端；本地 BrowserUse 修复异步准备到 spawn 之间的取消竞态。两类义务均阻止普通空闲回收。
+- 当前源码／实际构建树绑定的 **19 文件、170 个不同测试**通过（Runtime 110、Server 60），包括实际父子 Run、忽略取消、跨连接额度、SIGKILL 后不退预算、故障结算隔离、后台进程与浏览器准备／退出竞态。另复跑 1440/320px A/B 浏览器导航、后台自动化、预览资源与生产进程重开，0 page error、0 身份错配、0 横向溢出。外部模型请求 0。当前收据：[workspace-resource-coordination-current-2026-10-29.json](docs/artifacts/workspace-resource-coordination-current-2026-10-29.json)。首轮 167 测试收据原样保留；随后补齐 reasoning／长缓存子计数、部分费用和未分类 token 超用，并修正测试先观察 Run completed、尚未等到 schedule.lastRunId 的结算竞态，失败记录另行保留，未更改生产调度。
+- Runtime/Server compile、严格测试类型检查及 diff check 通过。架构仍为原 10 项，公开 API 仍为 root 1897/1896 与原 compatibility digest 两项失败；未提高预算、未重写历史收据。实现／变量／边界见 [workspace-resource-admission.md](docs/workspace-resource-admission.md)。
+- **G05-B 仍未完成**：尚需全局物理进程／浏览器容量、审批／review 浏览器验收、细化 rotation 回收。PID 复用保守阻断，不宣称通用崩溃资源回收；额度查询尚无统一暂停 UX。G01–G07 全范围保持 active，后续继续物理资源协调和其余共享执行／投影／恢复／交互／性能目标。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -404,7 +414,7 @@
 
 - [x] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。（生产 host 已接入；持久身份、自定义账本与恢复失败重试已实现。）
 - [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 threadId、预览资源与后台自动化已覆盖；审批／review 场景另列待验收。）
-- [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。
+- [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度和模型／进程／BrowserTask 生命周期保护已验证；全局物理进程／浏览器容量仍待完成。）
 - [ ] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。
 
 **验收**：A 项目长任务运行时可切到 B 提交新任务；A 后台任务和自动化继续；SSE、权限和成果无串线；重启后各工作区恢复；空闲资源能够释放。

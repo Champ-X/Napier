@@ -45,7 +45,7 @@ import {
   WorkspaceProcessControl,
   type WriteWorkspaceProcessInputRequest,
 } from "./workspace-process-control.js";
-import { reserveWorkspaceProcessStart } from "./workspace-process-admission.js";
+import { WorkspaceProcessLifetime } from "./workspace-process-lifetime.js";
 import { compensateWorkspaceProcessFailure } from "./workspace-process-auto-compensation.js";
 import { WorkspaceProcessRecoveryManager } from "./workspace-process-recovery.js";
 import {
@@ -148,7 +148,8 @@ export class WorkspaceProcessManager {
     string,
     Map<string, WorkspaceProcessSession>
   >();
-  private readonly startingByThread = new Map<string, number>();
+  private readonly lifetime =
+    new WorkspaceProcessLifetime(MAX_ACTIVE_WORKSPACE_PROCESSES, MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD);
   private readonly control: WorkspaceProcessControl<ActiveWorkspaceProcess>;
   private readonly writePreviews: WorkspaceProcessWritePreviewManager;
   private readonly recovery?: WorkspaceProcessRecoveryManager;
@@ -216,6 +217,8 @@ export class WorkspaceProcessManager {
       rollbackResults,
     );
   }
+
+  hasPendingWork(): boolean { return this.lifetime.hasPendingWork(); }
 
   async start(
     request: StartWorkspaceProcessRequest,
@@ -302,69 +305,66 @@ export class WorkspaceProcessManager {
   ): Promise<WorkspaceProcessSession> {
     this.assertReady();
     this.assertRunOwnership(request.threadId, request.runId);
-    const releaseAdmission = reserveWorkspaceProcessStart({
-      sessions: [...this.entries.values()].map((entry) => entry.session),
-      startingByThread: this.startingByThread,
-      threadId: request.threadId,
-      maximumGlobal: MAX_ACTIVE_WORKSPACE_PROCESSES,
-      maximumPerThread: MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD,
-    });
-    let launched: Awaited<ReturnType<typeof launchWorkspaceProcess>>;
-    try {
-      launched = await launchWorkspaceProcess({
-        request,
-        privateProtocol,
-        ...(writePreviewId ? { writePreviewId } : {}),
-        options: this.options,
-        writePreviews: this.writePreviews,
-        ...(this.recovery ? { recovery: this.recovery } : {}),
-        shuttingDown: () => this.shuttingDown,
+    return this.lifetime.start(
+      request.threadId, [...this.entries.values()].map((entry) => entry.session),
+      async (releaseAdmission) => {
+        let launched: Awaited<ReturnType<typeof launchWorkspaceProcess>>;
+        try {
+          launched = await launchWorkspaceProcess({
+            request,
+            privateProtocol,
+            ...(writePreviewId ? { writePreviewId } : {}),
+            options: this.options,
+            writePreviews: this.writePreviews,
+            ...(this.recovery ? { recovery: this.recovery } : {}),
+            shuttingDown: () => this.shuttingDown,
+          });
+        } finally {
+          releaseAdmission();
+        }
+        const { session, prepared, beforeSnapshot, child, write, writeLock } =
+          launched;
+        const processId = session.id;
+        const entry = this.createEntry(
+          session,
+          prepared,
+          beforeSnapshot,
+          child,
+          privateProtocol,
+          request.signal,
+          write,
+          writeLock,
+        );
+        this.entries.set(processId, entry);
+        try {
+          await this.appendSession(session, WORKSPACE_PROCESS_STARTED_EVENT);
+          await this.localServiceLeases.started(session);
+        } catch (error) {
+          this.entries.delete(processId);
+          await this.localServiceLeases.ended(session, "start_failed");
+          await child.terminate().catch(() => undefined);
+          await this.recovery?.remove(processId);
+          await writeLock?.release();
+          throw error;
+        }
+        entry.timeout = setTimeout(() => {
+          this.forceStop(
+            entry,
+            "timed_out",
+            "The Process Session exceeded its wall-time budget.",
+          );
+        }, prepared.timeoutMs);
+        entry.completion = this.lifetime.track(this.monitor(entry).catch(async () => {
+          this.failEntryInMemory(entry);
+          await this.appendSession(
+            entry.session,
+            WORKSPACE_PROCESS_INTERRUPTED_EVENT,
+          ).catch(() => undefined);
+          await this.recovery?.remove(entry.session.id);
+          await entry.writeLock?.release();
+        }));
+        return this.runtimeSession(entry);
       });
-    } finally {
-      releaseAdmission();
-    }
-    const { session, prepared, beforeSnapshot, child, write, writeLock } =
-      launched;
-    const processId = session.id;
-    const entry = this.createEntry(
-      session,
-      prepared,
-      beforeSnapshot,
-      child,
-      privateProtocol,
-      request.signal,
-      write,
-      writeLock,
-    );
-    this.entries.set(processId, entry);
-    try {
-      await this.appendSession(session, WORKSPACE_PROCESS_STARTED_EVENT);
-      await this.localServiceLeases.started(session);
-    } catch (error) {
-      this.entries.delete(processId);
-      await this.localServiceLeases.ended(session, "start_failed");
-      await child.terminate().catch(() => undefined);
-      await this.recovery?.remove(processId);
-      await writeLock?.release();
-      throw error;
-    }
-    entry.timeout = setTimeout(() => {
-      this.forceStop(
-        entry,
-        "timed_out",
-        "The Process Session exceeded its wall-time budget.",
-      );
-    }, prepared.timeoutMs);
-    entry.completion = this.monitor(entry).catch(async () => {
-      this.failEntryInMemory(entry);
-      await this.appendSession(
-        entry.session,
-        WORKSPACE_PROCESS_INTERRUPTED_EVENT,
-      ).catch(() => undefined);
-      await this.recovery?.remove(entry.session.id);
-      await entry.writeLock?.release();
-    });
-    return this.runtimeSession(entry);
   }
 
   async list(threadId: string): Promise<WorkspaceProcessSession[]> {
@@ -516,21 +516,21 @@ export class WorkspaceProcessManager {
     return this.runtimeSession(entry);
   }
 
-  async shutdown(): Promise<void> {
-    if (this.shuttingDown) return;
+  shutdown(): Promise<void> {
+    // Close admission before waiting for starts and their settlement.
     this.shuttingDown = true;
-    const active = [...this.entries.values()].filter(
-      (entry) => entry.session.status === "running",
-    );
-    for (const entry of active) {
-      this.forceStop(
-        entry,
-        "interrupted",
-        "The Runtime shut down before this Process Session settled.",
+    return this.lifetime.shutdown(() => {
+      const active = [...this.entries.values()].filter(
+        (entry) => entry.session.status === "running",
       );
-    }
-    await Promise.allSettled(active.map((entry) => entry.completion));
-    await this.localServiceLeases.revokeAll();
+      for (const entry of active) {
+        this.forceStop(
+          entry,
+          "interrupted",
+          "The Runtime shut down before this Process Session settled.",
+        );
+      }
+    }, () => this.localServiceLeases.revokeAll());
   }
 
   private createEntry(

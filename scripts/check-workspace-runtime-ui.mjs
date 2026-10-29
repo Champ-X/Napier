@@ -165,7 +165,7 @@ try {
     assert.ok(body.activeThread.runs.some((run) => run.status === "completed"));
   }
   receipt.productionProcessRestartVerified = true;
-  receipt.boundaries = ["Prepared production host with deterministic run.started gate and fixture provider; not a live-model quality experiment", "Readiness uses host-direct fixture configuration; no OS sandbox claim", "HTML interaction uses DOM button click as in existing preview checks", "Production entry reopened both completed ledgers in an independent child process; active execution restart is not claimed here", "Global model/budget admission remains pending"];
+  receipt.boundaries = ["Prepared production host with deterministic run.started gate and fixture provider; not a live-model quality experiment", "Readiness uses host-direct fixture configuration; no OS sandbox claim", "HTML interaction uses DOM button click as in existing preview checks", "Production entry reopened both completed ledgers in an independent child process; active execution restart is not claimed here", "This navigation scenario does not accept global resource or budget coordination; separate admission and lifetime tests cover those boundaries"];
   receipt.sources = before;
   assert.deepEqual(await hashes(), before);
   await writeFile(output, `${JSON.stringify(receipt, null, 2)}\n`, { flag: "wx" });

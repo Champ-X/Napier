@@ -114,8 +114,9 @@ describe("workspace registry with real HTTP and Runtime ledgers", () => {
       await vi.waitFor(() => {
         const runs = a.store.listRuns(backgroundA.id);
         expect(runs).toHaveLength(1); expect(runs[0]?.status).toBe("completed");
+        // Run completion precedes the scheduler's own durable settlement.
+        expect(a.store.getSchedule(schedule.id).lastRunId).toBe(runs[0]?.id);
       }, { timeout: 10_000, interval: 100 });
-      expect(a.store.getSchedule(schedule.id).lastRunId).toBe(a.store.listRuns(backgroundA.id)[0]?.id);
       expect(await registry.reclaimIdle()).toEqual([f.b.workspaceId]);
       expect(disposed).not.toContain(f.a.root);
       releaseA.resolve();

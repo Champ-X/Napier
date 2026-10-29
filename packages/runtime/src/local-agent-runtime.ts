@@ -52,6 +52,7 @@ export interface LocalAgentRuntimeOptions {
   dataRoot?: string;
   env?: Readonly<Record<string, string | undefined>>;
   keychain?: KeychainSecretStore;
+  modelCallAdmission?: ConstructorParameters<typeof ModelRegistry>[1];
   sandbox?: OsSandboxAdapter;
   sandboxSetup?: SandboxSetupServiceDependencies;
   browserSessions?: RunBrowserSessionManager;
@@ -115,7 +116,7 @@ export async function createLocalAgentRuntime(
       ...(options.env ? { env: options.env } : {}),
       ...(options.keychain ? { keychain: options.keychain } : {}),
     });
-    const models = new ModelRegistry(credentials);
+    const models = new ModelRegistry(credentials, options.modelCallAdmission);
     const fallbackSandbox =
       options.sandbox ??
       createSandboxFallbackAdapter({

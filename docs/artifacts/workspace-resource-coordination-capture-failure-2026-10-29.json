@@ -1,0 +1,239 @@
+{
+  "kind": "napier.workspace-resource-coordination-capture-failure",
+  "schemaVersion": 1,
+  "externalModelRequests": 0,
+  "rawDiagnosticsDirectory": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-workspace-resource-evidence-FuYoNw",
+  "counts": {
+    "numTotalTests": 60,
+    "numPassedTests": 59,
+    "numFailedTests": 1
+  },
+  "failedAssertions": [
+    {
+      "file": "apps/server/test/workspace-runtime-live-http.test.ts",
+      "name": "workspace registry with real HTTP and Runtime ledgers runs B and A automation while A is detached, scopes controls/files, then reopens both ledgers",
+      "status": "failed",
+      "failureMessages": [
+        "AssertionError: expected undefined to be 'run_d04047f0aa4149f8a465' // Object.is equality\n    at /Users/champ/orca/Napier/apps/server/test/workspace-runtime-live-http.test.ts:118:58\n    at file:///Users/champ/orca/Napier/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:20"
+      ]
+    }
+  ],
+  "bindings": {
+    "server-tests.json": "106a99207386b649151ec35e3d09f054886c6698e7096d188111b1c7eae97897",
+    "runtime-tests.json": "aa6fe639df6545515af2ad691cf9f7542bee7852d3cd2e0d41f57adca55a8024",
+    "bindings-before.json": "da7424e4b751ee9e96fc45d6343ba24255ecf80b93de02ef2e053b353a2ebd4e",
+    "bindings-after.json": "da7424e4b751ee9e96fc45d6343ba24255ecf80b93de02ef2e053b353a2ebd4e"
+  },
+  "sourceBindings": {
+    "files": [
+      {
+        "path": "apps/server/test/browser-task.test.ts",
+        "sha256": "793270c25993197e5b1d80748ea544c917d50af5e98b2ece72c35fb4b82f4c22"
+      },
+      {
+        "path": "apps/server/test/process-run-readiness-test-fixture.ts",
+        "sha256": "0de02cdd7b40ac405803cee358e29311ddbc3232d147b94757043c83e81220b1"
+      },
+      {
+        "path": "apps/server/test/workspace-model-admission-fixture.ts",
+        "sha256": "c661c0e1417b83d65c38a52c091fa0529f84c9cd9a3546e228a2d6b332f53aa7"
+      },
+      {
+        "path": "apps/server/test/workspace-model-admission-owner-fixture.ts",
+        "sha256": "1d1efbc1520e477c91b2c61f18853fbbf9693bff9970b1f1f0da78c4e3ac7dee"
+      },
+      {
+        "path": "apps/server/test/workspace-model-admission.test.ts",
+        "sha256": "3dee300ff03dc224a8ee023faa198354cc244b0aa3de2816e60cca54d4003972"
+      },
+      {
+        "path": "apps/server/test/workspace-model-host.test.ts",
+        "sha256": "03ae25c33c325e768fae3db90020101002753700b30e54b594d39234e408e959"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-host.test.ts",
+        "sha256": "d792ae4f1cddbac5536a0138516a6eeecc31133bda05183d8a0e954264a2f1ff"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-http.test.ts",
+        "sha256": "8e78f459726a6eb71a641117d223a288dce53037a5558f0dd3b5c627a6f65700"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-live-http.test.ts",
+        "sha256": "47946c347e56a35433aeaca62dc55f55bc18b52c06bbc2c9b5dcff82bd32d581"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-owner-process-fixture.ts",
+        "sha256": "d732e4184e0e77deda28798938e19dec3bbb4d2a6d33e64a49934c89469b28db"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-owner-process.test.ts",
+        "sha256": "4759c9fab90379c5fcb1d77fbf6815f2f955e5349092eeb60d63666669b92f4f"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-process-lifetime.test.ts",
+        "sha256": "3800d717ce060a058957f6fc8643ab8530b29ce4d53249fad457b71d70ec4e3a"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-recovery-process-fixture.ts",
+        "sha256": "d96b41cc57ea552f59b3c6ab17b665728038a77b0dc1e87186ea9c023946b5ae"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-recovery-process.test.ts",
+        "sha256": "e4767b282710b611d4c03b8e1364732e1280b753a376fe1712cc7040a00ec024"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-registry.test.ts",
+        "sha256": "912ef76362d20ffc2b95a2fd1ab8da5635b72a96bc37833b07bc951ce967e146"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-test-fixture.ts",
+        "sha256": "7cfee1e32a558f08adfd78af16fda5cc1a06e9d4015e93a4b5855091ee32e0f0"
+      },
+      {
+        "path": "node_modules/@earendil-works/pi-ai/dist/providers/faux.js",
+        "sha256": "b02c2292c3b9b82cb52605764f1b2eac56d32a8ffff8a2092f2f0f89648d3927"
+      },
+      {
+        "path": "node_modules/@earendil-works/pi-ai/package.json",
+        "sha256": "5ff1327178682b9a7a3224f8358eec187e97b5c3f3bd1e77bb45c310aab84865"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041"
+      },
+      {
+        "path": "packages/runtime/test/active-run-test-fixture.ts",
+        "sha256": "8851ece5ccd11460b04b127fe8ef8f1bd309401389edf4dadf5fa747e5452da4"
+      },
+      {
+        "path": "packages/runtime/test/browser-use-local-abort.test.ts",
+        "sha256": "7b99b9f9315d88d1b5a3341e0883d0a2cff462ca20ed3ba08a5d5e40fb560446"
+      },
+      {
+        "path": "packages/runtime/test/browser-use-local-backend.test.ts",
+        "sha256": "d9021a66b571ddf38baeb0f949be4579de85386b9e56e72bbc70bb00ed383301"
+      },
+      {
+        "path": "packages/runtime/test/model-adapter-capture.test.ts",
+        "sha256": "8f410456dfefd80431b6ee5f5ac948ffa337b4a0467e357ea31f94c1c8f24498"
+      },
+      {
+        "path": "packages/runtime/test/model-adapters.test.ts",
+        "sha256": "ac3126dfc178c5f0f0fc198b50c24b2151eba716ae111201c67c80c22cf0d195"
+      },
+      {
+        "path": "packages/runtime/test/model-call-admission.test.ts",
+        "sha256": "83c9004a2073376b4e2b6021325cc99df2a50262d94eeb79c80b296f581877fb"
+      },
+      {
+        "path": "packages/runtime/test/model-route-integration.test.ts",
+        "sha256": "f017098972d25f8ac7da00c0feaacb29c7256eee60d7c6a2639302f591edac99"
+      },
+      {
+        "path": "packages/runtime/test/model-stream-cancellation.test.ts",
+        "sha256": "85729116bd3ebf40207ea26ffb1088e4cde86246cec06718ea6c889048a44815"
+      },
+      {
+        "path": "packages/runtime/test/process-run-readiness-test-fixture.ts",
+        "sha256": "6da1ceadbb6f0caae80a6621dc74b332c3c7c051bf6ea0a615c5f28d09a83850"
+      },
+      {
+        "path": "packages/runtime/test/run-context-compaction-runtime.test.ts",
+        "sha256": "adfe0d6291e6251c5ddd42bfb3f084b6a182df4895e247d3a3ee33f02c58d184"
+      },
+      {
+        "path": "packages/runtime/test/run-context-compaction-test-support.ts",
+        "sha256": "5acb06f5f6b2bcabc8f0cc7af14e57774bc9acf05e541226df995161f6f7beef"
+      },
+      {
+        "path": "packages/runtime/test/run-progress-vector-test-support.ts",
+        "sha256": "558bd190158fdef049b33031b84c3477157a3843b1f2c29f178c79abd43ba0a6"
+      },
+      {
+        "path": "packages/runtime/test/workspace-processes.test.ts",
+        "sha256": "d7acbed21b53a5bf43e506458cd5d51aa56b373a69d6743909970a8a82b73669"
+      },
+      {
+        "path": "scripts/check-workspace-resource-coordination.mjs",
+        "sha256": "208ae8af483ad5d98daefdece7a03b85a28addb467d8d82fa8811666b9bb87bd"
+      },
+      {
+        "path": "scripts/check-workspace-runtime-ui.mjs",
+        "sha256": "5b06cd2dc8c883dd64d91396ad1bf4fc4c1ee0bcc48d2cdad8fd444f240c0d54"
+      },
+      {
+        "path": "scripts/production-server-test-environment.mjs",
+        "sha256": "ba6b7964057a2d43b221ae9ed6c5740ac2407fc035baa6811bbc3c3eebf3e466"
+      },
+      {
+        "path": "scripts/web-ui-e2e-runtime.mjs",
+        "sha256": "702db828c8b88c5cde4855471435fc0768ef0692978723b2c6c90deca8adf21c"
+      }
+    ],
+    "trees": [
+      {
+        "directory": "apps/server/src",
+        "suffixes": [
+          ".ts"
+        ],
+        "fileCount": 159,
+        "sha256": "182d3acc8c311331db43fea055a41de727575550dcc567c8949618ce9c9dbb8d"
+      },
+      {
+        "directory": "packages/contracts/src",
+        "suffixes": [
+          ".ts"
+        ],
+        "fileCount": 87,
+        "sha256": "ff203ef23ecb972a6b2ad9bf02189bfa0542ffc44a3c552c6e90a727ba0a5a88"
+      },
+      {
+        "directory": "packages/runtime/src",
+        "suffixes": [
+          ".ts"
+        ],
+        "fileCount": 1228,
+        "sha256": "fc5e00d3327d5c35430cf1893a6422e231768198a39736c21ed0ce2bb0ca8913"
+      },
+      {
+        "directory": "apps/web/src",
+        "suffixes": null,
+        "fileCount": 866,
+        "sha256": "aa579ec7d9b2e5a518efe4efbceabf4bbcad1337e8f2aa06a52f019e018bf5a8"
+      },
+      {
+        "directory": "packages/contracts/dist",
+        "suffixes": [
+          ".js"
+        ],
+        "fileCount": 87,
+        "sha256": "b6961d6fe2261de68449a795214ca44c44988b42747e16c45dab62fb3afdfb27"
+      },
+      {
+        "directory": "packages/runtime/dist",
+        "suffixes": [
+          ".js"
+        ],
+        "fileCount": 1228,
+        "sha256": "e020f02550e82dac88b1513f58a6aae70aadd235a5c2505a83b92faa1969130f"
+      },
+      {
+        "directory": "apps/server/dist",
+        "suffixes": [
+          ".js"
+        ],
+        "fileCount": 159,
+        "sha256": "75fb20029fc4e37d4aa0be1de2cb69ef89c74dfc5b28a63b5f8456778b0c7e83"
+      },
+      {
+        "directory": "apps/web/dist",
+        "suffixes": null,
+        "fileCount": 335,
+        "sha256": "977958c7d56376011879663ab73def802f94eb441d3c552e901c97286d4ac61e"
+      }
+    ]
+  },
+  "diagnosis": "The live HTTP fixture observed Run completed before the scheduler persisted schedule.lastRunId. The test now waits for both durable outcomes in the same bounded polling assertion; no production scheduler change.",
+  "browserExecuted": false
+}

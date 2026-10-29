@@ -13,10 +13,13 @@ import {
   type BrowserUseLocalTaskResult,
 } from "@napier/runtime";
 import { Hono } from "hono";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { registerBrowserTaskHttp } from "../src/browser-task-http.js";
 import { BrowserTaskService } from "../src/browser-task-service.js";
+import { BrowserTaskJournal } from "../src/browser-task-journal.js";
+import type { BrowserTaskCreateInput } from "../src/browser-task-types.js";
+import { deferred } from "./workspace-runtime-test-fixture.js";
 
 const temporaryRoots: string[] = [];
 
@@ -29,6 +32,170 @@ afterEach(async () => {
 });
 
 describe("Browser Use local task HTTP", () => {
+  it("reserves the only task slot before concurrent credential resolution", async () => {
+    const root = await temporaryRoot();
+    const resolving = deferred<void>();
+    const credential = deferred<string>();
+    const finish = deferred<void>();
+    const resolveCredential = vi.fn(async () => {
+      resolving.resolve();
+      return credential.promise;
+    });
+    const run = vi.fn(async () => {
+      await finish.promise;
+      return completed(root);
+    });
+    const service = new BrowserTaskService({
+      dataRoot: root, env: {}, resolveCredential,
+      createBackend: () => ({ run }),
+    });
+    const input = { ...validRequest(), credentialEnv: "" };
+    const starting = service.create(input);
+    try {
+      expect(service.hasPendingWork()).toBe(true);
+      expect(service.active()).toBeUndefined();
+      await resolving.promise;
+      await expect(service.create(input)).rejects.toMatchObject({ code: "browser_task_busy" });
+      expect(resolveCredential).toHaveBeenCalledOnce();
+      expect(run).not.toHaveBeenCalled();
+      credential.resolve("private-key");
+      const created = await starting;
+      expect(service.active()?.taskId).toBe(created.taskId);
+      expect(service.hasPendingWork()).toBe(true);
+      expect(run).toHaveBeenCalledOnce();
+      await expect(service.create(input)).rejects.toMatchObject({ code: "browser_task_busy" });
+      finish.resolve();
+      await service.shutdown();
+      expect(service.active()).toBeUndefined();
+      expect(service.hasPendingWork()).toBe(false);
+    } finally {
+      credential.resolve("private-key"); finish.resolve();
+      await starting.catch(() => undefined); await service.shutdown();
+    }
+  });
+
+  it.each(["missing", "rejected"] as const)("releases task admission after %s credentials", async (failure) => {
+    const root = await temporaryRoot();
+    let attempt = 0;
+    const service = new BrowserTaskService({
+      dataRoot: root, env: {},
+      resolveCredential: async () => {
+        if (++attempt > 1) return "private-key";
+        if (failure === "rejected") throw new Error("private credential failure");
+        return undefined;
+      },
+      createBackend: () => ({ run: async () => completed(root) }),
+    });
+    const input = { ...validRequest(), credentialEnv: "" };
+    try {
+      await expect(service.create(input)).rejects.toMatchObject({
+        code: failure === "missing" ? "credential_missing" : "credential_reference_unavailable",
+      });
+      expect(service.hasPendingWork()).toBe(false);
+      await expect(service.create(input)).resolves.toHaveProperty("taskId");
+    } finally { await service.shutdown(); }
+  });
+
+  it("closes admission and drains a credential lookup before shutting down", async () => {
+    const root = await temporaryRoot();
+    const resolving = deferred<void>();
+    const credential = deferred<string>();
+    const createBackend = vi.fn(() => ({ run: async () => completed(root) }));
+    const service = new BrowserTaskService({
+      dataRoot: root, env: {}, createBackend,
+      resolveCredential: async () => { resolving.resolve(); return credential.promise; },
+    });
+    const input = { ...validRequest(), credentialEnv: "" };
+    const starting = service.create(input);
+    const rejected = expect(starting).rejects.toMatchObject({ code: "browser_task_shutting_down" });
+    let shutdown: Promise<void> | undefined;
+    try {
+      await resolving.promise;
+      let drained = false;
+      shutdown = service.shutdown().then(() => { drained = true; });
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(drained).toBe(false);
+      expect(service.hasPendingWork()).toBe(true);
+      await expect(service.create(input)).rejects.toMatchObject({ code: "browser_task_shutting_down" });
+      credential.resolve("private-key");
+      await rejected; await shutdown;
+      expect(createBackend).not.toHaveBeenCalled();
+      expect(service.hasPendingWork()).toBe(false);
+    } finally {
+      credential.resolve("private-key");
+      await starting.catch(() => undefined); await shutdown; await service.shutdown();
+    }
+  });
+
+  it("retains task occupancy and drains terminal journal persistence", async () => {
+    const root = await temporaryRoot();
+    const persisting = deferred<void>();
+    const allowPersist = deferred<void>();
+    const save = BrowserTaskJournal.prototype.save;
+    const persist = vi.spyOn(BrowserTaskJournal.prototype, "save").mockImplementation(async function (this: BrowserTaskJournal, record) {
+      if (record.status === "terminal") { persisting.resolve(); await allowPersist.promise; }
+      return save.call(this, record);
+    });
+    const service = new BrowserTaskService({
+      dataRoot: root, env: { TEST_BROWSER_KEY: "private-key" },
+      createBackend: () => ({ run: async () => completed(root) }),
+    });
+    let shutdown: Promise<void> | undefined;
+    try {
+      const created = await service.create(validRequest());
+      await persisting.promise;
+      expect(service.active()?.taskId).toBe(created.taskId);
+      expect(service.hasPendingWork()).toBe(true);
+      let drained = false;
+      shutdown = service.shutdown().then(() => { drained = true; });
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(drained).toBe(false);
+      allowPersist.resolve(); await shutdown;
+      expect(service.hasPendingWork()).toBe(false);
+      expect(await service.latest()).toMatchObject({ taskId: created.taskId, status: "terminal" });
+    } finally {
+      allowPersist.resolve(); await shutdown; await service.shutdown(); persist.mockRestore();
+    }
+  });
+
+  it("cancels without launching when shutdown starts during the initial journal write", async () => {
+    const root = await temporaryRoot();
+    const persisting = deferred<void>(), allowPersist = deferred<void>();
+    const save = BrowserTaskJournal.prototype.save;
+    const persist = vi.spyOn(BrowserTaskJournal.prototype, "save").mockImplementation(async function (this: BrowserTaskJournal, record) {
+      if (record.status === "running") { persisting.resolve(); await allowPersist.promise; }
+      return save.call(this, record);
+    });
+    const run = vi.fn(async () => completed(root));
+    const service = new BrowserTaskService({
+      dataRoot: root, env: { TEST_BROWSER_KEY: "private-key" },
+      createBackend: () => ({ run }),
+    });
+    const starting = service.create(validRequest());
+    const rejected = expect(starting).rejects.toMatchObject({ code: "browser_task_shutting_down" });
+    let shutdown: Promise<void> | undefined;
+    try {
+      await persisting.promise;
+      const events = service.events(service.active()!.taskId);
+      const terminal = events.next();
+      shutdown = service.shutdown();
+      expect(service.hasPendingWork()).toBe(true);
+      allowPersist.resolve(); await rejected; await shutdown;
+      expect(run).not.toHaveBeenCalled();
+      expect(service.hasPendingWork()).toBe(false);
+      expect((await terminal).value).toMatchObject({ type: "error", code: "cancelled" });
+      expect((await events.next()).done).toBe(true);
+      const restored = new BrowserTaskService({ dataRoot: root, env: {} });
+      expect(await restored.latest()).toMatchObject({
+        status: "terminal", events: [expect.objectContaining({ type: "error", code: "cancelled" })],
+      });
+      await restored.shutdown();
+    } finally {
+      allowPersist.resolve(); await starting.catch(() => undefined);
+      await shutdown; await service.shutdown(); persist.mockRestore();
+    }
+  });
+
   it("streams replayable steps, serves screenshot evidence, and returns a result", async () => {
     const root = await temporaryRoot();
     const screenshot = path.join(
@@ -494,7 +661,7 @@ describe("Browser Use local task HTTP", () => {
   });
 });
 
-function validRequest() {
+function validRequest(): BrowserTaskCreateInput {
   return {
     backend: "browser_use_local",
     task: "Summarize the latest release",

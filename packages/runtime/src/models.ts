@@ -34,7 +34,7 @@ export class ModelRegistry {
   modelTurnDeadlinePolicy?: Partial<ModelTurnDeadlinePolicy>;
   toolDeadlinePolicy?: Partial<ToolDeadlinePolicy>;
 
-  constructor(credentials?: CredentialStore) {
+  constructor(credentials?: CredentialStore, admission?: Parameters<typeof createModelAdapterModels>[1]) {
     if (credentials && "readReference" in credentials) {
       this.credentialReferences = credentials as CredentialStore & {
         readReference(referenceId: string): Promise<Credential | undefined>;
@@ -45,6 +45,7 @@ export class ModelRegistry {
         ...(credentials ? { credentials } : {}),
         authContext: explicitCredentialAuthContext(),
       }),
+      admission,
     );
     for (const provider of builtinProviders()) {
       models.setProvider(withDeepSeekVisionModel(provider));

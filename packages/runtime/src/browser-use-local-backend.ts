@@ -189,6 +189,7 @@ async function executeBridge(input: {
   ) => void | Promise<void>;
   signal?: AbortSignal;
 }): Promise<BrowserUseLocalTaskResult> {
+  input.signal?.throwIfAborted();
   return await new Promise((resolve, reject) => {
     const child = spawn(
       input.pythonExecutable,
@@ -210,33 +211,12 @@ async function executeBridge(input: {
     let chain = Promise.resolve();
     let settled = false;
     if (!child.pid) {
+      child.once("error", () => undefined);
       reject(new Error("Browser Use local process did not expose an identity"));
       return;
     }
     const childPid = child.pid;
-    input.control.attach(childPid);
     const abort = (): void => input.control.terminate();
-    input.signal?.addEventListener("abort", abort, { once: true });
-    child.stdin.end(
-      `${JSON.stringify({
-        task: input.request.task,
-        ...(input.request.startUrl
-          ? { initialUrl: input.request.startUrl }
-          : {}),
-        modelProvider: input.request.model.provider,
-        modelId: input.request.model.id,
-        allowedDomains: input.request.allowedDomains,
-        browserExecutablePath: input.request.browserExecutablePath,
-        browserProduct: input.request.browserProduct,
-        browserVersion: input.request.browserVersion,
-        maxSteps: input.request.maxSteps,
-        artifactDirectory: input.artifactDirectory,
-        controlAvailable: input.control.available,
-        cancelMode: input.control.available
-          ? "terminate_process_group"
-          : "terminate_process",
-      })}\n`,
-    );
     child.stdout.on("data", (chunk: Buffer) => {
       outputBytes += chunk.byteLength;
       stdout = Buffer.concat([stdout, chunk]);
@@ -287,6 +267,7 @@ async function executeBridge(input: {
       stderrSha256.update(chunk);
       if (outputBytes > MAX_PROCESS_OUTPUT_BYTES) input.control.terminate();
     });
+    child.stdin.once("error", () => input.control.terminate());
     child.once("error", (error) => finish(() => reject(error)));
     child.once("close", (code) =>
       finish(() => {
@@ -328,6 +309,32 @@ async function executeBridge(input: {
           resolve(result);
         });
       }),
+    );
+    input.control.attach(childPid);
+    input.signal?.addEventListener("abort", abort, { once: true });
+    if (input.signal?.aborted) {
+      abort();
+      return;
+    }
+    child.stdin.end(
+      `${JSON.stringify({
+        task: input.request.task,
+        ...(input.request.startUrl
+          ? { initialUrl: input.request.startUrl }
+          : {}),
+        modelProvider: input.request.model.provider,
+        modelId: input.request.model.id,
+        allowedDomains: input.request.allowedDomains,
+        browserExecutablePath: input.request.browserExecutablePath,
+        browserProduct: input.request.browserProduct,
+        browserVersion: input.request.browserVersion,
+        maxSteps: input.request.maxSteps,
+        artifactDirectory: input.artifactDirectory,
+        controlAvailable: input.control.available,
+        cancelMode: input.control.available
+          ? "terminate_process_group"
+          : "terminate_process",
+      })}\n`,
     );
     function finish(operation: () => void): void {
       if (settled) return;

@@ -11,6 +11,7 @@ import type {
   AgentStepLifecycleContext,
   ComposableLifecycleExtensionPipeline,
 } from "./lifecycle-extension-pipeline.js";
+import { preserveModelAdmissionFailure } from "./model-call-admission.js";
 
 type TerminalAssistantEvent = Extract<
   AssistantMessageEvent,
@@ -62,7 +63,7 @@ function lifecycleErrorMessage(
   model: Model<Api>,
   error: unknown,
 ): AssistantMessage {
-  return {
+  return preserveModelAdmissionFailure(error, {
     role: "assistant",
     content: [],
     api: model.api,
@@ -79,5 +80,5 @@ function lifecycleErrorMessage(
     stopReason: "error",
     errorMessage: error instanceof Error ? error.message : String(error),
     timestamp: Date.now(),
-  };
+  });
 }

@@ -4,14 +4,14 @@ import {
   browserUseCloudRuntimeRoot,
   browserUseLocalRuntimeRoot,
 } from "@napier/runtime/browser";
-import {
-  sha256,
-} from "@napier/runtime/core";
+import { sha256 } from "@napier/runtime/core";
 import path from "node:path";
 
+import { BrowserTaskServiceError } from "./browser-task-error.js";
 import type { BrowserTaskJournalRecord } from "./browser-task-journal.js";
 import type {
   BrowserTaskBackend,
+  BrowserTaskCreateInput,
   BrowserTaskCreated,
   BrowserTaskErrorEvent,
   BrowserTaskEvent,
@@ -21,6 +21,42 @@ const FORWARDED_ENVIRONMENT =
   "ALL_PROXY,APPDATA,HOME,HTTPS_PROXY,HTTP_PROXY,LANG,LC_ALL,LOCALAPPDATA,LOGNAME,NO_PROXY,PATH,SSL_CERT_DIR,SSL_CERT_FILE,SYSTEMROOT,USER,USERPROFILE".split(
     ",",
   );
+
+export async function resolveBrowserTaskCredential(
+  input: BrowserTaskCreateInput,
+  env: Readonly<Record<string, string | undefined>>,
+  resolveCredential:
+    | ((providerId: string) => Promise<string | undefined>)
+    | undefined,
+): Promise<string> {
+  const credentialEnv = input.credentialEnv.trim();
+  let credential: string | undefined;
+  try {
+    credential = (
+      credentialEnv
+        ? env[credentialEnv]
+        : await resolveCredential?.(input.model.provider)
+    )?.trim();
+  } catch {
+    throw new BrowserTaskServiceError(
+      "The selected browser task credential reference is unavailable",
+      "credential_reference_unavailable",
+      409,
+      `Open Context → Credentials, repair the active ${input.model.provider} credential, then retry`,
+    );
+  }
+  if (!credential) {
+    throw new BrowserTaskServiceError(
+      "The selected browser task credential is missing",
+      "credential_missing",
+      409,
+      credentialEnv
+        ? `Set ${credentialEnv} in the server environment, then restart Napier`
+        : `Open Context → Credentials, add an active ${input.model.provider} credential, then retry`,
+    );
+  }
+  return credential;
+}
 
 export interface StreamableBrowserTaskRecord {
   status: "running" | "stopping" | "terminal";
@@ -90,6 +126,19 @@ export function browserTaskRestartFailure(
     message: "Browser task stopped when the Napier server restarted",
     diagnosticSha256: sha256(`${backend}_server_restarted`),
     recovery: "Retry the same task to start a fresh browser session",
+  };
+}
+
+export function browserTaskShutdownFailure(
+  backend: BrowserTaskBackend,
+): BrowserTaskErrorEvent {
+  return {
+    type: "error",
+    backend,
+    code: "cancelled",
+    message: "Browser task was stopped before it started",
+    diagnosticSha256: sha256(`${backend}_shutdown`),
+    recovery: "Start a fresh browser task when ready",
   };
 }
 

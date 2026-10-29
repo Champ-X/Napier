@@ -12,12 +12,15 @@ import { createWorkspaceRuntimeFetch } from "./workspace-runtime-http.js";
 import { resolveWorkspaceRuntimeIdentity } from "./workspace-runtime-identity.js";
 import { WorkspaceRuntimeRegistry } from "./workspace-runtime-registry.js";
 import { disposeWorkspaceRuntimeServices, workspaceRuntimeCanDispose } from "./workspace-runtime-services.js";
+import { WorkspaceModelAdmission } from "./workspace-model-admission.js";
+import type { WorkspaceModelBudgetOptions } from "./workspace-model-budget.js";
 
 interface WorkspaceRuntimeHostOptions {
   workspaceRoot: string;
   dataRoot?: string;
   stateHome?: string;
-  services?: Omit<ServerServiceOptions, "workspaceRoot" | "dataRoot" | "startAutomation">;
+  services?: Omit<ServerServiceOptions, "workspaceRoot" | "dataRoot" | "startAutomation" | "modelCallAdmission">;
+  modelBudget?: WorkspaceModelBudgetOptions;
   maxResident?: number;
   maxIdle?: number;
   idleMs?: number;
@@ -33,6 +36,8 @@ export async function createWorkspaceRuntimeHost(
   const interval = options.maintenanceMs ?? 30_000;
   if (!Number.isSafeInteger(interval) || interval < 100) throw new Error("Invalid workspace maintenance interval");
   const catalog = await WorkspaceRuntimeCatalog.open(stateHome);
+  const modelAdmission = await WorkspaceModelAdmission.open(stateHome, options.modelBudget)
+    .catch((error) => { catalog.close(); throw error; });
   const failures = new Map<string, string>();
   const registry = createRegistry();
 
@@ -46,6 +51,7 @@ export async function createWorkspaceRuntimeHost(
         prepare: async (identity) => {
           const services = await prepareServices({
             ...options.services, workspaceRoot: identity.root, dataRoot: identity.dataRoot, startAutomation: true,
+            modelCallAdmission: modelAdmission.forWorkspace(identity.workspaceId),
           });
           try {
             const app = createApp(services, {
@@ -57,13 +63,21 @@ export async function createWorkspaceRuntimeHost(
               setBodyContentSha256Header(context, response);
               return context.json(response);
             });
-            return { services, app };
-          } catch (error) { await disposeWorkspaceRuntimeServices(services); throw error; }
+            app.get("/api/workspace/resources", (context) => {
+              const response = modelAdmission.snapshot();
+              setBodyContentSha256Header(context, response);
+              return context.json(response);
+            });
+            return { services, app, workspaceId: identity.workspaceId };
+          } catch (error) {
+            await disposeWorkspaceRuntimeServices(services, () => modelAdmission.drainWorkspace(identity.workspaceId));
+            throw error;
+          }
         },
-        dispose: ({ services }) => disposeWorkspaceRuntimeServices(services),
-        canDispose: ({ services }) => workspaceRuntimeCanDispose(services),
+        dispose: ({ services, workspaceId }) => disposeWorkspaceRuntimeServices(services, () => modelAdmission.drainWorkspace(workspaceId)),
+        canDispose: ({ services, workspaceId }) => !modelAdmission.hasPending(workspaceId) && workspaceRuntimeCanDispose(services),
       });
-    } catch (error) { catalog.close(); throw error; }
+    } catch (error) { modelAdmission.close(); catalog.close(); throw error; }
   }
 
   async function identityFor(root: string, dataRoot?: string) {
@@ -99,7 +113,7 @@ export async function createWorkspaceRuntimeHost(
       options.onWarning?.(failure.workspaceId, failure.error);
     }
   } catch (error) {
-    await registry.shutdown(); catalog.close(); throw error;
+    await registry.shutdown(); modelAdmission.close(); catalog.close(); throw error;
   }
 
   let maintenance: Promise<void> | undefined;
@@ -129,6 +143,7 @@ export async function createWorkspaceRuntimeHost(
       shutdown ??= (async () => {
         await maintenance;
         await registry.shutdown();
+        modelAdmission.close();
         catalog.close();
       })();
       return shutdown;
