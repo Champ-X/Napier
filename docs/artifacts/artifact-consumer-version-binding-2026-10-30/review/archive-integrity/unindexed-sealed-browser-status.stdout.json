@@ -1,0 +1,53 @@
+{
+  "kind": "napier.artifact-consumer-portable-reconciliation",
+  "status": "passed",
+  "archiveStatus": "sealed",
+  "artifactCount": 396,
+  "functionalSourceFiles": 53,
+  "uniqueFinalTests": 480,
+  "uniqueFinalTestFiles": 69,
+  "baseTestCounts": [
+    {
+      "suite": "runtime",
+      "files": 26,
+      "total": 210,
+      "passed": 210,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "server",
+      "files": 10,
+      "total": 37,
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "web",
+      "files": 32,
+      "total": 225,
+      "passed": 225,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "cli",
+      "files": 1,
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "repeatedCasesMerged": 0,
+  "protectedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "browserStatus": "passed",
+  "liveSourceChecked": false,
+  "fullG01Complete": false,
+  "boundary": "Reconciles retained evidence; does not rerun tests or browser acceptance.",
+  "errors": []
+}

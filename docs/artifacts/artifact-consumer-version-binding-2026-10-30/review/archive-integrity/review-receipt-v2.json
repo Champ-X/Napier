@@ -1,0 +1,130 @@
+{
+  "kind": "napier.g01-consumer-archive-independent-review",
+  "schemaVersion": 1,
+  "createdAt": "2026-10-29T23:15:56.487207+00:00",
+  "reviewedScriptSha256": "8a9d044bd8045c39679d65da26474e59df2d43b0ec043a5e4f470771f0754593",
+  "reviewScope": "Portable archive reconciler draft; final browser/source seal still pending",
+  "sourceEdits": false,
+  "probes": {
+    "relocatedArchive": "passed without original working directory or tool dependencies",
+    "unindexedFunctionalReference": "rejected with Unindexed semantic evidence",
+    "unindexedBrowserReference": "rejected with Unindexed semantic evidence",
+    "tamperedIndexedArtifact": "rejected by hash/size"
+  },
+  "actualDraftCounts": {
+    "sourceFiles": 55,
+    "uniqueTests": 503,
+    "uniqueTestFiles": 71
+  },
+  "findings": [
+    {
+      "id": "unindexed-semantic-reference",
+      "status": "fixed",
+      "originalScriptSha256": "338845dce294011efe13b16adc06423bf59128c0e9a500ce795a4480a8db48ed",
+      "originalEffect": "Unindexed regression could reduce source count to zero, or unindexed status-only browser receipt could be accepted.",
+      "fix": "All direct semantic inputs and summary now require archive index membership; sealed source and browser provenance requirements added."
+    }
+  ],
+  "additionalChecks": "Reviewed strict snapshot-root test normalization, repo-relative source paths, declared incremental source delta and browser source/overlay/build/entry checks. No further concrete discrepancy found in actual draft evidence.",
+  "limits": [
+    "No final sealed browser/source artifact was available for this review.",
+    "Adversarial probes modify temporary copies only; they are not production or UI acceptance."
+  ],
+  "evidence": [
+    {
+      "path": "probe-summary.json",
+      "sha256": "a0ff18225120376582e39b107e41eafe17cecb9c24d3bbfc556df837f3882131",
+      "bytes": 786
+    },
+    {
+      "path": "probe.py",
+      "sha256": "6c698d21e87d6823d91c0556f015f2750f30e72f43c01963c3c7b7d89085f73a",
+      "bytes": 2311
+    },
+    {
+      "path": "relocated-original.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "relocated-original.stdout.json",
+      "sha256": "1d867a9e236e361ee9ce574724cfd65cfea5584fa92dc5c733178f448b704bf2",
+      "bytes": 1096
+    },
+    {
+      "path": "reviewed-reconcile-v1.py",
+      "sha256": "338845dce294011efe13b16adc06423bf59128c0e9a500ce795a4480a8db48ed",
+      "bytes": 8856
+    },
+    {
+      "path": "reviewed-reconcile-v2.py",
+      "sha256": "8a9d044bd8045c39679d65da26474e59df2d43b0ec043a5e4f470771f0754593",
+      "bytes": 13344
+    },
+    {
+      "path": "unindexed-functional-reference.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unindexed-functional-reference.stdout.json",
+      "sha256": "58ba8b83ab33bbdb754997e8f30755af58a02f5e193ecc7db67bbdc12e9c32c6",
+      "bytes": 1095
+    },
+    {
+      "path": "unindexed-sealed-browser-status.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "unindexed-sealed-browser-status.stdout.json",
+      "sha256": "aaa20fce155823fd75c21436a0ada23af68fa4011478a8048e07ea5b280ce328",
+      "bytes": 1074
+    },
+    {
+      "path": "updated-v2/probe-summary.json",
+      "sha256": "27c2c6a444ba1b3bd9b69143b7c468aae50488585bbf7c9a1b177c22a6750848",
+      "bytes": 3557
+    },
+    {
+      "path": "updated-v2/relocated-original.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "updated-v2/relocated-original.stdout.json",
+      "sha256": "8bd15ced8da8ae3440e98fc8003c2dd22a9d877c61b76fb2f73eb21631573f56",
+      "bytes": 1096
+    },
+    {
+      "path": "updated-v2/tampered-indexed-artifact.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "updated-v2/tampered-indexed-artifact.stdout.json",
+      "sha256": "c7d94e65c245a3d560ddd993157181df9d92d3deaa846e52d15c97e3c55a25da",
+      "bytes": 1214
+    },
+    {
+      "path": "updated-v2/unindexed-browser-reference.stderr.txt",
+      "sha256": "d130914d1d648be24f0ad983ecfd36cb796b73105edd634c7932aac09dd0d906",
+      "bytes": 90
+    },
+    {
+      "path": "updated-v2/unindexed-browser-reference.stdout.json",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "updated-v2/unindexed-functional-reference.stderr.txt",
+      "sha256": "549349c6de3f610c2aa2d41978660caff5164266ac7ffb654c3420e3b01bddf2",
+      "bytes": 88
+    },
+    {
+      "path": "updated-v2/unindexed-functional-reference.stdout.json",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}

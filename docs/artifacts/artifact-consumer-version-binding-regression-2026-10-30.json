@@ -1,0 +1,52 @@
+{
+  "kind": "napier.artifact-consumer-version-binding-final",
+  "schemaVersion": 1,
+  "implementationCommit": "c3734a07f1abc93357f2becf8e255c35d60dbce3",
+  "implementationTree": "4682fe56275dd0acfdf87da6452b03f9aedea622",
+  "baseHead": "e10a7bd39b71dc74dfb4bbd05f6c5254bedd5696",
+  "sourceFiles": 56,
+  "functional": {
+    "uniqueCases": 503,
+    "uniqueFiles": 71,
+    "failed": 0,
+    "skipped": 0,
+    "validation": "Initial480 isolated cases plus focused overlay cases; repeated assertions deduplicated. Responsive CSS/import delta rechecked with strict source/test types, Web design and production browser."
+  },
+  "browser": {
+    "uniqueScenarios": 7,
+    "visuallyInspectedScreenshots": 11,
+    "supplementaryUniqueScenarios": 0,
+    "sourceHashesStable": 2783,
+    "emittedHashesStable": 5227,
+    "theme": "light",
+    "fixtureBoundary": "Native LocalStore current/historical/missing; selected-version mismatch uses controlled UI response perturbation with valid transport digest."
+  },
+  "protectedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "retainedGateFailures": {
+    "architecture": 7,
+    "publicApi": 4,
+    "legacyStrictBaselineDiagnostics": 48,
+    "prospectiveDocumentationWhitespace": 41,
+    "prospectiveDocumentationDiffCheckExitCode": 2
+  },
+  "fullG01Complete": false,
+  "externalModelCalls": 0,
+  "push": false,
+  "reviewSummary": "docs/artifacts/artifact-consumer-version-binding-2026-10-30/review-summary.json",
+  "evidenceIndex": "docs/artifacts/artifact-consumer-version-binding-evidence-index-2026-10-30.json",
+  "rawWhitespaceReceipt": "docs/artifacts/artifact-consumer-version-binding-2026-10-30/review/retained-raw-whitespace.json",
+  "limits": [
+    "No browser pass inferred from unit/type/build results",
+    "Supported light theme only",
+    "Functional isolated checkout excludes protected user overlay28; browser checkout overlays those exact preserved files",
+    "Current filesystem observations are request-time evidence, not future immutability or creator proof",
+    "No full G01 completion or external model calls claimed",
+    "First projection candidate retains all raw logs and its hash manifest, but five earlier source blobs are unavailable; exact candidate-v2 and independent review source snapshots are retained.",
+    "Version mismatch cases perturb a UI response while recomputing its transport body digest; they are not new native ledger receipts. All other final fixtures use native LocalStore.",
+    "The supplementary EN320 block:start screenshot repeats an accepted scenario and is excluded from unique scenario count.",
+    "Functional503 is a deduplicated incremental consolidation; CSS plus stylesheet imports reused existing assertions after strict source/test and web-design checks, with browser layout acceptance."
+  ]
+}

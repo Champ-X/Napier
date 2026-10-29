@@ -1,0 +1,55 @@
+{
+  "kind": "napier.artifact-consumer-portable-reconciliation",
+  "status": "failed",
+  "archiveStatus": "sealed",
+  "artifactCount": 559,
+  "functionalSourceFiles": 56,
+  "uniqueFinalTests": 503,
+  "uniqueFinalTestFiles": 71,
+  "baseTestCounts": [
+    {
+      "suite": "runtime",
+      "files": 26,
+      "total": 210,
+      "passed": 210,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "server",
+      "files": 10,
+      "total": 37,
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "web",
+      "files": 32,
+      "total": 225,
+      "passed": 225,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "cli",
+      "files": 1,
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "repeatedCasesMerged": 28,
+  "protectedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "browserStatus": "passed",
+  "liveSourceChecked": false,
+  "fullG01Complete": false,
+  "boundary": "Reconciles retained evidence; does not rerun tests or browser acceptance.",
+  "errors": [
+    "Browser source manifest differs from functional source"
+  ]
+}

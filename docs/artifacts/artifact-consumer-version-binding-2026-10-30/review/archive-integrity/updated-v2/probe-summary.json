@@ -1,0 +1,130 @@
+{
+  "root": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g01-archive-independent-02ahmizh",
+  "scriptSha256": "8a9d044bd8045c39679d65da26474e59df2d43b0ec043a5e4f470771f0754593",
+  "sourceArchive": "docs/artifacts/artifact-consumer-version-binding-2026-10-30",
+  "probes": [
+    {
+      "probe": "relocated-original",
+      "exitCode": 0,
+      "kind": "napier.artifact-consumer-portable-reconciliation",
+      "status": "passed",
+      "archiveStatus": "draft-awaiting-final-provenance",
+      "artifactCount": 415,
+      "functionalSourceFiles": 55,
+      "uniqueFinalTests": 503,
+      "uniqueFinalTestFiles": 71,
+      "baseTestCounts": [
+        {
+          "suite": "runtime",
+          "files": 26,
+          "total": 210,
+          "passed": 210,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "server",
+          "files": 10,
+          "total": 37,
+          "passed": 37,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "web",
+          "files": 32,
+          "total": 225,
+          "passed": 225,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "cli",
+          "files": 1,
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        }
+      ],
+      "repeatedCasesMerged": 28,
+      "protectedUserFiles": {
+        "count": 28,
+        "changed": []
+      },
+      "browserStatus": null,
+      "liveSourceChecked": false,
+      "fullG01Complete": false,
+      "boundary": "Reconciles retained evidence; does not rerun tests or browser acceptance.",
+      "errors": []
+    },
+    {
+      "probe": "unindexed-functional-reference",
+      "exitCode": 1,
+      "error": "{\"status\": \"failed\", \"error\": \"Unindexed semantic evidence: unindexed-regression.json\"}\n"
+    },
+    {
+      "probe": "unindexed-browser-reference",
+      "exitCode": 1,
+      "error": "{\"status\": \"failed\", \"error\": \"Unindexed semantic evidence: unindexed-browser-pass.json\"}\n"
+    },
+    {
+      "probe": "tampered-indexed-artifact",
+      "exitCode": 1,
+      "kind": "napier.artifact-consumer-portable-reconciliation",
+      "status": "failed",
+      "archiveStatus": "draft-awaiting-final-provenance",
+      "artifactCount": 415,
+      "functionalSourceFiles": 55,
+      "uniqueFinalTests": 503,
+      "uniqueFinalTestFiles": 71,
+      "baseTestCounts": [
+        {
+          "suite": "runtime",
+          "files": 26,
+          "total": 210,
+          "passed": 210,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "server",
+          "files": 10,
+          "total": 37,
+          "passed": 37,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "web",
+          "files": 32,
+          "total": 225,
+          "passed": 225,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "cli",
+          "files": 1,
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        }
+      ],
+      "repeatedCasesMerged": 28,
+      "protectedUserFiles": {
+        "count": 28,
+        "changed": []
+      },
+      "browserStatus": null,
+      "liveSourceChecked": false,
+      "fullG01Complete": false,
+      "boundary": "Reconciles retained evidence; does not rerun tests or browser acceptance.",
+      "errors": [
+        "Artifact hash/size differs: browser/build/compile.log",
+        "Artifact hash/size differs: review-summary.json"
+      ]
+    }
+  ]
+}

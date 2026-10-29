@@ -1,0 +1,159 @@
+import type { ExecutionPlan } from "@napier/contracts";
+import { describe, expect, it } from "vitest";
+import {
+  projectTaskDeliverables,
+  taskArtifactBinding,
+} from "@napier/contracts/task-narrative";
+
+import {
+  taskArtifactPaths,
+  taskArtifactTargets,
+} from "../src/task-completion-output-paths";
+
+describe("Task completion summary", () => {
+  it.each(["missing", "mismatched"] as const)(
+    "does not reopen an observed %s output through legacy path fallback",
+    (status) => {
+      const current = plan("active");
+      current.artifacts = [artifact("report", "verified", "report.md", 1)];
+      const entries = projectTaskDeliverables([current]);
+      entries[0]!.observation = {
+        source: "workspace",
+        status,
+        bindingSha256: taskArtifactBinding(entries[0]!),
+      };
+      expect(
+        taskArtifactTargets([current], { outputPaths: ["report.md"] }, entries),
+      ).toEqual([]);
+      entries[0]!.observation.bindingSha256 = "b".repeat(64);
+      expect(taskArtifactTargets([current], undefined, entries)).toHaveLength(
+        1,
+      );
+    },
+  );
+
+  it("shows recent authoritative outputs without missing artifacts", () => {
+    const current = plan("active");
+    current.artifacts = [
+      artifact("report", "verified", "artifacts/report.md", 4),
+      artifact("preview", "produced", "artifacts/preview.html", 3),
+      artifact("missing", "missing", "artifacts/missing.txt", 5),
+      artifact("old", "superseded", "artifacts/old.txt", 6),
+    ];
+
+    expect(taskArtifactPaths([current])).toEqual([
+      "artifacts/report.md",
+      "artifacts/preview.html",
+    ]);
+  });
+
+  it("accepts projected output paths without rescanning artifacts", () => {
+    const current = plan("active");
+    current.artifacts = [];
+    expect(
+      taskArtifactPaths([current], {
+        outputPaths: ["projected/report.md"],
+      }),
+    ).toEqual(["projected/report.md"]);
+  });
+
+  it("binds projected paths back to their Artifact and plan when available", () => {
+    const current = plan("completed");
+    current.artifacts = [
+      artifact("report", "verified", "artifacts/report.md", 1),
+    ];
+
+    expect(
+      taskArtifactTargets([current], {
+        planId: "plan_1",
+        outputPaths: ["artifacts/report.md", "legacy/output.txt"],
+      }),
+    ).toEqual([
+      {
+        path: "artifacts/report.md",
+        planId: "plan_1",
+        planRevision: current.revision,
+        expectedSha256: current.artifacts[0]?.sha256,
+        artifact: current.artifacts[0],
+      },
+      { path: "legacy/output.txt" },
+    ]);
+  });
+  it("an empty active projection does not hide artifacts across plans or truncate the third output", () => {
+    const previous = plan("completed");
+    previous.id = "previous";
+    previous.artifacts = [artifact("report", "verified", "report.md", 1)];
+    const current = plan("active");
+    current.artifacts = [
+      artifact("preview", "produced", "preview.html", 2),
+      artifact("data", "produced", "data.csv", 3),
+    ];
+    expect(
+      taskArtifactPaths([previous, current], {
+        planId: current.id,
+        outputPaths: [],
+      }),
+    ).toEqual(["data.csv", "preview.html", "report.md"]);
+  });
+
+  it("selects a continuation's current version, then refuses to resurrect an unavailable one", () => {
+    const previous = plan("completed");
+    previous.id = "previous";
+    previous.artifacts = [artifact("v1", "verified", "report.md", 5)];
+    const current = plan("active");
+    const v2 = artifact("v2", "produced", "./report.md", 3);
+    v2.createdAt = timestamp(2);
+    v2.sourceRunId = "run_2";
+    current.artifacts = [v2];
+    expect(taskArtifactTargets([previous, current])).toMatchObject([
+      { artifact: { id: "v2", sourceRunId: "run_2" } },
+    ]);
+    v2.status = "missing";
+    expect(taskArtifactTargets([previous, current])).toEqual([]);
+  });
+});
+
+function plan(status: ExecutionPlan["status"]): ExecutionPlan {
+  return {
+    id: "plan_1",
+    threadId: "thread_1",
+    objective: "Deliver outputs",
+    status,
+    steps: [],
+    artifacts: [],
+    replans: [],
+    replanRecommendation: null,
+    criticalPathStepIds: [],
+    readyStepIds: [],
+    blockedStepIds: [],
+    phaseWaves: [],
+    activePhaseIndex: null,
+    parallelReadyStepIds: [],
+    phaseProjectionSha256: "a".repeat(64),
+    revision: 1,
+    createdAt: timestamp(0),
+    updatedAt: timestamp(0),
+  };
+}
+
+function artifact(
+  id: string,
+  status: ExecutionPlan["artifacts"][number]["status"],
+  path: string,
+  second: number,
+): ExecutionPlan["artifacts"][number] {
+  return {
+    id,
+    path,
+    kind: "file",
+    description: id,
+    status,
+    evidence: "Runtime evidence.",
+    createdAt: timestamp(0),
+    updatedAt: timestamp(second),
+  };
+}
+
+function timestamp(second: number): string {
+  return `2026-08-09T00:00:0${String(second)}.000Z`;
+}

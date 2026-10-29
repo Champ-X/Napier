@@ -1,0 +1,4 @@
+apps/web/test/artifact-version-binding.test.ts(45,5): error TS2375: Type '{ source: "workspace"; bindingSha256: string; status: "missing" | "unchecked" | "matched" | "observed" | "mismatched"; sha256: string | undefined; sizeBytes: number | undefined; }' is not assignable to type 'TaskArtifactObservation' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'sha256' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.

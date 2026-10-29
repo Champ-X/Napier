@@ -427,6 +427,16 @@
 - 最终隔离集成基线为 `53e2eaf2`＋6文件tree `681b9726`，**33文件／306测试**通过（Runtime302、Server4），编译、相关types／strict通过；4,043源文件／5,099产物哈希稳定，28用户文件不变。7项既有架构、root1897/1896、internal18/16及两份digest失败保留，旧48项strict诊断与原基线一致，不改预算或历史release证据。测量0模型调用，集成仅本地fixture／loopback，外部模型请求0。
 - 本片仅覆盖主 invocation preparation；mailbox、state-only／branch优化、完整10k／100k资源曲线、策略消融和目标模型质量仍未验收。typed历史与回放CPU仍随相关历史增长，batch完整性依赖原生append-only查询合同，不宣称生产端到端收益或完整G07。见[说明](docs/invocation-context-cursor.md)、[最终收据](docs/artifacts/invocation-context-cursor-regression-2026-10-30.json)及[含可移植核对脚本的证据索引](docs/artifacts/invocation-context-cursor-evidence-index-2026-10-30.json)。G07与总目标继续 **active**。
 
+### 后续推进：G01 成果消费者的选中版本与当前事实（2026-10-30）
+
+- 本地源码提交 `c3734a07f1abc93357f2becf8e255c35d60dbce3`，精确56文件，未push；保留28个用户文件原摘要及无关证据目录。
+- 预览、下载、diff和manifest回执按选中plan revision、artifact身份、路径及适用的摘要/大小校验；缺失字段不能绕过校验，晚到响应不能落入已切换的选择。mutation仍是latest-ID操作，未新增写入CAS。
+- Runtime和Web共享conversation artifact事件投影：当前manifest必须绑定原事件版本，保存事件Run与时间，重新判断当前/历史轮次；旧原生投影缺少来源字段时回退原始事件重放。无绑定事件不拼接成新成果卡；短事件窗口缺少共享intent时保持保守分类，不声称完整历史。
+- Artifact卡、Task Changes及主成果入口消费当前观察；`Integrity recorded`仅表达历史声明，文件缺失/漂移不再复用旧的绿色验证状态。浏览器另外发现并修复关闭异步预览后焦点落到body，以及窄屏文件名/页签截断；局部CSS没有改动用户保护样式。
+- 隔离整合验证去重后为71文件/503测试，构建、严格源/测试类型、Web设计检查通过；原架构7项及公共API4项失败保留。拆出download API测试后仅将其旧行数上限2488收紧为2393，未放宽门禁。
+- 生产构建与用户28文件overlay完成7个EN/ZH桌面/320/390浏览器场景，审阅11张截图；实际原生current HTML、历史directory声明、missing file，以及具有有效传输摘要的版本错配回包测试缝隙均明确分开。源码2783/输出5227摘要在最终浏览器执行前后稳定，零外部模型调用。
+- 说明和便携证据：[artifact-consumer-version-binding.md](docs/artifact-consumer-version-binding.md)。独立目标验收生产者、tool-only来源、完整历史字节/来源证明、写入版本前置条件及跨端全量收敛仍待完成；G01及G01–G07整体继续active，不以本片通过代替全体验收。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -493,7 +503,7 @@
 
 - [x] 梳理 Runtime 与前端已有状态投影，统一优先级和语义，覆盖无计划任务。（共享事实切片已验证；独立验收生产者仍是 G01 待办。）
 - [ ] 统一成果来源、去重、版本关系和主次排序，修复空 outputPaths 屏蔽已有产物的问题。（当前文件观察、正式声明与事件metadata版本绑定已验证，晚到旧代际不回退；tool-only来源和完整历史字节仍未完成。）
-- [ ] 让顶部、计划、Task 页和结果栏消费一致投影，移除重复推断。（Task validation已消费共享当前成果事实，EN/ZH及窄屏验证通过；所有artifact卡消费者迁移仍未完成。）
+- [ ] 让顶部、计划、Task 页和结果栏消费一致投影，移除重复推断。（Task validation、主要artifact卡、Task Changes和预览/下载已绑定共享当前事实与选中版本，EN/ZH窄屏验证通过；完整跨端收敛仍未验收。）
 - [x] 主成果提供打开预览、下载或复制路径、验证状态、继续修改入口；辅助证据渐进展开。（已登记产物与通过边界/摘要检查的显式引用候选均完成浏览器验收；候选发现范围限制另列待办。）
 - [x] 将本轮发现的状态和成果反例纳入回归用例。（含真实 SQLite、Web/CLI 与隔离浏览器检查；不代表全部 G01 验收通过。）
 

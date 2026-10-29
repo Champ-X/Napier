@@ -1,0 +1,120 @@
+{
+  "kind": "napier.g01-final-archive-review-probes",
+  "reviewedScriptSha256": "d509db65324303a76359326dafdf6f13cae9174c4ee3ca8b5fa4de7c43519de1",
+  "sourceArchive": "/Users/champ/orca/Napier/docs/artifacts/artifact-consumer-version-binding-2026-10-30",
+  "copiedArchive": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g01-final-review-v4-elxa_ynh/archive",
+  "probes": [
+    {
+      "probe": "relocated-sealed",
+      "exitCode": 0,
+      "kind": "napier.artifact-consumer-portable-reconciliation",
+      "status": "passed",
+      "archiveStatus": "sealed",
+      "artifactCount": 559,
+      "functionalSourceFiles": 56,
+      "uniqueFinalTests": 503,
+      "uniqueFinalTestFiles": 71,
+      "baseTestCounts": [
+        {
+          "suite": "runtime",
+          "files": 26,
+          "total": 210,
+          "passed": 210,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "server",
+          "files": 10,
+          "total": 37,
+          "passed": 37,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "web",
+          "files": 32,
+          "total": 225,
+          "passed": 225,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "cli",
+          "files": 1,
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        }
+      ],
+      "repeatedCasesMerged": 28,
+      "protectedUserFiles": {
+        "count": 28,
+        "changed": []
+      },
+      "browserStatus": "passed",
+      "liveSourceChecked": false,
+      "fullG01Complete": false,
+      "boundary": "Reconciles retained evidence; does not rerun tests or browser acceptance.",
+      "errors": []
+    },
+    {
+      "probe": "browser-declared-count-mismatch",
+      "exitCode": 1,
+      "kind": "napier.artifact-consumer-portable-reconciliation",
+      "status": "failed",
+      "archiveStatus": "sealed",
+      "artifactCount": 559,
+      "functionalSourceFiles": 56,
+      "uniqueFinalTests": 503,
+      "uniqueFinalTestFiles": 71,
+      "baseTestCounts": [
+        {
+          "suite": "runtime",
+          "files": 26,
+          "total": 210,
+          "passed": 210,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "server",
+          "files": 10,
+          "total": 37,
+          "passed": 37,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "web",
+          "files": 32,
+          "total": 225,
+          "passed": 225,
+          "failed": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "cli",
+          "files": 1,
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        }
+      ],
+      "repeatedCasesMerged": 28,
+      "protectedUserFiles": {
+        "count": 28,
+        "changed": []
+      },
+      "browserStatus": "passed",
+      "liveSourceChecked": false,
+      "fullG01Complete": false,
+      "boundary": "Reconciles retained evidence; does not rerun tests or browser acceptance.",
+      "errors": [
+        "Browser unique scenario count differs"
+      ]
+    }
+  ]
+}

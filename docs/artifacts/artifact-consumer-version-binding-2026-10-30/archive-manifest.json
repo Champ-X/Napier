@@ -1,0 +1,2999 @@
+{
+  "kind": "napier.artifact-consumer-archive",
+  "schemaVersion": 1,
+  "status": "sealed",
+  "generatedAt": "2026-10-29T23:23:34.662022+00:00",
+  "files": {
+    "browser/build/browser-source-receipt.json": {
+      "sha256": "a363caa220216cd652543ddbc9019910e53279296e04dc29090fed8e94718606",
+      "bytes": 347670,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030/browser-source-receipt.json"
+    },
+    "browser/build/build-receipt.json": {
+      "sha256": "658641f2821054d66346a096194f56e1c1167018474af83678f4cda390a5f5fe",
+      "bytes": 956,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030/build-receipt.json"
+    },
+    "browser/build/compile.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030/compile.log"
+    },
+    "browser/build/sandbox.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030/sandbox.log"
+    },
+    "browser/build/skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030/skills.log"
+    },
+    "browser/build/web-build.log": {
+      "sha256": "c7e7e5858ba155426e9fc9f63305ff43f83893f691259ce9c42b5cb08df57730",
+      "bytes": 19953,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030/web-build.log"
+    },
+    "browser/result-v1/browser-script.mjs": {
+      "sha256": "ec20bc4342e75e6613673d38a0ca6ae0141da605bc679c0da402fe8fe6d38c37",
+      "bytes": 9698,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v1-20261030/browser-script.mjs"
+    },
+    "browser/result-v1/receipt.json": {
+      "sha256": "d27e9dcfc8307d469eafd7e9c4352b9704deff910ca479579ab9349e93f41661",
+      "bytes": 2866,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v1-20261030/receipt.json"
+    },
+    "browser/result-v1/run.log": {
+      "sha256": "d27e9dcfc8307d469eafd7e9c4352b9704deff910ca479579ab9349e93f41661",
+      "bytes": 2866,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v1-20261030.log"
+    },
+    "browser/result-v2/browser-script.mjs": {
+      "sha256": "7f3ba1ee48af0a61967f4103fda0a89bad1ee3f32260e0b62de9c96d0141132c",
+      "bytes": 9707,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v2-20261030/browser-script.mjs"
+    },
+    "browser/result-v2/current-en-desktop-inspector.png": {
+      "sha256": "c2c01d3f7a9926fa9f7f6e1abd4a56e46a1c5b68205f56981647603c5424727f",
+      "bytes": 111625,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v2-20261030/current-en-desktop-inspector.png"
+    },
+    "browser/result-v2/receipt.json": {
+      "sha256": "982403b6bb484bd169d089d053c0c173ccf26452471eecf10d62e873dd8c3b37",
+      "bytes": 2289,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v2-20261030/receipt.json"
+    },
+    "browser/result-v2/run.log": {
+      "sha256": "982403b6bb484bd169d089d053c0c173ccf26452471eecf10d62e873dd8c3b37",
+      "bytes": 2289,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v2-20261030.log"
+    },
+    "browser/result-v3/browser-script.mjs": {
+      "sha256": "21d61c477ae9c741e51ef1b72a1a31825ca76669e13065f5f5f5a6a680f6291f",
+      "bytes": 10068,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v3-20261030/browser-script.mjs"
+    },
+    "browser/result-v3/current-en-desktop-inspector.png": {
+      "sha256": "8c4f5358ba3dd05dfac7b82f6b102310e634ece0246eebfe6a50762ba4830af5",
+      "bytes": 111634,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v3-20261030/current-en-desktop-inspector.png"
+    },
+    "browser/result-v3/receipt.json": {
+      "sha256": "b2fa9567ebdb799777b841006cb47bfae82dd51f1a36fb276feba15cda715d33",
+      "bytes": 2586,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v3-20261030/receipt.json"
+    },
+    "browser/result-v3/run.log": {
+      "sha256": "b2fa9567ebdb799777b841006cb47bfae82dd51f1a36fb276feba15cda715d33",
+      "bytes": 2586,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v3-20261030.log"
+    },
+    "browser/result-v4/browser-script.mjs": {
+      "sha256": "d3618f67ee149207a848f25370c8bfbfd6ffc35fb9e25347fa3d0cab721eace3",
+      "bytes": 10173,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v4-20261030/browser-script.mjs"
+    },
+    "browser/result-v4/current-en-desktop-inspector.png": {
+      "sha256": "ad6a4e99ef0f37af71a22bd677efa5363644d4b4c2325df53b1ba489966fad7f",
+      "bytes": 111543,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v4-20261030/current-en-desktop-inspector.png"
+    },
+    "browser/result-v4/receipt.json": {
+      "sha256": "635d778054c1cb15adf55a2d64d9f270cf74456af3be955524ed9a030c780453",
+      "bytes": 2586,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v4-20261030/receipt.json"
+    },
+    "browser/result-v4/run.log": {
+      "sha256": "635d778054c1cb15adf55a2d64d9f270cf74456af3be955524ed9a030c780453",
+      "bytes": 2586,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v4-20261030.log"
+    },
+    "browser/result-v5/browser-script.mjs": {
+      "sha256": "d3618f67ee149207a848f25370c8bfbfd6ffc35fb9e25347fa3d0cab721eace3",
+      "bytes": 10173,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v5-20261030/browser-script.mjs"
+    },
+    "browser/result-v5/current-en-320-inspector.png": {
+      "sha256": "4fda7665389106eef52f42d5f92dec17246df9ae0cb1d5dc508ee789e155a1f8",
+      "bytes": 33327,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v5-20261030/current-en-320-inspector.png"
+    },
+    "browser/result-v5/current-en-desktop-inspector.png": {
+      "sha256": "96aeee8054a8d111faba9cd1ba089918c85a89efdf4406e6e6f99105ae31a6e1",
+      "bytes": 111563,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v5-20261030/current-en-desktop-inspector.png"
+    },
+    "browser/result-v5/current-en-desktop.png": {
+      "sha256": "733487d2acec589ce5b0ceea1740bd193ba68f541aa825e2d9dab39cd891abb9",
+      "bytes": 107822,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v5-20261030/current-en-desktop.png"
+    },
+    "browser/result-v5/receipt.json": {
+      "sha256": "342d41c0071bfd8cae486f49646fd76568d383949b7609bc4d1dbb57dfe18190",
+      "bytes": 4150,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v5-20261030/receipt.json"
+    },
+    "browser/result-v5/run.log": {
+      "sha256": "342d41c0071bfd8cae486f49646fd76568d383949b7609bc4d1dbb57dfe18190",
+      "bytes": 4150,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v5-20261030.log"
+    },
+    "browser/result-v6/browser-script.mjs": {
+      "sha256": "f7fd709b4c69473e1514f5fa5643350236db1a7b3757b1187302476270190cb8",
+      "bytes": 10687,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030/browser-script.mjs"
+    },
+    "browser/result-v6/current-en-320-inspector.png": {
+      "sha256": "01ec74d02697cd0fd8c5c9d8f627f0e4fd0c40351b107717239b14877c4f931f",
+      "bytes": 34495,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030/current-en-320-inspector.png"
+    },
+    "browser/result-v6/current-en-320.png": {
+      "sha256": "5df22a98061caba9c214b50e21aa67d4adef8820a85324f26c51a23e1777bf87",
+      "bytes": 53042,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030/current-en-320.png"
+    },
+    "browser/result-v6/current-en-desktop-inspector.png": {
+      "sha256": "d1d1dc2e1fae9d0f4caacd4904280d3705154f28dea59a50a94849bf4dcd9dd8",
+      "bytes": 111413,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030/current-en-desktop-inspector.png"
+    },
+    "browser/result-v6/current-en-desktop.png": {
+      "sha256": "ba0bf797525f8446ec1d240f6b05665639c07764b4e722956d476a62aadf5fdb",
+      "bytes": 107755,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030/current-en-desktop.png"
+    },
+    "browser/result-v6/current-zh-390-inspector.png": {
+      "sha256": "50e0c84453866a523d1756ac98211ee393580f09fb4c50901669d9702b518be0",
+      "bytes": 34109,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030/current-zh-390-inspector.png"
+    },
+    "browser/result-v6/current-zh-390.png": {
+      "sha256": "38d9dc3b196eaca495b811d8f84064daa2cc986c3785fb934bfeb4d5dd1d291d",
+      "bytes": 55330,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030/current-zh-390.png"
+    },
+    "browser/result-v6/receipt.json": {
+      "sha256": "a146efcc2402b38459936ef0affa671986ff253f35f8766bb5f5e96c9463c1f0",
+      "bytes": 8835,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030/receipt.json"
+    },
+    "browser/result-v6/run.log": {
+      "sha256": "a146efcc2402b38459936ef0affa671986ff253f35f8766bb5f5e96c9463c1f0",
+      "bytes": 8835,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030.log"
+    },
+    "browser/result-v7/browser-script.mjs": {
+      "sha256": "027c2e875a4034553df9a045c89ef351ca25bdebc7ea730dd65c9537a58de18d",
+      "bytes": 10906,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030/browser-script.mjs"
+    },
+    "browser/result-v7/current-en-320-inspector.png": {
+      "sha256": "2adcafdf365f2c9faf9b6591583cd052e2b9c4518e1b051d94b102f1a249a4e6",
+      "bytes": 34010,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030/current-en-320-inspector.png"
+    },
+    "browser/result-v7/current-en-320.png": {
+      "sha256": "eb998648f44d568445ef31533ac8e844780d10e7945fdc8a7a74306cf6b58d44",
+      "bytes": 52560,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030/current-en-320.png"
+    },
+    "browser/result-v7/current-en-desktop-inspector.png": {
+      "sha256": "0ec90e73e80b03c9f9b15b216fcc8b62bc1c05ad4d2669509beec03aaf66cbc5",
+      "bytes": 111468,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030/current-en-desktop-inspector.png"
+    },
+    "browser/result-v7/current-en-desktop.png": {
+      "sha256": "6fd5ff50b299f762588d52164d8d47ee992846c8d997e1fa005a6a55579213b3",
+      "bytes": 107727,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030/current-en-desktop.png"
+    },
+    "browser/result-v7/current-zh-390-inspector.png": {
+      "sha256": "e9dc8f14e7d077775da649bfdb56fcded6cf121bc523af995cc773f1043fc42e",
+      "bytes": 34446,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030/current-zh-390-inspector.png"
+    },
+    "browser/result-v7/current-zh-390.png": {
+      "sha256": "26057bf83d8e86f59e658709523ad2572dabe470f49639ea780a34e44fd094f4",
+      "bytes": 55359,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030/current-zh-390.png"
+    },
+    "browser/result-v7/receipt.json": {
+      "sha256": "c35bd2c92992c9c2834b88f98cc9f3ab107cc5e2f602f368c0fc174757aceb70",
+      "bytes": 8967,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030/receipt.json"
+    },
+    "browser/result-v7/run.log": {
+      "sha256": "c35bd2c92992c9c2834b88f98cc9f3ab107cc5e2f602f368c0fc174757aceb70",
+      "bytes": 8967,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030.log"
+    },
+    "browser/result-v8/browser-script.mjs": {
+      "sha256": "06642eb117cc1e1d941ddd16ed7b155af39419f4dd66c7fbead69de52af8dadf",
+      "bytes": 10471,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/browser-script.mjs"
+    },
+    "browser/result-v8/current-en-320-inspector.png": {
+      "sha256": "201645049e17408cb09c69f7167276db78224233ffcc9230ffbd74e17e9011f8",
+      "bytes": 34029,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/current-en-320-inspector.png"
+    },
+    "browser/result-v8/current-en-320.png": {
+      "sha256": "db696e7b83950fbd0796ba6cc8512c25a34e6fcdd475a1482c69eb8045bf1227",
+      "bytes": 52592,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/current-en-320.png"
+    },
+    "browser/result-v8/current-en-desktop-inspector.png": {
+      "sha256": "5ff34dd8e16b9b1a645539223a7221e155c58f4707717ec70af8a06920cfb4e9",
+      "bytes": 113937,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/current-en-desktop-inspector.png"
+    },
+    "browser/result-v8/current-en-desktop.png": {
+      "sha256": "15101c0afcd9d23b7521177d94c4e1e4a38e51ff918e096f603aa7700ecbe00e",
+      "bytes": 110314,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/current-en-desktop.png"
+    },
+    "browser/result-v8/current-zh-390-inspector.png": {
+      "sha256": "7dbc3c2104a271fd000bae142b50ba4ff9dbcbb685853bc20e4c85ce4647c878",
+      "bytes": 34084,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/current-zh-390-inspector.png"
+    },
+    "browser/result-v8/current-zh-390.png": {
+      "sha256": "b5265bc8beb07fa2327784d9917e791c4b6f34c285de6ede944befb75fef1692",
+      "bytes": 55378,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/current-zh-390.png"
+    },
+    "browser/result-v8/historical-en-desktop.png": {
+      "sha256": "db633ee15e6d4d3154499c3589d6189cc2b7f99d1fba0e2b8c3e95ab2295238b",
+      "bytes": 98062,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/historical-en-desktop.png"
+    },
+    "browser/result-v8/missing-zh-320.png": {
+      "sha256": "2aaead6d4b20150196701e6315bd8cca4f86a0aee24d88d9c7b05ee311ddb277",
+      "bytes": 47659,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/missing-zh-320.png"
+    },
+    "browser/result-v8/receipt.json": {
+      "sha256": "46ff057c459576bdbafd23a0fbfe0daad4a66794cc9e65f9a97776c226a8c579",
+      "bytes": 10004,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030/receipt.json"
+    },
+    "browser/result-v8/run.log": {
+      "sha256": "46ff057c459576bdbafd23a0fbfe0daad4a66794cc9e65f9a97776c226a8c579",
+      "bytes": 10004,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030.log"
+    },
+    "browser/result-v9/current-en-320-inspector.png": {
+      "sha256": "7f608cd9237135998901ee1939dd89a6b50b6a4ef938168f70aac7943d29d20a",
+      "bytes": 34538,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/current-en-320-inspector.png"
+    },
+    "browser/result-v9/current-en-320.png": {
+      "sha256": "58f48d80fa22c5d71e735bc3da6e135898793ddaa60d3d2367a4c3a853584687",
+      "bytes": 52588,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/current-en-320.png"
+    },
+    "browser/result-v9/current-en-desktop-inspector.png": {
+      "sha256": "ee392aee3d30693f8cc393fadae22745bfa75e0b0e2f6445001adf4f722e5206",
+      "bytes": 114057,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/current-en-desktop-inspector.png"
+    },
+    "browser/result-v9/current-en-desktop.png": {
+      "sha256": "c10b8ee8c0b2e74fe7120c520b4ec641e7f91a4f6851212214c0f9385b187844",
+      "bytes": 110323,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/current-en-desktop.png"
+    },
+    "browser/result-v9/current-zh-390-inspector.png": {
+      "sha256": "e9dc8f14e7d077775da649bfdb56fcded6cf121bc523af995cc773f1043fc42e",
+      "bytes": 34446,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/current-zh-390-inspector.png"
+    },
+    "browser/result-v9/current-zh-390.png": {
+      "sha256": "d5a7a692d9a5bd1a7f36202484e9767902b5a44a536403773c1add44582d2bf5",
+      "bytes": 55379,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/current-zh-390.png"
+    },
+    "browser/result-v9/historical-en-desktop.png": {
+      "sha256": "180f71db5a4815640a5f57be8ffd58676b7a849bb685b2587e803dea62adb242",
+      "bytes": 98066,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/historical-en-desktop.png"
+    },
+    "browser/result-v9/mismatch-en-desktop.png": {
+      "sha256": "f9e9040ce32be7b0772d29187a6bcfa34c7beec0019ede4ee37504c23ed859a9",
+      "bytes": 111440,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/mismatch-en-desktop.png"
+    },
+    "browser/result-v9/mismatch-zh-390.png": {
+      "sha256": "f1753203c7b32a949314e60039d180988443089440b7d26b9b926bf4dc449c06",
+      "bytes": 53942,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/mismatch-zh-390.png"
+    },
+    "browser/result-v9/missing-zh-320.png": {
+      "sha256": "e6a83c8c9ba840ccd458e61e26065ca57ab4a72f3fe5565dad126d1c41f42c55",
+      "bytes": 47654,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/missing-zh-320.png"
+    },
+    "browser/result-v9/receipt.json": {
+      "sha256": "11900aa8c17e8c0f5a7ebd7d0eb6ce0a3a8fa459fa240376e27ac55397acac52",
+      "bytes": 12067,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030/receipt.json"
+    },
+    "browser/result-v9/run.log": {
+      "sha256": "11900aa8c17e8c0f5a7ebd7d0eb6ce0a3a8fa459fa240376e27ac55397acac52",
+      "bytes": 12067,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030.log"
+    },
+    "development/napier-g01-consumer-architecture-v3-final.log": {
+      "sha256": "7e66bca244bbe4c28d77960e5cde121579478864fc0bd839863b93919b755be1",
+      "bytes": 848,
+      "originalPath": "/tmp/napier-g01-consumer-architecture-v3-final.log"
+    },
+    "development/napier-g01-consumer-architecture-v3.log": {
+      "sha256": "3749c8b1e89d81c147edad1251ed5bfd76aa4afe30c145cd63668b5a898d3bd5",
+      "bytes": 925,
+      "originalPath": "/tmp/napier-g01-consumer-architecture-v3.log"
+    },
+    "development/napier-g01-consumer-architecture-v3b.log": {
+      "sha256": "7e66bca244bbe4c28d77960e5cde121579478864fc0bd839863b93919b755be1",
+      "bytes": 848,
+      "originalPath": "/tmp/napier-g01-consumer-architecture-v3b.log"
+    },
+    "development/napier-g01-consumer-archive-draft-20261030--eba28f9c31b3.py": {
+      "sha256": "eba28f9c31b3f291a01de4e9efe5c41d5065ffdc1aaa6c9d155d23847c35143a",
+      "bytes": 4241,
+      "originalPath": "/tmp/napier-g01-consumer-archive-draft-20261030.py"
+    },
+    "development/napier-g01-consumer-archive-draft-20261030.py": {
+      "sha256": "e30cef5474b4bbab6e889aed8cd29bb68cbfd1cfb8b1aec765106b9b79de4e39",
+      "bytes": 3880,
+      "originalPath": "/tmp/napier-g01-consumer-archive-draft-20261030.py"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v1.json": {
+      "sha256": "a5325f610fd302562f701a06c47a2ed04b73d40e5ff45091c742645cb9178789",
+      "bytes": 1063,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v1.json"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v2.json": {
+      "sha256": "1d867a9e236e361ee9ce574724cfd65cfea5584fa92dc5c733178f448b704bf2",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v2.json"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v3.json": {
+      "sha256": "7ec2da64ac1be2242f923de24e1a2098285965f94eecc5a2be91e4abd6cad229",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v3.json"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v4.json": {
+      "sha256": "8bd15ced8da8ae3440e98fc8003c2dd22a9d877c61b76fb2f73eb21631573f56",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v4.json"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v5.json": {
+      "sha256": "8bd15ced8da8ae3440e98fc8003c2dd22a9d877c61b76fb2f73eb21631573f56",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v5.json"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v6.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v6.json"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v6.log": {
+      "sha256": "80b3237bd77abe4d8d4ec8e98ad99ccbf3b565d0183cbbc1a21aab051503cefc",
+      "bytes": 495,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v6.log"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v7.json": {
+      "sha256": "8bd15ced8da8ae3440e98fc8003c2dd22a9d877c61b76fb2f73eb21631573f56",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v7.json"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v8.json": {
+      "sha256": "376d2de8502037f4890439afd37ef22086b216acad7092651af8cccc7060c6e8",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v8.json"
+    },
+    "development/napier-g01-consumer-archive-reconcile-draft-v9.json": {
+      "sha256": "ae4f44738f3641f62e98ed8e6f08c64fecc31f5cfb4d9562b53acf29102be629",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-reconcile-draft-v9.json"
+    },
+    "development/napier-g01-consumer-before-v2.log": {
+      "sha256": "3bd66c9439e577cbd0186ab4fe8bb84fa374d047b66e587620f1a43dbc463111",
+      "bytes": 1013,
+      "originalPath": "/tmp/napier-g01-consumer-before-v2.log"
+    },
+    "development/napier-g01-consumer-before.log": {
+      "sha256": "1c46849eb708d3be86d0e52e23387ed2075f7b340540243c084eedb5e9fffeea",
+      "bytes": 5109,
+      "originalPath": "/tmp/napier-g01-consumer-before.log"
+    },
+    "development/napier-g01-consumer-browser-20261030--41c4f589aa4e.mjs": {
+      "sha256": "41c4f589aa4eec8b1fb17e4cd8390bcc0e12af9dbca3f7b41f43f92d6a432aa6",
+      "bytes": 10788,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030.mjs"
+    },
+    "development/napier-g01-consumer-browser-20261030--f7fd709b4c69.mjs": {
+      "sha256": "f7fd709b4c69473e1514f5fa5643350236db1a7b3757b1187302476270190cb8",
+      "bytes": 10687,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030.mjs"
+    },
+    "development/napier-g01-consumer-browser-20261030.mjs": {
+      "sha256": "d3618f67ee149207a848f25370c8bfbfd6ffc35fb9e25347fa3d0cab721eace3",
+      "bytes": 10173,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030.mjs"
+    },
+    "development/napier-g01-consumer-browser-build-v2-20261030.log": {
+      "sha256": "e46436ac89200f1391298aedd5e0c00368b6d707140ca500b91f59b868be497e",
+      "bytes": 19953,
+      "originalPath": "/tmp/napier-g01-consumer-browser-build-v2-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-build-v3-20261030.log": {
+      "sha256": "1402519310c1389c10e30a1560ec07e1831fa07a1c79b6c7cb944c26ef6601a2",
+      "bytes": 19953,
+      "originalPath": "/tmp/napier-g01-consumer-browser-build-v3-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-build-v4-20261030.log": {
+      "sha256": "4eaaee73362cf75cdb227997af66974fb71af2e348c65e5354521720d6df4d0f",
+      "bytes": 20044,
+      "originalPath": "/tmp/napier-g01-consumer-browser-build-v4-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v1-20261030.log": {
+      "sha256": "d27e9dcfc8307d469eafd7e9c4352b9704deff910ca479579ab9349e93f41661",
+      "bytes": 2866,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v1-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v2-20261030.log": {
+      "sha256": "982403b6bb484bd169d089d053c0c173ccf26452471eecf10d62e873dd8c3b37",
+      "bytes": 2289,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v2-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v3-20261030.log": {
+      "sha256": "b2fa9567ebdb799777b841006cb47bfae82dd51f1a36fb276feba15cda715d33",
+      "bytes": 2586,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v3-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v4-20261030.log": {
+      "sha256": "635d778054c1cb15adf55a2d64d9f270cf74456af3be955524ed9a030c780453",
+      "bytes": 2586,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v4-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v5-20261030--342d41c0071b.log": {
+      "sha256": "342d41c0071bfd8cae486f49646fd76568d383949b7609bc4d1dbb57dfe18190",
+      "bytes": 4150,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v5-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v5-20261030.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v5-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v6-20261030.log": {
+      "sha256": "a146efcc2402b38459936ef0affa671986ff253f35f8766bb5f5e96c9463c1f0",
+      "bytes": 8835,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v6-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v7-20261030.log": {
+      "sha256": "c35bd2c92992c9c2834b88f98cc9f3ab107cc5e2f602f368c0fc174757aceb70",
+      "bytes": 8967,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v7-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v8-20261030.log": {
+      "sha256": "46ff057c459576bdbafd23a0fbfe0daad4a66794cc9e65f9a97776c226a8c579",
+      "bytes": 10004,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v8-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v9-20261030--11900aa8c17e.log": {
+      "sha256": "11900aa8c17e8c0f5a7ebd7d0eb6ce0a3a8fa459fa240376e27ac55397acac52",
+      "bytes": 12067,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-result-v9-20261030.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-browser-result-v9-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-setup-20261030.py": {
+      "sha256": "e61bc1b677d28215625d626715c670173b82309a933931156d2680eb84af7d72",
+      "bytes": 1997,
+      "originalPath": "/tmp/napier-g01-consumer-browser-setup-20261030.py"
+    },
+    "development/napier-g01-consumer-browser-top-capture-20261030.log": {
+      "sha256": "80e8584a227efe0f62fdc9546b495f93b720f153918deffc2a00f04a688ab33f",
+      "bytes": 3648,
+      "originalPath": "/tmp/napier-g01-consumer-browser-top-capture-20261030.log"
+    },
+    "development/napier-g01-consumer-browser-top-capture-20261030.mjs": {
+      "sha256": "8ed7d20104335583ffa2a5cbe8db9dcaeaabe06ff896ca78e608c8daa2ed050a",
+      "bytes": 10870,
+      "originalPath": "/tmp/napier-g01-consumer-browser-top-capture-20261030.mjs"
+    },
+    "development/napier-g01-consumer-browser-verify-20261030.py": {
+      "sha256": "cd109dabf27e7663515b83cc08e49430fd190b5c0452ae7d1d3c3412903fbfde",
+      "bytes": 2788,
+      "originalPath": "/tmp/napier-g01-consumer-browser-verify-20261030.py"
+    },
+    "development/napier-g01-consumer-debug.log": {
+      "sha256": "d7f33fcaf53fe49a1d1433be99fa4a5331e00ac4a24b45ceb36113bf49020f3a",
+      "bytes": 2218,
+      "originalPath": "/tmp/napier-g01-consumer-debug.log"
+    },
+    "development/napier-g01-consumer-diff-check-v3.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-diff-check-v3.log"
+    },
+    "development/napier-g01-consumer-extraction-v3.log": {
+      "sha256": "58dee7d8678583133cc92476de814ecdb86da25613dfaea5d864d0ea18a87be5",
+      "bytes": 208,
+      "originalPath": "/tmp/napier-g01-consumer-extraction-v3.log"
+    },
+    "development/napier-g01-consumer-extraction-vitest.config.mts": {
+      "sha256": "3713ed68a3ac6493ffea3b7024617080c41f23ebcdd7fe50cd85e08ff2194720",
+      "bytes": 211,
+      "originalPath": "/tmp/napier-g01-consumer-extraction-vitest.config.mts"
+    },
+    "development/napier-g01-consumer-fifth.log": {
+      "sha256": "7df5d39122b0d417c589585d67a87ae83ec2bcd90f6df5ad909182ddef3bb24a",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-fifth.log"
+    },
+    "development/napier-g01-consumer-final-review-20261030.json": {
+      "sha256": "2eb6fb4a05bb765f2b388db287a466d05f1583fe99dba8374f883818e2083bbc",
+      "bytes": 3099,
+      "originalPath": "/tmp/napier-g01-consumer-final-review-20261030.json"
+    },
+    "development/napier-g01-consumer-final-v2-exact.log": {
+      "sha256": "4e472b5aaf0cb4e76f462c3381eb43aad8cd6546c2e30d3e959be5139e30b475",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-final-v2-exact.log"
+    },
+    "development/napier-g01-consumer-final-v2.log": {
+      "sha256": "0b6301ab62291f621338de4c60d7c715f773513fa6f579696f2f02311c2f16d2",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-final-v2.log"
+    },
+    "development/napier-g01-consumer-final-v3-exact.log": {
+      "sha256": "4b8aaad499ed3b6196eb5594600dde708091fc9d0c7e01f4ff9d7de51bb22655",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-final-v3-exact.log"
+    },
+    "development/napier-g01-consumer-final-v3.log": {
+      "sha256": "380d39bc013f4709295d0f14b82c423b13e27bb6930e96dafe2dcf4e2f554920",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-final-v3.log"
+    },
+    "development/napier-g01-consumer-first.log": {
+      "sha256": "27b3e5fce8aa19e2f91d8c8867d7e320ad703efd816329a0e1739581f259cd57",
+      "bytes": 21756,
+      "originalPath": "/tmp/napier-g01-consumer-first.log"
+    },
+    "development/napier-g01-consumer-focus-after-20261030.json": {
+      "sha256": "c02b2b88ec89096c5a6ecbcc36bd8b4369f8d6bcb533da53678c53e678072926",
+      "bytes": 18521,
+      "originalPath": "/tmp/napier-g01-consumer-focus-after-20261030.json"
+    },
+    "development/napier-g01-consumer-focus-after-20261030.log": {
+      "sha256": "91d4efb46c74de18ab85649999b7ca8fb07cede85a009d10caaaea2f7e71b54c",
+      "bytes": 74,
+      "originalPath": "/tmp/napier-g01-consumer-focus-after-20261030.log"
+    },
+    "development/napier-g01-consumer-focus-after-v2-20261030.json": {
+      "sha256": "3f97811e44fc42920e367d85e897a2a0be0c109da3ac84dbef15b9d361f8240e",
+      "bytes": 18149,
+      "originalPath": "/tmp/napier-g01-consumer-focus-after-v2-20261030.json"
+    },
+    "development/napier-g01-consumer-focus-after-v2-20261030.log": {
+      "sha256": "c15de22fa51db96802e120a58824fbd324d1859e6d560111d62e1f546c19b0ae",
+      "bytes": 77,
+      "originalPath": "/tmp/napier-g01-consumer-focus-after-v2-20261030.log"
+    },
+    "development/napier-g01-consumer-focus-architecture-20261030.log": {
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685,
+      "originalPath": "/tmp/napier-g01-consumer-focus-architecture-20261030.log"
+    },
+    "development/napier-g01-consumer-focus-before-20261030.json": {
+      "sha256": "36b28842fc41376ceac370c902289feaab7878d13c57cb6862c088440b3c9873",
+      "bytes": 10350,
+      "originalPath": "/tmp/napier-g01-consumer-focus-before-20261030.json"
+    },
+    "development/napier-g01-consumer-focus-before-20261030.log": {
+      "sha256": "e6ef3aa47269775593a7b4bd3279d8779761341a9a1dbf84202ec714844f941b",
+      "bytes": 75,
+      "originalPath": "/tmp/napier-g01-consumer-focus-before-20261030.log"
+    },
+    "development/napier-g01-consumer-focus-consolidate-20261030.py": {
+      "sha256": "8abaf83f3d462190db8c7b1fd929211e548200ebba4b594a99ec45cc2c603e36",
+      "bytes": 3528,
+      "originalPath": "/tmp/napier-g01-consumer-focus-consolidate-20261030.py"
+    },
+    "development/napier-g01-consumer-focus-strict-20261030.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-focus-strict-20261030.log"
+    },
+    "development/napier-g01-consumer-format-v2.log": {
+      "sha256": "0ed08920fbb661df733904065564439a52eb6043724e88c9f03401753ea66583",
+      "bytes": 1988,
+      "originalPath": "/tmp/napier-g01-consumer-format-v2.log"
+    },
+    "development/napier-g01-consumer-format-v3.log": {
+      "sha256": "3f263042b69418ecafc8fb5d9fc86cbcd10e4aa9e63f4244926b173338419019",
+      "bytes": 1955,
+      "originalPath": "/tmp/napier-g01-consumer-format-v3.log"
+    },
+    "development/napier-g01-consumer-format-v4.log": {
+      "sha256": "d83b39cd1fb11883a4d4781bf430aa0c1c817890fe4989b45978a88b1e18326a",
+      "bytes": 1988,
+      "originalPath": "/tmp/napier-g01-consumer-format-v4.log"
+    },
+    "development/napier-g01-consumer-format-v5.log": {
+      "sha256": "b68619a3848372b8ade958ad3d3e2277fe718f929558a738014d3cbaa675bdf8",
+      "bytes": 64,
+      "originalPath": "/tmp/napier-g01-consumer-format-v5.log"
+    },
+    "development/napier-g01-consumer-format-v6.log": {
+      "sha256": "ccbcb627ae183840619fae2073d7f25d9d317680a20ebcc2cdd9f30cd2b905d9",
+      "bytes": 2190,
+      "originalPath": "/tmp/napier-g01-consumer-format-v6.log"
+    },
+    "development/napier-g01-consumer-format-v7.log": {
+      "sha256": "3efe32e9f37790f9c4861496a1a080a660534e4e46e3bca72457767ab4777acb",
+      "bytes": 88,
+      "originalPath": "/tmp/napier-g01-consumer-format-v7.log"
+    },
+    "development/napier-g01-consumer-format.log": {
+      "sha256": "6f7e7ee13483465ab0e01015772b2ffd954a2c00b4c35582dfeaeb69f8b5a45d",
+      "bytes": 1634,
+      "originalPath": "/tmp/napier-g01-consumer-format.log"
+    },
+    "development/napier-g01-consumer-fourth.log": {
+      "sha256": "5fa5f9d786fca91711a683443b752368cba2c1da660e8cf0e46d733ee51a8d9c",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-fourth.log"
+    },
+    "development/napier-g01-consumer-guidance-list-root-20261030.json": {
+      "sha256": "716116f3b76688918725c3d74e09eb3acc0b1b0f48ecefdde5fd40186f0a563c",
+      "bytes": 48090,
+      "originalPath": "/tmp/napier-g01-consumer-guidance-list-root-20261030.json"
+    },
+    "development/napier-g01-consumer-guidance-root-20261030.json": {
+      "sha256": "37ad7069203ec9162151f38d04bdc2ad24307658f20266666d16516b0647d091",
+      "bytes": 1882,
+      "originalPath": "/tmp/napier-g01-consumer-guidance-root-20261030.json"
+    },
+    "development/napier-g01-consumer-handoff-20261030-v1.json": {
+      "sha256": "177c0b7fab81d13b796ec2ccb215b11787cdf4e26c6a14ed6f15f15a67c8fe9e",
+      "bytes": 11371,
+      "originalPath": "/tmp/napier-g01-consumer-handoff-20261030-v1.json"
+    },
+    "development/napier-g01-consumer-handoff-20261030-v2.json": {
+      "sha256": "dd384dcbce0e0ee8ff6554a75846b6a3ffd9f15838400e6510a70f1e0e9ab160",
+      "bytes": 13584,
+      "originalPath": "/tmp/napier-g01-consumer-handoff-20261030-v2.json"
+    },
+    "development/napier-g01-consumer-handoff-20261030-v3.json": {
+      "sha256": "17c9e1b7bad6a425da0ac0dda72b2fdd3faccf543f3cf7835aea7895903fe17d",
+      "bytes": 15201,
+      "originalPath": "/tmp/napier-g01-consumer-handoff-20261030-v3.json"
+    },
+    "development/napier-g01-consumer-integrate-v3-20261030.py": {
+      "sha256": "1e6e5ff24cefc9867d86e259a0e2731a03c27059d00c7872eaee647b10df556b",
+      "bytes": 1849,
+      "originalPath": "/tmp/napier-g01-consumer-integrate-v3-20261030.py"
+    },
+    "development/napier-g01-consumer-owned-paths.json": {
+      "sha256": "aade3986088e56ec0e98dbf759028e8d1b56187fa2017cf6ad57070d2ac59e74",
+      "bytes": 1944,
+      "originalPath": "/tmp/napier-g01-consumer-owned-paths.json"
+    },
+    "development/napier-g01-consumer-regression-20261030.py": {
+      "sha256": "bbb65c073c07adb1946e5d5da338e55aaf7f5f83de4333b2a786aa1ac570c715",
+      "bytes": 9386,
+      "originalPath": "/tmp/napier-g01-consumer-regression-20261030.py"
+    },
+    "development/napier-g01-consumer-regression-setup-20261030.py": {
+      "sha256": "51c4ac78450af5aaeef57a9d1a21450bf0d3a754ad5b5d47898a364207b93f22",
+      "bytes": 1266,
+      "originalPath": "/tmp/napier-g01-consumer-regression-setup-20261030.py"
+    },
+    "development/napier-g01-consumer-regression-v2-20261030.py": {
+      "sha256": "fe8c9b4b286a6b6799484533954cd9177df718afa6cda7607169be5917157dd1",
+      "bytes": 9482,
+      "originalPath": "/tmp/napier-g01-consumer-regression-v2-20261030.py"
+    },
+    "development/napier-g01-consumer-regression-v3-20261030.py": {
+      "sha256": "617f9c7c7f246696f2db75d6daae779d1cfce786b5ec4c0065a4113775ec33aa",
+      "bytes": 2689,
+      "originalPath": "/tmp/napier-g01-consumer-regression-v3-20261030.py"
+    },
+    "development/napier-g01-consumer-responsive-strict-20261030.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-responsive-strict-20261030.log"
+    },
+    "development/napier-g01-consumer-review-after-v2.log": {
+      "sha256": "14c1a660a2d364c1ba891075b3da7cd6abb145fa470dbb0f3ddf80a6a95fbb92",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-review-after-v2.log"
+    },
+    "development/napier-g01-consumer-review-before-v2.log": {
+      "sha256": "bb36432f842e0183be2400f4cb318bd66bd2841a6e88c77eacc67ac3f0093a4c",
+      "bytes": 2619,
+      "originalPath": "/tmp/napier-g01-consumer-review-before-v2.log"
+    },
+    "development/napier-g01-consumer-root-setup-20261030.py": {
+      "sha256": "4968463e1f794eb974f9157dc5f4a16f8ff393146ae9c0e5b063f93be61f4548",
+      "bytes": 2592,
+      "originalPath": "/tmp/napier-g01-consumer-root-setup-20261030.py"
+    },
+    "development/napier-g01-consumer-second.log": {
+      "sha256": "13e0bd7cd52d4c2a7a3d3eed203d6ae2ca99ede3f50fbb100f1c935c223f2a91",
+      "bytes": 3771,
+      "originalPath": "/tmp/napier-g01-consumer-second.log"
+    },
+    "development/napier-g01-consumer-sixth.log": {
+      "sha256": "70348a21dd0447293866a9dde28665181cfb51fc4160b40d4da2fb8d6c573722",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-sixth.log"
+    },
+    "development/napier-g01-consumer-source-stage-20261030--9238feb8a406.json": {
+      "sha256": "9238feb8a406c40c917780ea2e5a80fdb633787faa94dc3568728eba6a4bb23c",
+      "bytes": 7418,
+      "originalPath": "/tmp/napier-g01-consumer-source-stage-20261030.json"
+    },
+    "development/napier-g01-consumer-source-stage-20261030.json": {
+      "sha256": "bb8c0bebd7f1e9b3e44b5613bc99dd7ae6b78fb35237ebcc29bb680464947394",
+      "bytes": 7177,
+      "originalPath": "/tmp/napier-g01-consumer-source-stage-20261030.json"
+    },
+    "development/napier-g01-consumer-source-stage-v1-20261030.json": {
+      "sha256": "d5a7c8d1a39d333e1e4accbce6cf3eae16b5dddc5ac0815749e0a8c2c0ce5626",
+      "bytes": 6107,
+      "originalPath": "/tmp/napier-g01-consumer-source-stage-v1-20261030.json"
+    },
+    "development/napier-g01-consumer-source-stage-v3-20261030.json": {
+      "sha256": "588de9b2f5065a2e968c03caa3613d5965b4fd693034e739ccc48c73962f265f",
+      "bytes": 6811,
+      "originalPath": "/tmp/napier-g01-consumer-source-stage-v3-20261030.json"
+    },
+    "development/napier-g01-consumer-source-stage-v4-20261030.json": {
+      "sha256": "bb8c0bebd7f1e9b3e44b5613bc99dd7ae6b78fb35237ebcc29bb680464947394",
+      "bytes": 7177,
+      "originalPath": "/tmp/napier-g01-consumer-source-stage-v4-20261030.json"
+    },
+    "development/napier-g01-consumer-stage-final-20261030.py": {
+      "sha256": "5ad7ff41ce983f8914d3fc908a8e70ddad52068fce63713f51813cb757fdc787",
+      "bytes": 1351,
+      "originalPath": "/tmp/napier-g01-consumer-stage-final-20261030.py"
+    },
+    "development/napier-g01-consumer-third.log": {
+      "sha256": "713918f45b1dc20ff4f79e449a6754486e90775e87dc3fedb80379bc791688dc",
+      "bytes": 210,
+      "originalPath": "/tmp/napier-g01-consumer-third.log"
+    },
+    "development/napier-g01-consumer-tsconfig.json": {
+      "sha256": "39046ebb03fcab62539edd9a7ea0400db1e4c3fc6a5494f2fa557827cccdd26e",
+      "bytes": 12718,
+      "originalPath": "/tmp/napier-g01-consumer-tsconfig.json"
+    },
+    "development/napier-g01-consumer-types-first.log": {
+      "sha256": "815390089fdc330213f27c97491842ea20a3354ebde639f5c7307ee0d2f9b620",
+      "bytes": 690,
+      "originalPath": "/tmp/napier-g01-consumer-types-first.log"
+    },
+    "development/napier-g01-consumer-types-fourth.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-types-fourth.log"
+    },
+    "development/napier-g01-consumer-types-second.log": {
+      "sha256": "5e239bf7159633d006e4a8170f39420ec8cd443777c4d51ff5b53919aaf0818b",
+      "bytes": 3149,
+      "originalPath": "/tmp/napier-g01-consumer-types-second.log"
+    },
+    "development/napier-g01-consumer-types-third.log": {
+      "sha256": "10b1887ab7b00f0dd8d0262f8009d1eeb740ea9c04c73967d5d2aad4ff7a9f0c",
+      "bytes": 1358,
+      "originalPath": "/tmp/napier-g01-consumer-types-third.log"
+    },
+    "development/napier-g01-consumer-types-v2-final.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-types-v2-final.log"
+    },
+    "development/napier-g01-consumer-types-v2.log": {
+      "sha256": "b38c145e8e84c97f4a1e8aa069785f08db9d729ccbd9a6e28278c77b3c80c225",
+      "bytes": 970,
+      "originalPath": "/tmp/napier-g01-consumer-types-v2.log"
+    },
+    "development/napier-g01-consumer-types-v3-final.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-types-v3-final.log"
+    },
+    "development/napier-g01-consumer-types-v3.log": {
+      "sha256": "6e38d9a8cf79c44ed696ef5a9fac45711b7161fa47c61a2c0d063343a44ae072",
+      "bytes": 897,
+      "originalPath": "/tmp/napier-g01-consumer-types-v3.log"
+    },
+    "development/napier-g01-consumer-v3-before-freeze-hashes.json": {
+      "sha256": "93fe433d37c0cfb5a4a84209b769226f29d6723fc70f1be0185cd3941f5d1def",
+      "bytes": 7390,
+      "originalPath": "/tmp/napier-g01-consumer-v3-before-freeze-hashes.json"
+    },
+    "development/napier-g01-consumer-vitest.config.mts": {
+      "sha256": "96ed799ca0f892ca465c1d4c0d006e7cb3026b9d13672754f1cc795dc82bf21b",
+      "bytes": 1183,
+      "originalPath": "/tmp/napier-g01-consumer-vitest.config.mts"
+    },
+    "development/napier-g01-consumer-web-design-20261030.log": {
+      "sha256": "9edb8208f6fe9c884f5a07ab7305cd98b2b6e54a8a4c6eec505637f3373c4eb1",
+      "bytes": 95,
+      "originalPath": "/tmp/napier-g01-consumer-web-design-20261030.log"
+    },
+    "development/napier-g03-agent-runtime-baseline-strict.log": {
+      "sha256": "1fa5fe6dd8c083ff1f2db9f9697d29a32e4c2ef8e7f97e2a9df9fb19e9d9587e",
+      "bytes": 19151,
+      "originalPath": "/tmp/napier-g03-agent-runtime-baseline-strict.log"
+    },
+    "development/napier-host-accounting-vitest-v6.config.mts": {
+      "sha256": "d1b50211f72420cd9d09f56d6e16ff2967bc6ee1991db1e25f66d4d82c4e4f90",
+      "bytes": 15571,
+      "originalPath": "/tmp/napier-host-accounting-vitest-v6.config.mts"
+    },
+    "development/napier-overlay-preserved-user-files-20261029.json": {
+      "sha256": "98005eb6811f8ebbf87e5324d47d6431c9ca1394026ea8a06fe3e4ca74a99157",
+      "bytes": 3046,
+      "originalPath": "/tmp/napier-overlay-preserved-user-files-20261029.json"
+    },
+    "integration/result-v1/architecture.log": {
+      "sha256": "a248cbeea6d6c7f30eefa78fe5812754090988f1d3e77391cb658dac56186a84",
+      "bytes": 1150,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/architecture.log"
+    },
+    "integration/result-v1/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/benchmark-types.log"
+    },
+    "integration/result-v1/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/bundled-skills.log"
+    },
+    "integration/result-v1/cli-tests.log": {
+      "sha256": "f22890f79acdfeaa56a5d09a1790cc8540bc307cf1f08881bdba446b87531434",
+      "bytes": 87,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/cli-tests.log"
+    },
+    "integration/result-v1/cli.json": {
+      "sha256": "c2455783ff79a7efb97d439658ced2a5c57387102e1e4d09a8d8081d6bbb6877",
+      "bytes": 3239,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/cli.json"
+    },
+    "integration/result-v1/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/contracts-runtime-emit.log"
+    },
+    "integration/result-v1/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/diff-check.log"
+    },
+    "integration/result-v1/emitted-after.json": {
+      "sha256": "ba96115df67c3bd26119d296a7c7936c6c6f96cf7026c6f766a4a5676cf8f950",
+      "bytes": 637281,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/emitted-after.json"
+    },
+    "integration/result-v1/emitted-before.json": {
+      "sha256": "ba96115df67c3bd26119d296a7c7936c6c6f96cf7026c6f766a4a5676cf8f950",
+      "bytes": 637281,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/emitted-before.json"
+    },
+    "integration/result-v1/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/harness-types.log"
+    },
+    "integration/result-v1/legacy-strict-baseline-comparison.json": {
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "bytes": 462,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/legacy-strict-baseline-comparison.json"
+    },
+    "integration/result-v1/legacy-strict-tests.json": {
+      "sha256": "07d61b90a1343ed5bc58ceb01ebf50fa58327dce25733feb52931d3cc933f5a3",
+      "bytes": 533,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/legacy-strict-tests.json"
+    },
+    "integration/result-v1/legacy-strict-tests.log": {
+      "sha256": "21aaf675249de58ac5c24965408d101f5fd1e39cc3553804c1854b79286e93cb",
+      "bytes": 14495,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/legacy-strict-tests.log"
+    },
+    "integration/result-v1/public-api.log": {
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/public-api.log"
+    },
+    "integration/result-v1/regression.json": {
+      "sha256": "f2c852eb7b6604766bc85837496cee1dbb51528bc74e7f8dfb21120dc0dc730e",
+      "bytes": 21605,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/regression.json"
+    },
+    "integration/result-v1/runtime-tests.log": {
+      "sha256": "f7bb648a3934cf3dbaf84187929d2ede8d2a4999af0c03109807c696bebfe39b",
+      "bytes": 91,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/runtime-tests.log"
+    },
+    "integration/result-v1/runtime.json": {
+      "sha256": "bf73734f52efabcf7e4cc2c696e58815fb0a143fd59a7168234a474ce355ad77",
+      "bytes": 56655,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/runtime.json"
+    },
+    "integration/result-v1/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/sandbox-assets.log"
+    },
+    "integration/result-v1/selected-tests.json": {
+      "sha256": "465cd6a2a08d8983b8e3efda0e7e657bd24cee9607b14523fb25cf47383305ee",
+      "bytes": 4068,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/selected-tests.json"
+    },
+    "integration/result-v1/server-tests.log": {
+      "sha256": "6222984e7486cb62ee6a59ffec71b106f5c9a03ecd360c158df0e6f43731c74d",
+      "bytes": 90,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/server-tests.log"
+    },
+    "integration/result-v1/server.json": {
+      "sha256": "0d24bb658c4ff19bd12aa2696ce8d1e5d0ea58a50933c1579bfb1f158a5a6416",
+      "bytes": 16175,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/server.json"
+    },
+    "integration/result-v1/source-after.json": {
+      "sha256": "0228bdddd65d43c2b39673a55447a988b22b4d2667ec0d7d19fde0b383be6f38",
+      "bytes": 488685,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/source-after.json"
+    },
+    "integration/result-v1/source-before.json": {
+      "sha256": "0228bdddd65d43c2b39673a55447a988b22b4d2667ec0d7d19fde0b383be6f38",
+      "bytes": 488685,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/source-before.json"
+    },
+    "integration/result-v1/strict-tests.json": {
+      "sha256": "7f69c40ab93babec6f74a3d52c0d8da4314c7f707e293c211e27150361c7a365",
+      "bytes": 16128,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/strict-tests.json"
+    },
+    "integration/result-v1/strict-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/strict-tests.log"
+    },
+    "integration/result-v1/web-tests.log": {
+      "sha256": "3b61bacb4ad6cbf3483684eab488d1998fa727077b3ae51922a49c588ab69720",
+      "bytes": 87,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/web-tests.log"
+    },
+    "integration/result-v1/web-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/web-types.log"
+    },
+    "integration/result-v1/web.json": {
+      "sha256": "a8398c8ced3184a32106b43b4353e52f3aa433ecbcca86204f8fcc931558ad4a",
+      "bytes": 78847,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v1-20261030/web.json"
+    },
+    "integration/result-v2/architecture.log": {
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/architecture.log"
+    },
+    "integration/result-v2/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/benchmark-types.log"
+    },
+    "integration/result-v2/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/bundled-skills.log"
+    },
+    "integration/result-v2/cli-tests.log": {
+      "sha256": "9037e51f9841d2ce27d3a8f4bdfb66cf9636bc7b380484fdd6b41fca38da24b7",
+      "bytes": 87,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/cli-tests.log"
+    },
+    "integration/result-v2/cli.json": {
+      "sha256": "30f7e3805347abeba881c114137234eba4b986a893381528bfe21368fc3c149d",
+      "bytes": 3246,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/cli.json"
+    },
+    "integration/result-v2/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/contracts-runtime-emit.log"
+    },
+    "integration/result-v2/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/diff-check.log"
+    },
+    "integration/result-v2/emitted-after.json": {
+      "sha256": "858300054363fdf96ccd05407ddfacadbb8c3262eb1905eec25e4416df68e311",
+      "bytes": 637655,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/emitted-after.json"
+    },
+    "integration/result-v2/emitted-before.json": {
+      "sha256": "858300054363fdf96ccd05407ddfacadbb8c3262eb1905eec25e4416df68e311",
+      "bytes": 637655,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/emitted-before.json"
+    },
+    "integration/result-v2/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/harness-types.log"
+    },
+    "integration/result-v2/legacy-strict-baseline-comparison.json": {
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "bytes": 462,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/legacy-strict-baseline-comparison.json"
+    },
+    "integration/result-v2/legacy-strict-tests.json": {
+      "sha256": "07d61b90a1343ed5bc58ceb01ebf50fa58327dce25733feb52931d3cc933f5a3",
+      "bytes": 533,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/legacy-strict-tests.json"
+    },
+    "integration/result-v2/legacy-strict-tests.log": {
+      "sha256": "21aaf675249de58ac5c24965408d101f5fd1e39cc3553804c1854b79286e93cb",
+      "bytes": 14495,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/legacy-strict-tests.log"
+    },
+    "integration/result-v2/public-api.log": {
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/public-api.log"
+    },
+    "integration/result-v2/regression.json": {
+      "sha256": "4d20bc19c63ad89e9426835413dbc5d4788a782e33b9e21a527293da57fd3eab",
+      "bytes": 23962,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/regression.json"
+    },
+    "integration/result-v2/runtime-tests.log": {
+      "sha256": "4ee2f503afa61a2d332293a93602000aaeb8aa0a3bfb41c1e02bf76b8c683921",
+      "bytes": 91,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/runtime-tests.log"
+    },
+    "integration/result-v2/runtime.json": {
+      "sha256": "52e9c2f7a277d66ea9dac32a0118cf1081431dfbc2a2dfe7d2c9474d57ecee31",
+      "bytes": 56622,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/runtime.json"
+    },
+    "integration/result-v2/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/sandbox-assets.log"
+    },
+    "integration/result-v2/selected-tests.json": {
+      "sha256": "50d8bd667254ea5e1462cfad4c9766345ac34f479c9766a57f4f3cf7dec6584b",
+      "bytes": 4124,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/selected-tests.json"
+    },
+    "integration/result-v2/server-tests.log": {
+      "sha256": "e3ab4141d9a1693f111fa825566e5f9cacdf4b7191d5ac45e8b5384b81dc2cb9",
+      "bytes": 90,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/server-tests.log"
+    },
+    "integration/result-v2/server.json": {
+      "sha256": "9971086c58b7639863e9e78b1906c637e16da6295aefe0b9e6b63bd370f9933b",
+      "bytes": 16188,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/server.json"
+    },
+    "integration/result-v2/source-after.json": {
+      "sha256": "517261778e17583ce33faa2b43a8e72b46aacf2098ba9a1702a2270560d72f79",
+      "bytes": 489163,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/source-after.json"
+    },
+    "integration/result-v2/source-before.json": {
+      "sha256": "517261778e17583ce33faa2b43a8e72b46aacf2098ba9a1702a2270560d72f79",
+      "bytes": 489163,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/source-before.json"
+    },
+    "integration/result-v2/strict-tests.json": {
+      "sha256": "85a0c3ebc473b54310438b1be6b6b7fc478a29826c47b79de085682b8e06724f",
+      "bytes": 16131,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/strict-tests.json"
+    },
+    "integration/result-v2/strict-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/strict-tests.log"
+    },
+    "integration/result-v2/web-tests.log": {
+      "sha256": "8fbfed754fe2e958c0249fb5c8af51cf6b846ae4d8e88a52dea115d2b038ddc1",
+      "bytes": 87,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/web-tests.log"
+    },
+    "integration/result-v2/web-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/web-types.log"
+    },
+    "integration/result-v2/web.json": {
+      "sha256": "cff13a3742896837af7ea868cce5f165e2c74fbb2ce6482a8daf8c516a1992cd",
+      "bytes": 78172,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/web.json"
+    },
+    "integration/result-v3/regression.json": {
+      "sha256": "2b5c06b0dd7bc0b8b2e05cbc75e01bedf49f207a133d6907fd4fd7562cad5a5b",
+      "bytes": 23620,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/regression.json"
+    },
+    "integration/result-v3/runtime-tests.log": {
+      "sha256": "3cc584af1275fe0af25ba6ebaf044ee5d267eb15dd37cfe6b8771514b2f77a56",
+      "bytes": 91,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/runtime-tests.log"
+    },
+    "integration/result-v3/runtime.json": {
+      "sha256": "e6b23cee5b7bb21d7fa873e87edca0b0ecf3ac7f4f4d1790957ebe154d88840b",
+      "bytes": 73961,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/runtime.json"
+    },
+    "integration/result-v3/server-tests.log": {
+      "sha256": "79e7e4f5e52d382c088348f6dd660cba4378bce02737e8fb12441e1edc5d7d44",
+      "bytes": 90,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/server-tests.log"
+    },
+    "integration/result-v3/server.json": {
+      "sha256": "a1f84035a9181a76755a95d03bd92fbecb71ceb1b004a8c2e106a9aa8e5fa068",
+      "bytes": 14634,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/server.json"
+    },
+    "integration/result-v4/regression.json": {
+      "sha256": "5c76d00ee06f3497fcf7078c465702fb2675efa96328ad91415c4751516fd925",
+      "bytes": 25573,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v4-20261030/regression.json"
+    },
+    "integration/result-v4/source-after.json": {
+      "sha256": "18fea617f9792ea9892f24a5bae52203573be8824f4d1587ff7fdb0e057a1a1a",
+      "bytes": 489163,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v4-20261030/source-after.json"
+    },
+    "integration/result-v5/regression.json": {
+      "sha256": "26b1e414291f4db5eb2fe77a7de59f36c9b40b7923fdee77797976a0e30d0113",
+      "bytes": 26643,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v5-20261030/regression.json"
+    },
+    "integration/result-v5/source-after.json": {
+      "sha256": "e005f89a499f4c6ed899dc6dcc30793d92d8ecf3825f16c90ef2dd4fcc5631bf",
+      "bytes": 489282,
+      "originalPath": "/tmp/napier-g01-consumer-integrated-result-v5-20261030/source-after.json"
+    },
+    "owner/frozen-v1/apps/server/test/artifact-consumer-version-binding.test.ts": {
+      "sha256": "e19b13216dcc4bf198cfdedcbc99525352d232f6c53cc0d41b7b6b538a47ec04",
+      "bytes": 3918,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/server/test/artifact-consumer-version-binding.test.ts"
+    },
+    "owner/frozen-v1/apps/web/src/AppWorkspaceViews.tsx": {
+      "sha256": "c517547c99f436cd1c4d911cdd3ab03e7c838c0fad3d08bc68a7345d7aae625a",
+      "bytes": 16319,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/AppWorkspaceViews.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/ArtifactActionSurface.tsx": {
+      "sha256": "98dc2d65efa2ac32a06a06ac3f61e8c4c374ec421700b3a86a8f5a17681ae121",
+      "bytes": 9048,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/ArtifactActionSurface.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/ArtifactInlinePreview.tsx": {
+      "sha256": "bd834e3e5d16b9545993e73ff17345a2866ae8ba81405c54f612e7692ffdbae3",
+      "bytes": 4331,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/ArtifactInlinePreview.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/ArtifactInspector.tsx": {
+      "sha256": "2c233b194d204a8ca91981741eadd3600e43137605c401a20d56174fb9bd6a95",
+      "bytes": 9207,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/ArtifactInspector.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/ConversationArtifactCard.tsx": {
+      "sha256": "859ad81ea51d6d0c4d180c964ea697376c4bf6116e7fe9942b059aafe23a21c4",
+      "bytes": 5951,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/ConversationArtifactCard.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/ConversationLedger.tsx": {
+      "sha256": "ac71eb33946dd6348e3dd217dfc915fa8dc1cbca457d38a2b01a75d2f32e8e28",
+      "bytes": 11015,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/ConversationLedger.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/PlanArtifactManifest.tsx": {
+      "sha256": "aa3c905f608f1211380d8ca4e23cfbbb51a57c4877973523b972371b67ffad2b",
+      "bytes": 4528,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/PlanArtifactManifest.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/PlanPanel.tsx": {
+      "sha256": "b08b3564e24e5a725aed39363c1535fb31e6bddc919af5c9cba543a9d7ce7894",
+      "bytes": 5265,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/PlanPanel.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/TaskChangesPanel.tsx": {
+      "sha256": "e485f2cca98ce4909a12a795edc8f3ef4a90eb898a8dabb45c6f267997ed05f2",
+      "bytes": 4517,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/TaskChangesPanel.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/TaskCompletionSummary.tsx": {
+      "sha256": "1ed1e3e3d1b1fbd7fb4ab84c41df6d067aad43bc147ef3a21d1fc98920def176",
+      "bytes": 7224,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/TaskCompletionSummary.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/artifact-file-api.ts": {
+      "sha256": "b5eacbf8b6895c5fa6c7a0ede61dfef7a53b6b0e1abeda2b869a6db89eb04e71",
+      "bytes": 12453,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/artifact-file-api.ts"
+    },
+    "owner/frozen-v1/apps/web/src/artifact-inspection.ts": {
+      "sha256": "0df622c5003cd58d4b67eb0a3ed34bc311fee034b6029e2ffe4cf288656a01ab",
+      "bytes": 2624,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/artifact-inspection.ts"
+    },
+    "owner/frozen-v1/apps/web/src/artifact-inspector-copy.ts": {
+      "sha256": "5d85e4a00e89813cf2d61609fff34d54eb4905567033e2f09411120fb90583a8",
+      "bytes": 3087,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/artifact-inspector-copy.ts"
+    },
+    "owner/frozen-v1/apps/web/src/artifact-version-binding.ts": {
+      "sha256": "4cf2e0e197fe8391a0ef03c508f27069bbb97f2549730bd1411cff7faa57384b",
+      "bytes": 1542,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/artifact-version-binding.ts"
+    },
+    "owner/frozen-v1/apps/web/src/conversation-detail-copy.ts": {
+      "sha256": "2d86b40673acb7f514d6891d32d5e925e1cc0db393a397396ec960871a3f33b6",
+      "bytes": 10658,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/conversation-detail-copy.ts"
+    },
+    "owner/frozen-v1/apps/web/src/message-markdown-inline.tsx": {
+      "sha256": "b09fbfe439059a84eb2176af61cea9aa29cbdf780fa6577cb956cccc73507ae3",
+      "bytes": 14231,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/message-markdown-inline.tsx"
+    },
+    "owner/frozen-v1/apps/web/src/message-markdown-types.ts": {
+      "sha256": "0e6487e4f48bbd6a6f67e28946f71ebefba7c7ea81fc06f477eb99e791cad3ad",
+      "bytes": 631,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/message-markdown-types.ts"
+    },
+    "owner/frozen-v1/apps/web/src/plan-artifact-manifest-model.ts": {
+      "sha256": "aa2c56bd1efe9cf06ef08461480e3f19154b90c62bc45bfdab1f196cab00eef4",
+      "bytes": 3044,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/plan-artifact-manifest-model.ts"
+    },
+    "owner/frozen-v1/apps/web/src/plan-artifact-manifest-types.ts": {
+      "sha256": "c65d2da720e70491caabe645b2a85b7c277b9b3d16614672b1347515352d6e04",
+      "bytes": 3207,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/plan-artifact-manifest-types.ts"
+    },
+    "owner/frozen-v1/apps/web/src/task-completion-output-paths.ts": {
+      "sha256": "aaf18e9cd4d6ad7d63a9e36abde768ee211aa50a3549ce96fbb2925f372dc81b",
+      "bytes": 2515,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/task-completion-output-paths.ts"
+    },
+    "owner/frozen-v1/apps/web/src/use-artifact-inspector-view.ts": {
+      "sha256": "77b1d6c9fdaa65ae2503f52778e47e567821cc2292fbeae9e458957ba9ef5af8",
+      "bytes": 5078,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/use-artifact-inspector-view.ts"
+    },
+    "owner/frozen-v1/apps/web/src/use-plan-artifact-controller.ts": {
+      "sha256": "fbe72f9095d03c59fba5d78d2a42ff40c2bcd19d78de50d4275de60a84f63271",
+      "bytes": 8396,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/src/use-plan-artifact-controller.ts"
+    },
+    "owner/frozen-v1/apps/web/test/ArtifactActionSurface.test.tsx": {
+      "sha256": "e47737a8555a2c3bf0894bfcc63d872e0ee72680adb28feef542f0a26746b342",
+      "bytes": 13849,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/ArtifactActionSurface.test.tsx"
+    },
+    "owner/frozen-v1/apps/web/test/ArtifactInlinePreview.test.tsx": {
+      "sha256": "4f4f118a78a1936e6ea5eda5d97f4b260e6709d76d68ee03ba5ea8ce7d692c25",
+      "bytes": 9367,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/ArtifactInlinePreview.test.tsx"
+    },
+    "owner/frozen-v1/apps/web/test/ArtifactInspector.test.tsx": {
+      "sha256": "c60ef71b927e7cb74973b1afdb76ae529a76f291633fc1acd5f1f282efdda598",
+      "bytes": 26751,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/ArtifactInspector.test.tsx"
+    },
+    "owner/frozen-v1/apps/web/test/ConversationArtifactCard.test.tsx": {
+      "sha256": "ea961c17c3fb33cae6a85da6401cc3ad123527eeead2dc71ada69c8218ffb4d0",
+      "bytes": 9228,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/ConversationArtifactCard.test.tsx"
+    },
+    "owner/frozen-v1/apps/web/test/TaskChangesPanel.test.tsx": {
+      "sha256": "b05bc5d41aedbb5972d7e294193b7f201bc3effe4db26c0d5b8d0ca3661e3f11",
+      "bytes": 8399,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/TaskChangesPanel.test.tsx"
+    },
+    "owner/frozen-v1/apps/web/test/api.test.ts": {
+      "sha256": "e2184abb4661c5d1988158207a7f8e65c7b738366e6976c58b77be803d259217",
+      "bytes": 92584,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/api.test.ts"
+    },
+    "owner/frozen-v1/apps/web/test/artifact-version-binding.test.ts": {
+      "sha256": "136f347a977ecb619328d7eabdcc850426b6a03f6697666f5178be3c93f4d8d6",
+      "bytes": 3825,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/artifact-version-binding.test.ts"
+    },
+    "owner/frozen-v1/apps/web/test/plan-artifact-manifest-model.test.ts": {
+      "sha256": "1589c00d5c87d77ca6c4f664adc5b431aa43ace188b033dcccaac3602e250a24",
+      "bytes": 5459,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/plan-artifact-manifest-model.test.ts"
+    },
+    "owner/frozen-v1/apps/web/test/task-completion-summary.test.ts": {
+      "sha256": "bb2243ba552e3ef81288c0ae44f4366207480545c075e23f021d837fa68ea5e8",
+      "bytes": 4844,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/task-completion-summary.test.ts"
+    },
+    "owner/frozen-v1/apps/web/test/use-plan-artifact-controller.test.tsx": {
+      "sha256": "984894612a9836937f4057163c5d072f737b67661c83402a7789d57705d6c8b5",
+      "bytes": 3906,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/apps/web/test/use-plan-artifact-controller.test.tsx"
+    },
+    "owner/frozen-v1/packages/contracts/src/task-artifact-facts.ts": {
+      "sha256": "5c77bf847b42c1db9f078f90c51e5bc306cc39e728d141f52948aff80fc1d6aa",
+      "bytes": 6327,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/packages/contracts/src/task-artifact-facts.ts"
+    },
+    "owner/frozen-v1/packages/contracts/src/task-narrative.ts": {
+      "sha256": "773d1c4dd2cfa3b2be64f8ff106aaf53829c2fa9afed60907c8928caf5cc85d2",
+      "bytes": 895,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v1/packages/contracts/src/task-narrative.ts"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-before-v2.log": {
+      "sha256": "3bd66c9439e577cbd0186ab4fe8bb84fa374d047b66e587620f1a43dbc463111",
+      "bytes": 1013,
+      "originalPath": "/tmp/napier-g01-consumer-before-v2.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-before.log": {
+      "sha256": "1c46849eb708d3be86d0e52e23387ed2075f7b340540243c084eedb5e9fffeea",
+      "bytes": 5109,
+      "originalPath": "/tmp/napier-g01-consumer-before.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-debug.log": {
+      "sha256": "d7f33fcaf53fe49a1d1433be99fa4a5331e00ac4a24b45ceb36113bf49020f3a",
+      "bytes": 2218,
+      "originalPath": "/tmp/napier-g01-consumer-debug.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-fifth.log": {
+      "sha256": "7df5d39122b0d417c589585d67a87ae83ec2bcd90f6df5ad909182ddef3bb24a",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-fifth.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-first.log": {
+      "sha256": "27b3e5fce8aa19e2f91d8c8867d7e320ad703efd816329a0e1739581f259cd57",
+      "bytes": 21756,
+      "originalPath": "/tmp/napier-g01-consumer-first.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-fourth.log": {
+      "sha256": "5fa5f9d786fca91711a683443b752368cba2c1da660e8cf0e46d733ee51a8d9c",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-fourth.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-second.log": {
+      "sha256": "13e0bd7cd52d4c2a7a3d3eed203d6ae2ca99ede3f50fbb100f1c935c223f2a91",
+      "bytes": 3771,
+      "originalPath": "/tmp/napier-g01-consumer-second.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-sixth.log": {
+      "sha256": "70348a21dd0447293866a9dde28665181cfb51fc4160b40d4da2fb8d6c573722",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-sixth.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-third.log": {
+      "sha256": "713918f45b1dc20ff4f79e449a6754486e90775e87dc3fedb80379bc791688dc",
+      "bytes": 210,
+      "originalPath": "/tmp/napier-g01-consumer-third.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-tsconfig.json": {
+      "sha256": "eedc7ce7734853f6d6870474a4bc3a5e5c153456db5fdf9717c25fa10c3d14b5",
+      "bytes": 12637,
+      "originalPath": "/tmp/napier-g01-consumer-tsconfig.json"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-types-first.log": {
+      "sha256": "815390089fdc330213f27c97491842ea20a3354ebde639f5c7307ee0d2f9b620",
+      "bytes": 690,
+      "originalPath": "/tmp/napier-g01-consumer-types-first.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-types-fourth.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-types-fourth.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-types-second.log": {
+      "sha256": "5e239bf7159633d006e4a8170f39420ec8cd443777c4d51ff5b53919aaf0818b",
+      "bytes": 3149,
+      "originalPath": "/tmp/napier-g01-consumer-types-second.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-types-third.log": {
+      "sha256": "10b1887ab7b00f0dd8d0262f8009d1eeb740ea9c04c73967d5d2aad4ff7a9f0c",
+      "bytes": 1358,
+      "originalPath": "/tmp/napier-g01-consumer-types-third.log"
+    },
+    "owner/frozen-v1/receipts/napier-g01-consumer-vitest.config.mts": {
+      "sha256": "ba835f45b25fdc2774b7f5f13df1ff569b5172da0e79aab5d77f60d0c52251c2",
+      "bytes": 1131,
+      "originalPath": "/tmp/napier-g01-consumer-vitest.config.mts"
+    },
+    "owner/frozen-v2/apps/server/test/artifact-consumer-version-binding.test.ts": {
+      "sha256": "e19b13216dcc4bf198cfdedcbc99525352d232f6c53cc0d41b7b6b538a47ec04",
+      "bytes": 3918,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/server/test/artifact-consumer-version-binding.test.ts"
+    },
+    "owner/frozen-v2/apps/web/src/AppWorkspaceViews.tsx": {
+      "sha256": "c517547c99f436cd1c4d911cdd3ab03e7c838c0fad3d08bc68a7345d7aae625a",
+      "bytes": 16319,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/AppWorkspaceViews.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/ArtifactActionSurface.tsx": {
+      "sha256": "98dc2d65efa2ac32a06a06ac3f61e8c4c374ec421700b3a86a8f5a17681ae121",
+      "bytes": 9048,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/ArtifactActionSurface.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/ArtifactInlinePreview.tsx": {
+      "sha256": "bce0b4d7c76a2c5ae57c7a60002cac087bbb21fd13321348a27ac8e072a60492",
+      "bytes": 4342,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/ArtifactInlinePreview.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/ArtifactInspector.tsx": {
+      "sha256": "a846d7417f20e49574d297e52e9cab786fa03c485fc11daebd67db70d613a291",
+      "bytes": 9218,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/ArtifactInspector.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/ConversationArtifactCard.tsx": {
+      "sha256": "2c8dcc54cc1c623179eadbc760cc810a716f55018991df4864a34601c88b150c",
+      "bytes": 5962,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/ConversationArtifactCard.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/ConversationLedger.tsx": {
+      "sha256": "ac71eb33946dd6348e3dd217dfc915fa8dc1cbca457d38a2b01a75d2f32e8e28",
+      "bytes": 11015,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/ConversationLedger.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/PlanArtifactManifest.tsx": {
+      "sha256": "aa3c905f608f1211380d8ca4e23cfbbb51a57c4877973523b972371b67ffad2b",
+      "bytes": 4528,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/PlanArtifactManifest.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/PlanPanel.tsx": {
+      "sha256": "b08b3564e24e5a725aed39363c1535fb31e6bddc919af5c9cba543a9d7ce7894",
+      "bytes": 5265,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/PlanPanel.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/TaskChangesPanel.tsx": {
+      "sha256": "e485f2cca98ce4909a12a795edc8f3ef4a90eb898a8dabb45c6f267997ed05f2",
+      "bytes": 4517,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/TaskChangesPanel.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/TaskCompletionSummary.tsx": {
+      "sha256": "1ed1e3e3d1b1fbd7fb4ab84c41df6d067aad43bc147ef3a21d1fc98920def176",
+      "bytes": 7224,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/TaskCompletionSummary.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/artifact-file-api.ts": {
+      "sha256": "b5eacbf8b6895c5fa6c7a0ede61dfef7a53b6b0e1abeda2b869a6db89eb04e71",
+      "bytes": 12453,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/artifact-file-api.ts"
+    },
+    "owner/frozen-v2/apps/web/src/artifact-inspection.ts": {
+      "sha256": "cd044d941797247f01a73964f04252580796d2f27c0a5ac8abf1e6df87dcec75",
+      "bytes": 2635,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/artifact-inspection.ts"
+    },
+    "owner/frozen-v2/apps/web/src/artifact-inspector-copy.ts": {
+      "sha256": "5d85e4a00e89813cf2d61609fff34d54eb4905567033e2f09411120fb90583a8",
+      "bytes": 3087,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/artifact-inspector-copy.ts"
+    },
+    "owner/frozen-v2/apps/web/src/artifact-version-binding.ts": {
+      "sha256": "afd7852e8dacf0f778c6fcd60239d1d84f5f82b1121c3ae066935a6d501283d8",
+      "bytes": 1661,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/artifact-version-binding.ts"
+    },
+    "owner/frozen-v2/apps/web/src/conversation-detail-copy.ts": {
+      "sha256": "2d86b40673acb7f514d6891d32d5e925e1cc0db393a397396ec960871a3f33b6",
+      "bytes": 10658,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/conversation-detail-copy.ts"
+    },
+    "owner/frozen-v2/apps/web/src/message-markdown-inline.tsx": {
+      "sha256": "b09fbfe439059a84eb2176af61cea9aa29cbdf780fa6577cb956cccc73507ae3",
+      "bytes": 14231,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/message-markdown-inline.tsx"
+    },
+    "owner/frozen-v2/apps/web/src/message-markdown-types.ts": {
+      "sha256": "0e6487e4f48bbd6a6f67e28946f71ebefba7c7ea81fc06f477eb99e791cad3ad",
+      "bytes": 631,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/message-markdown-types.ts"
+    },
+    "owner/frozen-v2/apps/web/src/plan-artifact-manifest-model.ts": {
+      "sha256": "aa2c56bd1efe9cf06ef08461480e3f19154b90c62bc45bfdab1f196cab00eef4",
+      "bytes": 3044,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/plan-artifact-manifest-model.ts"
+    },
+    "owner/frozen-v2/apps/web/src/plan-artifact-manifest-types.ts": {
+      "sha256": "c65d2da720e70491caabe645b2a85b7c277b9b3d16614672b1347515352d6e04",
+      "bytes": 3207,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/plan-artifact-manifest-types.ts"
+    },
+    "owner/frozen-v2/apps/web/src/task-completion-output-paths.ts": {
+      "sha256": "aaf18e9cd4d6ad7d63a9e36abde768ee211aa50a3549ce96fbb2925f372dc81b",
+      "bytes": 2515,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/task-completion-output-paths.ts"
+    },
+    "owner/frozen-v2/apps/web/src/use-artifact-inspector-view.ts": {
+      "sha256": "955c651ebad4a42de5863c7777f31d3b43fba10d7d40289b4666e9f43d608be5",
+      "bytes": 5180,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/use-artifact-inspector-view.ts"
+    },
+    "owner/frozen-v2/apps/web/src/use-plan-artifact-controller.ts": {
+      "sha256": "ae2b40998d36dd70e7aff55a35b7165361127c3314de81373ae963b94e73d911",
+      "bytes": 8533,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/src/use-plan-artifact-controller.ts"
+    },
+    "owner/frozen-v2/apps/web/test/ArtifactActionSurface.test.tsx": {
+      "sha256": "e47737a8555a2c3bf0894bfcc63d872e0ee72680adb28feef542f0a26746b342",
+      "bytes": 13849,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/ArtifactActionSurface.test.tsx"
+    },
+    "owner/frozen-v2/apps/web/test/ArtifactInlinePreview.test.tsx": {
+      "sha256": "4f4f118a78a1936e6ea5eda5d97f4b260e6709d76d68ee03ba5ea8ce7d692c25",
+      "bytes": 9367,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/ArtifactInlinePreview.test.tsx"
+    },
+    "owner/frozen-v2/apps/web/test/ArtifactInspector.test.tsx": {
+      "sha256": "c60ef71b927e7cb74973b1afdb76ae529a76f291633fc1acd5f1f282efdda598",
+      "bytes": 26751,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/ArtifactInspector.test.tsx"
+    },
+    "owner/frozen-v2/apps/web/test/ConversationArtifactCard.test.tsx": {
+      "sha256": "ea961c17c3fb33cae6a85da6401cc3ad123527eeead2dc71ada69c8218ffb4d0",
+      "bytes": 9228,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/ConversationArtifactCard.test.tsx"
+    },
+    "owner/frozen-v2/apps/web/test/TaskChangesPanel.test.tsx": {
+      "sha256": "b05bc5d41aedbb5972d7e294193b7f201bc3effe4db26c0d5b8d0ca3661e3f11",
+      "bytes": 8399,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/TaskChangesPanel.test.tsx"
+    },
+    "owner/frozen-v2/apps/web/test/api.test.ts": {
+      "sha256": "e2184abb4661c5d1988158207a7f8e65c7b738366e6976c58b77be803d259217",
+      "bytes": 92584,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/api.test.ts"
+    },
+    "owner/frozen-v2/apps/web/test/artifact-version-binding.test.ts": {
+      "sha256": "532ef3f9cfc5c9e943aa586b9ab84c7ee06febfdb92eb96bbe6a306faa7dd5bb",
+      "bytes": 5004,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/artifact-version-binding.test.ts"
+    },
+    "owner/frozen-v2/apps/web/test/plan-artifact-manifest-model.test.ts": {
+      "sha256": "1589c00d5c87d77ca6c4f664adc5b431aa43ace188b033dcccaac3602e250a24",
+      "bytes": 5459,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/plan-artifact-manifest-model.test.ts"
+    },
+    "owner/frozen-v2/apps/web/test/task-completion-summary.test.ts": {
+      "sha256": "bb2243ba552e3ef81288c0ae44f4366207480545c075e23f021d837fa68ea5e8",
+      "bytes": 4844,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/task-completion-summary.test.ts"
+    },
+    "owner/frozen-v2/apps/web/test/use-plan-artifact-controller.test.tsx": {
+      "sha256": "0fa646a48d8f14aeb2c13b807f05a59dfe9cb749b147974bf4b68a6c8422a699",
+      "bytes": 5142,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/apps/web/test/use-plan-artifact-controller.test.tsx"
+    },
+    "owner/frozen-v2/packages/contracts/src/task-artifact-facts.ts": {
+      "sha256": "d8e4ee94f4ed8df20f973d8f7a8dfb3ee39fe6ade9c70c9555351f96213e7490",
+      "bytes": 7451,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/packages/contracts/src/task-artifact-facts.ts"
+    },
+    "owner/frozen-v2/packages/contracts/src/task-narrative.ts": {
+      "sha256": "ffff4da51173a75df03b5742a5e925f6b49312b9ed9471b31e5e74315608dc36",
+      "bytes": 927,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v2/packages/contracts/src/task-narrative.ts"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-before-v2.log": {
+      "sha256": "3bd66c9439e577cbd0186ab4fe8bb84fa374d047b66e587620f1a43dbc463111",
+      "bytes": 1013,
+      "originalPath": "/tmp/napier-g01-consumer-before-v2.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-before.log": {
+      "sha256": "1c46849eb708d3be86d0e52e23387ed2075f7b340540243c084eedb5e9fffeea",
+      "bytes": 5109,
+      "originalPath": "/tmp/napier-g01-consumer-before.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-debug.log": {
+      "sha256": "d7f33fcaf53fe49a1d1433be99fa4a5331e00ac4a24b45ceb36113bf49020f3a",
+      "bytes": 2218,
+      "originalPath": "/tmp/napier-g01-consumer-debug.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-fifth.log": {
+      "sha256": "7df5d39122b0d417c589585d67a87ae83ec2bcd90f6df5ad909182ddef3bb24a",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-fifth.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-final-v2-exact.log": {
+      "sha256": "4e472b5aaf0cb4e76f462c3381eb43aad8cd6546c2e30d3e959be5139e30b475",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-final-v2-exact.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-final-v2.log": {
+      "sha256": "0b6301ab62291f621338de4c60d7c715f773513fa6f579696f2f02311c2f16d2",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-final-v2.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-first.log": {
+      "sha256": "27b3e5fce8aa19e2f91d8c8867d7e320ad703efd816329a0e1739581f259cd57",
+      "bytes": 21756,
+      "originalPath": "/tmp/napier-g01-consumer-first.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-fourth.log": {
+      "sha256": "5fa5f9d786fca91711a683443b752368cba2c1da660e8cf0e46d733ee51a8d9c",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-fourth.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-review-after-v2.log": {
+      "sha256": "14c1a660a2d364c1ba891075b3da7cd6abb145fa470dbb0f3ddf80a6a95fbb92",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-review-after-v2.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-review-before-v2.log": {
+      "sha256": "bb36432f842e0183be2400f4cb318bd66bd2841a6e88c77eacc67ac3f0093a4c",
+      "bytes": 2619,
+      "originalPath": "/tmp/napier-g01-consumer-review-before-v2.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-second.log": {
+      "sha256": "13e0bd7cd52d4c2a7a3d3eed203d6ae2ca99ede3f50fbb100f1c935c223f2a91",
+      "bytes": 3771,
+      "originalPath": "/tmp/napier-g01-consumer-second.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-sixth.log": {
+      "sha256": "70348a21dd0447293866a9dde28665181cfb51fc4160b40d4da2fb8d6c573722",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-sixth.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-third.log": {
+      "sha256": "713918f45b1dc20ff4f79e449a6754486e90775e87dc3fedb80379bc791688dc",
+      "bytes": 210,
+      "originalPath": "/tmp/napier-g01-consumer-third.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-tsconfig.json": {
+      "sha256": "eedc7ce7734853f6d6870474a4bc3a5e5c153456db5fdf9717c25fa10c3d14b5",
+      "bytes": 12637,
+      "originalPath": "/tmp/napier-g01-consumer-tsconfig.json"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-types-first.log": {
+      "sha256": "815390089fdc330213f27c97491842ea20a3354ebde639f5c7307ee0d2f9b620",
+      "bytes": 690,
+      "originalPath": "/tmp/napier-g01-consumer-types-first.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-types-fourth.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-types-fourth.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-types-second.log": {
+      "sha256": "5e239bf7159633d006e4a8170f39420ec8cd443777c4d51ff5b53919aaf0818b",
+      "bytes": 3149,
+      "originalPath": "/tmp/napier-g01-consumer-types-second.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-types-third.log": {
+      "sha256": "10b1887ab7b00f0dd8d0262f8009d1eeb740ea9c04c73967d5d2aad4ff7a9f0c",
+      "bytes": 1358,
+      "originalPath": "/tmp/napier-g01-consumer-types-third.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-types-v2-final.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-types-v2-final.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-types-v2.log": {
+      "sha256": "b38c145e8e84c97f4a1e8aa069785f08db9d729ccbd9a6e28278c77b3c80c225",
+      "bytes": 970,
+      "originalPath": "/tmp/napier-g01-consumer-types-v2.log"
+    },
+    "owner/frozen-v2/receipts/napier-g01-consumer-vitest.config.mts": {
+      "sha256": "ba835f45b25fdc2774b7f5f13df1ff569b5172da0e79aab5d77f60d0c52251c2",
+      "bytes": 1131,
+      "originalPath": "/tmp/napier-g01-consumer-vitest.config.mts"
+    },
+    "owner/frozen-v3/apps/server/test/artifact-consumer-version-binding.test.ts": {
+      "sha256": "e19b13216dcc4bf198cfdedcbc99525352d232f6c53cc0d41b7b6b538a47ec04",
+      "bytes": 3918,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/server/test/artifact-consumer-version-binding.test.ts"
+    },
+    "owner/frozen-v3/apps/web/src/AppWorkspaceViews.tsx": {
+      "sha256": "654ab4ba4c42320d41c814acf5d12adf02317da1d4b8a05a940da50fe03d790a",
+      "bytes": 14914,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/AppWorkspaceViews.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/ArtifactActionSurface.tsx": {
+      "sha256": "98dc2d65efa2ac32a06a06ac3f61e8c4c374ec421700b3a86a8f5a17681ae121",
+      "bytes": 9048,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/ArtifactActionSurface.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/ArtifactInlinePreview.tsx": {
+      "sha256": "bce0b4d7c76a2c5ae57c7a60002cac087bbb21fd13321348a27ac8e072a60492",
+      "bytes": 4342,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/ArtifactInlinePreview.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/ArtifactInspector.tsx": {
+      "sha256": "a846d7417f20e49574d297e52e9cab786fa03c485fc11daebd67db70d613a291",
+      "bytes": 9218,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/ArtifactInspector.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/ConversationArtifactCard.tsx": {
+      "sha256": "2c8dcc54cc1c623179eadbc760cc810a716f55018991df4864a34601c88b150c",
+      "bytes": 5962,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/ConversationArtifactCard.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/ConversationLedger.tsx": {
+      "sha256": "ac71eb33946dd6348e3dd217dfc915fa8dc1cbca457d38a2b01a75d2f32e8e28",
+      "bytes": 11015,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/ConversationLedger.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/MessageWorkspaceArtifactLink.tsx": {
+      "sha256": "31582202f10f208e98537394ccbbfded9dd1ab28e3acf6792439add7c8f7cfa4",
+      "bytes": 1258,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/MessageWorkspaceArtifactLink.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/PlanArtifactManifest.tsx": {
+      "sha256": "aa3c905f608f1211380d8ca4e23cfbbb51a57c4877973523b972371b67ffad2b",
+      "bytes": 4528,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/PlanArtifactManifest.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/PlanPanel.tsx": {
+      "sha256": "b08b3564e24e5a725aed39363c1535fb31e6bddc919af5c9cba543a9d7ce7894",
+      "bytes": 5265,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/PlanPanel.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/TaskChangesPanel.tsx": {
+      "sha256": "e485f2cca98ce4909a12a795edc8f3ef4a90eb898a8dabb45c6f267997ed05f2",
+      "bytes": 4517,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/TaskChangesPanel.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/TaskCompletionSummary.tsx": {
+      "sha256": "1ed1e3e3d1b1fbd7fb4ab84c41df6d067aad43bc147ef3a21d1fc98920def176",
+      "bytes": 7224,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/TaskCompletionSummary.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/artifact-file-api.ts": {
+      "sha256": "b5eacbf8b6895c5fa6c7a0ede61dfef7a53b6b0e1abeda2b869a6db89eb04e71",
+      "bytes": 12453,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/artifact-file-api.ts"
+    },
+    "owner/frozen-v3/apps/web/src/artifact-inspection-target.ts": {
+      "sha256": "811374e0c37dbea466107de423d47286e0bd5c85363b964ea5fad54cf30da3bb",
+      "bytes": 1694,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/artifact-inspection-target.ts"
+    },
+    "owner/frozen-v3/apps/web/src/artifact-inspection.ts": {
+      "sha256": "cd044d941797247f01a73964f04252580796d2f27c0a5ac8abf1e6df87dcec75",
+      "bytes": 2635,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/artifact-inspection.ts"
+    },
+    "owner/frozen-v3/apps/web/src/artifact-inspector-copy.ts": {
+      "sha256": "5d85e4a00e89813cf2d61609fff34d54eb4905567033e2f09411120fb90583a8",
+      "bytes": 3087,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/artifact-inspector-copy.ts"
+    },
+    "owner/frozen-v3/apps/web/src/artifact-version-binding.ts": {
+      "sha256": "afd7852e8dacf0f778c6fcd60239d1d84f5f82b1121c3ae066935a6d501283d8",
+      "bytes": 1661,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/artifact-version-binding.ts"
+    },
+    "owner/frozen-v3/apps/web/src/conversation-detail-copy.ts": {
+      "sha256": "2d86b40673acb7f514d6891d32d5e925e1cc0db393a397396ec960871a3f33b6",
+      "bytes": 10658,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/conversation-detail-copy.ts"
+    },
+    "owner/frozen-v3/apps/web/src/message-markdown-inline.tsx": {
+      "sha256": "781791946b547e0cf32829966d5cbccea6b660fa944ea6f72f4b3933c6296951",
+      "bytes": 13258,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/message-markdown-inline.tsx"
+    },
+    "owner/frozen-v3/apps/web/src/message-markdown-types.ts": {
+      "sha256": "0e6487e4f48bbd6a6f67e28946f71ebefba7c7ea81fc06f477eb99e791cad3ad",
+      "bytes": 631,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/message-markdown-types.ts"
+    },
+    "owner/frozen-v3/apps/web/src/plan-artifact-manifest-model.ts": {
+      "sha256": "aa2c56bd1efe9cf06ef08461480e3f19154b90c62bc45bfdab1f196cab00eef4",
+      "bytes": 3044,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/plan-artifact-manifest-model.ts"
+    },
+    "owner/frozen-v3/apps/web/src/plan-artifact-manifest-types.ts": {
+      "sha256": "c65d2da720e70491caabe645b2a85b7c277b9b3d16614672b1347515352d6e04",
+      "bytes": 3207,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/plan-artifact-manifest-types.ts"
+    },
+    "owner/frozen-v3/apps/web/src/task-completion-output-paths.ts": {
+      "sha256": "aaf18e9cd4d6ad7d63a9e36abde768ee211aa50a3549ce96fbb2925f372dc81b",
+      "bytes": 2515,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/task-completion-output-paths.ts"
+    },
+    "owner/frozen-v3/apps/web/src/use-artifact-inspector-view.ts": {
+      "sha256": "955c651ebad4a42de5863c7777f31d3b43fba10d7d40289b4666e9f43d608be5",
+      "bytes": 5180,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/use-artifact-inspector-view.ts"
+    },
+    "owner/frozen-v3/apps/web/src/use-plan-artifact-controller.ts": {
+      "sha256": "ae2b40998d36dd70e7aff55a35b7165361127c3314de81373ae963b94e73d911",
+      "bytes": 8533,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/src/use-plan-artifact-controller.ts"
+    },
+    "owner/frozen-v3/apps/web/test/ArtifactActionSurface.test.tsx": {
+      "sha256": "e47737a8555a2c3bf0894bfcc63d872e0ee72680adb28feef542f0a26746b342",
+      "bytes": 13849,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/ArtifactActionSurface.test.tsx"
+    },
+    "owner/frozen-v3/apps/web/test/ArtifactInlinePreview.test.tsx": {
+      "sha256": "4f4f118a78a1936e6ea5eda5d97f4b260e6709d76d68ee03ba5ea8ce7d692c25",
+      "bytes": 9367,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/ArtifactInlinePreview.test.tsx"
+    },
+    "owner/frozen-v3/apps/web/test/ArtifactInspector.test.tsx": {
+      "sha256": "c60ef71b927e7cb74973b1afdb76ae529a76f291633fc1acd5f1f282efdda598",
+      "bytes": 26751,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/ArtifactInspector.test.tsx"
+    },
+    "owner/frozen-v3/apps/web/test/ConversationArtifactCard.test.tsx": {
+      "sha256": "ea961c17c3fb33cae6a85da6401cc3ad123527eeead2dc71ada69c8218ffb4d0",
+      "bytes": 9228,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/ConversationArtifactCard.test.tsx"
+    },
+    "owner/frozen-v3/apps/web/test/TaskChangesPanel.test.tsx": {
+      "sha256": "b05bc5d41aedbb5972d7e294193b7f201bc3effe4db26c0d5b8d0ca3661e3f11",
+      "bytes": 8399,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/TaskChangesPanel.test.tsx"
+    },
+    "owner/frozen-v3/apps/web/test/api.test.ts": {
+      "sha256": "cbee2388648fd646272da8160470b50dd6691e7d2e63e3e1378bbe30a38d3050",
+      "bytes": 86579,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/api.test.ts"
+    },
+    "owner/frozen-v3/apps/web/test/artifact-file-download-api.test.ts": {
+      "sha256": "a48aae36eca948d65383f90a808fc946872ca1a5f49a51f5126cf88845027107",
+      "bytes": 6249,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/artifact-file-download-api.test.ts"
+    },
+    "owner/frozen-v3/apps/web/test/artifact-version-binding.test.ts": {
+      "sha256": "532ef3f9cfc5c9e943aa586b9ab84c7ee06febfdb92eb96bbe6a306faa7dd5bb",
+      "bytes": 5004,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/artifact-version-binding.test.ts"
+    },
+    "owner/frozen-v3/apps/web/test/plan-artifact-manifest-model.test.ts": {
+      "sha256": "1589c00d5c87d77ca6c4f664adc5b431aa43ace188b033dcccaac3602e250a24",
+      "bytes": 5459,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/plan-artifact-manifest-model.test.ts"
+    },
+    "owner/frozen-v3/apps/web/test/task-completion-summary.test.ts": {
+      "sha256": "bb2243ba552e3ef81288c0ae44f4366207480545c075e23f021d837fa68ea5e8",
+      "bytes": 4844,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/task-completion-summary.test.ts"
+    },
+    "owner/frozen-v3/apps/web/test/use-plan-artifact-controller.test.tsx": {
+      "sha256": "0fa646a48d8f14aeb2c13b807f05a59dfe9cb749b147974bf4b68a6c8422a699",
+      "bytes": 5142,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/apps/web/test/use-plan-artifact-controller.test.tsx"
+    },
+    "owner/frozen-v3/handoff.json": {
+      "sha256": "17c9e1b7bad6a425da0ac0dda72b2fdd3faccf543f3cf7835aea7895903fe17d",
+      "bytes": 15201,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/handoff.json"
+    },
+    "owner/frozen-v3/packages/contracts/src/task-artifact-facts.ts": {
+      "sha256": "a1d40f70c51934336b2c48f781d01a523d9541833771d2e308427141dee3f356",
+      "bytes": 4704,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/packages/contracts/src/task-artifact-facts.ts"
+    },
+    "owner/frozen-v3/packages/contracts/src/task-artifact-receipt.ts": {
+      "sha256": "8022949735ca4f1b46832877a392d8483425d9cfd4b139e8ada73a89eaaeac92",
+      "bytes": 3431,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/packages/contracts/src/task-artifact-receipt.ts"
+    },
+    "owner/frozen-v3/packages/contracts/src/task-narrative.ts": {
+      "sha256": "7bd4619919d1873452c5c867b22fd1525c3528746b2d9820d9aeca01c10e99fa",
+      "bytes": 973,
+      "originalPath": "/tmp/napier-g01-consumer-source-freeze-20261030-v3/packages/contracts/src/task-narrative.ts"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-architecture-v3-final.log": {
+      "sha256": "7e66bca244bbe4c28d77960e5cde121579478864fc0bd839863b93919b755be1",
+      "bytes": 848,
+      "originalPath": "/tmp/napier-g01-consumer-architecture-v3-final.log"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-architecture-v3b.log": {
+      "sha256": "7e66bca244bbe4c28d77960e5cde121579478864fc0bd839863b93919b755be1",
+      "bytes": 848,
+      "originalPath": "/tmp/napier-g01-consumer-architecture-v3b.log"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-diff-check-v3.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-diff-check-v3.log"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-extraction-v3.log": {
+      "sha256": "58dee7d8678583133cc92476de814ecdb86da25613dfaea5d864d0ea18a87be5",
+      "bytes": 208,
+      "originalPath": "/tmp/napier-g01-consumer-extraction-v3.log"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-extraction-vitest.config.mts": {
+      "sha256": "3713ed68a3ac6493ffea3b7024617080c41f23ebcdd7fe50cd85e08ff2194720",
+      "bytes": 211,
+      "originalPath": "/tmp/napier-g01-consumer-extraction-vitest.config.mts"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-final-v3-exact.log": {
+      "sha256": "4b8aaad499ed3b6196eb5594600dde708091fc9d0c7e01f4ff9d7de51bb22655",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-final-v3-exact.log"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-final-v3.log": {
+      "sha256": "380d39bc013f4709295d0f14b82c423b13e27bb6930e96dafe2dcf4e2f554920",
+      "bytes": 214,
+      "originalPath": "/tmp/napier-g01-consumer-final-v3.log"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-owned-paths.json": {
+      "sha256": "aade3986088e56ec0e98dbf759028e8d1b56187fa2017cf6ad57070d2ac59e74",
+      "bytes": 1944,
+      "originalPath": "/tmp/napier-g01-consumer-owned-paths.json"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-tsconfig.json": {
+      "sha256": "39046ebb03fcab62539edd9a7ea0400db1e4c3fc6a5494f2fa557827cccdd26e",
+      "bytes": 12718,
+      "originalPath": "/tmp/napier-g01-consumer-tsconfig.json"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-types-v3-final.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-types-v3-final.log"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-types-v3.log": {
+      "sha256": "6e38d9a8cf79c44ed696ef5a9fac45711b7161fa47c61a2c0d063343a44ae072",
+      "bytes": 897,
+      "originalPath": "/tmp/napier-g01-consumer-types-v3.log"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-v3-before-freeze-hashes.json": {
+      "sha256": "93fe433d37c0cfb5a4a84209b769226f29d6723fc70f1be0185cd3941f5d1def",
+      "bytes": 7390,
+      "originalPath": "/tmp/napier-g01-consumer-v3-before-freeze-hashes.json"
+    },
+    "owner/frozen-v3/receipts/napier-g01-consumer-vitest.config.mts": {
+      "sha256": "96ed799ca0f892ca465c1d4c0d006e7cb3026b9d13672754f1cc795dc82bf21b",
+      "bytes": 1183,
+      "originalPath": "/tmp/napier-g01-consumer-vitest.config.mts"
+    },
+    "owner/frozen-v3/receipts/napier-host-accounting-vitest-v6.config.mts": {
+      "sha256": "d1b50211f72420cd9d09f56d6e16ff2967bc6ee1991db1e25f66d4d82c4e4f90",
+      "bytes": 15571,
+      "originalPath": "/tmp/napier-host-accounting-vitest-v6.config.mts"
+    },
+    "owner/handoff-v1.json": {
+      "sha256": "177c0b7fab81d13b796ec2ccb215b11787cdf4e26c6a14ed6f15f15a67c8fe9e",
+      "bytes": 11371,
+      "originalPath": "/tmp/napier-g01-consumer-handoff-20261030-v1.json"
+    },
+    "owner/handoff-v2.json": {
+      "sha256": "dd384dcbce0e0ee8ff6554a75846b6a3ffd9f15838400e6510a70f1e0e9ab160",
+      "bytes": 13584,
+      "originalPath": "/tmp/napier-g01-consumer-handoff-20261030-v2.json"
+    },
+    "owner/handoff-v3.json": {
+      "sha256": "17c9e1b7bad6a425da0ac0dda72b2fdd3faccf543f3cf7835aea7895903fe17d",
+      "bytes": 15201,
+      "originalPath": "/tmp/napier-g01-consumer-handoff-20261030-v3.json"
+    },
+    "projection/before/before-v2.json": {
+      "sha256": "0aee949ac26a94dbde17a2ac42d3bb81ce87c5beac339279e717176c23626485",
+      "bytes": 2534,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/before-v2.json"
+    },
+    "projection/before/before-v2.log": {
+      "sha256": "e078803ad46ad1337c468476fa099d271929f1e8eded5e6cfc55ebec638bf9c4",
+      "bytes": 83,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/before-v2.log"
+    },
+    "projection/before/before-v3.json": {
+      "sha256": "5a31a1230f77b9ae4c70a273e9b22d4d7eecaba54bfc7f7a31e311e8a1ed6c3a",
+      "bytes": 2534,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/before-v3.json"
+    },
+    "projection/before/before-v3.log": {
+      "sha256": "98757d784a926d5c1a83537cbb48cf800f99b6710a6fd3d1bf3915e266f164c8",
+      "bytes": 83,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/before-v3.log"
+    },
+    "projection/before/before.json": {
+      "sha256": "07ff37571328160057d0aecfe5bb3edbd4640d5681828076aa1be65c6ccc827f",
+      "bytes": 3270,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/before.json"
+    },
+    "projection/before/before.log": {
+      "sha256": "67cfd2504f08452343be2488ad9af6186b278045d66dbeb1eb8142dcbc149925",
+      "bytes": 88,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/before.log"
+    },
+    "projection/before/probe.config.mts": {
+      "sha256": "b512e436514d7dc9ae94846be3030935d14cf0ec9c542590fe41d5075e310b62",
+      "bytes": 18315,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/probe.config.mts"
+    },
+    "projection/before/setup.py": {
+      "sha256": "96420f36edb767f6a633dbac51caac78c4a0d72daec3680b7accfa757e1ea4e9",
+      "bytes": 1364,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030.py"
+    },
+    "projection/before/source/packages/contracts/src/task-artifact-facts.ts": {
+      "sha256": "8f5ab4e37dd69f24763f083e728845b298b1cdbc0efee221330ec8bfefa2586f",
+      "bytes": 4008,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/packages/contracts/src/task-artifact-facts.ts"
+    },
+    "projection/before/source/packages/contracts/src/task-narrative.ts": {
+      "sha256": "23e8c372171b1bda2c3f7aab1cbe79211c9ff2b1be8d7c47317897723e6f1227",
+      "bytes": 507,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/packages/contracts/src/task-narrative.ts"
+    },
+    "projection/before/source/packages/runtime/src/conversation-artifacts-projection.ts": {
+      "sha256": "321ef2330e9595d7d1ce51e8593ee338a709d691bd40cebeb7a0e2b88b807c2e",
+      "bytes": 3362,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/packages/runtime/src/conversation-artifacts-projection.ts"
+    },
+    "projection/before/source/packages/runtime/src/kernel-detail-projections.ts": {
+      "sha256": "8655f12ac757af1fc955ba33ee172795582d5516b84c384782de127242a75217",
+      "bytes": 9118,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/packages/runtime/src/kernel-detail-projections.ts"
+    },
+    "projection/before/source/packages/runtime/test/conversation-artifact-version-binding.test.ts": {
+      "sha256": "dadfb2cf12c3388c590a9543b7c44229314dcb0d41d8f2aca40622e09c54a16b",
+      "bytes": 4869,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/packages/runtime/test/conversation-artifact-version-binding.test.ts"
+    },
+    "projection/before/source/packages/runtime/test/kernel-projections.test.ts": {
+      "sha256": "b20283e3a7d9147688634fee9ebb1c4ab043334b976e85f793d5cc95a4cb881f",
+      "bytes": 24649,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/packages/runtime/test/kernel-projections.test.ts"
+    },
+    "projection/before/source/packages/runtime/test/subagent-child-run-projection.test.ts": {
+      "sha256": "24d86f8c8c1c2b036031c67ec626a878f08bc20526cef37cd2f2e732232e369e",
+      "bytes": 10884,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/packages/runtime/test/subagent-child-run-projection.test.ts"
+    },
+    "projection/candidate-v1/available-source/packages/runtime/src/conversation-artifacts-projection.ts": {
+      "sha256": "8e930b90099324d135191c4dc8dc7cc7a0a6c5ea3042ea6ac8a4cf179800e937",
+      "bytes": 301,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/src/conversation-artifacts-projection.ts"
+    },
+    "projection/candidate-v1/available-source/packages/runtime/src/kernel-detail-projections.ts": {
+      "sha256": "7d6c3b1dfaf66939c9464a7863d1506bf04e3de39db9a349a44094f44613414f",
+      "bytes": 9118,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/src/kernel-detail-projections.ts"
+    },
+    "projection/candidate-v1/available-source/packages/runtime/test/conversation-artifact-version-binding.test.ts": {
+      "sha256": "dadfb2cf12c3388c590a9543b7c44229314dcb0d41d8f2aca40622e09c54a16b",
+      "bytes": 4869,
+      "originalPath": "/tmp/napier-g01-conversation-before-20261030/packages/runtime/test/conversation-artifact-version-binding.test.ts"
+    },
+    "projection/candidate-v1/available-source/packages/runtime/test/kernel-projections.test.ts": {
+      "sha256": "9ca7654bde4f812f647c65b071aca41c133c17b9ecc1776a867f6c95f74bd52e",
+      "bytes": 24677,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/test/kernel-projections.test.ts"
+    },
+    "projection/candidate-v1/available-source/packages/runtime/test/subagent-child-run-projection.test.ts": {
+      "sha256": "d98ebcc99a4aedf0f571583f355808dc59456f95d16ec07414b56394bea54761",
+      "bytes": 11086,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/test/subagent-child-run-projection.test.ts"
+    },
+    "projection/candidate-v1/source-coverage.json": {
+      "sha256": "85f35dc07d9872f91c922972c1e1b0d0f3fc9831deca81c666e25e57b22f8ad2",
+      "bytes": 2976,
+      "origin": "authored_evidence"
+    },
+    "projection/candidate/compile-v1.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/compile-v1.log"
+    },
+    "projection/candidate/compile-v2.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/compile-v2.log"
+    },
+    "projection/candidate/isolated-web-types-v1.log": {
+      "sha256": "6e90d4269d80c040a9ee0a487990d3ca5947a130c036dea699a60e912f8df8f7",
+      "bytes": 184,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/isolated-web-types-v1.log"
+    },
+    "projection/candidate/isolated-web-types-v2.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/isolated-web-types-v2.log"
+    },
+    "projection/candidate/probe.config.mts": {
+      "sha256": "200a816a81ba3d696731ffd32801ab8d9bb7035a1fd67529c1d393fc9d806a4b",
+      "bytes": 18609,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/probe.config.mts"
+    },
+    "projection/candidate/restart-v3.json": {
+      "sha256": "1adbe3a383a71d324ce61e35e218435190515bc69b5d68b8e3f6a2ea9d020c37",
+      "bytes": 1949,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/restart-v3.json"
+    },
+    "projection/candidate/restart-v3.log": {
+      "sha256": "458d089fd224c152d50c0434b6425f3cbe11c2c40433876fde360858c5bd6169",
+      "bytes": 87,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/restart-v3.log"
+    },
+    "projection/candidate/setup.py": {
+      "sha256": "b77c10ccd492bad84a424258c06006ec89581f1407ab0a87ff855be956ffd753",
+      "bytes": 2219,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030.py"
+    },
+    "projection/candidate/source-manifest-v2.json": {
+      "sha256": "cd73ec91e78bc8eb4810f7cef0207229a1bc5008ae5be61ad2a979bf3dc2a1f5",
+      "bytes": 1479,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/source-manifest-v2.json"
+    },
+    "projection/candidate/source-manifest.json": {
+      "sha256": "57413823e03225052146a387ba008522cca0829acf9ce9eb885ddd509b1799dd",
+      "bytes": 1359,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/source-manifest.json"
+    },
+    "projection/candidate/source/apps/web/src/conversation-artifact-view-model.ts": {
+      "sha256": "bb3962f8f934918754291db3548aa07a657afe678552974af52ee8f28f19b050",
+      "bytes": 4251,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/apps/web/src/conversation-artifact-view-model.ts"
+    },
+    "projection/candidate/source/apps/web/src/conversation-feed-projection.ts": {
+      "sha256": "293d9743f7290450a9281fe6d549f8bdc17e1371871837fdb47cb9d04b79b268",
+      "bytes": 12333,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/apps/web/src/conversation-feed-projection.ts"
+    },
+    "projection/candidate/source/apps/web/test/conversation-artifact-view-model.test.ts": {
+      "sha256": "c25b652d79b8a7b54f1f79a93c04c42c188ed55611cc84d15568fd03b31a37b1",
+      "bytes": 9962,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/apps/web/test/conversation-artifact-view-model.test.ts"
+    },
+    "projection/candidate/source/packages/contracts/src/conversation-artifact-projection.ts": {
+      "sha256": "53564d704260311fba32dced025fb2f5ac87850e53a97a61dc7269972bb9529c",
+      "bytes": 5124,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/contracts/src/conversation-artifact-projection.ts"
+    },
+    "projection/candidate/source/packages/contracts/src/task-artifact-facts.ts": {
+      "sha256": "5c77bf847b42c1db9f078f90c51e5bc306cc39e728d141f52948aff80fc1d6aa",
+      "bytes": 6327,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/contracts/src/task-artifact-facts.ts"
+    },
+    "projection/candidate/source/packages/contracts/src/task-narrative.ts": {
+      "sha256": "773d1c4dd2cfa3b2be64f8ff106aaf53829c2fa9afed60907c8928caf5cc85d2",
+      "bytes": 895,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/contracts/src/task-narrative.ts"
+    },
+    "projection/candidate/source/packages/runtime/src/conversation-artifacts-projection.ts": {
+      "sha256": "8e930b90099324d135191c4dc8dc7cc7a0a6c5ea3042ea6ac8a4cf179800e937",
+      "bytes": 301,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/src/conversation-artifacts-projection.ts"
+    },
+    "projection/candidate/source/packages/runtime/src/kernel-detail-projections.ts": {
+      "sha256": "7d6c3b1dfaf66939c9464a7863d1506bf04e3de39db9a349a44094f44613414f",
+      "bytes": 9118,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/src/kernel-detail-projections.ts"
+    },
+    "projection/candidate/source/packages/runtime/test/conversation-artifact-version-binding.test.ts": {
+      "sha256": "8dc27babaf4d55d5fc8a94bc51ad3b2d0054e21f61c5a7484d6a280d3a08057a",
+      "bytes": 5952,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/test/conversation-artifact-version-binding.test.ts"
+    },
+    "projection/candidate/source/packages/runtime/test/kernel-projections.test.ts": {
+      "sha256": "9ca7654bde4f812f647c65b071aca41c133c17b9ecc1776a867f6c95f74bd52e",
+      "bytes": 24677,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/test/kernel-projections.test.ts"
+    },
+    "projection/candidate/source/packages/runtime/test/subagent-child-run-projection.test.ts": {
+      "sha256": "d98ebcc99a4aedf0f571583f355808dc59456f95d16ec07414b56394bea54761",
+      "bytes": 11086,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/packages/runtime/test/subagent-child-run-projection.test.ts"
+    },
+    "projection/candidate/tests-v1.json": {
+      "sha256": "6ffa2b19de7ee1292654f2e089c4d2ff507406b813585143c94da0dd4e6548a5",
+      "bytes": 12086,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/tests-v1.json"
+    },
+    "projection/candidate/tests-v1.log": {
+      "sha256": "31a5a784a9fccca6cb398cd68946c5edde613f729162097b4ead7e61d92b45c1",
+      "bytes": 93,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/tests-v1.log"
+    },
+    "projection/candidate/tests-v2.json": {
+      "sha256": "65a21cf47cf0b5b13f80d72bcb1f9f5b8b1b08fe10d064647253b97e63fc3356",
+      "bytes": 15560,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/tests-v2.json"
+    },
+    "projection/candidate/tests-v2.log": {
+      "sha256": "dfd5adcfd1878e9cdd48edb45f961d0c09901379264e4d7a9261c518ef572c93",
+      "bytes": 85,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/tests-v2.log"
+    },
+    "projection/candidate/tests-v4.json": {
+      "sha256": "da9a4563d88d276004630cf7725e21e0c98dbd2413dcc634cdf7a8979ca4456e",
+      "bytes": 17033,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/tests-v4.json"
+    },
+    "projection/candidate/tests-v4.log": {
+      "sha256": "dc18229d44c52e378a81447a2b574f2a0b274ccdcd43495076fbf9a1e2e2b3fc",
+      "bytes": 85,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/tests-v4.log"
+    },
+    "projection/candidate/web-types-v1.log": {
+      "sha256": "df72355fb701338b6f156914a84ebbeb6e12ab71975cc3ac9272545050822f70",
+      "bytes": 589,
+      "originalPath": "/tmp/napier-g01-conversation-candidate-20261030/web-types-v1.log"
+    },
+    "projection/independent-review/independent-review-v4.json": {
+      "sha256": "b7b313e36cfe9c3936e1d0fdb4d065392940669f647c68a60a109dc98f49c527",
+      "bytes": 986,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/independent-review-v4.json"
+    },
+    "projection/independent-review/probe.config.mts": {
+      "sha256": "953ac301f7fa3b118617a9a83aa7f57a1409321ed7918740a047d964e42b1f9e",
+      "bytes": 193,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/probe.config.mts"
+    },
+    "projection/independent-review/review-v2.json": {
+      "sha256": "8bc665c13bcbbe85851d44f9e8e417bd0c50c4161df79db54fdb92417a3b586a",
+      "bytes": 1507,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review-v2.json"
+    },
+    "projection/independent-review/review-v2.log": {
+      "sha256": "fdc58c2c73f7fde4a909ac19d7994ef20681b54a269376c7ae6d430c9de3ca37",
+      "bytes": 88,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review-v2.log"
+    },
+    "projection/independent-review/review-v3.json": {
+      "sha256": "fb8ecaa29eb602d030ecab1835a310116f7be37f4a534083a8f97cd409447c1a",
+      "bytes": 2127,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review-v3.json"
+    },
+    "projection/independent-review/review-v3.log": {
+      "sha256": "02d610943f151a8f6e2f9bb2a80140eca598bd0c83e396d742e78da2558c336f",
+      "bytes": 88,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review-v3.log"
+    },
+    "projection/independent-review/review-v4.json": {
+      "sha256": "1a960259a10140ca09d3f2da6802d3bcaac5574f53de65e27096eea2e7b0c28a",
+      "bytes": 2129,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review-v4.json"
+    },
+    "projection/independent-review/review-v4.log": {
+      "sha256": "bb84e6cfd60f816ddcd2f25198f6e8c36c73ce711a33ab345a44d191e4ae305a",
+      "bytes": 88,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review-v4.log"
+    },
+    "projection/independent-review/review-v4.test.ts.copy": {
+      "sha256": "25fc256d259901f53f23482619bfdab14e683528589e2b868cca1a732355b868",
+      "bytes": 6571,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review-v4.test.ts.copy"
+    },
+    "projection/independent-review/review.json": {
+      "sha256": "d478556457b58d4ca5e9af13aa44a28f22bc544b34c445311e6a78e4afd2d5c7",
+      "bytes": 3423,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review.json"
+    },
+    "projection/independent-review/review.log": {
+      "sha256": "fee9fe6c1fd7f00ba6370a60e1a1db5d51961023e635e38a5c41de808a95b630",
+      "bytes": 85,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review.log"
+    },
+    "projection/independent-review/review.test.ts": {
+      "sha256": "25fc256d259901f53f23482619bfdab14e683528589e2b868cca1a732355b868",
+      "bytes": 6571,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/review.test.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/apps/web/src/conversation-artifact-view-model.ts": {
+      "sha256": "fcf4a8a0dffbc8523a01311ea345f5936cc919fb17b2e0913fc83aed9a92dcdf",
+      "bytes": 4989,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/apps/web/src/conversation-artifact-view-model.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/apps/web/src/conversation-feed-projection.ts": {
+      "sha256": "293d9743f7290450a9281fe6d549f8bdc17e1371871837fdb47cb9d04b79b268",
+      "bytes": 12333,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/apps/web/src/conversation-feed-projection.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/apps/web/src/run-intent-id.ts": {
+      "sha256": "16a539c50a83ca327034f26254e026c6605cd20bbb819573f8c5395662372b26",
+      "bytes": 2132,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/apps/web/src/run-intent-id.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/apps/web/src/task-narrative-protocol.ts": {
+      "sha256": "c366c7144bcbe524f464f0224562156cb08e91f82ab2dbcc9c7ba48f3e3ee7d7",
+      "bytes": 6940,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/apps/web/src/task-narrative-protocol.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/contracts/src/conversation-artifact-projection.ts": {
+      "sha256": "53564d704260311fba32dced025fb2f5ac87850e53a97a61dc7269972bb9529c",
+      "bytes": 5124,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/contracts/src/conversation-artifact-projection.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/contracts/src/primary-run-selection.ts": {
+      "sha256": "902ea8b0a86e1ed19819fa78ce8e2c85d1ec29cbcb567cc048de30c87c8f274b",
+      "bytes": 471,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/contracts/src/primary-run-selection.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/contracts/src/task-artifact-facts.ts": {
+      "sha256": "d8e4ee94f4ed8df20f973d8f7a8dfb3ee39fe6ade9c70c9555351f96213e7490",
+      "bytes": 7451,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/contracts/src/task-artifact-facts.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/contracts/src/task-artifact-history.ts": {
+      "sha256": "42b743461588943a345821289cd4bbf5300db02850f3b9d36dbd830ea5d0f5c6",
+      "bytes": 6590,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/contracts/src/task-artifact-history.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/contracts/src/task-deliverables.ts": {
+      "sha256": "021e2398088bc2bd1951d9fb30091e602a3c08069fe1c21ef662c8a82503e4a4",
+      "bytes": 3872,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/contracts/src/task-deliverables.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/contracts/src/task-narrative.ts": {
+      "sha256": "ffff4da51173a75df03b5742a5e925f6b49312b9ed9471b31e5e74315608dc36",
+      "bytes": 927,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/contracts/src/task-narrative.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/runtime/src/conversation-artifacts-projection.ts": {
+      "sha256": "8e930b90099324d135191c4dc8dc7cc7a0a6c5ea3042ea6ac8a4cf179800e937",
+      "bytes": 301,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/runtime/src/conversation-artifacts-projection.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/runtime/src/kernel-detail-projections.ts": {
+      "sha256": "7d6c3b1dfaf66939c9464a7863d1506bf04e3de39db9a349a44094f44613414f",
+      "bytes": 9118,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/runtime/src/kernel-detail-projections.ts"
+    },
+    "projection/independent-review/reviewed-sources-v4/packages/runtime/src/kernel-projections.ts": {
+      "sha256": "b38c23f0debcc3ff7d1d918c9c3e598ae1f0861cf7bcee555731dad3f1d7839d",
+      "bytes": 13715,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4/packages/runtime/src/kernel-projections.ts"
+    },
+    "projection/independent-review/source-before-v4.json": {
+      "sha256": "d7181ca6fb0b60e50099b7300d456a5392f0717ca078189fb372c3a014cfb243",
+      "bytes": 1968,
+      "originalPath": "/tmp/napier-g01-conversation-adversarial-20261030/source-before-v4.json"
+    },
+    "review-summary.json": {
+      "sha256": "641c9c1c4a28404ae2b8268c5657ededc4ce221a2653e7e96333ef4129d46f1f",
+      "bytes": 5382,
+      "origin": "authored_evidence"
+    },
+    "review/archive-integrity/probe-summary.json": {
+      "sha256": "a0ff18225120376582e39b107e41eafe17cecb9c24d3bbfc556df837f3882131",
+      "bytes": 786,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/probe-summary.json"
+    },
+    "review/archive-integrity/probe.py": {
+      "sha256": "6c698d21e87d6823d91c0556f015f2750f30e72f43c01963c3c7b7d89085f73a",
+      "bytes": 2311,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/probe.py"
+    },
+    "review/archive-integrity/relocated-original.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/relocated-original.stderr.txt"
+    },
+    "review/archive-integrity/relocated-original.stdout.json": {
+      "sha256": "1d867a9e236e361ee9ce574724cfd65cfea5584fa92dc5c733178f448b704bf2",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/relocated-original.stdout.json"
+    },
+    "review/archive-integrity/review-receipt-v2.json": {
+      "sha256": "3ee24b8f2df3cc8e4459e8f25f078280be080f1214de9fdf4d8ba4df89468e2e",
+      "bytes": 4979,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/review-receipt-v2.json"
+    },
+    "review/archive-integrity/reviewed-reconcile-v1.py": {
+      "sha256": "338845dce294011efe13b16adc06423bf59128c0e9a500ce795a4480a8db48ed",
+      "bytes": 8856,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/reviewed-reconcile-v1.py"
+    },
+    "review/archive-integrity/reviewed-reconcile-v2.py": {
+      "sha256": "8a9d044bd8045c39679d65da26474e59df2d43b0ec043a5e4f470771f0754593",
+      "bytes": 13344,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/reviewed-reconcile-v2.py"
+    },
+    "review/archive-integrity/unindexed-functional-reference.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/unindexed-functional-reference.stderr.txt"
+    },
+    "review/archive-integrity/unindexed-functional-reference.stdout.json": {
+      "sha256": "58ba8b83ab33bbdb754997e8f30755af58a02f5e193ecc7db67bbdc12e9c32c6",
+      "bytes": 1095,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/unindexed-functional-reference.stdout.json"
+    },
+    "review/archive-integrity/unindexed-sealed-browser-status.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/unindexed-sealed-browser-status.stderr.txt"
+    },
+    "review/archive-integrity/unindexed-sealed-browser-status.stdout.json": {
+      "sha256": "aaa20fce155823fd75c21436a0ada23af68fa4011478a8048e07ea5b280ce328",
+      "bytes": 1074,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/unindexed-sealed-browser-status.stdout.json"
+    },
+    "tools/reconcile.py": {
+      "sha256": "d509db65324303a76359326dafdf6f13cae9174c4ee3ca8b5fa4de7c43519de1",
+      "bytes": 18783,
+      "origin": "authored_evidence"
+    },
+    "final/source-manifest.json": {
+      "sha256": "9238feb8a406c40c917780ea2e5a80fdb633787faa94dc3568728eba6a4bb23c",
+      "bytes": 7418,
+      "originalPath": "/tmp/napier-g01-consumer-source-stage-20261030.json"
+    },
+    "final/source/apps/server/test/artifact-consumer-version-binding.test.ts": {
+      "sha256": "e19b13216dcc4bf198cfdedcbc99525352d232f6c53cc0d41b7b6b538a47ec04",
+      "bytes": 3918,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/server/test/artifact-consumer-version-binding.test.ts"
+    },
+    "final/source/apps/web/src/AppWorkspaceViews.tsx": {
+      "sha256": "654ab4ba4c42320d41c814acf5d12adf02317da1d4b8a05a940da50fe03d790a",
+      "bytes": 14914,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/AppWorkspaceViews.tsx"
+    },
+    "final/source/apps/web/src/ArtifactActionSurface.tsx": {
+      "sha256": "98dc2d65efa2ac32a06a06ac3f61e8c4c374ec421700b3a86a8f5a17681ae121",
+      "bytes": 9048,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/ArtifactActionSurface.tsx"
+    },
+    "final/source/apps/web/src/ArtifactInlinePreview.tsx": {
+      "sha256": "2fa8d0ed0238c9fb5d9fa64e230658059879a9a5abc3fba23b00fdfae56dc330",
+      "bytes": 4387,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/ArtifactInlinePreview.tsx"
+    },
+    "final/source/apps/web/src/ArtifactInspector.tsx": {
+      "sha256": "642643fda52fcb358d6e62578aecc22792213976da1824f7b29272e6c7403764",
+      "bytes": 9263,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/ArtifactInspector.tsx"
+    },
+    "final/source/apps/web/src/ConversationArtifactCard.tsx": {
+      "sha256": "2c8dcc54cc1c623179eadbc760cc810a716f55018991df4864a34601c88b150c",
+      "bytes": 5962,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/ConversationArtifactCard.tsx"
+    },
+    "final/source/apps/web/src/ConversationLedger.tsx": {
+      "sha256": "ac71eb33946dd6348e3dd217dfc915fa8dc1cbca457d38a2b01a75d2f32e8e28",
+      "bytes": 11015,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/ConversationLedger.tsx"
+    },
+    "final/source/apps/web/src/MessageWorkspaceArtifactLink.tsx": {
+      "sha256": "31582202f10f208e98537394ccbbfded9dd1ab28e3acf6792439add7c8f7cfa4",
+      "bytes": 1258,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/MessageWorkspaceArtifactLink.tsx"
+    },
+    "final/source/apps/web/src/PlanArtifactManifest.tsx": {
+      "sha256": "aa3c905f608f1211380d8ca4e23cfbbb51a57c4877973523b972371b67ffad2b",
+      "bytes": 4528,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/PlanArtifactManifest.tsx"
+    },
+    "final/source/apps/web/src/PlanPanel.tsx": {
+      "sha256": "b08b3564e24e5a725aed39363c1535fb31e6bddc919af5c9cba543a9d7ce7894",
+      "bytes": 5265,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/PlanPanel.tsx"
+    },
+    "final/source/apps/web/src/TaskChangesPanel.tsx": {
+      "sha256": "e485f2cca98ce4909a12a795edc8f3ef4a90eb898a8dabb45c6f267997ed05f2",
+      "bytes": 4517,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/TaskChangesPanel.tsx"
+    },
+    "final/source/apps/web/src/TaskCompletionSummary.tsx": {
+      "sha256": "1ed1e3e3d1b1fbd7fb4ab84c41df6d067aad43bc147ef3a21d1fc98920def176",
+      "bytes": 7224,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/TaskCompletionSummary.tsx"
+    },
+    "final/source/apps/web/src/artifact-file-api.ts": {
+      "sha256": "b5eacbf8b6895c5fa6c7a0ede61dfef7a53b6b0e1abeda2b869a6db89eb04e71",
+      "bytes": 12453,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/artifact-file-api.ts"
+    },
+    "final/source/apps/web/src/artifact-inspection-target.ts": {
+      "sha256": "811374e0c37dbea466107de423d47286e0bd5c85363b964ea5fad54cf30da3bb",
+      "bytes": 1694,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/artifact-inspection-target.ts"
+    },
+    "final/source/apps/web/src/artifact-inspection.ts": {
+      "sha256": "cd044d941797247f01a73964f04252580796d2f27c0a5ac8abf1e6df87dcec75",
+      "bytes": 2635,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/artifact-inspection.ts"
+    },
+    "final/source/apps/web/src/artifact-inspector-copy.ts": {
+      "sha256": "5d85e4a00e89813cf2d61609fff34d54eb4905567033e2f09411120fb90583a8",
+      "bytes": 3087,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/artifact-inspector-copy.ts"
+    },
+    "final/source/apps/web/src/artifact-version-binding.ts": {
+      "sha256": "afd7852e8dacf0f778c6fcd60239d1d84f5f82b1121c3ae066935a6d501283d8",
+      "bytes": 1661,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/artifact-version-binding.ts"
+    },
+    "final/source/apps/web/src/conversation-artifact-view-model.ts": {
+      "sha256": "890f91a5879141339f48daf992f18fa3ecaa3bb0b12e312748c252ac803bd1cd",
+      "bytes": 5565,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/conversation-artifact-view-model.ts"
+    },
+    "final/source/apps/web/src/conversation-detail-copy.ts": {
+      "sha256": "2d86b40673acb7f514d6891d32d5e925e1cc0db393a397396ec960871a3f33b6",
+      "bytes": 10658,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/conversation-detail-copy.ts"
+    },
+    "final/source/apps/web/src/conversation-feed-projection.ts": {
+      "sha256": "c539f15b210e44278fec364062c4bb135cd7f872ddb972ad142c0d03dee90f4a",
+      "bytes": 12357,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/conversation-feed-projection.ts"
+    },
+    "final/source/apps/web/src/message-markdown-inline.tsx": {
+      "sha256": "781791946b547e0cf32829966d5cbccea6b660fa944ea6f72f4b3933c6296951",
+      "bytes": 13258,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/message-markdown-inline.tsx"
+    },
+    "final/source/apps/web/src/message-markdown-types.ts": {
+      "sha256": "0e6487e4f48bbd6a6f67e28946f71ebefba7c7ea81fc06f477eb99e791cad3ad",
+      "bytes": 631,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/message-markdown-types.ts"
+    },
+    "final/source/apps/web/src/plan-artifact-manifest-model.ts": {
+      "sha256": "aa2c56bd1efe9cf06ef08461480e3f19154b90c62bc45bfdab1f196cab00eef4",
+      "bytes": 3044,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/plan-artifact-manifest-model.ts"
+    },
+    "final/source/apps/web/src/plan-artifact-manifest-types.ts": {
+      "sha256": "c65d2da720e70491caabe645b2a85b7c277b9b3d16614672b1347515352d6e04",
+      "bytes": 3207,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/plan-artifact-manifest-types.ts"
+    },
+    "final/source/apps/web/src/task-completion-output-paths.ts": {
+      "sha256": "aaf18e9cd4d6ad7d63a9e36abde768ee211aa50a3549ce96fbb2925f372dc81b",
+      "bytes": 2515,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/task-completion-output-paths.ts"
+    },
+    "final/source/apps/web/src/task-narrative-protocol.ts": {
+      "sha256": "c366c7144bcbe524f464f0224562156cb08e91f82ab2dbcc9c7ba48f3e3ee7d7",
+      "bytes": 6940,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/task-narrative-protocol.ts"
+    },
+    "final/source/apps/web/src/use-artifact-inspector-view.ts": {
+      "sha256": "955c651ebad4a42de5863c7777f31d3b43fba10d7d40289b4666e9f43d608be5",
+      "bytes": 5180,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/use-artifact-inspector-view.ts"
+    },
+    "final/source/apps/web/src/use-plan-artifact-controller.ts": {
+      "sha256": "ae2b40998d36dd70e7aff55a35b7165361127c3314de81373ae963b94e73d911",
+      "bytes": 8533,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/use-plan-artifact-controller.ts"
+    },
+    "final/source/apps/web/test/ArtifactActionSurface.test.tsx": {
+      "sha256": "e47737a8555a2c3bf0894bfcc63d872e0ee72680adb28feef542f0a26746b342",
+      "bytes": 13849,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/ArtifactActionSurface.test.tsx"
+    },
+    "final/source/apps/web/test/ArtifactInlinePreview.test.tsx": {
+      "sha256": "4f4f118a78a1936e6ea5eda5d97f4b260e6709d76d68ee03ba5ea8ce7d692c25",
+      "bytes": 9367,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/ArtifactInlinePreview.test.tsx"
+    },
+    "final/source/apps/web/test/ArtifactInspector.test.tsx": {
+      "sha256": "c60ef71b927e7cb74973b1afdb76ae529a76f291633fc1acd5f1f282efdda598",
+      "bytes": 26751,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/ArtifactInspector.test.tsx"
+    },
+    "final/source/apps/web/test/ConversationArtifactCard.test.tsx": {
+      "sha256": "ea961c17c3fb33cae6a85da6401cc3ad123527eeead2dc71ada69c8218ffb4d0",
+      "bytes": 9228,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/ConversationArtifactCard.test.tsx"
+    },
+    "final/source/apps/web/test/TaskChangesPanel.test.tsx": {
+      "sha256": "b05bc5d41aedbb5972d7e294193b7f201bc3effe4db26c0d5b8d0ca3661e3f11",
+      "bytes": 8399,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/TaskChangesPanel.test.tsx"
+    },
+    "final/source/apps/web/test/api.test.ts": {
+      "sha256": "cbee2388648fd646272da8160470b50dd6691e7d2e63e3e1378bbe30a38d3050",
+      "bytes": 86579,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/api.test.ts"
+    },
+    "final/source/apps/web/test/artifact-file-download-api.test.ts": {
+      "sha256": "a48aae36eca948d65383f90a808fc946872ca1a5f49a51f5126cf88845027107",
+      "bytes": 6249,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/artifact-file-download-api.test.ts"
+    },
+    "final/source/apps/web/test/artifact-version-binding.test.ts": {
+      "sha256": "532ef3f9cfc5c9e943aa586b9ab84c7ee06febfdb92eb96bbe6a306faa7dd5bb",
+      "bytes": 5004,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/artifact-version-binding.test.ts"
+    },
+    "final/source/apps/web/test/conversation-artifact-view-model.test.ts": {
+      "sha256": "7397d1d3b26be7401373c3456d4fb8a8c44b387bdff0db1255048961ee361adb",
+      "bytes": 15689,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/conversation-artifact-view-model.test.ts"
+    },
+    "final/source/apps/web/test/plan-artifact-manifest-model.test.ts": {
+      "sha256": "1589c00d5c87d77ca6c4f664adc5b431aa43ace188b033dcccaac3602e250a24",
+      "bytes": 5459,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/plan-artifact-manifest-model.test.ts"
+    },
+    "final/source/apps/web/test/task-completion-summary.test.ts": {
+      "sha256": "bb2243ba552e3ef81288c0ae44f4366207480545c075e23f021d837fa68ea5e8",
+      "bytes": 4844,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/task-completion-summary.test.ts"
+    },
+    "final/source/apps/web/test/task-narrative-protocol.test.ts": {
+      "sha256": "fc11986a07947c70b065cf7b946f2dfd4fae3cc880432d3a96614f310bfa9846",
+      "bytes": 5912,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/task-narrative-protocol.test.ts"
+    },
+    "final/source/apps/web/test/use-plan-artifact-controller.test.tsx": {
+      "sha256": "0fa646a48d8f14aeb2c13b807f05a59dfe9cb749b147974bf4b68a6c8422a699",
+      "bytes": 5142,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/use-plan-artifact-controller.test.tsx"
+    },
+    "final/source/docs/architecture-budget.json": {
+      "sha256": "6239cf2a568bcfa8695047a41618947aac5d95c27f7c84357150e0a4e34377bb",
+      "bytes": 12083,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/docs/architecture-budget.json"
+    },
+    "final/source/packages/contracts/src/conversation-artifact-projection.ts": {
+      "sha256": "46ff6cd44674c1fb8362905f40ed55bc42e0d7fb318d2dd3a5762a9525cc686e",
+      "bytes": 5735,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/contracts/src/conversation-artifact-projection.ts"
+    },
+    "final/source/packages/contracts/src/task-artifact-facts.ts": {
+      "sha256": "a1d40f70c51934336b2c48f781d01a523d9541833771d2e308427141dee3f356",
+      "bytes": 4704,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/contracts/src/task-artifact-facts.ts"
+    },
+    "final/source/packages/contracts/src/task-artifact-history.ts": {
+      "sha256": "42b743461588943a345821289cd4bbf5300db02850f3b9d36dbd830ea5d0f5c6",
+      "bytes": 6590,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/contracts/src/task-artifact-history.ts"
+    },
+    "final/source/packages/contracts/src/task-artifact-receipt.ts": {
+      "sha256": "8022949735ca4f1b46832877a392d8483425d9cfd4b139e8ada73a89eaaeac92",
+      "bytes": 3431,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/contracts/src/task-artifact-receipt.ts"
+    },
+    "final/source/packages/contracts/src/task-narrative.ts": {
+      "sha256": "7bd4619919d1873452c5c867b22fd1525c3528746b2d9820d9aeca01c10e99fa",
+      "bytes": 973,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/contracts/src/task-narrative.ts"
+    },
+    "final/source/packages/runtime/src/conversation-artifacts-projection.ts": {
+      "sha256": "8e930b90099324d135191c4dc8dc7cc7a0a6c5ea3042ea6ac8a4cf179800e937",
+      "bytes": 301,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/runtime/src/conversation-artifacts-projection.ts"
+    },
+    "final/source/packages/runtime/src/kernel-detail-projections.ts": {
+      "sha256": "7d6c3b1dfaf66939c9464a7863d1506bf04e3de39db9a349a44094f44613414f",
+      "bytes": 9118,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/runtime/src/kernel-detail-projections.ts"
+    },
+    "final/source/packages/runtime/src/kernel-projections.ts": {
+      "sha256": "b38c23f0debcc3ff7d1d918c9c3e598ae1f0861cf7bcee555731dad3f1d7839d",
+      "bytes": 13715,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/runtime/src/kernel-projections.ts"
+    },
+    "final/source/packages/runtime/test/conversation-artifact-version-binding.test.ts": {
+      "sha256": "055923e838d49406fdb602f9c220da3024a0238b1e717e5e4f4ac45510efe410",
+      "bytes": 6369,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/runtime/test/conversation-artifact-version-binding.test.ts"
+    },
+    "final/source/packages/runtime/test/kernel-projections.test.ts": {
+      "sha256": "9ca7654bde4f812f647c65b071aca41c133c17b9ecc1776a867f6c95f74bd52e",
+      "bytes": 24677,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/runtime/test/kernel-projections.test.ts"
+    },
+    "final/source/packages/runtime/test/subagent-child-run-projection.test.ts": {
+      "sha256": "97d6ab5010634db9ae7ab54c9d3c75c0a73c8a2cdf085ef6872870f034e92572",
+      "bytes": 12120,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/packages/runtime/test/subagent-child-run-projection.test.ts"
+    },
+    "final/source/apps/web/src/workbench-overlay-focus.ts": {
+      "sha256": "ff25b00b175cff248548c861eed0b2214edb9ebdbdbf016c505741ae2897ea87",
+      "bytes": 1936,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/workbench-overlay-focus.ts"
+    },
+    "final/source/apps/web/test/workbench-overlay-suspension.test.tsx": {
+      "sha256": "36b2768129672fa62fedd41d8b6e0fdddea59b1299737371e0d6c87054ce3fb3",
+      "bytes": 19819,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/test/workbench-overlay-suspension.test.tsx"
+    },
+    "final/source/apps/web/src/artifact-consumer-responsive.css": {
+      "sha256": "27d1d33b1724f7856f4ede770e30b7c8c7091899fbe1fb2306c6c5536e4a953f",
+      "bytes": 1438,
+      "originalPath": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web/src/artifact-consumer-responsive.css"
+    },
+    "browser/final-verification-v9/emitted-after.json": {
+      "sha256": "d31e0ba8599e88d513e4d26741d55557ec3a97432745e15b20b9a70be75b4108",
+      "bytes": 655440,
+      "originalPath": "/tmp/napier-g01-consumer-browser-final-verification-v9-20261030/emitted-after.json"
+    },
+    "browser/final-verification-v9/emitted-before.json": {
+      "sha256": "d31e0ba8599e88d513e4d26741d55557ec3a97432745e15b20b9a70be75b4108",
+      "bytes": 655440,
+      "originalPath": "/tmp/napier-g01-consumer-browser-final-verification-v9-20261030/emitted-before.json"
+    },
+    "browser/final-verification-v9/source-after.json": {
+      "sha256": "800c701e40ffc9db1fd9675e21c271eca836950162a4008bb0f6600c00bb9ac3",
+      "bytes": 332122,
+      "originalPath": "/tmp/napier-g01-consumer-browser-final-verification-v9-20261030/source-after.json"
+    },
+    "browser/final-verification-v9/source-before.json": {
+      "sha256": "800c701e40ffc9db1fd9675e21c271eca836950162a4008bb0f6600c00bb9ac3",
+      "bytes": 332122,
+      "originalPath": "/tmp/napier-g01-consumer-browser-final-verification-v9-20261030/source-before.json"
+    },
+    "browser/final-verification-v9/verification.json": {
+      "sha256": "d9cf2ed86ed0a91516259f53ded79f31444f56566fab8f37cfef5d24b27cba55",
+      "bytes": 11722,
+      "originalPath": "/tmp/napier-g01-consumer-browser-final-verification-v9-20261030/verification.json"
+    },
+    "browser/supplementary-en320/current-en-320-inspector.png": {
+      "sha256": "7f608cd9237135998901ee1939dd89a6b50b6a4ef938168f70aac7943d29d20a",
+      "bytes": 34538,
+      "originalPath": "/tmp/napier-g01-consumer-browser-top-capture-20261030/current-en-320-inspector.png"
+    },
+    "browser/supplementary-en320/current-en-320.png": {
+      "sha256": "2cbb6e5228cdcdbc44f7ec012dffe249e35a871d4462843672eee7ab33e091d4",
+      "bytes": 52069,
+      "originalPath": "/tmp/napier-g01-consumer-browser-top-capture-20261030/current-en-320.png"
+    },
+    "browser/supplementary-en320/receipt.json": {
+      "sha256": "80e8584a227efe0f62fdc9546b495f93b720f153918deffc2a00f04a688ab33f",
+      "bytes": 3648,
+      "originalPath": "/tmp/napier-g01-consumer-browser-top-capture-20261030/receipt.json"
+    },
+    "final/review.json": {
+      "sha256": "2eb6fb4a05bb765f2b388db287a466d05f1583fe99dba8374f883818e2083bbc",
+      "bytes": 3099,
+      "originalPath": "/tmp/napier-g01-consumer-final-review-20261030.json"
+    },
+    "browser/final/script.mjs": {
+      "sha256": "41c4f589aa4eec8b1fb17e4cd8390bcc0e12af9dbca3f7b41f43f92d6a432aa6",
+      "bytes": 10788,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030.mjs"
+    },
+    "browser/final/entries/apps/server/dist/index.js": {
+      "sha256": "e365bf4d29f57b71fb645ca363aa7f2f08bdd07a0df4f7ececd84d78df9cbf7f",
+      "bytes": 2192,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030/apps/server/dist/index.js"
+    },
+    "browser/final/entries/apps/web/dist/index.html": {
+      "sha256": "4bf3f11e9c7bb765a3d3050959e67fcc18b4e223f13f56797dc6e892bc8e11fc",
+      "bytes": 568,
+      "originalPath": "/tmp/napier-g01-consumer-browser-20261030/apps/web/dist/index.html"
+    },
+    "development/napier-g01-consumer-seal-20261030.py": {
+      "sha256": "497c41be7f4aadcaa40c05720c1558e65e6b8e6e2bda59bdad2df1972adb4f7c",
+      "bytes": 4477,
+      "originalPath": "/tmp/napier-g01-consumer-seal-20261030.py"
+    },
+    "review/archive-integrity/final-probe.py": {
+      "sha256": "6d3f09d066a9a833aac144d72897d95608236b1e1a6ac0c9c2e8789c20598ed7",
+      "bytes": 4108,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-probe.py"
+    },
+    "review/archive-integrity/final-review-receipt-v4.json": {
+      "sha256": "41235c48788eb02fa19b83d6fdbdc2eea42a41cd4266781b7ae88850ba61ee39",
+      "bytes": 6149,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-review-receipt-v4.json"
+    },
+    "review/archive-integrity/final-v3/browser-declared-count-mismatch.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/browser-declared-count-mismatch.stderr.json"
+    },
+    "review/archive-integrity/final-v3/browser-declared-count-mismatch.stdout.json": {
+      "sha256": "749af6339b34343f859ffd3f539671b0c74ce4911f935eae5d561f3705ddefad",
+      "bytes": 1075,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/browser-declared-count-mismatch.stdout.json"
+    },
+    "review/archive-integrity/final-v3/browser-emitted-drift.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/browser-emitted-drift.stderr.json"
+    },
+    "review/archive-integrity/final-v3/browser-emitted-drift.stdout.json": {
+      "sha256": "30263131d2cf07660eb551a318802ea14dc2440147468e7c4155d3ffccb54571",
+      "bytes": 1131,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/browser-emitted-drift.stdout.json"
+    },
+    "review/archive-integrity/final-v3/browser-wrong-script-binding.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/browser-wrong-script-binding.stderr.json"
+    },
+    "review/archive-integrity/final-v3/browser-wrong-script-binding.stdout.json": {
+      "sha256": "6322d0e6b2ac7391218661db109d496bf0d3d43d17f6338ea53b77682a019714",
+      "bytes": 1130,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/browser-wrong-script-binding.stdout.json"
+    },
+    "review/archive-integrity/final-v3/browser-wrong-source-manifest.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/browser-wrong-source-manifest.stderr.json"
+    },
+    "review/archive-integrity/final-v3/browser-wrong-source-manifest.stdout.json": {
+      "sha256": "a7aaaf2ca5d75abf139340d5d8fe3cd99b48976133f21a1662c05428577be77a",
+      "bytes": 1139,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/browser-wrong-source-manifest.stdout.json"
+    },
+    "review/archive-integrity/final-v3/missing-final-css-source-map.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/missing-final-css-source-map.stderr.json"
+    },
+    "review/archive-integrity/final-v3/missing-final-css-source-map.stdout.json": {
+      "sha256": "3b8559ea8e65826f66603d2973fba8840c145c435bbd275417946050c3eb184a",
+      "bytes": 1299,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/missing-final-css-source-map.stdout.json"
+    },
+    "review/archive-integrity/final-v3/probe-summary.json": {
+      "sha256": "0d312fe36863b1db995b44f0fba14ed5ce85dba827b7d265ef54ac267043119a",
+      "bytes": 10520,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/probe-summary.json"
+    },
+    "review/archive-integrity/final-v3/relocated-live-source.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/relocated-live-source.stderr.json"
+    },
+    "review/archive-integrity/final-v3/relocated-live-source.stdout.json": {
+      "sha256": "e25e33200c2b32e84cce2336cd90e8f57fd53889afd156d64ff3d835fc3394b1",
+      "bytes": 1074,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/relocated-live-source.stdout.json"
+    },
+    "review/archive-integrity/final-v3/relocated-sealed.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/relocated-sealed.stderr.json"
+    },
+    "review/archive-integrity/final-v3/relocated-sealed.stdout.json": {
+      "sha256": "749af6339b34343f859ffd3f539671b0c74ce4911f935eae5d561f3705ddefad",
+      "bytes": 1075,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/relocated-sealed.stdout.json"
+    },
+    "review/archive-integrity/final-v3/reviewed-reconcile.py": {
+      "sha256": "093c630ae855575e7910e31ccbdd9fadd2074a8fb86a7ba711b72964090d34a7",
+      "bytes": 17139,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/reviewed-reconcile.py"
+    },
+    "review/archive-integrity/final-v3/unindexed-semantic-reference.stderr.json": {
+      "sha256": "a8bfd0907354003849ca13a3a7ee32adc775ccf1ad25e2c31ceaf646657f1634",
+      "bytes": 84,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/unindexed-semantic-reference.stderr.json"
+    },
+    "review/archive-integrity/final-v3/unindexed-semantic-reference.stdout.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v3/unindexed-semantic-reference.stdout.json"
+    },
+    "review/archive-integrity/final-v4/browser-declared-count-mismatch.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v4/browser-declared-count-mismatch.stderr.json"
+    },
+    "review/archive-integrity/final-v4/browser-declared-count-mismatch.stdout.json": {
+      "sha256": "abb6f1e36ce89492397e5261815db3ca003ed2786de64fbc9fd5e2ae03ed9ac6",
+      "bytes": 1122,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v4/browser-declared-count-mismatch.stdout.json"
+    },
+    "review/archive-integrity/final-v4/probe-summary.json": {
+      "sha256": "4feb1be900d5fcb7bf204f8f7e22bdf4db9262a3537d7e26b8c06c6ed4f8777b",
+      "bytes": 3147,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v4/probe-summary.json"
+    },
+    "review/archive-integrity/final-v4/relocated-sealed.stderr.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v4/relocated-sealed.stderr.json"
+    },
+    "review/archive-integrity/final-v4/relocated-sealed.stdout.json": {
+      "sha256": "749af6339b34343f859ffd3f539671b0c74ce4911f935eae5d561f3705ddefad",
+      "bytes": 1075,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v4/relocated-sealed.stdout.json"
+    },
+    "review/archive-integrity/final-v4/reviewed-reconcile.py": {
+      "sha256": "d509db65324303a76359326dafdf6f13cae9174c4ee3ca8b5fa4de7c43519de1",
+      "bytes": 18783,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/final-v4/reviewed-reconcile.py"
+    },
+    "review/archive-integrity/updated-v2/probe-summary.json": {
+      "sha256": "27c2c6a444ba1b3bd9b69143b7c468aae50488585bbf7c9a1b177c22a6750848",
+      "bytes": 3557,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/probe-summary.json"
+    },
+    "review/archive-integrity/updated-v2/relocated-original.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/relocated-original.stderr.txt"
+    },
+    "review/archive-integrity/updated-v2/relocated-original.stdout.json": {
+      "sha256": "8bd15ced8da8ae3440e98fc8003c2dd22a9d877c61b76fb2f73eb21631573f56",
+      "bytes": 1096,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/relocated-original.stdout.json"
+    },
+    "review/archive-integrity/updated-v2/tampered-indexed-artifact.stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/tampered-indexed-artifact.stderr.txt"
+    },
+    "review/archive-integrity/updated-v2/tampered-indexed-artifact.stdout.json": {
+      "sha256": "c7d94e65c245a3d560ddd993157181df9d92d3deaa846e52d15c97e3c55a25da",
+      "bytes": 1214,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/tampered-indexed-artifact.stdout.json"
+    },
+    "review/archive-integrity/updated-v2/unindexed-browser-reference.stderr.txt": {
+      "sha256": "d130914d1d648be24f0ad983ecfd36cb796b73105edd634c7932aac09dd0d906",
+      "bytes": 90,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/unindexed-browser-reference.stderr.txt"
+    },
+    "review/archive-integrity/updated-v2/unindexed-browser-reference.stdout.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/unindexed-browser-reference.stdout.json"
+    },
+    "review/archive-integrity/updated-v2/unindexed-functional-reference.stderr.txt": {
+      "sha256": "549349c6de3f610c2aa2d41978660caff5164266ac7ffb654c3420e3b01bddf2",
+      "bytes": 88,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/unindexed-functional-reference.stderr.txt"
+    },
+    "review/archive-integrity/updated-v2/unindexed-functional-reference.stdout.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "originalPath": "/tmp/napier-g01-consumer-archive-independent-20261030/updated-v2/unindexed-functional-reference.stdout.json"
+    },
+    "review/prospective-whitespace-initial.json": {
+      "sha256": "f5a343305472c4163378162fd02f49423ee02599228d36ae659047f5d7f90f57",
+      "bytes": 141294,
+      "originalPath": "/tmp/napier-g01-consumer-docs-whitespace-initial-20261030.json"
+    },
+    "tools/prospective-whitespace.py": {
+      "sha256": "4ff44d51ad8f463da6d6fc07fc54943e0690222f9ace567781e74852b35adcc2",
+      "bytes": 2727,
+      "originalPath": "/tmp/napier-g01-consumer-docs-whitespace-20261030.py"
+    },
+    "review/retained-raw-whitespace.json": {
+      "sha256": "985c7ee42dc54f068122008dc945d3af90bffc33e43a33e16ce45d02db69a007",
+      "bytes": 12146,
+      "origin": "authored_evidence"
+    },
+    "final/portable-reconciliation.json": {
+      "sha256": "d24a51606ff2071d5a3b4ec6b0c9831dc34179dd6f9530d1b13465637ccaaa90",
+      "bytes": 1074,
+      "origin": "authored_evidence"
+    }
+  },
+  "implementationCommit": "c3734a07f1abc93357f2becf8e255c35d60dbce3"
+}

@@ -1,0 +1,10 @@
+apps/web/test/artifact-version-binding.test.ts(84,5): error TS2375: Type '{ source: "workspace"; bindingSha256: string; status: "missing" | "matched" | "mismatched" | "observed" | "unchecked"; sha256: string | undefined; sizeBytes: number | undefined; }' is not assignable to type 'TaskArtifactObservation' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'sha256' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+apps/web/test/ArtifactInlinePreview.test.tsx(243,5): error TS2741: Property 'evidence' is missing in type '{ id: string; path: string; kind: "file"; description: string; status: "produced"; createdAt: string; updatedAt: string; }' but required in type 'ArtifactManifestEntry'.
+apps/web/test/ArtifactInspector.test.tsx(444,7): error TS2322: Type 'Promise<boolean>' is not assignable to type 'void | Promise<void>'.
+  Type 'Promise<boolean>' is not assignable to type 'Promise<void>'.
+    Type 'boolean' is not assignable to type 'void'.
+apps/web/test/ArtifactInspector.test.tsx(460,13): error TS6133: 'document' is declared but its value is never read.
+apps/web/test/ArtifactInspector.test.tsx(533,12): error TS2790: The operand of a 'delete' operator must be optional.

@@ -1,0 +1,118 @@
+{
+  "kind": "napier.artifact-consumer-browser",
+  "snapshot": "/private/tmp/napier-g01-consumer-browser-20261030",
+  "root": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-web-ui-e2e-zZaOcf",
+  "startedAt": "2026-10-29T23:08:26.698Z",
+  "paidModelCalls": 0,
+  "themeBoundary": "Supported light theme only",
+  "cases": [
+    {
+      "name": "current-en-desktop",
+      "fixture": "match",
+      "locale": "en",
+      "width": 1440,
+      "height": 1000,
+      "fact": "integrity_observed",
+      "header": "Current Artifact · File integrity observed\ndelivery.html\n23:08",
+      "taskLabel": "File integrity observed",
+      "geometry": {
+        "viewport": 1440,
+        "documentWidth": 1440,
+        "card": {
+          "left": 298,
+          "right": 1058,
+          "width": 760
+        },
+        "violations": []
+      },
+      "keyboardInspection": true,
+      "versionMismatchRejected": false
+    }
+  ],
+  "screenshots": [
+    "/tmp/napier-g01-consumer-browser-result-v5-20261030/current-en-desktop-inspector.png",
+    "/tmp/napier-g01-consumer-browser-result-v5-20261030/current-en-desktop.png",
+    "/tmp/napier-g01-consumer-browser-result-v5-20261030/current-en-320-inspector.png"
+  ],
+  "consoleErrors": [],
+  "pageErrors": [
+    {
+      "scenario": "current-en-desktop",
+      "message": "Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag."
+    },
+    {
+      "scenario": "current-en-desktop",
+      "message": "Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag."
+    },
+    {
+      "scenario": "current-en-320",
+      "message": "Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag."
+    },
+    {
+      "scenario": "current-en-320",
+      "message": "Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag."
+    }
+  ],
+  "perturbations": [],
+  "fixtures": {
+    "match": {
+      "threadId": "thread_6c91eaa1e4494c648773",
+      "planId": "plan_f72e3b7d5f2e43eab360",
+      "filename": "delivery.html",
+      "revision": 3
+    },
+    "missing": {
+      "threadId": "thread_46f11ccf4c724f0bac5f",
+      "planId": "plan_4e874068a40e41eeb5ff",
+      "filename": "missing.txt",
+      "revision": 3
+    }
+  },
+  "productionEntry": {
+    "serverBuilt": true,
+    "webBuilt": true,
+    "serverSha256": "e365bf4d29f57b71fb645ca363aa7f2f08bdd07a0df4f7ececd84d78df9cbf7f",
+    "webIndexSha256": "d987c506141c3ce50e52e8d5d1fe9a65763d4c9958dd224ee95453b02295e468"
+  },
+  "server": {
+    "origin": "http://127.0.0.1:65176",
+    "loopbackOnly": true,
+    "ephemeralPort": true,
+    "healthReady": true,
+    "startupDurationMs": 572
+  },
+  "browser": {
+    "transport": "playwright-launch",
+    "freshProfile": true,
+    "profilePersistent": false,
+    "osIsolationClaimed": false,
+    "executableSha256": "a596b1cfc6353e987fcec8d71a23a28cd6a9e7a6b4e20b908e4c4fcffe51158e",
+    "startupDurationMs": 216
+  },
+  "focusRestoration": [
+    {
+      "scenario": "current-en-desktop",
+      "tag": "BUTTON",
+      "id": "workspace-rail-toggle",
+      "label": "Hide workspace",
+      "className": "workspace-rail-toggle",
+      "inactive": false
+    },
+    {
+      "scenario": "current-en-320",
+      "tag": "BUTTON",
+      "id": "workspace-rail-toggle",
+      "label": "Show workspace",
+      "className": "workspace-rail-toggle",
+      "inactive": false
+    }
+  ],
+  "status": "failed",
+  "error": {
+    "message": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   {\n+     kind: 'content-overflow',\n+     text: 'delivery.html'\n+   }\n+ ]\n- []\n",
+    "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   {\n+     kind: 'content-overflow',\n+     text: 'delivery.html'\n+   }\n+ ]\n- []\n\n    at file:///private/tmp/napier-g01-consumer-browser-20261030.mjs:66:10"
+  },
+  "browserClosed": true,
+  "serverClosed": true,
+  "finishedAt": "2026-10-29T23:08:31.777Z"
+}

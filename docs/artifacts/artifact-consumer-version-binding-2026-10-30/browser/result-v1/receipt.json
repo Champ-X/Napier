@@ -1,0 +1,61 @@
+{
+  "kind": "napier.artifact-consumer-browser",
+  "snapshot": "/private/tmp/napier-g01-consumer-browser-20261030",
+  "root": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-web-ui-e2e-fmBBZO",
+  "startedAt": "2026-10-29T23:01:04.632Z",
+  "paidModelCalls": 0,
+  "themeBoundary": "Supported light theme only",
+  "cases": [],
+  "screenshots": [],
+  "consoleErrors": [],
+  "pageErrors": [
+    {
+      "scenario": "current-en-desktop",
+      "message": "Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag."
+    }
+  ],
+  "perturbations": [],
+  "fixtures": {
+    "match": {
+      "threadId": "thread_0b26f4499290460f838c",
+      "planId": "plan_8b755b0de2004fab855a",
+      "filename": "delivery.html",
+      "revision": 3
+    },
+    "missing": {
+      "threadId": "thread_994a832fef7f4f88ad8d",
+      "planId": "plan_296a9bc197194fc4a073",
+      "filename": "missing.txt",
+      "revision": 3
+    }
+  },
+  "productionEntry": {
+    "serverBuilt": true,
+    "webBuilt": true,
+    "serverSha256": "e365bf4d29f57b71fb645ca363aa7f2f08bdd07a0df4f7ececd84d78df9cbf7f",
+    "webIndexSha256": "6e6f69a826f21bdccf6108793e90d6e1e676ffefbf796f69d25001ec80863fa4"
+  },
+  "server": {
+    "origin": "http://127.0.0.1:63928",
+    "loopbackOnly": true,
+    "ephemeralPort": true,
+    "healthReady": true,
+    "startupDurationMs": 589
+  },
+  "browser": {
+    "transport": "playwright-launch",
+    "freshProfile": true,
+    "profilePersistent": false,
+    "osIsolationClaimed": false,
+    "executableSha256": "a596b1cfc6353e987fcec8d71a23a28cd6a9e7a6b4e20b908e4c4fcffe51158e",
+    "startupDurationMs": 468
+  },
+  "status": "failed",
+  "error": {
+    "message": "locator.innerText: Error: strict mode violation: locator('.conversation-artifact[data-artifact-path=\"delivery.html\"]').locator('header') resolved to 2 elements:\n    1) <header>…</header> aka getByText('Current Artifact · File integrity observeddelivery.html23:')\n    2) <header>…</header> aka getByText('delivery.htmlLive preview')\n\nCall log:\n\u001b[2m  - waiting for locator('.conversation-artifact[data-artifact-path=\"delivery.html\"]').locator('header')\u001b[22m\n",
+    "stack": "locator.innerText: Error: strict mode violation: locator('.conversation-artifact[data-artifact-path=\"delivery.html\"]').locator('header') resolved to 2 elements:\n    1) <header>…</header> aka getByText('Current Artifact · File integrity observeddelivery.html23:')\n    2) <header>…</header> aka getByText('delivery.htmlLive preview')\n\nCall log:\n\u001b[2m  - waiting for locator('.conversation-artifact[data-artifact-path=\"delivery.html\"]').locator('header')\u001b[22m\n\n    at /private/tmp/napier-g01-consumer-browser-20261030.mjs:54:45"
+  },
+  "browserClosed": true,
+  "serverClosed": true,
+  "finishedAt": "2026-10-29T23:01:08.003Z"
+}

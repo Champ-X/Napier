@@ -1,0 +1,15 @@
+{
+  "base": "e10a7bd39b71dc74dfb4bbd05f6c5254bedd5696",
+  "files": {
+    "packages/contracts/src/conversation-artifact-projection.ts": "2c3c997508c7434616835d3e1fc696a1804bc902e535c63dce1d470549d7ad05",
+    "packages/contracts/src/task-narrative.ts": "5bbbcf0678bcbf07a2116577bca1b5b70aef5d8bd00ac2b9c5daae6a1e908869",
+    "packages/contracts/src/task-artifact-facts.ts": "d49d59cd9b9d3a425b32fc9932b08ddbc470c25c16cc2cf2aa2f162b8d5f9a44",
+    "packages/runtime/src/conversation-artifacts-projection.ts": "8e930b90099324d135191c4dc8dc7cc7a0a6c5ea3042ea6ac8a4cf179800e937",
+    "packages/runtime/src/kernel-detail-projections.ts": "7d6c3b1dfaf66939c9464a7863d1506bf04e3de39db9a349a44094f44613414f",
+    "packages/runtime/test/conversation-artifact-version-binding.test.ts": "dadfb2cf12c3388c590a9543b7c44229314dcb0d41d8f2aca40622e09c54a16b",
+    "packages/runtime/test/kernel-projections.test.ts": "9ca7654bde4f812f647c65b071aca41c133c17b9ecc1776a867f6c95f74bd52e",
+    "packages/runtime/test/subagent-child-run-projection.test.ts": "d98ebcc99a4aedf0f571583f355808dc59456f95d16ec07414b56394bea54761",
+    "apps/web/src/conversation-artifact-view-model.ts": "83a9208666ea6024ab8fead429217e1cdc3c8dadccea09ddce59754c180c64b7",
+    "apps/web/test/conversation-artifact-view-model.test.ts": "def5d4f6a94ee5a8042a002691fb654a62c688d088fce4913f9e5689d61187d2"
+  }
+}

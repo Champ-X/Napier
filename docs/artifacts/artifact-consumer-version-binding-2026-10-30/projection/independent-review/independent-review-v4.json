@@ -1,0 +1,19 @@
+{
+  "result": "passed",
+  "tests": 5,
+  "failedTests": 0,
+  "sourceHashesStable": 13,
+  "changed": [],
+  "sourceSnapshot": "/tmp/napier-g01-conversation-adversarial-20261030/reviewed-sources-v4",
+  "testsLog": "/tmp/napier-g01-conversation-adversarial-20261030/review-v4.json",
+  "probeSource": "/tmp/napier-g01-conversation-adversarial-20261030/review-v4.test.ts.copy",
+  "executionBoundary": "Live source-alias execution with before/after reviewed module hashes; not a full isolated-copy run.",
+  "findings": [
+    "Stale native attemptScope corrected by current primary/intent context.",
+    "Omitted sourceRunId no longer permits arbitrary recorder run/time; dedicated event fields are bound.",
+    "Incremental fold leaves prior states immutable.",
+    "Newer child activity does not replace primary owner; child-only record list does not fabricate a primary.",
+    "Artifact history insertion order does not change exact current version binding."
+  ],
+  "remainingBlockers": []
+}

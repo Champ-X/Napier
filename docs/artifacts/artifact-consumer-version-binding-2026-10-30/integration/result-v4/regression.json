@@ -1,0 +1,503 @@
+{
+  "kind": "napier.artifact-consumer-version-regression",
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T23:08:52.119158+00:00",
+  "head": "e10a7bd39b71dc74dfb4bbd05f6c5254bedd5696",
+  "stagedTree": "861479cae5cb307a5588e6ce3a36d38e80e88508",
+  "stagedSourceManifest": {
+    "baseHead": "e10a7bd39b71dc74dfb4bbd05f6c5254bedd5696",
+    "tree": "861479cae5cb307a5588e6ce3a36d38e80e88508",
+    "files": {
+      "apps/server/test/artifact-consumer-version-binding.test.ts": "e19b13216dcc4bf198cfdedcbc99525352d232f6c53cc0d41b7b6b538a47ec04",
+      "apps/web/src/AppWorkspaceViews.tsx": "654ab4ba4c42320d41c814acf5d12adf02317da1d4b8a05a940da50fe03d790a",
+      "apps/web/src/ArtifactActionSurface.tsx": "98dc2d65efa2ac32a06a06ac3f61e8c4c374ec421700b3a86a8f5a17681ae121",
+      "apps/web/src/ArtifactInlinePreview.tsx": "bce0b4d7c76a2c5ae57c7a60002cac087bbb21fd13321348a27ac8e072a60492",
+      "apps/web/src/ArtifactInspector.tsx": "a846d7417f20e49574d297e52e9cab786fa03c485fc11daebd67db70d613a291",
+      "apps/web/src/ConversationArtifactCard.tsx": "2c8dcc54cc1c623179eadbc760cc810a716f55018991df4864a34601c88b150c",
+      "apps/web/src/ConversationLedger.tsx": "ac71eb33946dd6348e3dd217dfc915fa8dc1cbca457d38a2b01a75d2f32e8e28",
+      "apps/web/src/MessageWorkspaceArtifactLink.tsx": "31582202f10f208e98537394ccbbfded9dd1ab28e3acf6792439add7c8f7cfa4",
+      "apps/web/src/PlanArtifactManifest.tsx": "aa3c905f608f1211380d8ca4e23cfbbb51a57c4877973523b972371b67ffad2b",
+      "apps/web/src/PlanPanel.tsx": "b08b3564e24e5a725aed39363c1535fb31e6bddc919af5c9cba543a9d7ce7894",
+      "apps/web/src/TaskChangesPanel.tsx": "e485f2cca98ce4909a12a795edc8f3ef4a90eb898a8dabb45c6f267997ed05f2",
+      "apps/web/src/TaskCompletionSummary.tsx": "1ed1e3e3d1b1fbd7fb4ab84c41df6d067aad43bc147ef3a21d1fc98920def176",
+      "apps/web/src/artifact-file-api.ts": "b5eacbf8b6895c5fa6c7a0ede61dfef7a53b6b0e1abeda2b869a6db89eb04e71",
+      "apps/web/src/artifact-inspection-target.ts": "811374e0c37dbea466107de423d47286e0bd5c85363b964ea5fad54cf30da3bb",
+      "apps/web/src/artifact-inspection.ts": "cd044d941797247f01a73964f04252580796d2f27c0a5ac8abf1e6df87dcec75",
+      "apps/web/src/artifact-inspector-copy.ts": "5d85e4a00e89813cf2d61609fff34d54eb4905567033e2f09411120fb90583a8",
+      "apps/web/src/artifact-version-binding.ts": "afd7852e8dacf0f778c6fcd60239d1d84f5f82b1121c3ae066935a6d501283d8",
+      "apps/web/src/conversation-artifact-view-model.ts": "890f91a5879141339f48daf992f18fa3ecaa3bb0b12e312748c252ac803bd1cd",
+      "apps/web/src/conversation-detail-copy.ts": "2d86b40673acb7f514d6891d32d5e925e1cc0db393a397396ec960871a3f33b6",
+      "apps/web/src/conversation-feed-projection.ts": "c539f15b210e44278fec364062c4bb135cd7f872ddb972ad142c0d03dee90f4a",
+      "apps/web/src/message-markdown-inline.tsx": "781791946b547e0cf32829966d5cbccea6b660fa944ea6f72f4b3933c6296951",
+      "apps/web/src/message-markdown-types.ts": "0e6487e4f48bbd6a6f67e28946f71ebefba7c7ea81fc06f477eb99e791cad3ad",
+      "apps/web/src/plan-artifact-manifest-model.ts": "aa2c56bd1efe9cf06ef08461480e3f19154b90c62bc45bfdab1f196cab00eef4",
+      "apps/web/src/plan-artifact-manifest-types.ts": "c65d2da720e70491caabe645b2a85b7c277b9b3d16614672b1347515352d6e04",
+      "apps/web/src/task-completion-output-paths.ts": "aaf18e9cd4d6ad7d63a9e36abde768ee211aa50a3549ce96fbb2925f372dc81b",
+      "apps/web/src/task-narrative-protocol.ts": "c366c7144bcbe524f464f0224562156cb08e91f82ab2dbcc9c7ba48f3e3ee7d7",
+      "apps/web/src/use-artifact-inspector-view.ts": "955c651ebad4a42de5863c7777f31d3b43fba10d7d40289b4666e9f43d608be5",
+      "apps/web/src/use-plan-artifact-controller.ts": "ae2b40998d36dd70e7aff55a35b7165361127c3314de81373ae963b94e73d911",
+      "apps/web/test/ArtifactActionSurface.test.tsx": "e47737a8555a2c3bf0894bfcc63d872e0ee72680adb28feef542f0a26746b342",
+      "apps/web/test/ArtifactInlinePreview.test.tsx": "4f4f118a78a1936e6ea5eda5d97f4b260e6709d76d68ee03ba5ea8ce7d692c25",
+      "apps/web/test/ArtifactInspector.test.tsx": "c60ef71b927e7cb74973b1afdb76ae529a76f291633fc1acd5f1f282efdda598",
+      "apps/web/test/ConversationArtifactCard.test.tsx": "ea961c17c3fb33cae6a85da6401cc3ad123527eeead2dc71ada69c8218ffb4d0",
+      "apps/web/test/TaskChangesPanel.test.tsx": "b05bc5d41aedbb5972d7e294193b7f201bc3effe4db26c0d5b8d0ca3661e3f11",
+      "apps/web/test/api.test.ts": "cbee2388648fd646272da8160470b50dd6691e7d2e63e3e1378bbe30a38d3050",
+      "apps/web/test/artifact-file-download-api.test.ts": "a48aae36eca948d65383f90a808fc946872ca1a5f49a51f5126cf88845027107",
+      "apps/web/test/artifact-version-binding.test.ts": "532ef3f9cfc5c9e943aa586b9ab84c7ee06febfdb92eb96bbe6a306faa7dd5bb",
+      "apps/web/test/conversation-artifact-view-model.test.ts": "7397d1d3b26be7401373c3456d4fb8a8c44b387bdff0db1255048961ee361adb",
+      "apps/web/test/plan-artifact-manifest-model.test.ts": "1589c00d5c87d77ca6c4f664adc5b431aa43ace188b033dcccaac3602e250a24",
+      "apps/web/test/task-completion-summary.test.ts": "bb2243ba552e3ef81288c0ae44f4366207480545c075e23f021d837fa68ea5e8",
+      "apps/web/test/task-narrative-protocol.test.ts": "fc11986a07947c70b065cf7b946f2dfd4fae3cc880432d3a96614f310bfa9846",
+      "apps/web/test/use-plan-artifact-controller.test.tsx": "0fa646a48d8f14aeb2c13b807f05a59dfe9cb749b147974bf4b68a6c8422a699",
+      "docs/architecture-budget.json": "6239cf2a568bcfa8695047a41618947aac5d95c27f7c84357150e0a4e34377bb",
+      "packages/contracts/src/conversation-artifact-projection.ts": "46ff6cd44674c1fb8362905f40ed55bc42e0d7fb318d2dd3a5762a9525cc686e",
+      "packages/contracts/src/task-artifact-facts.ts": "a1d40f70c51934336b2c48f781d01a523d9541833771d2e308427141dee3f356",
+      "packages/contracts/src/task-artifact-history.ts": "42b743461588943a345821289cd4bbf5300db02850f3b9d36dbd830ea5d0f5c6",
+      "packages/contracts/src/task-artifact-receipt.ts": "8022949735ca4f1b46832877a392d8483425d9cfd4b139e8ada73a89eaaeac92",
+      "packages/contracts/src/task-narrative.ts": "7bd4619919d1873452c5c867b22fd1525c3528746b2d9820d9aeca01c10e99fa",
+      "packages/runtime/src/conversation-artifacts-projection.ts": "8e930b90099324d135191c4dc8dc7cc7a0a6c5ea3042ea6ac8a4cf179800e937",
+      "packages/runtime/src/kernel-detail-projections.ts": "7d6c3b1dfaf66939c9464a7863d1506bf04e3de39db9a349a44094f44613414f",
+      "packages/runtime/src/kernel-projections.ts": "b38c23f0debcc3ff7d1d918c9c3e598ae1f0861cf7bcee555731dad3f1d7839d",
+      "packages/runtime/test/conversation-artifact-version-binding.test.ts": "055923e838d49406fdb602f9c220da3024a0238b1e717e5e4f4ac45510efe410",
+      "packages/runtime/test/kernel-projections.test.ts": "9ca7654bde4f812f647c65b071aca41c133c17b9ecc1776a867f6c95f74bd52e",
+      "packages/runtime/test/subagent-child-run-projection.test.ts": "97d6ab5010634db9ae7ab54c9d3c75c0a73c8a2cdf085ef6872870f034e92572",
+      "apps/web/src/workbench-overlay-focus.ts": "ff25b00b175cff248548c861eed0b2214edb9ebdbdbf016c505741ae2897ea87",
+      "apps/web/test/workbench-overlay-suspension.test.tsx": "36b2768129672fa62fedd41d8b6e0fdddea59b1299737371e0d6c87054ce3fb3"
+    },
+    "fileCount": 55,
+    "snapshot": "/private/tmp/napier-g01-consumer-integrated-20261030",
+    "consumerHandoff": "/tmp/napier-g01-consumer-handoff-20261030-v3.json",
+    "consumerHandoffSha256": "17c9e1b7bad6a425da0ac0dda72b2fdd3faccf543f3cf7835aea7895903fe17d",
+    "architectureBudgetChange": "Tighten api.test line override 2488 to 2393 after extracting download API tests",
+    "browserCorrection": "Reject body/html as focus restore candidates and correct selected-version fixture in overlay test"
+  },
+  "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+  "originalWorkspace": "/Users/champ/orca/Napier",
+  "verificationScope": "Exact recorded base HEAD plus staged artifact consumer and conversation provenance source/test blobs in isolated checkout; preexisting user changes excluded",
+  "node": "v24.19.0",
+  "providerMode": "local faux and loopback HTTP only; no external model calls",
+  "checks": [
+    {
+      "name": "contracts-runtime-emit",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/typescript/bin/tsc",
+        "-b",
+        "packages/runtime",
+        "apps/cli",
+        "apps/server",
+        "--force"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:05.611206+00:00",
+      "finishedAt": "2026-10-29T23:00:15.670382+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/contracts-runtime-emit.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "bundled-skills",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/copy-bundled-skills.mjs"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:15.670594+00:00",
+      "finishedAt": "2026-10-29T23:00:15.704129+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/bundled-skills.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "sandbox-assets",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/copy-sandbox-image.mjs"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:15.704325+00:00",
+      "finishedAt": "2026-10-29T23:00:15.731534+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/sandbox-assets.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime-tests",
+      "argv": [
+        "node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "--dir",
+        "packages/runtime/test",
+        "packages/runtime/test/artifact-preview-receipts.test.ts",
+        "packages/runtime/test/browser-output-artifact.test.ts",
+        "packages/runtime/test/conversation-artifact-version-binding.test.ts",
+        "packages/runtime/test/kernel-projections.test.ts",
+        "packages/runtime/test/plan-archives.test.ts",
+        "packages/runtime/test/plan-file-preview.test.ts",
+        "packages/runtime/test/plan-guidance-policy.test.ts",
+        "packages/runtime/test/plan-tool-transitions.test.ts",
+        "packages/runtime/test/plan-tools.test.ts",
+        "packages/runtime/test/store-compatibility-projections.test.ts",
+        "packages/runtime/test/store-event-idempotency.test.ts",
+        "packages/runtime/test/store-snapshot-consistency.test.ts",
+        "packages/runtime/test/store.test.ts",
+        "packages/runtime/test/subagent-child-run-projection.test.ts",
+        "packages/runtime/test/task-deliverable-inspection.test.ts",
+        "packages/runtime/test/task-outcome-projection.test.ts",
+        "packages/runtime/test/thread-bundles.test.ts",
+        "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "packages/runtime/test/workspace-artifact-diff.test.ts",
+        "--maxWorkers=2",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-g01-consumer-integrated-result-v3-20261030/runtime.json"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:01:28.132666+00:00",
+      "finishedAt": "2026-10-29T23:01:44.229421+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/runtime-tests.log",
+      "logSha256": "3cc584af1275fe0af25ba6ebaf044ee5d267eb15dd37cfe6b8771514b2f77a56"
+    },
+    {
+      "name": "server-tests",
+      "argv": [
+        "node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "--dir",
+        "apps/server/test",
+        "apps/server/test/artifact-consumer-version-binding.test.ts",
+        "apps/server/test/plan-artifact-diff-http.test.ts",
+        "apps/server/test/plan-artifact-file-preview-http.test.ts",
+        "apps/server/test/plan-artifact-file-preview-store.test.ts",
+        "apps/server/test/plan-artifact-inspection-http-store-port.test.ts",
+        "apps/server/test/plan-artifact-verification.test.ts",
+        "apps/server/test/plan-lifecycle-http-validation.test.ts",
+        "apps/server/test/plan-progress-http-store-port.test.ts",
+        "apps/server/test/plan-progress-http-validation.test.ts",
+        "apps/server/test/task-deliverable-facts.test.ts",
+        "--maxWorkers=2",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-g01-consumer-integrated-result-v3-20261030/server.json"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:01:28.132861+00:00",
+      "finishedAt": "2026-10-29T23:01:32.834843+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/server-tests.log",
+      "logSha256": "79e7e4f5e52d382c088348f6dd660cba4378bce02737e8fb12441e1edc5d7d44"
+    },
+    {
+      "name": "legacy-strict-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "/tmp/napier-g01-consumer-integrated-result-v2-20261030/legacy-strict-tests.json"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": false,
+      "exitCode": 2,
+      "startedAt": "2026-10-29T23:00:22.706363+00:00",
+      "finishedAt": "2026-10-29T23:00:29.012773+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/legacy-strict-tests.log",
+      "logSha256": "21aaf675249de58ac5c24965408d101f5fd1e39cc3553804c1854b79286e93cb"
+    },
+    {
+      "name": "web-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "apps/web/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:28.206282+00:00",
+      "finishedAt": "2026-10-29T23:00:35.972892+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/web-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "harness-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "packages/harness-eval/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:29.013032+00:00",
+      "finishedAt": "2026-10-29T23:00:29.753429+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/harness-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "benchmark-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "packages/benchmark-kit/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:29.753757+00:00",
+      "finishedAt": "2026-10-29T23:00:31.455578+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/benchmark-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "public-api",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/check-public-api.mjs"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": false,
+      "exitCode": 1,
+      "startedAt": "2026-10-29T23:00:34.021788+00:00",
+      "finishedAt": "2026-10-29T23:00:37.547625+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/public-api.log",
+      "logSha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3"
+    },
+    {
+      "name": "diff-check",
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:34.385847+00:00",
+      "finishedAt": "2026-10-29T23:00:34.416665+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/diff-check.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "web-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "test/ArtifactActionSurface.test.tsx",
+        "test/ArtifactInlinePreview.test.tsx",
+        "test/ArtifactInspector.test.tsx",
+        "test/ConversationArtifactCard.test.tsx",
+        "test/TaskChangesPanel.test.tsx",
+        "test/api.test.ts",
+        "test/artifact-action-model.test.ts",
+        "test/artifact-event-view.test.ts",
+        "test/artifact-file-download-api.test.ts",
+        "test/artifact-manifest-view-model.test.ts",
+        "test/artifact-version-binding.test.ts",
+        "test/conversation-artifact-anchor.test.ts",
+        "test/conversation-artifact-view-model.test.ts",
+        "test/conversation-artifacts-protocol.test.ts",
+        "test/conversation-feed-grouping.test.ts",
+        "test/conversation-feed-projection-persistence.test.ts",
+        "test/conversation-feed-projection-thinking.test.ts",
+        "test/conversation-plan-progress.test.ts",
+        "test/conversation-plan-view-model.test.ts",
+        "test/conversation-plans-protocol.test.ts",
+        "test/desktop-workbench-contract.test.ts",
+        "test/plan-archive-artifact-view-model.test.ts",
+        "test/plan-artifact-manifest-model.test.ts",
+        "test/plan-current-sheet.test.tsx",
+        "test/task-completion-summary.test.ts",
+        "test/task-narrative-protocol.test.ts",
+        "test/task-narrative-view-model.test.ts",
+        "test/task-overview-view-model.test.ts",
+        "test/task-status-badge.test.ts",
+        "test/task-surface-components.zh.test.tsx",
+        "test/task-validation-matrix.test.ts",
+        "test/use-plan-artifact-controller.test.tsx",
+        "--maxWorkers=2",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-g01-consumer-integrated-result-v2-20261030/web.json"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030/apps/web",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:34.416905+00:00",
+      "finishedAt": "2026-10-29T23:00:36.813745+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/web-tests.log",
+      "logSha256": "8fbfed754fe2e958c0249fb5c8af51cf6b846ae4d8e88a52dea115d2b038ddc1"
+    },
+    {
+      "name": "cli-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "/private/tmp/napier-g01-consumer-integrated-20261030/apps/cli/test/cli-resume.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-g01-consumer-integrated-result-v2-20261030/cli.json"
+      ],
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T23:00:35.973122+00:00",
+      "finishedAt": "2026-10-29T23:00:44.875815+00:00",
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/cli-tests.log",
+      "logSha256": "9037e51f9841d2ce27d3a8f4bdfb66cf9636bc7b380484fdd6b41fca38da24b7"
+    },
+    {
+      "name": "legacy-strict-baseline-nonregression",
+      "required": true,
+      "exitCode": 0,
+      "log": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/legacy-strict-baseline-comparison.json",
+      "logSha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908"
+    },
+    {
+      "name": "strict-tests",
+      "log": "/tmp/napier-g01-consumer-focus-strict-20261030.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exitCode": 0,
+      "required": true,
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "phase": "after focus correction"
+    },
+    {
+      "name": "architecture",
+      "log": "/tmp/napier-g01-consumer-focus-architecture-20261030.log",
+      "logSha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "exitCode": 1,
+      "required": false,
+      "cwd": "/private/tmp/napier-g01-consumer-integrated-20261030",
+      "phase": "after focus correction"
+    }
+  ],
+  "testCounts": [
+    {
+      "suite": "runtime",
+      "files": 26,
+      "total": 210,
+      "passed": 210,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "server",
+      "files": 10,
+      "total": 37,
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "web",
+      "files": 32,
+      "total": 225,
+      "passed": 225,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "cli",
+      "files": 1,
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "sourceCount": 4053,
+  "emittedCount": 5105,
+  "sourceDrift": [],
+  "stagedWorkspaceDrift": [],
+  "emittedDrift": [],
+  "preservedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "passedRequiredChecks": true,
+  "testReports": {
+    "runtime": {
+      "path": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/runtime.json",
+      "sha256": "e6b23cee5b7bb21d7fa873e87edca0b0ecf3ac7f4f4d1790957ebe154d88840b"
+    },
+    "server": {
+      "path": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/server.json",
+      "sha256": "a1f84035a9181a76755a95d03bd92fbecb71ceb1b004a8c2e106a9aa8e5fa068"
+    },
+    "web": {
+      "path": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/web.json",
+      "sha256": "cff13a3742896837af7ea868cce5f165e2c74fbb2ce6482a8daf8c516a1992cd"
+    },
+    "cli": {
+      "path": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/cli.json",
+      "sha256": "30f7e3805347abeba881c114137234eba4b986a893381528bfe21368fc3c149d"
+    }
+  },
+  "consolidatedFrom": {
+    "path": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/regression.json",
+    "sha256": "4d20bc19c63ad89e9426835413dbc5d4788a782e33b9e21a527293da57fd3eab",
+    "reason": "Retain unchanged successful build/type/web/CLI/gate checks; rerun only runtime and server with explicit test search directories after Vitest matched archived source copies."
+  },
+  "uniqueFinalAssertions": {
+    "files": 71,
+    "passed": 503,
+    "failed": 0,
+    "skipped": 0,
+    "reports": [
+      {
+        "path": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/runtime.json",
+        "sha256": "e6b23cee5b7bb21d7fa873e87edca0b0ecf3ac7f4f4d1790957ebe154d88840b"
+      },
+      {
+        "path": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/server.json",
+        "sha256": "a1f84035a9181a76755a95d03bd92fbecb71ceb1b004a8c2e106a9aa8e5fa068"
+      },
+      {
+        "path": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/web.json",
+        "sha256": "cff13a3742896837af7ea868cce5f165e2c74fbb2ce6482a8daf8c516a1992cd"
+      },
+      {
+        "path": "/tmp/napier-g01-consumer-integrated-result-v2-20261030/cli.json",
+        "sha256": "30f7e3805347abeba881c114137234eba4b986a893381528bfe21368fc3c149d"
+      },
+      {
+        "path": "/tmp/napier-g01-consumer-focus-after-v2-20261030.json",
+        "sha256": "3f97811e44fc42920e367d85e897a2a0be0c109da3ac84dbef15b9d361f8240e"
+      }
+    ],
+    "deduplication": "test path relative to snapshot plus fullName; latest repeated test report replaces earlier result"
+  },
+  "incrementalValidation": {
+    "prior": "/tmp/napier-g01-consumer-integrated-result-v3-20261030/regression.json",
+    "priorSha256": "2b5c06b0dd7bc0b8b2e05cbc75e01bedf49f207a133d6907fd4fd7562cad5a5b",
+    "changedSourceFiles": [
+      "apps/web/src/workbench-overlay-focus.ts",
+      "apps/web/test/workbench-overlay-suspension.test.tsx"
+    ],
+    "additionalFunctionalReport": "/tmp/napier-g01-consumer-focus-after-v2-20261030.json",
+    "beforeReport": "/tmp/napier-g01-consumer-focus-before-20261030.json",
+    "reason": "Observed production-browser focus loss; reject body/html return targets, validate fallback and overlay state. Existing artifact suspension fixture now carries exact selected revision/path digest. Backend emissions unchanged."
+  },
+  "sourceAfterManifest": {
+    "path": "/tmp/napier-g01-consumer-integrated-result-v4-20261030/source-after.json",
+    "sha256": "18fea617f9792ea9892f24a5bae52203573be8824f4d1587ff7fdb0e057a1a1a"
+  }
+}

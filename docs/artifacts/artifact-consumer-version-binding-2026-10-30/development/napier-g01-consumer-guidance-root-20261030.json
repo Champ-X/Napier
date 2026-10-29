@@ -1,0 +1,11 @@
+Warning: a new SKILL.md is available for modern-web-guidance. Please update.
+
+Your version: 2026_09_04-7de96777
+Latest version: 2026_10_16-6654652b
+
+See the docs for how to update: https://github.com/GoogleChrome/modern-web-guidance#updating
+[{"id":"local-network-access","description":"Access resources on a user's local network or loopback interface from a public web application.","category":"security","featuresUsed":["Local network access"],"tokenCount":3598,"similarity":0.3486},
+{"id":"language-model","description":"Run on-device natural language inference in the browser using the Prompt API, with streaming output, structured JSON responses, and multi-turn session management.","category":"built-in-ai","featuresUsed":["LanguageModel"],"tokenCount":4319,"similarity":0.3099},
+{"id":"validate-input-after-interaction","description":"Show form field validation feedback (e.g. password complexity or email format requirements) only after the user has finished their initial interaction, avoiding premature errors on page load or while the user is typing.","category":"forms","featuresUsed":[":user-valid and :user-invalid"],"tokenCount":2556,"similarity":0.3802},
+{"id":"same-document-transitions","description":"Visually connect persisting elements across different page states or navigations in a Single Page Application (SPA) (e.g. expanding a product thumbnail into a full-bleed hero image) by smoothly morphing their size, position, or other styling properties.","category":"ui-behaviors","featuresUsed":["View transitions"],"tokenCount":2134,"similarity":0.3692},
+{"id":"persistent-top-layer-ui","description":"Keep a modal dialog, fullscreen element, or native popover visibly open and functionally active when its underlying DOM node is moved or reparented in the DOM.","category":"ui-behaviors","featuresUsed":["moveBefore()"],"tokenCount":698,"similarity":0.3491}]

@@ -1,0 +1,282 @@
+{
+  "extends": "/Users/champ/orca/Napier/tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "/Users/champ/orca/Napier",
+    "paths": {
+      "@napier/contracts/model-accounting": [
+        "/Users/champ/orca/Napier/packages/contracts/src/model-accounting.ts"
+      ],
+      "@napier/contracts/file-preview": [
+        "/Users/champ/orca/Napier/packages/contracts/src/file-preview.ts"
+      ],
+      "@napier/contracts": [
+        "/Users/champ/orca/Napier/packages/contracts/src/index.ts"
+      ],
+      "@napier/contracts/agent-capabilities": [
+        "/Users/champ/orca/Napier/packages/contracts/src/agent-capabilities.ts"
+      ],
+      "@napier/contracts/agent-capability-contract": [
+        "/Users/champ/orca/Napier/packages/contracts/src/agent-capability-contract.ts"
+      ],
+      "@napier/contracts/management-http": [
+        "/Users/champ/orca/Napier/packages/contracts/src/management-http.ts"
+      ],
+      "@napier/contracts/workflow-recovery": [
+        "/Users/champ/orca/Napier/packages/contracts/src/workflow-recovery.ts"
+      ],
+      "@napier/contracts/manual-run-recovery": [
+        "/Users/champ/orca/Napier/packages/contracts/src/manual-run-recovery.ts"
+      ],
+      "@napier/contracts/kernel-plugins": [
+        "/Users/champ/orca/Napier/packages/contracts/src/kernel-plugins.ts"
+      ],
+      "@napier/contracts/browser-interaction-confirmation": [
+        "/Users/champ/orca/Napier/packages/contracts/src/browser-interaction-confirmation.ts"
+      ],
+      "@napier/contracts/browser-live-view": [
+        "/Users/champ/orca/Napier/packages/contracts/src/browser-live-view.ts"
+      ],
+      "@napier/contracts/browser-session-control": [
+        "/Users/champ/orca/Napier/packages/contracts/src/browser-session-control.ts"
+      ],
+      "@napier/contracts/browser-takeover": [
+        "/Users/champ/orca/Napier/packages/contracts/src/browser-takeover.ts"
+      ],
+      "@napier/contracts/default-run-model": [
+        "/Users/champ/orca/Napier/packages/contracts/src/default-run-model.ts"
+      ],
+      "@napier/contracts/evaluation-casebook-template": [
+        "/Users/champ/orca/Napier/packages/contracts/src/evaluation-casebook-template.ts"
+      ],
+      "@napier/contracts/release-product-trial": [
+        "/Users/champ/orca/Napier/packages/contracts/src/release-product-trial.ts"
+      ],
+      "@napier/contracts/controlled-harness-evidence": [
+        "/Users/champ/orca/Napier/packages/contracts/src/controlled-harness-evidence.ts"
+      ],
+      "@napier/contracts/run-harness-effects": [
+        "/Users/champ/orca/Napier/packages/contracts/src/run-harness-effects.ts"
+      ],
+      "@napier/contracts/provider-setup": [
+        "/Users/champ/orca/Napier/packages/contracts/src/provider-setup.ts"
+      ],
+      "@napier/contracts/model-route": [
+        "/Users/champ/orca/Napier/packages/contracts/src/model-route.ts"
+      ],
+      "@napier/contracts/harness-experiments": [
+        "/Users/champ/orca/Napier/packages/contracts/src/harness-experiments.ts"
+      ],
+      "@napier/contracts/agent-harness-acceptance": [
+        "/Users/champ/orca/Napier/packages/contracts/src/agent-harness-acceptance.ts"
+      ],
+      "@napier/contracts/tool-protocol": [
+        "/Users/champ/orca/Napier/packages/contracts/src/tool-protocol.ts"
+      ],
+      "@napier/contracts/subagent-supervisor": [
+        "/Users/champ/orca/Napier/packages/contracts/src/subagent-supervisor.ts"
+      ],
+      "@napier/contracts/context-compaction": [
+        "/Users/champ/orca/Napier/packages/contracts/src/context-compaction-v1.ts"
+      ],
+      "@napier/contracts/subagent-hub": [
+        "/Users/champ/orca/Napier/packages/contracts/src/subagent-hub-v1.ts"
+      ],
+      "@napier/contracts/sandbox-setup": [
+        "/Users/champ/orca/Napier/packages/contracts/src/sandbox-setup.ts"
+      ],
+      "@napier/contracts/skill-load": [
+        "/Users/champ/orca/Napier/packages/contracts/src/skill-load.ts"
+      ],
+      "@napier/contracts/skill-load-standard": [
+        "/Users/champ/orca/Napier/packages/contracts/src/skill-load-standard.ts"
+      ],
+      "@napier/contracts/skill-resource": [
+        "/Users/champ/orca/Napier/packages/contracts/src/skill-resource.ts"
+      ],
+      "@napier/contracts/skill-lifecycle": [
+        "/Users/champ/orca/Napier/packages/contracts/src/skill-lifecycle.ts"
+      ],
+      "@napier/contracts/task-narrative": [
+        "/Users/champ/orca/Napier/packages/contracts/src/task-narrative.ts"
+      ],
+      "@napier/runtime": [
+        "/Users/champ/orca/Napier/packages/runtime/src/index.ts"
+      ],
+      "@napier/runtime/internal": [
+        "/Users/champ/orca/Napier/packages/runtime/src/internal.ts"
+      ],
+      "@napier/runtime/agent": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/agent.ts"
+      ],
+      "@napier/runtime/browser": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/browser.ts"
+      ],
+      "@napier/runtime/code": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/code.ts"
+      ],
+      "@napier/runtime/core": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/core.ts"
+      ],
+      "@napier/runtime/evaluation": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/evaluation.ts"
+      ],
+      "@napier/runtime/governance": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/governance.ts"
+      ],
+      "@napier/runtime/model": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/model.ts"
+      ],
+      "@napier/runtime/store": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/store.ts"
+      ],
+      "@napier/runtime/subagents": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/subagents.ts"
+      ],
+      "@napier/runtime/tools": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/tools.ts"
+      ],
+      "@napier/runtime/workflow": [
+        "/Users/champ/orca/Napier/packages/runtime/src/public/workflow.ts"
+      ],
+      "@napier/runtime/evaluation-casebook-templates": [
+        "/Users/champ/orca/Napier/packages/runtime/src/evaluation-casebook-templates.ts"
+      ],
+      "@napier/runtime/release-product-gate": [
+        "/Users/champ/orca/Napier/packages/runtime/src/release-product-gate.ts"
+      ],
+      "@napier/runtime/release-product-trial-adoption": [
+        "/Users/champ/orca/Napier/packages/runtime/src/release-product-trial-adoption.ts"
+      ],
+      "@napier/runtime/controlled-harness-evidence": [
+        "/Users/champ/orca/Napier/packages/runtime/src/controlled-harness-evidence.ts"
+      ],
+      "@napier/runtime/web-search": [
+        "/Users/champ/orca/Napier/packages/runtime/src/web-search.ts"
+      ],
+      "@napier/runtime/doctor-probes": [
+        "/Users/champ/orca/Napier/packages/runtime/src/doctor-runtime-probes.ts"
+      ],
+      "@napier/runtime/standard-skill-catalog": [
+        "/Users/champ/orca/Napier/packages/runtime/src/standard-skill-catalog.ts"
+      ],
+      "@napier/runtime/sandbox-container": [
+        "/Users/champ/orca/Napier/packages/runtime/src/sandbox-container.ts"
+      ],
+      "@napier/runtime/sandbox-runtime-setup": [
+        "/Users/champ/orca/Napier/packages/runtime/src/sandbox-runtime-setup.ts"
+      ],
+      "@napier/runtime/sandbox-setup-service": [
+        "/Users/champ/orca/Napier/packages/runtime/src/sandbox-setup-service.ts"
+      ],
+      "@napier/runtime/sandbox-switchable": [
+        "/Users/champ/orca/Napier/packages/runtime/src/sandbox-switchable.ts"
+      ],
+      "@napier/runtime/sandbox-installation": [
+        "/Users/champ/orca/Napier/packages/runtime/src/sandbox-installation.ts"
+      ],
+      "@napier/runtime/browser-interaction-confirmations": [
+        "/Users/champ/orca/Napier/packages/runtime/src/browser-interaction-confirmations.ts"
+      ],
+      "@napier/runtime/browser-live-view": [
+        "/Users/champ/orca/Napier/packages/runtime/src/browser-live-view.ts"
+      ],
+      "@napier/runtime/browser-live-view-stream": [
+        "/Users/champ/orca/Napier/packages/runtime/src/browser-live-view-stream.ts"
+      ],
+      "@napier/runtime/browser-session-control": [
+        "/Users/champ/orca/Napier/packages/runtime/src/browser-session-control.ts"
+      ],
+      "@napier/runtime/browser-runtime-setup": [
+        "/Users/champ/orca/Napier/packages/runtime/src/browser-runtime-setup.ts"
+      ],
+      "@napier/runtime/browser-use-local-setup": [
+        "/Users/champ/orca/Napier/packages/runtime/src/browser-use-local-setup.ts"
+      ],
+      "@napier/runtime/browser-takeover": [
+        "/Users/champ/orca/Napier/packages/runtime/src/browser-takeover.ts"
+      ],
+      "@napier/runtime/kernel-artifact-plugin": [
+        "/Users/champ/orca/Napier/packages/runtime/src/kernel-artifact-plugin.ts"
+      ],
+      "@napier/runtime/kernel-browser-plugin": [
+        "/Users/champ/orca/Napier/packages/runtime/src/kernel-browser-plugin.ts"
+      ],
+      "@napier/runtime/kernel-search-plugin": [
+        "/Users/champ/orca/Napier/packages/runtime/src/kernel-search-plugin.ts"
+      ],
+      "@napier/runtime/kernel-plugin-scaffold": [
+        "/Users/champ/orca/Napier/packages/runtime/src/kernel-plugin-scaffold.ts"
+      ],
+      "@napier/runtime/kernel-plugin-state": [
+        "/Users/champ/orca/Napier/packages/runtime/src/kernel-plugin-state.ts"
+      ],
+      "@napier/runtime/provider-setup": [
+        "/Users/champ/orca/Napier/packages/runtime/src/provider-setup.ts"
+      ],
+      "@napier/runtime/process-run-readiness": [
+        "/Users/champ/orca/Napier/packages/runtime/src/process-run-readiness.ts"
+      ],
+      "@napier/runtime/agent-capability-store-mutations": [
+        "/Users/champ/orca/Napier/packages/runtime/src/agent-capability-store-mutations.ts"
+      ],
+      "@napier/runtime/subagent-provider": [
+        "/Users/champ/orca/Napier/packages/runtime/src/subagent-provider.ts"
+      ],
+      "@napier/runtime/subagent-supervisor": [
+        "/Users/champ/orca/Napier/packages/runtime/src/subagent-supervisor.ts"
+      ],
+      "@napier/runtime/in-process-subagent-provider": [
+        "/Users/champ/orca/Napier/packages/runtime/src/in-process-subagent-provider.ts"
+      ],
+      "@napier/runtime/token-meter-provider": [
+        "/Users/champ/orca/Napier/packages/runtime/src/token-meter-provider.ts"
+      ],
+      "@napier/runtime/agent-harness-acceptance": [
+        "/Users/champ/orca/Napier/packages/runtime/src/agent-harness-acceptance.ts"
+      ],
+      "@napier/runtime/harness-eval-support": [
+        "/Users/champ/orca/Napier/packages/runtime/src/harness-eval-support.ts"
+      ],
+      "@napier/runtime/subagent-repository": [
+        "/Users/champ/orca/Napier/packages/runtime/src/subagent-repository.ts"
+      ]
+    },
+    "composite": false,
+    "noEmit": true,
+    "rootDir": "/Users/champ/orca/Napier",
+    "declaration": false,
+    "declarationMap": false,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": [
+      "node",
+      "/Users/champ/orca/Napier/node_modules/vite/client.d.ts"
+    ],
+    "typeRoots": [
+      "/Users/champ/orca/Napier/node_modules/@types"
+    ]
+  },
+  "include": [
+    "/Users/champ/orca/Napier/packages/contracts/src/**/*.ts",
+    "/Users/champ/orca/Napier/packages/runtime/src/**/*.ts",
+    "/Users/champ/orca/Napier/apps/server/src/**/*.ts",
+    "/Users/champ/orca/Napier/apps/web/src/**/*.ts",
+    "/Users/champ/orca/Napier/apps/web/src/**/*.tsx",
+    "/Users/champ/orca/Napier/apps/server/test/task-deliverable-facts.test.ts",
+    "/Users/champ/orca/Napier/packages/runtime/test/task-deliverable-inspection.test.ts",
+    "/Users/champ/orca/Napier/apps/web/test/task-validation-matrix.test.ts",
+    "/Users/champ/orca/Napier/apps/web/test/task-narrative-protocol.test.ts",
+    "/Users/champ/orca/Napier/apps/web/test/ArtifactInlinePreview.test.tsx",
+    "/Users/champ/orca/Napier/apps/web/test/ArtifactInspector.test.tsx",
+    "/Users/champ/orca/Napier/apps/web/test/ArtifactActionSurface.test.tsx",
+    "/Users/champ/orca/Napier/apps/web/test/ConversationArtifactCard.test.tsx",
+    "/Users/champ/orca/Napier/apps/web/test/plan-artifact-manifest-model.test.ts",
+    "/Users/champ/orca/Napier/apps/web/test/task-completion-summary.test.ts",
+    "/Users/champ/orca/Napier/apps/web/test/artifact-version-binding.test.ts",
+    "/Users/champ/orca/Napier/apps/web/test/api.test.ts",
+    "/Users/champ/orca/Napier/apps/web/test/use-plan-artifact-controller.test.tsx",
+    "/Users/champ/orca/Napier/apps/server/test/artifact-consumer-version-binding.test.ts",
+    "/Users/champ/orca/Napier/apps/web/test/TaskChangesPanel.test.tsx"
+  ]
+}
