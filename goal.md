@@ -437,6 +437,14 @@
 - 生产构建与用户28文件overlay完成7个EN/ZH桌面/320/390浏览器场景，审阅11张截图；实际原生current HTML、历史directory声明、missing file，以及具有有效传输摘要的版本错配回包测试缝隙均明确分开。源码2783/输出5227摘要在最终浏览器执行前后稳定，零外部模型调用。
 - 说明和便携证据：[artifact-consumer-version-binding.md](docs/artifact-consumer-version-binding.md)。独立目标验收生产者、tool-only来源、完整历史字节/来源证明、写入版本前置条件及跨端全量收敛仍待完成；G01及G01–G07整体继续active，不以本片通过代替全体验收。
 
+### 后续推进：G03 原生共享在途额度（2026-10-30）
+
+- 本地源码 `1bf62ef299e9935dbc27f4d9caf46aa7f75f83d2` 固定17文件。Context UTF-8名义输入、adapter输出上限与费率随调用冻结，dispatch同一队列/SQLite CAS检查self、child及不可变predecessor的唯一额度；不将预留额写入canonical usage。
+- 父预算1200、两个700上限的真实本地反例由两次provider进入/最终1400，改为一次进入/最终700及另一份affirmative undispatched凭证。unknown、取消和partial仍保留未结算维度；实际超额不截断。额度不是通用physical token或invoice硬上界，G03完整共享预算验收不勾选。
+- 隔离原始193用例通过，受限Node网络重跑为同193而非新增193；独立探针5通过，另保留基线已有duplicate response revision旧值问题。后者已在独立源码提交 `bf3b1c7843811766c70b66625f59b872c8806b79` 修复，未改写原冻结证据。Host结算竞态只在账本revision变化时按已有有界CAS重试，稳定坏回执仍拒绝。
+- 与已提交G01及G04精确冻结源码整合后，完整编译、Web类型和75项定向回归通过；原架构7/API4失败保留。便携证据：[shared-run-model-allowance.md](docs/shared-run-model-allowance.md)。零外部模型调用、未push，G03整体仍未完成。
+
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -558,7 +566,7 @@
 
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
 - [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 checkpoint、持久物理用量与迟到对账已完成本地功能回归；普通回合 thinking 共享恢复、Host 记账边界收敛及 overflow 不确定调用停止／legacy有界恢复已完成；原生overflow成功恢复、完整 child compiler／extension parity 和内部接口18/16门禁仍待完成。）
-- [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查与 mailbox 稀疏消费持久化已实现；并发共享父 token／cost 原子额度仍待完成。）
+- [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查、mailbox 稀疏消费持久化与共享父名义额度原子准入已实现；额度的适配器覆盖及取消／重启／恢复完整验收仍待完成，不将名义额度表述为物理token／invoice硬上界。）
 - [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明、安全恢复授权、严格 tail 校验、原生只读 continuation 和具备完整原生证明的历史 v1 候选受限对账已实现；coder／工作区重建、未覆盖尾部及缺失证明的历史记录仍待完成。）
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。
 
