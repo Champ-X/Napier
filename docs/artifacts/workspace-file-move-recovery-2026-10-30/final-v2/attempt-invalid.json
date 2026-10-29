@@ -1,0 +1,8 @@
+{
+  "accepted": false,
+  "reason": "Preparation failed staged diff check on a new EOF blank line; shell continued into verifier with old staged manifest. Stopped only this verification process tree. No results accepted. Final-v3 uses refreshed22-file manifest and both staged diff checks.",
+  "sourceCorrection": {
+    "path": "packages/runtime/src/workspace-file-mutation-plan.ts",
+    "exactChange": "remove one trailing newline before final verification"
+  }
+}

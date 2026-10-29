@@ -373,6 +373,15 @@
 - [证据索引](docs/artifacts/native-thinking-recovery-evidence-index-2026-10-30.json) 保留 route-buffer 反例、取消误分类和首轮冻结 773／774。唯一冻结失败是按预算检查次数注入的旧 fixture 提前触发；改为 durable capture 后耗尽预算，保留一份 reservation、known-zero response、零派发／turn／step及顺序断言。新增实际路由主／子用例验证 thinking 重试不随 fallback 重置；不完整原生 child receipt 仍阻断后续调用。
 - 隔离快照有 **7 项既有架构失败**（此前包含用户工作区改动的收据为 8 项，范围不同）；API 仍为 root 1897／1896、internal 21／16 与两项 digest 失败，旧测试 48 个严格类型错误与 `d2e33ac3` 完全一致。历史 release manifest 未重写，零外部付费请求。不宣称完整 compiler／overflow／extension parity或质量／性能改善；并发 owner 额度、coder 恢复与其余 G01–G07 目标继续 **active**。详见 [实现边界](docs/native-thinking-recovery.md)。
 
+### 后续推进：G04 原生文件移动的独立对账（2026-10-30）
+
+- 本地实现提交 `0d269b64`，未 push。原生 `workspace_file_apply` 的单个普通文件移动新增私有写前意图与持久 commit gate，绑定 source inode／摘要、workspace／父目录、call／operation／input。writer 死亡后，在规范路径锁下核对；源消失且目标仍为原文件才证明完成，缺 gate 且完整原生 journal／原始文件状态一致才证明未执行。对账 proof、原执行者权限隔离与 Run interrupted 原子提交，不重放 rename 或补造工具成功。
+- 已完成移动仅允许剩余只读工作，continuation 前再次检查文件；未提交事实不授予自动重试。精确锁冲突保留 unknown 并推迟核查，防止竞争者将正在对账的赢家封成 blocked_safety；赢家随后死亡时仍需后续 initialize／显式 lifecycle 对账，普通 RecoveryService sweep 尚未重核失主 Run。
+- 审查发现严格目录持久化能力不支持时会阻止原本可行的普通移动，已修正：仅 intent 存储抛出明确类型的 unsupported 错误时，先持久记录绑定原调用的 `recovery_unavailable` 再执行普通移动；标记失败、EIO／ENOSPC／EACCES、文件 sync 失败及同名伪造错误均阻止移动。该标记不产生恢复／未执行／自动续跑权限。能力故障在真实工具链的 intent 存储点注入，未宣称 Windows 实机验收。
+- 最终冻结快照 **47 文件／411 测试**全部通过（Runtime 393、Server 11、Web 既有组件 7）；编译、相关类型与新测试 strict 检查通过，4,020 源文件与 5,069 构建产物哈希稳定，28 个已有用户文件不变。旧 `agent-runtime.test.ts` 的 48 项 strict 诊断与 `d2e33ac3` 归一化基线完全一致。
+- v1 的 Web reason 类型遗漏和两项新架构失败、无效中断的 v2、修正后但尚无兼容 fallback 的 v3 402/402，以及最终 v4 全部留存。当前隔离快照仍有 7 项既有架构失败，API root1897/1896、internal21/16 与两份 digest 失败；不包含并行 Host 收敛候选，历史 release 失败保留。只降低 manager 旧行数 allowance746→701。EN/ZH 文案、既有组件测试和静态渲染不代替新浏览器验收。
+- 范围仍限同文件系统、已有安全父目录、目标缺失、至多32MiB的单普通文件；外部非协作写入的无覆盖原子保证、混合／多移动链、目录／copy／trash／restore／外部副作用、周期失主重核和完整分类矩阵未完成。见[实现说明](docs/workspace-file-move-recovery.md)、[最终收据](docs/artifacts/workspace-file-move-recovery-regression-2026-10-30.json)与[证据索引](docs/artifacts/workspace-file-move-recovery-evidence-index-2026-10-30.json)。G04 与全部剩余目标继续 **active**。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -517,7 +526,7 @@
 
 - [ ] 基于现有 operation 记录区分：尚未执行、已确认完成、结果待对账、不可自动重放。
 - [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态或精确结算结果与私有绑定齐备时，重查后置条件并继续原有只读恢复；当前 26 场景进程故障证据已留存；有写前意图的未结算提交也可独立对账，精确捕获的未提交主 Agent apply_patch 已在显式 verified_patches 策略下继续；其他操作和统一恢复操作区仍待完成。）
-- [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。（有写前意图的 apply_patch 已实现文件身份/摘要对账；尚未完成全 G04 操作分类与恢复矩阵。）
+- [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。（有写前意图的 apply_patch 及单个原生普通文件 move 已实现文件身份/摘要对账；混合/多操作、周期失主重核和全 G04 分类恢复矩阵尚未完成。）
 - [ ] 对环境漂移、权限变化、证据缺失和不可对账操作保留明确停止原因。
 - [ ] 将恢复建议与用户操作区接通，说明保留了什么、从哪里继续、哪些结果仍不确定。
 

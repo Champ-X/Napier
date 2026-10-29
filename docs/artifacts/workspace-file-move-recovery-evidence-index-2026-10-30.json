@@ -1,0 +1,459 @@
+{
+  "kind": "napier.workspace-file-move-recovery-evidence-index",
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T20:38:40.803567+00:00",
+  "implementationCommit": "0d269b64eb2e109faf6ebca6cc7fb1077c7f4e04",
+  "paidModelCalls": 0,
+  "fullG04Complete": false,
+  "archivedPathConvention": "Original /tmp paths remain in raw receipts. Archive directory final-vN maps to /tmp/napier-move-final-vN-20261030. Hashes bind the exact retained bytes.",
+  "artifacts": {
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/development-fallback-pack.json": {
+      "sha256": "f0ba83d20e08d7f5e978a7ce2e98a493bba0668ee04041b14a078233c95f54f4",
+      "bytes": 28682
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/development-owned.json": {
+      "sha256": "1ea75b05daad0b05ad1912ae4e3c6416ac2f2c9c69882cfd5af7d3261bdd00c6",
+      "bytes": 7156
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/development-pack.json": {
+      "sha256": "65e035c8f46447123264d1ce395fd3667f27b766db41d2143145168ed1fc1708",
+      "bytes": 26118
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/architecture.log": {
+      "sha256": "d091b7a124bbd12d6d65ca5cab1bc96d3cf6c5063b63e91b5798b65b8f5d1535",
+      "bytes": 888
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/emitted-after.json": {
+      "sha256": "7c2655f867da798f44d9f0b726806d3e5a06077454706a99ce0713a2a9ede9d0",
+      "bytes": 632634
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/emitted-before.json": {
+      "sha256": "7c2655f867da798f44d9f0b726806d3e5a06077454706a99ce0713a2a9ede9d0",
+      "bytes": 632634
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/legacy-strict-baseline-comparison.json": {
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "bytes": 462
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/legacy-strict-tests.json": {
+      "sha256": "c4a5478dd73ec4b593c4a93a931c1cc623b0bb89f036555c6be22d1804a8a000",
+      "bytes": 453
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/legacy-strict-tests.log": {
+      "sha256": "1773004330e85b4db4293dde2748f34c0976a4dc6264dd214a2309c8d01bcd80",
+      "bytes": 16463
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/public-api.log": {
+      "sha256": "2dc0e441cef13d05f2e54e1cbb764defd210cd9457412df1ad84600855622048",
+      "bytes": 277
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/regression.json": {
+      "sha256": "7197f162e9abc22930e876ab4b3797591f38d6764b0fe99d6af3fc53b76cb353",
+      "bytes": 15038
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/runtime-tests.log": {
+      "sha256": "8376fa31c2e8f57dc3542930d5d451af06edefedd893e9b6e6dcbb266dfeb702",
+      "bytes": 71
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/runtime.json": {
+      "sha256": "e1e2b9e4a57c5b5404af6c8da5e9ff607e975e14f3ff26bb33da8dbb29f92337",
+      "bytes": 130636
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/selected-tests.json": {
+      "sha256": "3bf60a59391d161980f6e44ec1c5accbc3c7780f98739c6b484b456296fbccf6",
+      "bytes": 3305
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/server-tests.log": {
+      "sha256": "003d704265a6d09603c52c87b73c3cf312ea60ed770214e2eb9477fefc3a1d67",
+      "bytes": 70
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/server.json": {
+      "sha256": "bab311d92bf66371c1977999b4a65e135e319d24c4920174606dc067618538ea",
+      "bytes": 5080
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/source-after.json": {
+      "sha256": "fc76bc5e671ddc2251ee6238eb5046721c758b54fe3a6e2d192c2ad0372cf54f",
+      "bytes": 484829
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/source-before.json": {
+      "sha256": "fc76bc5e671ddc2251ee6238eb5046721c758b54fe3a6e2d192c2ad0372cf54f",
+      "bytes": 484829
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/strict-tests.json": {
+      "sha256": "2f2acc9c0bf9df02a76cc4431e3058468b6b7f223a83bbf6b7c3d0f576b4eac5",
+      "bytes": 769
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/strict-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v1/web-types.log": {
+      "sha256": "2bc731c619f0eeac6a19f2f5bd0c2ab767bcc8518008e7f4bc1f062ec17b8c17",
+      "bytes": 655
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/architecture.log": {
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/attempt-invalid.json": {
+      "sha256": "e9039e91c31116a4bcdee8ce7e97402da281a02fa0b67ecfec51fe343438a032",
+      "bytes": 464
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/emitted-before.json": {
+      "sha256": "8b410e80c3fb98e73fd711bbb8864f78a2a4ea13fbef1f8456d466d910356017",
+      "bytes": 633023
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/legacy-strict-tests.json": {
+      "sha256": "c4a5478dd73ec4b593c4a93a931c1cc623b0bb89f036555c6be22d1804a8a000",
+      "bytes": 453
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/legacy-strict-tests.log": {
+      "sha256": "1773004330e85b4db4293dde2748f34c0976a4dc6264dd214a2309c8d01bcd80",
+      "bytes": 16463
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/public-api.log": {
+      "sha256": "2dc0e441cef13d05f2e54e1cbb764defd210cd9457412df1ad84600855622048",
+      "bytes": 277
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/runtime-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/selected-tests.json": {
+      "sha256": "3bf60a59391d161980f6e44ec1c5accbc3c7780f98739c6b484b456296fbccf6",
+      "bytes": 3305
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/server-tests.log": {
+      "sha256": "7a491fafe112d806629b194f633322ded3c5cf7ac4aa7c7d00a3dbcc28182e79",
+      "bytes": 70
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/server.json": {
+      "sha256": "a392251573c0dc24c11401b2574d4e4737c1bb9daeab9bc1e460746033d35861",
+      "bytes": 5088
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/source-before.json": {
+      "sha256": "50af30455cc7e4ea99321b0f7b984ff6a6f7e30bd0de394e6c98cdc85094bb02",
+      "bytes": 484955
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/strict-tests.json": {
+      "sha256": "2f2acc9c0bf9df02a76cc4431e3058468b6b7f223a83bbf6b7c3d0f576b4eac5",
+      "bytes": 769
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/strict-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v2/web-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/architecture.log": {
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/emitted-after.json": {
+      "sha256": "8b410e80c3fb98e73fd711bbb8864f78a2a4ea13fbef1f8456d466d910356017",
+      "bytes": 633023
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/emitted-before.json": {
+      "sha256": "8b410e80c3fb98e73fd711bbb8864f78a2a4ea13fbef1f8456d466d910356017",
+      "bytes": 633023
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/legacy-strict-baseline-comparison.json": {
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "bytes": 462
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/legacy-strict-tests.json": {
+      "sha256": "c4a5478dd73ec4b593c4a93a931c1cc623b0bb89f036555c6be22d1804a8a000",
+      "bytes": 453
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/legacy-strict-tests.log": {
+      "sha256": "1773004330e85b4db4293dde2748f34c0976a4dc6264dd214a2309c8d01bcd80",
+      "bytes": 16463
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/public-api.log": {
+      "sha256": "2dc0e441cef13d05f2e54e1cbb764defd210cd9457412df1ad84600855622048",
+      "bytes": 277
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/regression.json": {
+      "sha256": "af2fe7c79021efa5c88ae0f24614fd685d6b011f0373b328ae03f6c745b62e9c",
+      "bytes": 16299
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/runtime-tests.log": {
+      "sha256": "640cf0a99c51ee9f57db3eb4cca8caee156adf9c22ac06c1cf9b27abbdf46629",
+      "bytes": 71
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/runtime.json": {
+      "sha256": "d8e2ebc5df6b6dd773e56c5dd8bbcfb913fc2e95f31de6fa797ab66d536ac368",
+      "bytes": 130492
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/selected-tests.json": {
+      "sha256": "3bf60a59391d161980f6e44ec1c5accbc3c7780f98739c6b484b456296fbccf6",
+      "bytes": 3305
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/server-tests.log": {
+      "sha256": "e56acea47c1d5d20c1ca31546e5c6d611be15d8d92b306d7540beda04f80da6e",
+      "bytes": 70
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/server.json": {
+      "sha256": "6690691021b3c7cbf9c9d75aa33272c4c80252e80897fc7cc47f2b1a967b4543",
+      "bytes": 5088
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/source-after.json": {
+      "sha256": "59204f6f5012c71c764769838dd36c281a850522d2d79e648c967b60c6e62d33",
+      "bytes": 484955
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/source-before.json": {
+      "sha256": "59204f6f5012c71c764769838dd36c281a850522d2d79e648c967b60c6e62d33",
+      "bytes": 484955
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/strict-tests.json": {
+      "sha256": "2f2acc9c0bf9df02a76cc4431e3058468b6b7f223a83bbf6b7c3d0f576b4eac5",
+      "bytes": 769
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/strict-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/web-recovery-tests.log": {
+      "sha256": "7f8994df96a563dc197eef7cb18856e0880be2804797d0ac0adeb21f1f740aaa",
+      "bytes": 67
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/web-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v3/web.json": {
+      "sha256": "4e39fffb6e91046791a607df3a0ccbcc6c90798f5a2df2ec0ed8cac531a59010",
+      "bytes": 2548
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/architecture.log": {
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/emitted-after.json": {
+      "sha256": "43341a65b0ea8205298a9a4820e83bba6ccfeefbc8d1c799c57ffd1e29921ec6",
+      "bytes": 633023
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/emitted-before.json": {
+      "sha256": "43341a65b0ea8205298a9a4820e83bba6ccfeefbc8d1c799c57ffd1e29921ec6",
+      "bytes": 633023
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/legacy-strict-baseline-comparison.json": {
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "bytes": 462
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/legacy-strict-tests.json": {
+      "sha256": "c4a5478dd73ec4b593c4a93a931c1cc623b0bb89f036555c6be22d1804a8a000",
+      "bytes": 453
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/legacy-strict-tests.log": {
+      "sha256": "1773004330e85b4db4293dde2748f34c0976a4dc6264dd214a2309c8d01bcd80",
+      "bytes": 16463
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/public-api.log": {
+      "sha256": "2dc0e441cef13d05f2e54e1cbb764defd210cd9457412df1ad84600855622048",
+      "bytes": 277
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/regression.json": {
+      "sha256": "ba504007f56dd417913acb3ee7089e4c39cbc52b25296b4a696c73f97ecc50a9",
+      "bytes": 16377
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/runtime-tests.log": {
+      "sha256": "453bb0ef43b422fd25e9598015f2ad94384494b0c54fa559ddd27f66a2c84320",
+      "bytes": 71
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/runtime.json": {
+      "sha256": "38e72f8df989814e71c558db40bc67c58ac0064e061c46683c621b0504e28f8b",
+      "bytes": 133217
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/selected-tests.json": {
+      "sha256": "3bf60a59391d161980f6e44ec1c5accbc3c7780f98739c6b484b456296fbccf6",
+      "bytes": 3305
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/server-tests.log": {
+      "sha256": "9708470b32dd9e12bdb663f365811bcfee53904e5f42106a67b96d6d2e0d0596",
+      "bytes": 70
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/server.json": {
+      "sha256": "7903ee8b21851fe0d08c0ff8c61f714ab4b4b5ea136909f3cb2fb0e2554f54a6",
+      "bytes": 5077
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/source-after.json": {
+      "sha256": "52f00bdfbe5cef0518846b235441c7677a9d6cc0c2ca7d67663e0f6ae27c1971",
+      "bytes": 484955
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/source-before.json": {
+      "sha256": "52f00bdfbe5cef0518846b235441c7677a9d6cc0c2ca7d67663e0f6ae27c1971",
+      "bytes": 484955
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/strict-tests.json": {
+      "sha256": "2f2acc9c0bf9df02a76cc4431e3058468b6b7f223a83bbf6b7c3d0f576b4eac5",
+      "bytes": 769
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/strict-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/web-recovery-tests.log": {
+      "sha256": "957a5430e72aaa03569ff33282f75c46420740c8a4d77ede3e01e2ebf3042e1c",
+      "bytes": 67
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/web-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/final-v4/web.json": {
+      "sha256": "a7c61c8ad7b2f4d0918d158f6b10a8b06cd02c03dbc03cf83849dc39a711d16d",
+      "bytes": 2548
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/handoff-fallback.json": {
+      "sha256": "5c21646ae4f027a797bd377f4ad699592c6e26a59b2964e93037cdef26699c4b",
+      "bytes": 8290
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/handoff-v1.json": {
+      "sha256": "8472b65a89b3c695c86f96e12ae78ebc37c4abfaeeca83af60dfaacb3592b92f",
+      "bytes": 6519
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/handoff-v2.json": {
+      "sha256": "a01d12dd031bfb591a351cfd5885aee4a7e36d60e8a18b5026a71c707b60aa28",
+      "bytes": 6826
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/legacy-agent-runtime-baseline-strict.log": {
+      "sha256": "1fa5fe6dd8c083ff1f2db9f9697d29a32e4c2ef8e7f97e2a9df9fb19e9d9587e",
+      "bytes": 19151
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/preserved-user-files.json": {
+      "sha256": "98005eb6811f8ebbf87e5324d47d6431c9ca1394026ea8a06fe3e4ca74a99157",
+      "bytes": 3046
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/recovery-copy-en.html": {
+      "sha256": "1ce8e7fe575256d01480415a99f7ef44efc5ed7aac207655aa4b0f913dec92bf",
+      "bytes": 1232
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/recovery-copy-zh.html": {
+      "sha256": "820b4eec533018ac88581122292cd7642f787c56fc6e57754a80410707f3532a",
+      "bytes": 1152
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/staged-source-final.json": {
+      "sha256": "86c97a2d0192b7b407d18adac7a0ec67f51a84018a72f5b41b6b98895a296d84",
+      "bytes": 3108
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/staged-source-v1.json": {
+      "sha256": "b71f65a27b3f272445016bec61d39bec7d0583dc9aff676e4778c6f3a194a527",
+      "bytes": 2683
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/staged-source-v3.json": {
+      "sha256": "eca102015be2ee8bb8d5abdbe62b66cb9b09e6111c0429f54e70d840e48cfe79",
+      "bytes": 3032
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/verifier-final.py": {
+      "sha256": "74920aa01e78032de74874fa45407b5c77e80e69ed3d568089e3e99b0780d524",
+      "bytes": 8876
+    },
+    "docs/artifacts/workspace-file-move-recovery-2026-10-30/verifier-v1.py": {
+      "sha256": "85b716d30069a72394fad6aec65dd6e117cd4b5c3c096b5b6533589104bb352d",
+      "bytes": 8694
+    },
+    "docs/artifacts/workspace-file-move-recovery-regression-2026-10-30.json": {
+      "sha256": "9de76135ac13b015f9e5c3675584e1749a66f87dcf923edeee60cecd0b953b8a",
+      "bytes": 17658
+    }
+  }
+}

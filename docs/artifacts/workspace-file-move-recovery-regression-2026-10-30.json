@@ -1,0 +1,377 @@
+{
+  "kind": "napier.workspace-file-move-recovery-regression",
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T20:36:52.112164+00:00",
+  "head": "7d022a0b70e23a9dc5464688036a5921aaaf8644",
+  "stagedTree": "71337d2ae5c420e41e119ebb6949aaecf1754208",
+  "stagedSourceManifest": {
+    "baseHead": "7d022a0b70e23a9dc5464688036a5921aaaf8644",
+    "tree": "71337d2ae5c420e41e119ebb6949aaecf1754208",
+    "fileCount": 22,
+    "files": {
+      "packages/contracts/src/manual-run-recovery.ts": "782c5952ba49704051bb8ca01a839782dfe20041a2fee7899562d67a7be01205",
+      "packages/contracts/src/run-event-tool-definitions-v1.ts": "5b1f5b4ac551f364b73617a4ecdb66c23f5a44058fce38452004032556399d4f",
+      "packages/runtime/src/agent-run-recovery.ts": "648e01e4d489e13b5d4b7680072dff45c965466da4ed18581265cfca9b8f8cc7",
+      "packages/runtime/src/run-lost-owner-recovery.ts": "92441228bc1ecafe2775787f0be234add7720746a9551d0b39ef9c6f22547d9f",
+      "packages/runtime/src/run-recovery-checkpoint.ts": "f8aba0f31627868e766c92f62ef357c3828f591c37d6f5586a5d23d6225551b3",
+      "packages/runtime/src/run-tool-effect-observations.ts": "6dc4555ee92a739870f9d4d99eb0fec5aeb2fb0e5787a922721fce070f420f7d",
+      "packages/runtime/src/sqlite-effect-indeterminate-commit.ts": "d7af4f51e32f882f979092e5044cc224f4a66485559ee35619f188d53d062875",
+      "packages/runtime/src/workspace-file-mutations.ts": "0bcb673dfd4ab6e875119548de511fcf03b95c50494d62712cb2c006e1cf353b",
+      "packages/runtime/src/workspace-file-tools.ts": "2d1f76209c95fc741a551fa6378bdc305752209b4065bc130a841568c2b11b91",
+      "packages/runtime/src/workspace-file-move-paths.ts": "0775a1a99c267a38ed3be2738e4c0721acde744f9419ee6aa049c04641bb1230",
+      "packages/runtime/src/workspace-file-move-preparation.ts": "199d8a49f321cd3462e50619cef767630a304e1822f1584989dce251ad0bc710",
+      "packages/runtime/src/workspace-file-move-evidence.ts": "2655bc6d987db948aba103de793ba7f6da6486e9cfd5666beed5dd8ba8de2af2",
+      "packages/runtime/src/workspace-file-move-reconciliation.ts": "cc0f4c15c47f60d90b00682202efafa798fc4c4ff58dcfc25842ba4bec3272cb",
+      "packages/runtime/src/workspace-operation-reconciliation.ts": "9b702f591db80750244d3fe13e5df78db3e978453b40c87652f900dfe3f91d7d",
+      "packages/runtime/test/fixtures/workspace-file-move-crash.ts": "7a0033ed100fa8f458eed990f96fc9f1293d100a89736c4c00d9d6eb946ab80a",
+      "packages/runtime/test/fixtures/workspace-file-move-recover.ts": "8b8098b181276ec25027b7f39ef0fb2e55e981545455775771c402a7ea8d19c3",
+      "packages/runtime/test/fixtures/workspace-file-move-tsconfig.json": "b01d710f095aa5c3aceafa0d2075ee89c54ee9086da1ce6ace8650cd33dacce3",
+      "packages/runtime/test/workspace-file-move-recovery.test.ts": "637c140bbc7d156fd4cdd5227450da4d5ae000baccd37554ecc33cefff53b4af",
+      "packages/runtime/test/workspace-file-move-vitest.config.ts": "17fec814599f315547de333d16909fb8d336c4a516047ea7d9d179550c511ef4",
+      "apps/web/src/recovery-operations-copy.ts": "e43a20db93195b3d74906c5232a4e1d859845feec4d7ce423be40ddbb675d2b2",
+      "docs/architecture-budget.json": "519f80d7623ff9c8d898010a8f86325999b584777665a12e3b33872ff18ba4e9",
+      "packages/runtime/src/workspace-file-mutation-plan.ts": "7cb39d6d9dd13c9ef15f61e3aea54f440a8d85e65fb7153076a148333eaa6d82"
+    },
+    "preservedUserCount": 28,
+    "snapshot": "/tmp/napier-move-verify-20261030",
+    "handoffManifest": "/tmp/napier-g04-move-handoff-fallback-20261030.json"
+  },
+  "cwd": "/tmp/napier-move-verify-20261030",
+  "originalWorkspace": "/Users/champ/orca/Napier",
+  "verificationScope": "Exact HEAD7d022a0b plus staged G04 source/test blobs in isolated checkout; concurrent Host accounting consolidation and preexisting user changes excluded",
+  "node": "v24.19.0",
+  "providerMode": "local faux and loopback HTTP only; no external model calls",
+  "checks": [
+    {
+      "name": "contracts-runtime-emit",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/typescript/bin/tsc",
+        "-b",
+        "packages/runtime",
+        "apps/cli",
+        "apps/server",
+        "--force"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:33:49.569613+00:00",
+      "finishedAt": "2026-10-29T20:33:58.716851+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/contracts-runtime-emit.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "bundled-skills",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/copy-bundled-skills.mjs"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:33:58.717110+00:00",
+      "finishedAt": "2026-10-29T20:33:58.745802+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/bundled-skills.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "sandbox-assets",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/copy-sandbox-image.mjs"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:33:58.746037+00:00",
+      "finishedAt": "2026-10-29T20:33:58.767570+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/sandbox-assets.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "web-recovery-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/test/recovery-operations.test.tsx",
+        "--maxWorkers=1",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-move-final-v4-20261030/web.json"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:33:58.928395+00:00",
+      "finishedAt": "2026-10-29T20:33:59.334373+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/web-recovery-tests.log",
+      "logSha256": "957a5430e72aaa03569ff33282f75c46420740c8a4d77ede3e01e2ebf3042e1c"
+    },
+    {
+      "name": "runtime-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "packages/runtime/test/agent-manual-run-recovery.test.ts",
+        "packages/runtime/test/agent-recovery-plan-context.test.ts",
+        "packages/runtime/test/agent-runtime-loop-cursor.test.ts",
+        "packages/runtime/test/agent-runtime-memory-provenance.test.ts",
+        "packages/runtime/test/agent-runtime-utils.test.ts",
+        "packages/runtime/test/agent-runtime.test.ts",
+        "packages/runtime/test/agent-workspace-files.test.ts",
+        "packages/runtime/test/automatic-recovery.test.ts",
+        "packages/runtime/test/git-branch-switch-checkout-recovery.test.ts",
+        "packages/runtime/test/git-commit-recovery.test.ts",
+        "packages/runtime/test/kernel-recovery-projection.test.ts",
+        "packages/runtime/test/local-private-capsule-store.test.ts",
+        "packages/runtime/test/operator-decision-recovery.test.ts",
+        "packages/runtime/test/read-only-recovery.test.ts",
+        "packages/runtime/test/run-recovery-checkpoint.test.ts",
+        "packages/runtime/test/run-recovery-prompt.test.ts",
+        "packages/runtime/test/settled-patch-recovery.test.ts",
+        "packages/runtime/test/sqlite-ledger-migration.test.ts",
+        "packages/runtime/test/store-compatibility-projections.test.ts",
+        "packages/runtime/test/store-snapshot-consistency.test.ts",
+        "packages/runtime/test/store.test.ts",
+        "packages/runtime/test/subagent-child-effect-fencing.test.ts",
+        "packages/runtime/test/thread-bundles.test.ts",
+        "packages/runtime/test/tool-effect-indeterminate-recovery.test.ts",
+        "packages/runtime/test/tool-execution-admission-structure.test.ts",
+        "packages/runtime/test/tool-execution-retry-lineage.test.ts",
+        "packages/runtime/test/tool-operation-failure-receipt.test.ts",
+        "packages/runtime/test/tool-operation-journal.test.ts",
+        "packages/runtime/test/tool-operation-lease-local-store.test.ts",
+        "packages/runtime/test/tool-operation-result-repair.test.ts",
+        "packages/runtime/test/tool-operation-terminal-fence.test.ts",
+        "packages/runtime/test/unsettled-patch-recovery.test.ts",
+        "packages/runtime/test/verified-patch-recovery.test.ts",
+        "packages/runtime/test/workflow-approval-recovery.test.ts",
+        "packages/runtime/test/workflow-recovery-checkpoint.test.ts",
+        "packages/runtime/test/workflow-recovery.test.ts",
+        "packages/runtime/test/workspace-file-move-recovery.test.ts",
+        "packages/runtime/test/workspace-file-mutations.test.ts",
+        "packages/runtime/test/workspace-patch-input-error.test.ts",
+        "packages/runtime/test/workspace-patch-reconciliation.test.ts",
+        "packages/runtime/test/workspace-patch-tool.test.ts",
+        "--maxWorkers=2",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-move-final-v4-20261030/runtime.json"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:33:58.928466+00:00",
+      "finishedAt": "2026-10-29T20:36:51.778243+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/runtime-tests.log",
+      "logSha256": "453bb0ef43b422fd25e9598015f2ad94384494b0c54fa559ddd27f66a2c84320"
+    },
+    {
+      "name": "server-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/server/test/partial-run-recovery-http.test.ts",
+        "apps/server/test/workspace-files.test.ts",
+        "apps/server/test/workspace-runtime-host.test.ts",
+        "apps/server/test/workspace-runtime-recovery-process.test.ts",
+        "apps/server/test/workflow-recovery.test.ts",
+        "--maxWorkers=2",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-move-final-v4-20261030/server.json"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:33:58.928529+00:00",
+      "finishedAt": "2026-10-29T20:34:10.973278+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/server-tests.log",
+      "logSha256": "9708470b32dd9e12bdb663f365811bcfee53904e5f42106a67b96d6d2e0d0596"
+    },
+    {
+      "name": "strict-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "/tmp/napier-move-final-v4-20261030/strict-tests.json"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:33:59.334559+00:00",
+      "finishedAt": "2026-10-29T20:34:04.596939+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/strict-tests.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "legacy-strict-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "/tmp/napier-move-final-v4-20261030/legacy-strict-tests.json"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": false,
+      "exitCode": 2,
+      "startedAt": "2026-10-29T20:34:04.597224+00:00",
+      "finishedAt": "2026-10-29T20:34:09.777852+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/legacy-strict-tests.log",
+      "logSha256": "1773004330e85b4db4293dde2748f34c0976a4dc6264dd214a2309c8d01bcd80"
+    },
+    {
+      "name": "web-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "apps/web/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:34:09.778090+00:00",
+      "finishedAt": "2026-10-29T20:34:15.929531+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/web-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "harness-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "packages/harness-eval/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:34:10.973545+00:00",
+      "finishedAt": "2026-10-29T20:34:11.584238+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/harness-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "benchmark-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/tmp/napier-move-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "packages/benchmark-kit/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:34:11.584526+00:00",
+      "finishedAt": "2026-10-29T20:34:12.907951+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/benchmark-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "architecture",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/check-architecture.mjs"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": false,
+      "exitCode": 1,
+      "startedAt": "2026-10-29T20:34:12.908263+00:00",
+      "finishedAt": "2026-10-29T20:34:14.889111+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/architecture.log",
+      "logSha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af"
+    },
+    {
+      "name": "public-api",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/check-public-api.mjs"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": false,
+      "exitCode": 1,
+      "startedAt": "2026-10-29T20:34:14.889441+00:00",
+      "finishedAt": "2026-10-29T20:34:18.091352+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/public-api.log",
+      "logSha256": "2dc0e441cef13d05f2e54e1cbb764defd210cd9457412df1ad84600855622048"
+    },
+    {
+      "name": "diff-check",
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "cwd": "/tmp/napier-move-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T20:34:15.930693+00:00",
+      "finishedAt": "2026-10-29T20:34:15.951660+00:00",
+      "log": "/tmp/napier-move-final-v4-20261030/diff-check.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "legacy-strict-baseline-nonregression",
+      "required": true,
+      "exitCode": 0,
+      "log": "/tmp/napier-move-final-v4-20261030/legacy-strict-baseline-comparison.json",
+      "logSha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908"
+    }
+  ],
+  "testCounts": [
+    {
+      "suite": "runtime",
+      "files": 41,
+      "total": 393,
+      "passed": 393,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "server",
+      "files": 5,
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "web",
+      "files": 1,
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "sourceCount": 4020,
+  "emittedCount": 5069,
+  "sourceDrift": [],
+  "stagedWorkspaceDrift": [],
+  "emittedDrift": [],
+  "preservedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "passedRequiredChecks": true,
+  "implementationCommit": "0d269b64eb2e109faf6ebca6cc7fb1077c7f4e04",
+  "acceptedScope": "One native regular-file move with bound durable evidence; typed unsupported-directory fallback preserves ordinary execution without recovery authority. Full G04 incomplete.",
+  "priorAttempts": {
+    "final-v1": "Behavior passed 395; missing new Web reason copy and two new architecture findings failed validation; corrected before v3.",
+    "final-v2": "Invalid interrupted bootstrap; staged EOF check failed and old manifest was used. No results accepted.",
+    "final-v3": "402 passed on pre-fallback source. Superseded after review identified conditional unsupported-directory compatibility regression.",
+    "final-v4": "Final 411 passed after typed fallback. All required checks passed; legacy strict and architecture/API failures remain explicitly recorded."
+  },
+  "gateBoundary": "Seven preexisting architecture findings in isolated checkout; root API1897/1896 and internal21/16 plus both digest mismatches retained. Concurrent Host boundary candidate excluded. Historical release-manifest failure was not rerun or rewritten.",
+  "uiEvidence": "Existing seven component tests, Web types and static EN/ZH renders only; no layout/TSX change and no new browser/usability acceptance."
+}

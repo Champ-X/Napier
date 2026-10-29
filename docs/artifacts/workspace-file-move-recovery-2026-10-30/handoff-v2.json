@@ -1,0 +1,169 @@
+{
+  "scope": "G04 native workspace_file_apply single regular-file move reconciliation; full G04 incomplete",
+  "revision": "v2 cross-package copy and cohesive architecture corrections",
+  "workspace": "/Users/champ/orca/Napier",
+  "branch": "main",
+  "baseHead": "7d022a0b70e23a9dc5464688036a5921aaaf8644",
+  "createdAt": "2026-10-29T20:16:16.073363+00:00",
+  "priorManifest": "/tmp/napier-g04-move-handoff-20261030.json",
+  "ownedFiles": [
+    {
+      "path": "packages/contracts/src/manual-run-recovery.ts",
+      "sha256": "782c5952ba49704051bb8ca01a839782dfe20041a2fee7899562d67a7be01205",
+      "bytes": 2918
+    },
+    {
+      "path": "packages/contracts/src/run-event-tool-definitions-v1.ts",
+      "sha256": "b0f7eafd9f17eed250559299b91299b2f922a2a047b0b1d4393da798997df0b3",
+      "bytes": 7545
+    },
+    {
+      "path": "packages/runtime/src/agent-run-recovery.ts",
+      "sha256": "648e01e4d489e13b5d4b7680072dff45c965466da4ed18581265cfca9b8f8cc7",
+      "bytes": 12769
+    },
+    {
+      "path": "packages/runtime/src/run-lost-owner-recovery.ts",
+      "sha256": "92441228bc1ecafe2775787f0be234add7720746a9551d0b39ef9c6f22547d9f",
+      "bytes": 7553
+    },
+    {
+      "path": "packages/runtime/src/run-recovery-checkpoint.ts",
+      "sha256": "f8aba0f31627868e766c92f62ef357c3828f591c37d6f5586a5d23d6225551b3",
+      "bytes": 6698
+    },
+    {
+      "path": "packages/runtime/src/run-tool-effect-observations.ts",
+      "sha256": "6dc4555ee92a739870f9d4d99eb0fec5aeb2fb0e5787a922721fce070f420f7d",
+      "bytes": 4486
+    },
+    {
+      "path": "packages/runtime/src/sqlite-effect-indeterminate-commit.ts",
+      "sha256": "d7af4f51e32f882f979092e5044cc224f4a66485559ee35619f188d53d062875",
+      "bytes": 15664
+    },
+    {
+      "path": "packages/runtime/src/workspace-file-mutations.ts",
+      "sha256": "0bcb673dfd4ab6e875119548de511fcf03b95c50494d62712cb2c006e1cf353b",
+      "bytes": 23614
+    },
+    {
+      "path": "packages/runtime/src/workspace-file-tools.ts",
+      "sha256": "2d1f76209c95fc741a551fa6378bdc305752209b4065bc130a841568c2b11b91",
+      "bytes": 14816
+    },
+    {
+      "path": "packages/runtime/src/workspace-file-move-paths.ts",
+      "sha256": "0775a1a99c267a38ed3be2738e4c0721acde744f9419ee6aa049c04641bb1230",
+      "bytes": 4823
+    },
+    {
+      "path": "packages/runtime/src/workspace-file-move-preparation.ts",
+      "sha256": "fc82775fcd4f57c35f140cf43c52f14f3ab618c5348f7b975719c7ee94fba82e",
+      "bytes": 12181
+    },
+    {
+      "path": "packages/runtime/src/workspace-file-move-evidence.ts",
+      "sha256": "2655bc6d987db948aba103de793ba7f6da6486e9cfd5666beed5dd8ba8de2af2",
+      "bytes": 7320
+    },
+    {
+      "path": "packages/runtime/src/workspace-file-move-reconciliation.ts",
+      "sha256": "cc0f4c15c47f60d90b00682202efafa798fc4c4ff58dcfc25842ba4bec3272cb",
+      "bytes": 4604
+    },
+    {
+      "path": "packages/runtime/src/workspace-operation-reconciliation.ts",
+      "sha256": "9b702f591db80750244d3fe13e5df78db3e978453b40c87652f900dfe3f91d7d",
+      "bytes": 1206
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workspace-file-move-crash.ts",
+      "sha256": "e8c539e5a1356c603ca8f5506481123c043bf3a082e027c1894c7b63272fb392",
+      "bytes": 4533
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workspace-file-move-recover.ts",
+      "sha256": "8b8098b181276ec25027b7f39ef0fb2e55e981545455775771c402a7ea8d19c3",
+      "bytes": 1219
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workspace-file-move-tsconfig.json",
+      "sha256": "b01d710f095aa5c3aceafa0d2075ee89c54ee9086da1ce6ace8650cd33dacce3",
+      "bytes": 3625
+    },
+    {
+      "path": "packages/runtime/test/workspace-file-move-recovery.test.ts",
+      "sha256": "e04d878491974aa091721d6de24cb64391acedaa6977f816c27f093730235c98",
+      "bytes": 18797
+    },
+    {
+      "path": "packages/runtime/test/workspace-file-move-vitest.config.ts",
+      "sha256": "17fec814599f315547de333d16909fb8d336c4a516047ea7d9d179550c511ef4",
+      "bytes": 822
+    },
+    {
+      "path": "docs/workspace-file-move-recovery.md",
+      "sha256": "8d7bd248feeb11b017e53c86c4cca0e47f7e29cd72a63d99557868f26e65c458",
+      "bytes": 7714
+    },
+    {
+      "path": "apps/web/src/recovery-operations-copy.ts",
+      "sha256": "e43a20db93195b3d74906c5232a4e1d859845feec4d7ce423be40ddbb675d2b2",
+      "bytes": 6105
+    },
+    {
+      "path": "docs/architecture-budget.json",
+      "sha256": "519f80d7623ff9c8d898010a8f86325999b584777665a12e3b33872ff18ba4e9",
+      "bytes": 12083
+    },
+    {
+      "path": "packages/runtime/src/workspace-file-mutation-plan.ts",
+      "sha256": "93aed7ee4b9aceaed7da31192dfed596be5724b7eba8a37072b94ab47deca5c4",
+      "bytes": 1785
+    }
+  ],
+  "verification": [
+    {
+      "path": "/tmp/napier-g04-move-refactor-v2-20261030.json",
+      "sha256": "9faea93fc3b41f1ee2758bd3c58425b732bd884c0909996240afea947b588b9f",
+      "total": 40,
+      "passed": 40,
+      "failed": 0
+    },
+    {
+      "path": "/tmp/napier-g04-move-ui-existing-v2-20261030.json",
+      "sha256": "f1421c3fc4ac5154bdb9f83c07d78354d73e879dc2eace11ea6a2c0a3169730a",
+      "total": 7,
+      "passed": 7,
+      "failed": 0
+    }
+  ],
+  "checks": {
+    "runtimeNoEmit": "npx tsc -p packages/runtime/tsconfig.json --noEmit --pretty false --tsBuildInfoFile /tmp/napier-g04-refactor-runtime.tsbuildinfo: exit 0",
+    "strictOwnedSourceNoEmit": "npx tsc -p /tmp/napier-g04-move-test-tsconfig.json --noEmit --pretty false: exit 0",
+    "webNoEmit": "npx tsc -p apps/web/tsconfig.json --noEmit --pretty false: exit 0",
+    "diffCheck": "git diff --check: exit 0",
+    "architecture": "Whole workspace fails outside selected G04 files; selected measurements in /tmp/napier-g04-move-architecture-v2-20261030.json; only manager line allowance reduced 746 to 701"
+  },
+  "renderObservations": [
+    "/tmp/napier-g04-move-recovery-ui-render-v2-20261030.html",
+    "/tmp/napier-g04-move-recovery-ui-render-zh-v2-20261030.html"
+  ],
+  "limitations": [
+    "No atomic no-replace guarantee against noncooperating filesystem writers",
+    "Exact path-lock busy defers target Run with no new evidence; if contender winner dies, needs later initialization/explicit lifecycle reconciliation; periodic RecoveryService sweep does not reconcile lost owners",
+    "No multiple move path-version chains, directory move reconciliation, arbitrary/plugin/external effect reconciliation",
+    "No move replay, synthetic tool result, or automatic permission from negative proof",
+    "No power-loss, hostile FS concurrency, or cross-platform acceptance"
+  ],
+  "delivery": {
+    "stagedByWorker": false,
+    "committedByWorker": false,
+    "pushedByWorker": false,
+    "goalMdEdited": false,
+    "g03OwnedFilesEdited": false,
+    "protectedUserFilesEdited": false,
+    "distJavaScriptEmitted": false
+  }
+}
