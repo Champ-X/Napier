@@ -458,6 +458,13 @@
 - 最终133用例通过，独立四组探针验证全组锁、完整事务范围、跨线程seq和延期重检。原始emit使用noCheck与新增可达图strict检查分别报告；root跨G01/G03整合另外完成严格完整编译及75项定向检查，不将重跑数与133相加。
 - native写工具仍互斥，真实证据仅支持多个settled加最后一个unfinished；不声称同Run多个同时未决native写、目录move、远程副作用或任意工具自动重放。说明和完整失败证据：[workspace-operation-batch-recovery.md](docs/workspace-operation-batch-recovery.md)。G04及全部G01–G07保持active。
 
+### 后续推进：G07 mailbox 的类型化事件读取（2026-10-30）
+
+- 本地源码 `a7bd8ebd399243858b6e27a4c09c107b73627c79` 固定7个生产文件及1个测试文件。共享查询覆盖continuation、接收、inspect、child fence及checkpoint父级SDK凭证；保留完整child frontier、全parent Run身份冲突、thread范围展示、重复请求先于terminal拒绝及稀疏消费语义。没有新增mailbox cursor/cache或SQL planner修改。
+- 隔离Contracts/Runtime编译通过；16文件146唯一用例通过。新增测试的JsonValue收窄在strict检查发现后修正，同8用例重跑和strict通过，不与146叠加。基线／candidate架构均7项失败；同28文件用户overlay的基线／当前工作区均8项失败，API4项失败保留。
+- 100／10k／100k无关事件、2条已接受消息及1条delivery的原生SQLite种子，按baseline/candidate/candidate/baseline执行240条样本。每路径完整输出摘要一致；100k下checkpoint准备返回行300018→5、中位277.633→24.001ms，inspect返回行100006→3、中位181.611→11.338ms。这里是返回／解码行，不是SQLite扫描行；多类型查询仍有整段索引扫描残余。
+- 证据、失败及复现范围见 [mailbox-typed-event-queries.md](docs/mailbox-typed-event-queries.md)。CPU／边界RSS及不利范围按原始样本报告；不推断峰值内存、稠密mailbox、并发负载或完整Run收益。G07与G01–G07整体继续active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -689,8 +696,8 @@
 
 **实施任务**
 
-- [ ] 先采样模型调用前处理耗时、SQLite 读行数、JSON 解码 CPU、RSS、文件读取次数和缓存命中。（主 invocation 的固定smoke／100k对照已记录wall／CPU／returned rows／RSS／文件读取与index telemetry，完整范围仍待补齐。）
-- [ ] 复用已有增量投影机制，为 loop guard、mailbox 等引入 watermark / typed-event cursor；保留完整 replay 作为校验基准。（沿用既有loop guard游标，主 invocation新增Run级输入游标并与完整oracle比较；mailbox未覆盖。）
+- [ ] 先采样模型调用前处理耗时、SQLite 读行数、JSON 解码 CPU、RSS、文件读取次数和缓存命中。（主invocation固定smoke／100k及mailbox的100／10k／100k原生对照已记录wall／CPU／returned rows／边界RSS；SQL扫描及JSON解码CPU分项等完整范围仍待补齐。）
+- [ ] 复用已有增量投影机制，为 loop guard、mailbox 等引入 watermark / typed-event cursor；保留完整 replay 作为校验基准。（沿用既有loop guard游标，主invocation新增Run级输入游标；mailbox已按类型查询并与完整replay比较，保留完整child frontier。mailbox增量cursor及更广泛负载尚未验收。）
 - [ ] 记忆索引按变更维护，基于文件摘要缓存校验依赖；候选检索与有效性检查之间保持正确性。
 - [ ] 按模型与任务族消融：计划开关、工具集合、上下文策略、独立验证强度、委派策略。
 - [ ] 优先保留稳定提示前缀和按需工具发现，验证缓存收益与工具召回是否兼容。

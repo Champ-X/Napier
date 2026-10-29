@@ -1,0 +1,667 @@
+{
+  "schemaVersion": 1,
+  "archive": {
+    "file": "mailbox-typed-event-queries-2026-10-30.tar.gz",
+    "sha256": "0cd8559a69cbcdf8beb07ad7543ad8f5157c8a0be3621759a469f13beed845df",
+    "bytes": 9089261
+  },
+  "regression": {
+    "file": "mailbox-typed-event-queries-regression-2026-10-30.json",
+    "sha256": "275b226e944f1562339d22459999e90ac87427ef697443e7f846bc5b30e49543"
+  },
+  "sourceCommit": "a7bd8ebd399243858b6e27a4c09c107b73627c79",
+  "members": [
+    {
+      "path": "config/package-lock.json",
+      "sha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+      "bytes": 182145,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/package-lock.json"
+    },
+    {
+      "path": "config/package.json",
+      "sha256": "4a0b446aac957c711eb335dede9e188edc538b0fdfea975c89a6c455c7aa9577",
+      "bytes": 18146,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/package.json"
+    },
+    {
+      "path": "config/packages/contracts/package.json",
+      "sha256": "7a965487c23233ab6b2445a9ba5489021147bd90dc07e34f716548f798f5a562",
+      "bytes": 4592,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/contracts/package.json"
+    },
+    {
+      "path": "config/packages/contracts/tsconfig.json",
+      "sha256": "ae40c0b8ea329898be2c509314c0702a9f2f243e51ffc6ebc7d47ee4d383bf50",
+      "bytes": 189,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/contracts/tsconfig.json"
+    },
+    {
+      "path": "config/packages/runtime/package.json",
+      "sha256": "75f9af919d89385835fb5c32aa42197c53a3d0810c5f458d575c415a262b4fd1",
+      "bytes": 9464,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/package.json"
+    },
+    {
+      "path": "config/packages/runtime/tsconfig.json",
+      "sha256": "f824e4c28086e99d337fa6e8dd8ce58f798a4720c356438f14543955a912cfb7",
+      "bytes": 253,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/tsconfig.json"
+    },
+    {
+      "path": "config/runtime.json",
+      "sha256": "275afbe2715e34aa7a55132fe2a7873ec49d56a18491012df762a7f3b02285c9",
+      "bytes": 908,
+      "origin": "Captured after measurements from the same node command; binary not archived."
+    },
+    {
+      "path": "config/tsconfig.base.json",
+      "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c",
+      "bytes": 704,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/tsconfig.base.json"
+    },
+    {
+      "path": "config/vitest.config.mts",
+      "sha256": "4ca41826ab82d96937a2813c2461d2bf72d0033b2acd82ac3724053f7f077b70",
+      "bytes": 18021,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/vitest.config.mts"
+    },
+    {
+      "path": "development/new-tests.log",
+      "sha256": "56d7e139e094655dc3245ad5f76288f1f5c6e9acac48d9a0f6759e965674ad71",
+      "bytes": 208,
+      "origin": "/tmp/napier-g07-mailbox-typed-query-tests-20261030.log"
+    },
+    {
+      "path": "diagnostic/sql-plan-probe.json",
+      "sha256": "2cfd18ffe05f18201a586069e9f536ca76e7d4093d00509a95705b53c41cfb4b",
+      "bytes": 4513,
+      "origin": "/tmp/napier-g07-mailbox-sql-plan-probe-20261030.json"
+    },
+    {
+      "path": "diagnostic/sql-plan-probe.mjs",
+      "sha256": "9b5a486e29d45377852f42c6e36e0bbb10301437f392d3b31b369594ef4243d2",
+      "bytes": 2356,
+      "origin": "/tmp/napier-g07-mailbox-sql-plan-probe-20261030.mjs"
+    },
+    {
+      "path": "initial-probe/baseline-source-manifest.json",
+      "sha256": "df87a211d300e4d1af592368ca411e7a0321a081fc1e83401add418c617c0475",
+      "bytes": 1058,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/baseline-source-manifest.json"
+    },
+    {
+      "path": "initial-probe/baseline-v1.test.ts",
+      "sha256": "ec32d60bf43b339730d7dc27f1ce44428cad5fcd8573832067022610eface1c8",
+      "bytes": 7737,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/baseline-v1.test.ts"
+    },
+    {
+      "path": "initial-probe/baseline.test.ts",
+      "sha256": "22271eb6f90a4e21c7a513d635df64042e5c5e2bc22dee2b3853da949a0ae5af",
+      "bytes": 8198,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/baseline.test.ts"
+    },
+    {
+      "path": "initial-probe/focused-v1.log",
+      "sha256": "7dea5c36630f65bc08626e6c10ed77ef32262acab5a73002431de415a97f255c",
+      "bytes": 210,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/focused-v1.log"
+    },
+    {
+      "path": "initial-probe/inspect-explain-v1.json",
+      "sha256": "b7c086280ec4ded5e48310a6d65ea13b6f3b0e3c24306aa2d61c1501a3c52176",
+      "bytes": 639,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/inspect-explain-v1.json"
+    },
+    {
+      "path": "initial-probe/measurements-v2.json",
+      "sha256": "ba006c9fbe9a1bb39039b6f81f7ee51566d3648aace5f3258a8996f7f1db529f",
+      "bytes": 35131,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/measurements-v2.json"
+    },
+    {
+      "path": "initial-probe/result-v1.json",
+      "sha256": "cd83781d622251366186a4d60b0744a502053be5241f61adbfed5040fc86331a",
+      "bytes": 1783,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/result-v1.json"
+    },
+    {
+      "path": "initial-probe/result-v2.json",
+      "sha256": "d868bc936f8c7a52d0a2b3bd848a24c113f3c71d9a141cb69d4097d1f9a7d2e6",
+      "bytes": 912,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/result-v2.json"
+    },
+    {
+      "path": "initial-probe/run-v1.log",
+      "sha256": "808f595456e77d401362f3b2763c80ff36a3845e643a5981fdc2a3b1e28671d8",
+      "bytes": 1785,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/run-v1.log"
+    },
+    {
+      "path": "initial-probe/run-v2.log",
+      "sha256": "83590913497c74fd53da6adbc77908e04cfd6032807e806511f1c42f1b6ac828",
+      "bytes": 418,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/run-v2.log"
+    },
+    {
+      "path": "initial-probe/seed-v2-100-receipt.json",
+      "sha256": "88f8868dbd6416dfe7f606864648323eda3bb31a953ed00e0c55fb17741e1727",
+      "bytes": 195,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/seed-v2-100-receipt.json"
+    },
+    {
+      "path": "initial-probe/seed-v2-10000-receipt.json",
+      "sha256": "2d984054323f9d3ba33736ce9357f28c3ce2ce5c41c0a2ba9d99e694d6166965",
+      "bytes": 201,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/seed-v2-10000-receipt.json"
+    },
+    {
+      "path": "initial-probe/seed-v2-100000-receipt.json",
+      "sha256": "d7f3c9db8c2cfd62b13e609eb0813aeb948b15c9e3221622e894673ba83f0364",
+      "bytes": 204,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/seed-v2-100000-receipt.json"
+    },
+    {
+      "path": "initial-probe/vitest.config.mts",
+      "sha256": "f69517f54478ce3556be2eca5b0d2e7ec4fa16a5b95288f352861ade1ba9175e",
+      "bytes": 312,
+      "origin": "/tmp/napier-g07-mailbox-baseline-20261030/vitest.config.mts"
+    },
+    {
+      "path": "probe/balanced-followups-run-v3.json",
+      "sha256": "f6b990c34e81de9963976736c86a4448c047a86499983975bcfbe07041df49bf",
+      "bytes": 359,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/balanced-followups-run-v3.json"
+    },
+    {
+      "path": "probe/baseline-compile-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-compile-v1.log"
+    },
+    {
+      "path": "probe/baseline-measurements-v1.json",
+      "sha256": "8e2aa031b692e58e6cc2fff96cbe7cb93a9279c73f3d4bc36c4c6f89d36b067d",
+      "bytes": 47402,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-measurements-v1.json"
+    },
+    {
+      "path": "probe/baseline-paired-exploratory-v1.test.ts",
+      "sha256": "1497f8056c806caebebdbc9f0788fd2fe7e7b5b205fec1bd55a96e4aa9f4ea64",
+      "bytes": 5245,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-paired-exploratory-v1.test.ts"
+    },
+    {
+      "path": "probe/baseline-paired-v1.log",
+      "sha256": "7bae9860e734d66b677c98693f0dda4beab07857510d50d069bd96016d512f9a",
+      "bytes": 424,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-paired-v1.log"
+    },
+    {
+      "path": "probe/baseline-paired.test.ts",
+      "sha256": "1629db43c57b42b43cce2cacddac805a46235adf9e8453a951ba3a6a1426c2ba",
+      "bytes": 5336,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-paired.test.ts"
+    },
+    {
+      "path": "probe/baseline-probe-exploratory-v1.config.mts",
+      "sha256": "18a12d002e0a435792a54587c1b694aae9e6d4f795749f91cd02fe705d6a6e46",
+      "bytes": 342,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-probe-exploratory-v1.config.mts"
+    },
+    {
+      "path": "probe/baseline-probe.config.mts",
+      "sha256": "6ff6599d1f84d60665fb804e61a4ca12a99929ba87273448f96e401ee1bbbcd7",
+      "bytes": 394,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-probe.config.mts"
+    },
+    {
+      "path": "probe/baseline-result-v1.json",
+      "sha256": "5c1de5e9fa957f730837d3193ce54e3fd729f71063b7b1fa13afbe3d99cb19fe",
+      "bytes": 898,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-result-v1.json"
+    },
+    {
+      "path": "probe/baseline-round1-measurements-v3.json",
+      "sha256": "6132b106710b8e1d8dfef442777262f8ad2f9d744ed44405964f185c27394c4f",
+      "bytes": 48778,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-round1-measurements-v3.json"
+    },
+    {
+      "path": "probe/baseline-round1-result-v2.json",
+      "sha256": "ef963e66a293671b8d10e9d589b5aa62b3297c129ea045720354c25159d7c3cb",
+      "bytes": 1424,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-round1-result-v2.json"
+    },
+    {
+      "path": "probe/baseline-round1-result-v3.json",
+      "sha256": "5e5e0538f68f634cce89a41c9f8b013cb5ae9e05b6b6f8f21ef0e26e08a1c64d",
+      "bytes": 898,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-round1-result-v3.json"
+    },
+    {
+      "path": "probe/baseline-round1-v2.log",
+      "sha256": "1fc8042d4a7d94e00938427f11651dd3bf7a8a11c104bb35b0e6ff1ab5006c01",
+      "bytes": 1535,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-round1-v2.log"
+    },
+    {
+      "path": "probe/baseline-round1-v3.log",
+      "sha256": "60dd4da8f74ba2e85ab6516e220230ed58d68812bf3acc7c335518cc1a26b4ff",
+      "bytes": 431,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-round1-v3.log"
+    },
+    {
+      "path": "probe/baseline-round4-measurements-v3.json",
+      "sha256": "81b4b5e5767e5a6a733876e192655c5d97c7cd53880d08fa7d62b874a620e2f2",
+      "bytes": 48779,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-round4-measurements-v3.json"
+    },
+    {
+      "path": "probe/baseline-round4-result-v3.json",
+      "sha256": "e62c47ebd269719597b1f83d64d33dcfef9618188e1c8c0735f40363eca8cf6f",
+      "bytes": 898,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-round4-result-v3.json"
+    },
+    {
+      "path": "probe/baseline-round4-v3.log",
+      "sha256": "5b489b9a0616a370f84e645e9becf8c82617d8cf6b4bb7c7ef16965a681b29a3",
+      "bytes": 431,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline-round4-v3.log"
+    },
+    {
+      "path": "probe/candidate-compile-v1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-compile-v1.log"
+    },
+    {
+      "path": "probe/candidate-manifest.json",
+      "sha256": "93f7609ee69f21cd971c9a2d81c352905078efe2e1793b986c5054bc60816b3e",
+      "bytes": 1452,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-manifest.json"
+    },
+    {
+      "path": "probe/candidate-paired-exploratory-v1.test.ts",
+      "sha256": "63830f26233ff1623ce8fda02781fd5e974aebeefa924d1708dcebc703a4bab1",
+      "bytes": 5251,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-paired-exploratory-v1.test.ts"
+    },
+    {
+      "path": "probe/candidate-paired-v1.log",
+      "sha256": "9fd39c3ee224c3239b671acfe71b6be74f7d2ef294611c8c31cf3ca5a2b457a1",
+      "bytes": 1535,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-paired-v1.log"
+    },
+    {
+      "path": "probe/candidate-paired.test.ts",
+      "sha256": "53e6e1daf560d214c2245e5188530c28130a25ff4f04ec9ad49bcb0a9b24777f",
+      "bytes": 5342,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-paired.test.ts"
+    },
+    {
+      "path": "probe/candidate-probe.config.mts",
+      "sha256": "c79115b38d5b6944c3590429657709585f316cbea886e45cb24bffa87cff48d1",
+      "bytes": 397,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-probe.config.mts"
+    },
+    {
+      "path": "probe/candidate-regression-v1.json",
+      "sha256": "12e22c232f06fd475ea97c595c9a9d8671ea6acd76af4e4f46cc3f4e1ddede0d",
+      "bytes": 56542,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-regression-v1.json"
+    },
+    {
+      "path": "probe/candidate-regression-v1.log",
+      "sha256": "099de98a0bece1132d91819991eff34c2c9968c960d5cc1aa279a3f022f14d08",
+      "bytes": 4289,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-regression-v1.log"
+    },
+    {
+      "path": "probe/candidate-regression.config.mts",
+      "sha256": "f8f88db02df488d2be88ce2a808e1fafe544affe966182ca61162325cdf2873a",
+      "bytes": 1280,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-regression.config.mts"
+    },
+    {
+      "path": "probe/candidate-result-v1.json",
+      "sha256": "26e185adb742de5acbfd5d682d61dcc88fdc1694985d2c736c70291c1a7baacb",
+      "bytes": 1428,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-result-v1.json"
+    },
+    {
+      "path": "probe/candidate-round2-measurements-v3.json",
+      "sha256": "6612861a1418fd11b427e786dd48afe788e2fb48d5bea8498bb1a45affdad3be",
+      "bytes": 61340,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-round2-measurements-v3.json"
+    },
+    {
+      "path": "probe/candidate-round2-result-v3.json",
+      "sha256": "d8091138303fc8d64b8966ccca2e59a21331b19ca66ee40155569ea811ac8440",
+      "bytes": 899,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-round2-result-v3.json"
+    },
+    {
+      "path": "probe/candidate-round2-v3.log",
+      "sha256": "1df4fe6c040caf31b04d0e5dec4f464890f49960f3b12a0f016ea2a6c2b4fd5e",
+      "bytes": 433,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-round2-v3.log"
+    },
+    {
+      "path": "probe/candidate-round3-measurements-v3.json",
+      "sha256": "af66efef64502461718a18bc9cd37f08c9b16f55ff6f0b2bff44fd847836d053",
+      "bytes": 61345,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-round3-measurements-v3.json"
+    },
+    {
+      "path": "probe/candidate-round3-result-v3.json",
+      "sha256": "979ac352faad375407cd75df8d259e614e9b623f03409f914b2b2b3dcf23f7c2",
+      "bytes": 898,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-round3-result-v3.json"
+    },
+    {
+      "path": "probe/candidate-round3-v3.log",
+      "sha256": "329f0b84d96a75a8f0fc76b3e266d2271de9ab543cf7cc1b2bec2d2ca31f86f6",
+      "bytes": 433,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate-round3-v3.log"
+    },
+    {
+      "path": "probe/evidence-manifest-v3.json",
+      "sha256": "4024f49fb8f4771cf527048b0e96c3f427a0c3731b6bd07f8f1af33b2832af75",
+      "bytes": 4819,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/evidence-manifest-v3.json"
+    },
+    {
+      "path": "probe/make-probes.py",
+      "sha256": "de2044b3a2a966143a441ebae032d19d025c9ca541bbc31ee6ea4988cdbe4113",
+      "bytes": 6962,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/make-probes.py"
+    },
+    {
+      "path": "probe/new-test-regression-v2.json",
+      "sha256": "fe0562606f3297c91ced8186ecfa2e92c70e7c7974993ac2b4f3cc735cff1c6d",
+      "bytes": 3622,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/new-test-regression-v2.json"
+    },
+    {
+      "path": "probe/new-test-regression-v2.log",
+      "sha256": "5fb51f9b94f8be4e1de05e7539b34defffd2411a80a2d8a07d8630c7f3b916b9",
+      "bytes": 404,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/new-test-regression-v2.log"
+    },
+    {
+      "path": "probe/new-test-strict-v2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/new-test-strict-v2.log"
+    },
+    {
+      "path": "probe/production-source-manifest.json",
+      "sha256": "01044f161fcb3362647153f039a80fe884521f9a84a4cb494a787426fe4120b4",
+      "bytes": 1219,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/production-source-manifest.json"
+    },
+    {
+      "path": "probe/review-receipt-v3.json",
+      "sha256": "78ac22bc622e089988de900594fba72d882b139fa057ef26420ee272d2b7185c",
+      "bytes": 20373,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/review-receipt-v3.json"
+    },
+    {
+      "path": "probe/seed-probe.config.mts",
+      "sha256": "2ec5ffff07751bf45216aa9de433f7b6d69cdc4b15f67077d4fa37b86544ba72",
+      "bytes": 327,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-probe.config.mts"
+    },
+    {
+      "path": "probe/seed-result-v1.json",
+      "sha256": "a3f7ff26fa525877ae67e5ef7299e1b80c80997abdb8c5279211ad5490ee5ca0",
+      "bytes": 898,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-result-v1.json"
+    },
+    {
+      "path": "probe/seed-result-v3.json",
+      "sha256": "40a2dbc6ef7ad32dde669b8a90b6a206e4e8e6f31412525f979225ff54f11594",
+      "bytes": 905,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-result-v3.json"
+    },
+    {
+      "path": "probe/seed-run-v1.log",
+      "sha256": "40daa9ba60f6203c806b77e99d5132bb4b9ed9ffdb0f23a4597c949d646fa8fb",
+      "bytes": 413,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-run-v1.log"
+    },
+    {
+      "path": "probe/seed-run-v3.log",
+      "sha256": "2850f0a42f24fced7f9e71308d27d65078d0b06c6133b43c221ec2ffd3206b8d",
+      "bytes": 413,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-run-v3.log"
+    },
+    {
+      "path": "probe/seed-v1.test.ts",
+      "sha256": "081ba4e311c63d67e121ae24647662e24e091a600ddf1b38276b969a50a44a7b",
+      "bytes": 4736,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-v1.test.ts"
+    },
+    {
+      "path": "probe/seed.test.ts",
+      "sha256": "08e4e90521b3822502e10af218fa35693af660622a380f2d6c77dcbe30cf9292",
+      "bytes": 4934,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed.test.ts"
+    },
+    {
+      "path": "probe/summarize-v3.py",
+      "sha256": "dc8a4788f557b1b110f42ec58b4e66a2b114b55071ba189218bae8a40453caa7",
+      "bytes": 6932,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/summarize-v3.py"
+    },
+    {
+      "path": "probe/test-paths.json",
+      "sha256": "6b4c7d8e4ce4b5a3cbb28e64821554c239a993e3e219a27724caabded0cb4b31",
+      "bytes": 1054,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/test-paths.json"
+    },
+    {
+      "path": "root-review/architecture-working.log",
+      "sha256": "8a0933141e076e7b7437ebd39422ad410215655f8918324810b60d88cb20667b",
+      "bytes": 777,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/architecture-working.log"
+    },
+    {
+      "path": "root-review/baseline-architecture.log",
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/baseline-architecture.log"
+    },
+    {
+      "path": "root-review/baseline-user-overlay-architecture.log",
+      "sha256": "8a0933141e076e7b7437ebd39422ad410215655f8918324810b60d88cb20667b",
+      "bytes": 777,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/baseline-user-overlay-architecture.log"
+    },
+    {
+      "path": "root-review/candidate-architecture.log",
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/candidate-architecture.log"
+    },
+    {
+      "path": "root-review/gates.json",
+      "sha256": "569dafa29f8ef53dcaca164e520e00e8031e6960c5bc40b357dd69e8740139ae",
+      "bytes": 5165,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/gates.json"
+    },
+    {
+      "path": "root-review/public-api-working.log",
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/public-api-working.log"
+    },
+    {
+      "path": "root-review/scripts/check-architecture.mjs",
+      "sha256": "a25b9cee3bc44762be439bf77bdfbe0e1b30034182240a752c94ee86529a2948",
+      "bytes": 15657,
+      "origin": "/Users/champ/orca/Napier/scripts/check-architecture.mjs"
+    },
+    {
+      "path": "root-review/scripts/check-public-api.mjs",
+      "sha256": "88260f3315457eb21487a8a062a7200cde0e602ca9421c2415f152b43fc79783",
+      "bytes": 6503,
+      "origin": "/Users/champ/orca/Napier/scripts/check-public-api.mjs"
+    },
+    {
+      "path": "root-review/source-commit.json",
+      "sha256": "755896879156264f19b3f4e83cf7b7377d6a6d10bd30144f0991b43ad8a02166",
+      "bytes": 1924,
+      "origin": "/tmp/napier-g07-mailbox-root-source-commit-20261030.json"
+    },
+    {
+      "path": "root-review/strict-result.json",
+      "sha256": "7cb24efb5476d374b93172e2898fa1f3771b8be28d87aa0e9d092d3b44623e1b",
+      "bytes": 1853,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/strict-result.json"
+    },
+    {
+      "path": "root-review/strict.json",
+      "sha256": "d118dd698788994b1509bac57021102436f5083a580894ab8c582345709daf86",
+      "bytes": 568,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/strict.json"
+    },
+    {
+      "path": "root-review/strict.log",
+      "sha256": "ae0ea2ecfc6e3f25874505916af6d7a6979aaa35954faa7b7f9741df5243ed99",
+      "bytes": 487,
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/strict.log"
+    },
+    {
+      "path": "seeds/100/ledger.sqlite",
+      "sha256": "06e43db20d55d6cd039fa147999035c228e13ebacd4278c53fc7cb674ea69ac6",
+      "bytes": 249856,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-v3-100/ledger.sqlite"
+    },
+    {
+      "path": "seeds/10000/ledger.sqlite",
+      "sha256": "aa11004baa92e8cc9663d30dfdafaca95a5f405c65286fbe046f08e23ac49472",
+      "bytes": 8900608,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-v3-10000/ledger.sqlite"
+    },
+    {
+      "path": "seeds/100000/ledger.sqlite",
+      "sha256": "08cc8002f6040d3175a8c1107ea4d92a645e962a2bbbf60e8049b681128b3170",
+      "bytes": 88641536,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/seed-v3-100000/ledger.sqlite"
+    },
+    {
+      "path": "semantics/constraints.md",
+      "sha256": "e7cb742e55d4c47cca545ec22bd971234568542a801d7ea8599a7b2af13babb7",
+      "bytes": 10651,
+      "origin": "/tmp/napier-g07-mailbox-semantics-review-20261030/constraints.md"
+    },
+    {
+      "path": "semantics/source-manifest.json",
+      "sha256": "aee78c174612e96f93842341566489d4d5f9bf207218eb6b86e0ac51a9420b96",
+      "bytes": 3650,
+      "origin": "/tmp/napier-g07-mailbox-semantics-review-20261030/source-manifest.json"
+    },
+    {
+      "path": "source/baseline/packages/runtime/src/in-process-subagent-provider.ts",
+      "sha256": "bb8c26eec673db25245aea14b0b7ff84360fd0b9b267829dd6d662424e79840c",
+      "bytes": 15045,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline/packages/runtime/src/in-process-subagent-provider.ts"
+    },
+    {
+      "path": "source/baseline/packages/runtime/src/subagent-checkpoint-repository.ts",
+      "sha256": "27b6b79a4e801c5d5cfad236be5eb9c3ef367b44e23edbdbe08504f3c9499462",
+      "bytes": 7063,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline/packages/runtime/src/subagent-checkpoint-repository.ts"
+    },
+    {
+      "path": "source/baseline/packages/runtime/src/subagent-child-run-fence.ts",
+      "sha256": "60b076632b5fd1a3df4aada1332619158bdc7c885c26b09f10d691721d1ff4c9",
+      "bytes": 3191,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline/packages/runtime/src/subagent-child-run-fence.ts"
+    },
+    {
+      "path": "source/baseline/packages/runtime/src/subagent-child-run-host.ts",
+      "sha256": "34665870228f8cecbba6acbea89d10948f7b0c4f40c7adb910233db8d13ae40a",
+      "bytes": 911,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline/packages/runtime/src/subagent-child-run-host.ts"
+    },
+    {
+      "path": "source/baseline/packages/runtime/src/subagent-continuation-mailbox.ts",
+      "sha256": "1f192f9cf3a14250ac470b5a84cbce4cdca8ce34b24b3a08a3a7ab28873ed93b",
+      "bytes": 2811,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline/packages/runtime/src/subagent-continuation-mailbox.ts"
+    },
+    {
+      "path": "source/baseline/packages/runtime/src/subagent-mailbox-state.ts",
+      "sha256": "c764d3e7429917a2469a14ca7cf07ab2be6dd69a6cef17075c28fd3a8bfb78ee",
+      "bytes": 5658,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline/packages/runtime/src/subagent-mailbox-state.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/in-process-subagent-provider.ts",
+      "sha256": "1f410d4690cc2285a3ac6aea71dedf4e360a15cde8b4c50592fee3e5eb26bedd",
+      "bytes": 15147,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/src/in-process-subagent-provider.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/subagent-checkpoint-repository.ts",
+      "sha256": "3630f9e3bbbcec1a97c9fef305f2b3be20a8261c3ef45beaf76c7e204b394e86",
+      "bytes": 7093,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/src/subagent-checkpoint-repository.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/subagent-child-run-fence.ts",
+      "sha256": "e87b013eb7897b3618f3bba2b392a0cec7126b6c5b4663c246787e9050f6e4e3",
+      "bytes": 3275,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/src/subagent-child-run-fence.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/subagent-child-run-host.ts",
+      "sha256": "f82d76901aefbf90d39e7b1807abb4479464c19c8d54f4881e40513b0a3a8ae0",
+      "bytes": 979,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/src/subagent-child-run-host.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/subagent-continuation-mailbox.ts",
+      "sha256": "465337a8a083a69025d09d49d9ce26c4f04925bdcdfcdf86bc86b311de467a7e",
+      "bytes": 3039,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/src/subagent-continuation-mailbox.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/subagent-mailbox-events.ts",
+      "sha256": "9d485aa7a07eedee7cfbfcabe3c9f296238615b8670cec1e1456e1a88c00f2ec",
+      "bytes": 1469,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/src/subagent-mailbox-events.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/subagent-mailbox-state.ts",
+      "sha256": "6c74fc67447fd2bed470f1a17700933b644dad6ae3a852d7dca7df58420d6640",
+      "bytes": 5763,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/src/subagent-mailbox-state.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/test/subagent-mailbox-typed-query.test.ts",
+      "sha256": "79e9444f8a9f593d1a5a324bbdcd6f5e2736bf949a5e94ec0c6395a69f493b64",
+      "bytes": 12509,
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/candidate/packages/runtime/test/subagent-mailbox-typed-query.test.ts"
+    },
+    {
+      "path": "source/pre-guard/subagent-mailbox-typed-query.test.ts",
+      "sha256": "8635b6b39587a9a03734d972ff2f5eb54d520cadc94205ea8a23f43a46bf716f",
+      "bytes": 12370,
+      "origin": "Reconstructed by reversing only the guarded JsonValue assertion; SHA256 matches original root strict-result.json and reviewer receipt."
+    },
+    {
+      "path": "verification/owner-command-results.json",
+      "sha256": "929d3e27533ee01514aafd77464decfa7e40c465aad7fac4f078a313b564a156",
+      "bytes": 520,
+      "origin": "Owner observed command results; raw reports are separately archived."
+    }
+  ],
+  "reconciler": {
+    "file": "mailbox-typed-event-queries-reconcile-2026-10-30.py",
+    "sha256": "417519720cf9c0315b6c074171efe998add4c497b8763fb73cd667614d57d8a5"
+  }
+}
