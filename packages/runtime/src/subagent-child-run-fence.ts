@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { SubagentTask } from "@napier/contracts";
 import { sha256 } from "./ed25519.js";
-import { durableTerminalRunStatus } from "./run-event-admission.js";
+import { durableTerminalRunStatus, RUN_TERMINAL_EVENT_TYPES } from "./run-event-admission.js";
 import type { ChildPersistedRun, SubagentChildRunHost } from "./subagent-child-run-host.js";
 import type { SubagentChildRunFence, SubagentChildRunState } from "./subagent-execution-fence-types.js";
 
@@ -24,7 +24,7 @@ export function assertChildRunFence(
     fail("Child Run execution binding is invalid");
   assertLease(run, input.token);
   if (run.status !== "running" || task.status !== "running" ||
-      durableTerminalRunStatus(host.requireLedger().listRunEvents(run.id), run.threadId, run.id))
+      durableTerminalRunStatus(host.requireLedger().listRunEvents(run.id, 0, RUN_TERMINAL_EVENT_TYPES), run.threadId, run.id))
     fail("Child Run execution is no longer active");
   if (options.checkRevision !== false && input.expectedExecutionRevision !== undefined &&
       input.expectedExecutionRevision !== owner.executionRevision)
@@ -47,7 +47,7 @@ function assertParentActive(host: SubagentChildRunHost, run: ChildPersistedRun):
     if (!parent || parent.status !== "running" ||
         (parent.lease && Date.parse(parent.lease.expiresAt) <= Date.now()) ||
         parent.configuration?.contentSha256 !== run.subagent!.parentConfigurationSha256 ||
-        durableTerminalRunStatus(host.requireLedger().listRunEvents(parent.id), parent.threadId, parent.id))
+        durableTerminalRunStatus(host.requireLedger().listRunEvents(parent.id, 0, RUN_TERMINAL_EVENT_TYPES), parent.threadId, parent.id))
       fail("Child Run parent is no longer active");
 }
 

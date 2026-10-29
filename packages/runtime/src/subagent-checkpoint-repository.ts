@@ -58,7 +58,8 @@ export class SubagentCheckpointRepository {
       if (canonicalJson(frontier) !== canonicalJson(proposed.frontier))
         throw new Error("Child checkpoint execution or ledger frontier changed");
       assertPreviousCheckpoint(proposed, previous, run.subagent!.checkpoint?.capsuleSha256 ?? run.subagent!.continuation?.sourceCapsuleSha256);
-      assertChildCheckpointTranscript(proposed, run, task, events, this.host.requireLedger().listRunEvents(task.runId), inherited);
+      assertChildCheckpointTranscript(proposed, run, task, events,
+        this.host.requireLedger().listRunEvents(task.runId, 0, ["subagent.step"]), inherited);
       if (run.subagent!.checkpoint) assertPreviousChildCheckpoint(frontier, run.subagent!.checkpoint, previous);
       const accepted = continuationMailbox(this.host, run, task).accepted;
       const priorConsumed = !run.subagent!.checkpoint && inherited ? inheritConsumedMailbox(inherited.mailbox.entries,

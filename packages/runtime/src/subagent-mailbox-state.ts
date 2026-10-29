@@ -3,6 +3,7 @@ import type { SubagentMessage } from "@napier/contracts/subagent-supervisor";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { durableTerminalRunStatus } from "./run-event-admission.js";
 import type { SubagentChildRunHost } from "./subagent-child-run-host.js";
+import { listSubagentMailboxAdmissionEvents } from "./subagent-mailbox-events.js";
 import type { AcceptSubagentMessageInput, AcceptSubagentMessageResult, SubagentMailboxAcceptedBinding,
   SubagentMailboxConsumedBinding } from "./subagent-working-set-types.js";
 
@@ -65,7 +66,7 @@ export async function acceptSubagentMessage(host: SubagentChildRunHost,
   return host.stateQueue.run(async () => {
     const task = host.state.subagents.find((candidate) => candidate.id === input.taskId);
     if (!task || task.executionId !== input.executionId) throw new Error("Subagent mailbox execution binding is invalid");
-    const parentEvents = host.requireLedger().listRunEvents(task.runId);
+    const parentEvents = listSubagentMailboxAdmissionEvents(host.requireLedger(), task.runId);
     const prior = parentEvents.find((event) => event.type === "subagent.message.accepted" &&
       record(event.payload)?.["id"] === input.message.id);
     if (prior) {

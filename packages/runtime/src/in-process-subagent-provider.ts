@@ -16,6 +16,7 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import { SubagentExecutionControl } from "./subagent-execution-control.js";
 import { projectSubagentMailbox } from "./subagent-mailbox-projection.js";
+import { listThreadSubagentMailboxEvents } from "./subagent-mailbox-events.js";
 import {
   normalizeSubagentOutputSchema,
   subagentOutputSchemaSha256,
@@ -163,7 +164,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
   async inspect(handle: SubagentHandle): Promise<SubagentSnapshot> {
     const task = this.requireTask(handle);
     const mailbox = projectSubagentMailbox(task, this.options.store.listSubagentTasks(task.threadId),
-      await this.options.store.listEvents(task.threadId));
+      await listThreadSubagentMailboxEvents(this.options.store, task.threadId));
     return {
       kind: "napier.subagent-snapshot",
       schemaVersion: 1,

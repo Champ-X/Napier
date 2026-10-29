@@ -2,6 +2,7 @@ import type { RunRecord, SubagentTask } from "@napier/contracts";
 import type { SubagentMessage } from "@napier/contracts/subagent-supervisor";
 import type { SubagentChildRunHost } from "./subagent-child-run-host.js";
 import { acceptedSubagentMailbox, validateSubagentMailboxMessage } from "./subagent-mailbox-state.js";
+import { listAcceptedSubagentMailboxEvents } from "./subagent-mailbox-events.js";
 import type { SubagentMailboxAcceptedBinding, SubagentMailboxConsumedBinding } from "./subagent-working-set-types.js";
 
 export function continuationMailbox(host: SubagentChildRunHost, run: RunRecord, task: SubagentTask) {
@@ -21,10 +22,14 @@ export function continuationMailbox(host: SubagentChildRunHost, run: RunRecord, 
   const accepted: SubagentMailboxAcceptedBinding[] = [];
   const messages = new Map<string, SubagentMessage>();
   for (const source of sources) {
-    const events = host.requireLedger().listRunEvents(source.runId);
+    const events = listAcceptedSubagentMailboxEvents(host.requireLedger(), source.runId);
+    const bySeq = new Map<number, (typeof events)[number]>();
+    for (const event of events) {
+      if (event.type === "subagent.message.accepted" && !bySeq.has(event.seq)) bySeq.set(event.seq, event);
+    }
     for (const entry of acceptedSubagentMailbox(events, source)) {
       if (messages.has(entry.id)) throw new Error("Child mailbox inherited identity is ambiguous");
-      const event = events.find((candidate) => candidate.type === "subagent.message.accepted" && candidate.seq === entry.acceptedSeq)!;
+      const event = bySeq.get(entry.acceptedSeq)!;
       messages.set(entry.id, validateSubagentMailboxMessage(event.payload, source.id));
       accepted.push(source.id === task.id ? entry : { ...entry, originTaskId: source.id, originParentRunId: source.runId });
     }
