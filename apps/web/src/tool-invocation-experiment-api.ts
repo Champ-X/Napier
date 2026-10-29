@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import type {
   CreateToolInvocationExperimentRequest,
   StreamFrame,
@@ -33,7 +34,7 @@ export async function previewToolInvocationExperiment(
   signal?: AbortSignal,
 ): Promise<ToolInvocationExperimentPreview> {
   const path = experimentPath(threadId, true);
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -84,7 +85,7 @@ export async function executeToolInvocationExperiment(
   ) {
     throw new Error("Tool invocation experiment execution preview is stale");
   }
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

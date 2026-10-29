@@ -27,6 +27,11 @@ export type RebindWorkspace = (
   absoluteRoot: string,
 ) => Promise<WorkspaceSummary>;
 
+export interface WorkspaceRootBindingOptions {
+  rebindWorkspace?: RebindWorkspace;
+  independentWorkspaces?: boolean;
+}
+
 interface WorkspaceRootHttpServices {
   store: Pick<LocalStore, "getWorkspaceSummary" | "listThreads" | "listRuns">;
 }
@@ -35,6 +40,7 @@ export function registerWorkspaceRootHttp(
   app: Hono,
   services: WorkspaceRootHttpServices,
   rebindWorkspace?: RebindWorkspace,
+  independentWorkspaces = false,
 ): void {
   // The folder picker's directory browser shares this "change the workspace
   // root" surface, so it is mounted here rather than in app.ts.
@@ -87,12 +93,12 @@ export function registerWorkspaceRootHttp(
       }
       throw error;
     }
-    if (resolvedRoot === currentRoot) {
+    if (resolvedRoot === currentRoot && !independentWorkspaces) {
       const summary = services.store.getWorkspaceSummary();
       setBodyContentSha256Header(context, summary);
       return context.json(summary, 200);
     }
-    const busy = workspaceRebindBusyReasons(services.store);
+    const busy = independentWorkspaces ? [] : workspaceRebindBusyReasons(services.store);
     if (busy.length > 0) {
       return jsonError(context, `Workspace is busy: ${busy.join("; ")}`, 409);
     }

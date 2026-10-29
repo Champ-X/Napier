@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import { throwNapierApiError } from "./api-error";
 import {
   ledgerEventReceiptFromHeaders,
@@ -57,7 +58,7 @@ async function requestPlanArtifactFilePreview(
   peek: boolean,
 ): Promise<PlanArtifactFilePreview | PlanArtifactFilePreviewReceipt> {
   const endpoint = `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/preview-file`;
-  const response = await fetch(peek ? `${endpoint}/peek` : endpoint);
+  const response = await workspaceFetch(peek ? `${endpoint}/peek` : endpoint);
   if (!response.ok)
     await throwNapierApiError(
       response,

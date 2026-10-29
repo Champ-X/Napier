@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import type { MessageSkillResourceLink } from "./message-markdown";
 import {
   readFilePreviewResponse,
@@ -14,6 +15,6 @@ export async function previewSkillResource(
     rootKind: reference.rootKind,
     sha256: reference.rawContentSha256,
   }).toString()}`;
-  const response = await fetch(endpoint, signal ? { signal } : undefined);
+  const response = await workspaceFetch(endpoint, signal ? { signal } : undefined);
   return readFilePreviewResponse(response, endpoint, reference.virtualPath);
 }

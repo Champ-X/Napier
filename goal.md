@@ -204,6 +204,15 @@
 - Server typecheck、diff check 通过；架构仍为原有 10 项失败，无新增超限。实现与限制见 [workspace-runtime-registry.md](docs/workspace-runtime-registry.md)，源码绑定收据见 [workspace-runtime-registry-2026-10-29.json](docs/artifacts/workspace-runtime-registry-2026-10-29.json)。
 - **尚未接入生产 index.ts／Web 切换**；完整后台义务策略、全局执行／预算协调、预览与 HTML 子资源的归属、浏览器切换及进程恢复验收仍待完成。当前新增基础通过不等于 G05-B 交付，G01–G07 全范围继续保持 active。
 
+### 后续推进：G05-B 生产入口、Web 绑定与导航
+
+- 从 `main @ 647920e5` 继续，保留用户前端／文档／启动脚本改动，未 push。生产入口改为稳定 host，按持久身份恢复各工作区及自定义 dataRoot；UI 选择不再暂停／替换后台 graph。最近工作区与 catalog 使用同一 stateHome，启动校验失败关闭 catalog，恢复失败可查询并定时重试。
+- Web 文档绑定 `?workspace=<id>`，所有 fetch、SSE、控制、预览、HTML 子资源、本地图片、截图和生成的 webhook 地址显式归属工作区。切换采用完整同源导航；旧文档异步回调仍绑定 A，连续选择只接受最后一次结果。显式工作区链接不跨 ledger 搜索；旧 thread-only 链接的 404 恢复遇到多个匹配时拒绝猜测。原有文本／mode 持久草稿与图片内存生命周期保持。
+- 生命周期保护 queued/running Run、未来定时任务、活跃频道及待投递消息、恢复义务、浏览器任务和订阅；普通空闲 graph 可回收并从原账本重开。rotation 订阅／审批基线因缺少完整 pending 索引仍保守常驻，不宣称全部空闲资源均已可回收。
+- Server 7 文件 33 测试、Web 17 文件 157 测试、Markdown／automation 渲染 2 文件 7 测试通过；Server/Web build、Web design contract、diff check 通过。架构保留原有 10 项失败，公开 API 保留原 1897/1896 与 compatibility digest 失败；app 行数预算随职责缩减降至 2978，未提高预算。
+- 当前构建在 1440/320px 真实浏览器中：A 运行时从侧栏切到复制了相同 threadId 的 B 并提交新任务；B 完成时 A 继续，B 的 stop 不影响 A，A 自动化实际完成。B HTML 相对脚本和同名 Markdown 图片均来自 B；0 page error、0 成功响应身份错配、0 横向溢出。A 完成后独立生产 index 进程重开两边历史与自定义账本。外部模型请求 0；HTML 交互采用既有 DOM click 边界。收据：[workspace-runtime-integration-2026-10-29.json](docs/artifacts/workspace-runtime-integration-2026-10-29.json)，包含保留的用户前端改动，不是干净提交发布证明。
+- G05-B 尚需全局并发／预算协调、运行中任务跨进程崩溃恢复、多工作区审批／review 浏览器验收及细化 rotation 回收。仅勾选注册表与显式寻址实现项，未宣称 G05-B 或 G01–G07 总目标完成。下一步继续资源协调与进程恢复验收。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -386,8 +395,8 @@
 
 **实施任务**
 
-- [ ] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。
-- [ ] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。
+- [x] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。（生产 host 已接入；持久身份、自定义账本与恢复失败重试已实现。）
+- [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 threadId、预览资源与后台自动化已覆盖；审批／review 场景另列待验收。）
 - [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。
 - [ ] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。
 

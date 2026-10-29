@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import type {
   AgentMessageExperimentPreview,
   AgentMessageExperimentResultFrame,
@@ -38,7 +39,7 @@ export async function previewAgentMessageExperiment(
   signal?: AbortSignal,
 ): Promise<AgentMessageExperimentPreview> {
   const path = experimentPath(threadId, true);
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -95,7 +96,7 @@ export async function executeAgentMessageExperiment(
   ) {
     throw new Error("Agent message experiment execution preview is stale");
   }
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

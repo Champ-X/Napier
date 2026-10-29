@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import {
   BROWSER_LIVE_STREAM_MAX_IMAGE_BYTES,
   BROWSER_LIVE_STREAM_MAX_SAMPLES,
@@ -31,7 +32,7 @@ export async function streamBrowserLiveViews(
   signal?: AbortSignal,
 ): Promise<BrowserLiveViewStreamTerminal> {
   const path = `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/browser-live-view/stream`;
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     cache: "no-store",
     headers: { Accept: "text/event-stream" },
     ...(signal ? { signal } : {}),

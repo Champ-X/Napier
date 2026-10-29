@@ -13,6 +13,7 @@ import type {
 } from "@napier/contracts";
 
 import { automationCopy as copy } from "./automation-copy";
+import { workspaceApiUrl } from "./workspace-api-binding";
 import { formatAutomationDuration } from "./automation-panel-helpers";
 import type { AutomationChannelCardEditorController } from "./use-automation-channel-card-editor";
 
@@ -56,7 +57,7 @@ export function AutomationChannelSummary({
           {channel.status === "active" ? copy.active : copy.paused}
         </span>
       </header>
-      <code>/api/channels/{channel.id}/inbound</code>
+      <code>{workspaceApiUrl(`/api/channels/${encodeURIComponent(channel.id)}/inbound`)}</code>
       <p>
         {copy.fingerprint}: {channel.tokenFingerprint}
       </p>

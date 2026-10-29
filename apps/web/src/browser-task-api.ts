@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import { requestJsonWithResponse } from "./api-client";
 import { throwNapierApiError } from "./api-error";
 import { parseBrowserTaskEvent } from "./browser-task-event-api";
@@ -85,7 +86,7 @@ export async function streamBrowserTask(
   onEvent: (event: BrowserTaskApiEvent) => void,
   signal?: AbortSignal,
 ): Promise<Extract<BrowserTaskApiEvent, { type: "completed" | "error" }>> {
-  const response = await fetch(created.streamUrl, {
+  const response = await workspaceFetch(created.streamUrl, {
     cache: "no-store",
     headers: { Accept: "text/event-stream" },
     ...(signal ? { signal } : {}),

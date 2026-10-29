@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import type { WorkflowRecoveryCheckpoint } from "@napier/contracts/workflow-recovery";
 import { throwNapierApiError } from "./api-error";
 import { validateWorkflowResult } from "./workflow-result-web-protocol";
@@ -27,7 +28,7 @@ export async function getWorkflowRecovery(
   signal?: AbortSignal,
 ): Promise<WorkflowRecoveryCheckpoint> {
   const url = endpoint(threadId, planId);
-  const response = await fetch(url, {
+  const response = await workspaceFetch(url, {
     cache: "no-store",
     ...(signal ? { signal } : {}),
   });
@@ -63,7 +64,7 @@ export async function recoverWorkflow(checkpoint: WorkflowRecoveryCheckpoint) {
   if (checkpoint.status !== "ready" || !checkpoint.checkpointSha256)
     throw new Error("Workflow checkpoint is not ready");
   const url = endpoint(checkpoint.threadId, checkpoint.planId);
-  const response = await fetch(url, {
+  const response = await workspaceFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ checkpointSha256: checkpoint.checkpointSha256 }),

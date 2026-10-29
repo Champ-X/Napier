@@ -51,7 +51,6 @@ import {
   previewExtensionPackageRolloutChannel as previewExtensionPackageRolloutChannelApi,
   previewExtensionPackageUpdate as previewExtensionPackageUpdateApi,
   publishExtensionPackageRolloutChannel as publishExtensionPackageRolloutChannelApi,
-  rebindWorkspaceRoot,
   reviewMemory,
   reviewExtension,
   reviewMcpTool,
@@ -69,7 +68,7 @@ import {
   verifyThreadReplayBundle as verifyThreadReplayBundleApi,
   type WebThreadDetail,
 } from "./api";
-import { getBootstrap, getBootstrapRestoringWorkspace } from "./bootstrap-api";
+import { getBootstrap, getBootstrapRestoringWorkspace, navigateWorkspaceRoot } from "./bootstrap-api";
 import { contextCheckpointPayload } from "./context-checkpoint-payload";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
@@ -384,53 +383,7 @@ export function useWorkspaceViewModel() {
     async (root: string, threadId?: string): Promise<void> => {
       setError(undefined);
       try {
-        await rebindWorkspaceRoot(root);
-        const result = await getBootstrap(threadId);
-        threadDetailCacheRef.current.clear();
-        if (result.activeThread)
-          threadDetailCacheRef.current.set(
-            result.activeThread.thread.id,
-            result.activeThread,
-          );
-        setThreadRunSessions({});
-        setBootstrap(result);
-        setDetail(result.activeThread);
-        commitThreadLocation(
-          setSelectedThreadId,
-          result.activeThread?.thread.id,
-        );
-        setSelectedModelKey(modelKey(result.recommendedRunModel));
-        [
-          setGoalDraft,
-          setMemoryDraft,
-          setLabLeftRunId,
-          setLabRightRunId,
-        ].forEach((reset) => reset(""));
-        [
-          setMemorySupersedesId,
-          setRunComparison,
-          setRunReplayVerificationReceipt,
-          setLabFixtureReceipt,
-          setTraceExportReceipt,
-          setTraceVerificationReceipt,
-          setExtensionBusyId,
-          setExtensionPackageReceipt,
-          setExtensionPackageUpdatePreview,
-          setExtensionPackageUpdateEnvelope,
-          setExtensionPackageDeploymentPreview,
-          setExtensionPackageDeploymentEnvelopes,
-          setExtensionPackageRolloutPreview,
-          setLabBusyAction,
-        ].forEach((reset) => reset(undefined));
-        [
-          setTraceExportBusy,
-          setTraceVerifyBusy,
-        ].forEach((reset) => reset(false));
-        setMemoryConsolidatesIds([]);
-        setMemoryCategory("context");
-        setMemoryScope("workspace");
-        setMemoryReviewIntervalDays(90);
-        setInspectorTab("plan");
+        await navigateWorkspaceRoot(root, threadId);
       } catch (cause) {
         setError(toErrorMessage(cause));
         throw cause;

@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import {
   parseVerifiedJson,
   requireNapierContentHash,
@@ -22,7 +23,7 @@ export async function requestJsonWithResponse<T>(
   path: string,
   init?: RequestInit,
 ): Promise<NapierJsonResponse<T>> {
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     ...init,
     headers: {
       "Content-Type": "application/json",

@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import type {
   CreateExecutionPlanWorkflowExperimentRequest,
   ExecutionPlanWorkflowExperimentPreview,
@@ -41,7 +42,7 @@ export async function previewWorkflowExperiment(
   signal?: AbortSignal,
 ): Promise<ExecutionPlanWorkflowExperimentPreview> {
   const path = experimentPath(threadId, planId, true);
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -120,7 +121,7 @@ export async function executeWorkflowExperiment(
   ) {
     throw new Error("Workflow experiment execution preview is stale");
   }
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

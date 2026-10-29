@@ -1,6 +1,7 @@
 import { filePreviewContentType } from "@napier/contracts/file-preview";
 import type { MouseEvent, ReactNode } from "react";
 import { FileCode2 } from "lucide-react";
+import { workspaceApiUrl } from "./workspace-api-binding";
 
 import type { ArtifactInspection } from "./artifact-inspection";
 import type {
@@ -468,7 +469,7 @@ export function messageImageSource(
   if (!isWorkspaceImageReference(imagePath)) return undefined;
   const query = new URLSearchParams({ path: imagePath });
   if (document?.threadId) query.set("threadId", document.threadId);
-  return `/api/workspace/file?${query.toString()}`;
+  return workspaceApiUrl(`/api/workspace/file?${query.toString()}`);
 }
 
 export function isWorkspaceImageReference(value: string): boolean {
@@ -493,8 +494,6 @@ export function isWorkspaceFileReference(value: string): boolean {
   }
   const filename = normalized.split("/").at(-1);
   return Boolean(
-    filename &&
-    !filename.startsWith(".") &&
-    WORKSPACE_FILE_EXTENSION.test(filename),
+    filename && !filename.startsWith(".") && WORKSPACE_FILE_EXTENSION.test(filename),
   );
 }

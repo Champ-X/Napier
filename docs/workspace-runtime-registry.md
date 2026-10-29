@@ -1,8 +1,10 @@
 # Workspace Runtime Registry
 
-Status: G05-B infrastructure implemented and exercised with real HTTP/Runtime
-integration. **The production `index.ts` and Web client still use the previous
-workspace swap implementation. This is not completed multi-workspace delivery.**
+Status: the production `index.ts` and Web client now use the registry. Current
+HTTP/Runtime and browser evidence covers independent A/B execution, navigation,
+background automation, preview resources, and reopening completed histories in a
+new production process. **G05-B remains incomplete: global resource/budget
+coordination and active execution recovery after process death need acceptance.**
 
 ## Identity and ownership
 
@@ -30,22 +32,28 @@ other programs, old servers, or separately configured state directories.
 The registry has no selected-workspace field. `acquire(workspaceId)` returns a
 lease, and concurrent cold acquisitions share one preparation. Loading entries
 count toward the resident bound. The default policy permits 12 residents, keeps
-up to 3 idle graphs, and expires idle graphs after 5 minutes; callers explicitly
-invoke reclamation. Capacity pressure can reclaim an idle graph earlier. If every
+up to 3 idle graphs, and expires idle graphs after 5 minutes. The production host
+reclaims every 30 seconds; capacity pressure can reclaim an idle graph earlier. If every
 resident is pinned or has background obligations, new acquisition fails with
 backpressure instead of stopping existing work.
 
-`canDispose` is an injected, synchronous policy. A production adapter must protect
-Runs, scheduled work, channel delivery, recovery, workflows, browser operations,
-subscription work, and execution preparation before a Run exists. Reclamation
+`canDispose` is an injected, synchronous policy. The production adapter retains
+queued/running Runs, active browser tasks, active/claimed schedules, active inbound
+channels and pending deliveries, recovery attempts and unassessed interruptions,
+and active directory/checkpoint subscriptions. Rotation subscriptions and approval
+policy baselines conservatively retain their graph even while paused, because a
+complete pending-apply index is not exposed. Request leases also cover execution
+preparation before a Run exists. Reclamation
 checks the policy again after every awaited disposal. New requests for a retiring
 workspace wait until disposal completes. Shutdown rejects new admission, drains
 request leases, and disposes all remaining graphs. Each service's disposal must
 wait for its own background executions.
 
 `restore()` activates registered identities independently and returns per-workspace
-failures. It does not silently discard registrations. A host still needs to expose
-and retry unavailable/capacity-blocked background workspaces.
+failures. The host exposes these at `/api/workspace/runtimes` and retries them on
+maintenance ticks; it does not silently discard registrations. Recent navigation
+and the catalog use the same configured state home. Workers are stopped together
+and drained before the local runtime and ledger are closed.
 
 ## Request and response binding
 
@@ -66,10 +74,20 @@ between request acceptance and persistent Run creation, and lets the underlying
 SSE writer progress after a page has disconnected. Background work also requires
 the lifetime policy described above.
 
-The Web client still needs explicit binding for all fetches, stream consumers,
-control requests, preview URLs and HTML subresources. Frontend asynchronous work
-must retain its original binding across view changes. Those changes are required
-before replacing the production swap path.
+Each Web document binds once to its `?workspace=<id>` address or the first server
+response. Fetches verify the response identity and retain existing content-hash
+validation. Selecting another workspace opens it and navigates to a new same-origin
+document. Outstanding asynchronous work from A cannot acquire B's address. The
+latest selection wins if earlier opens settle later. Text/mode drafts keep their
+existing synchronous localStorage persistence; image attachments retain their
+existing in-memory lifetime.
+
+Preview URLs, HTML subresource CSP, local Markdown images, browser screenshots,
+and generated webhook addresses carry the workspace prefix. Explicit deep links
+never scan other ledgers after a 404. Legacy thread-only links still begin in the
+launch workspace; if that lookup fails, recent-workspace recovery rejects multiple
+matches rather than choosing the first copied ledger. Legacy addresses cannot
+disambiguate a thread already present in the launch ledger.
 
 ## Verified evidence
 
@@ -106,12 +124,36 @@ recovery. The source-bound receipt is
 
 ## Remaining G05-B integration
 
-- Replace the production swap/cache path with the registry and a complete service
-  activity/obligation policy; persist startup workspace registrations and retry
-  unavailable background workspaces.
 - Add shared admission and budget/resource coordination across all execution
   entry points, including automation/recovery and experiments.
-- Bind the Web client and generated preview/subresource addresses; verify stale
-  completions, copied ledger IDs, permissions, and review state across switching.
-- Run the full A/B browser scenario, process restart/recovery, and idle-resource
-  acceptance before checking off G05-B. G01–G07 remain active.
+- Prove active execution recovery across process death in multiple workspaces,
+  including blocked/unsafe operations; completed history reopening is distinct.
+- Replace conservative rotation retention with a complete pending-work index.
+- Extend actual browser acceptance for approval/review isolation. G01–G07 remain active.
+
+## Production and browser evidence
+
+The additional host tests cover startup cleanup on invalid policy, explicit
+state-home isolation, future automation retention, pause/reclaim/reopen, and
+production HTML asset scoping. Together with registry, transport, process owner,
+live HTTP, recent-workspaces and legacy root tests: 33 tests in 7 files passed.
+Web API/binding/navigation tests: 157 tests in 17 files; Markdown/automation
+rendering: 7 tests in 2 files. Server/Web builds and Web design contract passed.
+Architecture retains 10 existing failures and public API retains its two baseline
+failures; no budgets were increased or historical receipts rewritten.
+
+Run `node scripts/check-workspace-runtime-ui.mjs <new-output-path>` after building
+Server/Web. At 1440px and 320px the browser starts A, uses the sidebar to navigate
+to B with an intentionally copied thread ID, submits B, rejects B's attempt to
+stop A, and confirms A's automation finishes. B's HTML preview loads relative JS
+under its scoped CSP; B's same-name Markdown image decodes from B. Both viewports
+have zero page errors, identity mismatches, and horizontal overflow. A then
+finishes, and an independent production `index.ts` process reopens both completed
+ledgers with their custom data roots. HTML interaction uses a DOM button click.
+
+The source/build-bound receipt is
+[workspace-runtime-integration-2026-10-29.json](artifacts/workspace-runtime-integration-2026-10-29.json).
+It includes retained user Web changes, so it is worktree evidence rather than a
+clean-commit release receipt. Fixture models make zero external model requests.
+The earlier foundational receipt remains unchanged and accurately describes its
+then-unwired boundary.

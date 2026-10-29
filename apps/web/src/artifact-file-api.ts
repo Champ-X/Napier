@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import { throwNapierApiError } from "./api-error";
 import { requestJson } from "./api-client";
 import {
@@ -225,7 +226,7 @@ export async function downloadPlanArtifactFile(
   artifactId: string,
 ): Promise<PlanArtifactFileDownload> {
   const path = `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/file`;
-  const response = await fetch(path);
+  const response = await workspaceFetch(path);
   if (!response.ok) {
     await throwNapierApiError(response, "Request failed", path);
   }

@@ -97,7 +97,7 @@ verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate,
 verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate,
 verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineGate
 } from "./receipt-trust-rotation-proposals.js";
-import { registerRecentWorkspacesHttp,type ListWorkspaceThreads } from "./recent-workspaces.js";
+import { registerRecentWorkspacesHttp,type RecentWorkspaceOptions } from "./recent-workspaces.js";
 import { registerRunEvaluationHttp } from "./run-evaluation-http.js";
 import { registerScheduleHttp } from "./schedule-http.js";
 import type { NapierServices } from "./server-composition-root.js";
@@ -109,22 +109,19 @@ import { registerThreadLifecycleHttp } from "./thread-lifecycle-http.js";
 import { registerThreadOperationsHttp } from "./thread-operations-http.js";
 import { registerThreadWorkflowHttp } from "./thread-workflow-http.js";
 import { registerWorkspaceProcessHttp } from "./workspace-process-http.js";
-import { registerWorkspaceRootHttp,type RebindWorkspace } from "./workspace-root-http.js";
+import { registerWorkspaceRootHttp,type WorkspaceRootBindingOptions } from "./workspace-root-http.js";
 
 export { createServices } from "./server-composition-root.js";
 export type { NapierServices } from "./server-composition-root.js";
 export { inferWorkspaceRoot } from "./workspace-root.js";
-interface CreateAppOptions {
-  rebindWorkspace?: RebindWorkspace;
-  listWorkspaceThreads?: ListWorkspaceThreads;
-}
+interface CreateAppOptions extends WorkspaceRootBindingOptions, RecentWorkspaceOptions {}
 export function createApp(services: NapierServices, options?: CreateAppOptions): Hono {
   const app = new Hono(); registerLoopbackApiGuard(app);
   app.use(
     "/api/*",
     cors({
       origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-      allowHeaders: ["Content-Type", "Authorization", "X-Napier-Channel-Token", "X-Napier-Intent"],
+      allowHeaders: ["Content-Type", "Authorization", "X-Napier-Channel-Token", "X-Napier-Intent", "X-Napier-Workspace-Id"],
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       credentials: false,
     }),
@@ -1838,8 +1835,8 @@ export function createApp(services: NapierServices, options?: CreateAppOptions):
 
   registerThreadLifecycleHttp(app, services);
   registerThreadOperationsHttp(app, services);
-  registerWorkspaceRootHttp(app, services, options?.rebindWorkspace);
-  registerRecentWorkspacesHttp(app, options?.listWorkspaceThreads);
+  registerWorkspaceRootHttp(app, services, options?.rebindWorkspace, options?.independentWorkspaces);
+  registerRecentWorkspacesHttp(app, options?.listWorkspaceThreads, options?.recentWorkspaceStateHome);
 
   registerWorkspaceProcessHttp(app, services.workspaceProcesses, {
     jsonError,

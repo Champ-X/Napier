@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import type { BrowserLiveViewReceipt } from "@napier/contracts/browser-live-view";
 
 import { throwNapierApiError } from "./api-error";
@@ -17,7 +18,7 @@ export async function getBrowserLiveView(
   signal?: AbortSignal,
 ): Promise<BrowserLiveView> {
   const path = `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/browser-live-view`;
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     cache: "no-store",
     ...(signal ? { signal } : {}),
   });

@@ -17,6 +17,8 @@ import type { AutomationSchedule, ContextCheckpointCalibrationReport } from "./w
 import type { RunRecoveryCheckpoint } from "./manual-run-recovery.js";
 
 export interface WorkspaceSummary {
+  /** Stable address when served by the multi-workspace runtime host. */
+  workspaceId?: string;
   root: string;
   dataRoot: string;
   localFirst: true;

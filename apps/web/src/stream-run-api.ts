@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import type {
   PromptRequest,
   ResumeRunRequest,
@@ -38,7 +39,7 @@ export async function streamRunFrames(
   expectation: StreamRunExpectation,
   onFrame: (frame: StreamFrame) => void,
 ): Promise<void> {
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { workspaceApiUrl } from "./workspace-api-binding";
 
 import type {
   CreatedInboundChannel,
@@ -56,7 +57,7 @@ function useChannelComposerState() {
   const endpoint = useMemo(
     () =>
       createdChannel
-        ? `${window.location.origin}/api/channels/${createdChannel.channel.id}/inbound`
+        ? `${window.location.origin}${workspaceApiUrl(`/api/channels/${encodeURIComponent(createdChannel.channel.id)}/inbound`)}`
         : "",
     [createdChannel],
   );

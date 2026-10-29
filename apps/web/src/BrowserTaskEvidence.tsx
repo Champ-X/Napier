@@ -1,3 +1,4 @@
+import { workspaceApiUrl } from "./workspace-api-binding";
 import type { BrowserTaskApiEvent } from "./browser-task-api";
 import { browserTaskCopy } from "./browser-task-copy";
 
@@ -48,7 +49,7 @@ export function BrowserTaskEvidence({ events }: BrowserTaskEvidenceProps) {
         <figure className="browser-task-screenshot">
           <img
             alt={browserTaskCopy.evidence.latestStepAlt}
-            src={screenshot.screenshotUrl}
+            src={workspaceApiUrl(screenshot.screenshotUrl)}
           />
           <figcaption>
             {browserTaskCopy.evidence.step} {screenshot.step} ·{" "}

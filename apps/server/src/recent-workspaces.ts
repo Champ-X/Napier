@@ -22,14 +22,12 @@ interface ParsedRecentWorkspace {
 
 /**
  * The recent-workspaces registry lives OUTSIDE any per-workspace ledger. Each
- * workspace keeps its own `<root>/.napier` store, so a switch swaps the whole
- * service graph and anything stored in a ledger disappears with the folder.
+ * workspace keeps its own store, while its service graph has an independent
+ * lifecycle. Recent navigation belongs to the host, not to any one ledger.
  * This machine-level index must therefore persist independently of the store
  * and survive service rebuilds.
  */
-function registryPath(): string {
-  const stateHome =
-    process.env["NAPIER_STATE_HOME"] ?? path.join(os.homedir(), ".napier");
+function registryPath(stateHome = process.env["NAPIER_STATE_HOME"] ?? path.join(os.homedir(), ".napier")): string {
   return path.join(stateHome, "recent-workspaces.json");
 }
 
@@ -37,10 +35,10 @@ function workspaceName(root: string): string {
   return path.basename(root) || root;
 }
 
-export async function readRecentWorkspaces(): Promise<RecentWorkspace[]> {
+export async function readRecentWorkspaces(stateHome?: string): Promise<RecentWorkspace[]> {
   let raw: string;
   try {
-    raw = await readFile(registryPath(), "utf8");
+    raw = await readFile(registryPath(stateHome), "utf8");
   } catch {
     return [];
   }
@@ -66,7 +64,7 @@ export async function readRecentWorkspaces(): Promise<RecentWorkspace[]> {
     });
     if (entries.length >= MAX_RECENT_WORKSPACES) break;
   }
-  if (!sameRegistry(parsed, entries)) await writeRegistry(entries);
+  if (!sameRegistry(parsed, entries)) await writeRegistry(entries, stateHome);
   return entries;
 }
 
@@ -77,12 +75,13 @@ export async function readRecentWorkspaces(): Promise<RecentWorkspace[]> {
  */
 export async function recordRecentWorkspace(
   root: string,
+  stateHome?: string,
 ): Promise<RecentWorkspace[]> {
   if (!path.isAbsolute(root) || transientWorkspaceRoot(root)) {
-    return readRecentWorkspaces();
+    return readRecentWorkspaces(stateHome);
   }
   const canonicalRoot = (await existingCanonicalDirectory(root)) ?? root;
-  const existing = await readRecentWorkspaces();
+  const existing = await readRecentWorkspaces(stateHome);
   const recorded: RecentWorkspace = {
     root: canonicalRoot,
     name: workspaceName(canonicalRoot),
@@ -97,7 +96,7 @@ export async function recordRecentWorkspace(
           index === existingIndex ? recorded : entry,
         )
       : [...existing, recorded].slice(0, MAX_RECENT_WORKSPACES);
-  await writeRegistry(next);
+  await writeRegistry(next, stateHome);
   return next;
 }
 
@@ -158,9 +157,9 @@ function sameRegistry(raw: unknown[], entries: RecentWorkspace[]): boolean {
   });
 }
 
-async function writeRegistry(entries: RecentWorkspace[]): Promise<void> {
+async function writeRegistry(entries: RecentWorkspace[], stateHome?: string): Promise<void> {
   try {
-    const target = registryPath();
+    const target = registryPath(stateHome);
     await mkdir(path.dirname(target), { recursive: true });
     await writeFile(target, `${JSON.stringify(entries, null, 2)}\n`, "utf8");
   } catch {
@@ -170,12 +169,18 @@ async function writeRegistry(entries: RecentWorkspace[]): Promise<void> {
 
 export type ListWorkspaceThreads = (root: string) => Promise<ThreadSummary[]>;
 
+export interface RecentWorkspaceOptions {
+  listWorkspaceThreads?: ListWorkspaceThreads;
+  recentWorkspaceStateHome?: string;
+}
+
 export function registerRecentWorkspacesHttp(
   app: Hono,
   listWorkspaceThreads?: ListWorkspaceThreads,
+  stateHome?: string,
 ): void {
   app.get("/api/workspace/recent", async (context) => {
-    const recent = await readRecentWorkspaces();
+    const recent = await readRecentWorkspaces(stateHome);
     setBodyContentSha256Header(context, recent);
     return context.json(recent);
   });
@@ -194,7 +199,7 @@ export function registerRecentWorkspacesHttp(
     if (!canonicalRoot) {
       return context.json({ error: "Workspace root does not exist" }, 404);
     }
-    const recent = await readRecentWorkspaces();
+    const recent = await readRecentWorkspaces(stateHome);
     if (!recent.some((entry) => entry.root === canonicalRoot)) {
       return context.json({ error: "Workspace is not in the recent list" }, 404);
     }

@@ -29,9 +29,8 @@ interface RecentWorkspace {
 /**
  * Merged workspace + sessions sidebar tree (DeepSeek-Harness style). The active
  * workspace keeps a stable position and can expand independently. Inactive
- * folders use a read-only summary endpoint, so browsing them never rebinds the
- * runtime. Selecting one of their sessions performs one atomic workspace +
- * thread switch while the app shell remains mounted.
+ * folders use a read-only summary endpoint. Selecting a workspace navigates to
+ * its explicit identity; background runtimes keep their independent lifetime.
  */
 export interface WorkspaceTreeProps {
   currentRoot: string;

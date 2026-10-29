@@ -1,3 +1,4 @@
+import { workspaceFetch } from "./workspace-api-binding";
 import type {
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowBreakpoint,
@@ -26,7 +27,7 @@ export async function continueWorkflowBreakpoint(
   signal?: AbortSignal,
 ): Promise<ExecutionPlanWorkflowResultFrame> {
   const path = `/api/threads/${encodeURIComponent(threadId)}/workflows`;
-  const response = await fetch(path, {
+  const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

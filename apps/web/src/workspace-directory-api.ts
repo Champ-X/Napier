@@ -1,3 +1,4 @@
+import { workspaceApiUrl, workspaceFetch } from "./workspace-api-binding";
 import {
   decodeFilePreviewText,
   isTextPreviewContentType,
@@ -76,7 +77,7 @@ export async function previewWorkspaceFile(
     ...(threadId ? { threadId } : {}),
   });
   const endpoint = `/api/workspace/file?${query.toString()}`;
-  const response = await fetch(endpoint, signal ? { signal } : undefined);
+  const response = await workspaceFetch(endpoint, signal ? { signal } : undefined);
   return readFilePreviewResponse(response, endpoint, path);
 }
 
@@ -132,7 +133,7 @@ export async function readFilePreviewResponse(
     sizeBytes,
     sha256,
     ...(response.headers.get("X-Napier-Workspace-Preview-Url")
-      ? { previewUrl: response.headers.get("X-Napier-Workspace-Preview-Url")! }
+      ? { previewUrl: workspaceApiUrl(response.headers.get("X-Napier-Workspace-Preview-Url")!) }
       : {}),
     ...decodePreviewText(bytes, contentType),
   };

@@ -35,6 +35,19 @@ describe("workspace-aware bootstrap", () => {
     await expect(getBootstrapRestoringWorkspace("thread_fixture02")).rejects.toMatchObject({ status: 503 });
     expect(fetch).toHaveBeenCalledTimes(1);
   });
+
+  it("does not open the first matching ledger when a legacy thread id is ambiguous", async () => {
+    const responses = [
+      response({ error: "Thread not found" }, 404),
+      response([{ root: "/work/one" }, { root: "/work/two" }]),
+      response([{ id: "thread_copied01" }]),
+      response([{ id: "thread_copied01" }]),
+    ];
+    const fetch = vi.fn(async () => responses.shift()!);
+    vi.stubGlobal("fetch", fetch);
+    await expect(getBootstrapRestoringWorkspace("thread_copied01")).rejects.toThrow("多个工作区");
+    expect(fetch).toHaveBeenCalledTimes(4);
+  });
 });
 
 function response(body: unknown, status = 200): Response {

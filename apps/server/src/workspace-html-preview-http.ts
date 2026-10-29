@@ -6,6 +6,7 @@ import { MAX_WORKSPACE_FILE_PREVIEW_BYTES } from "@napier/contracts/file-preview
 import type { Hono } from "hono";
 
 import type { WorkspaceFilePreview } from "./workspace-file-preview.js";
+import { validWorkspaceRuntimeId } from "./workspace-runtime-identity.js";
 
 const PREFIX = "/api/workspace/preview/";
 const MAX_SESSIONS = 256;
@@ -67,7 +68,10 @@ export function registerWorkspaceHtmlPreviewHttp(
         target === session.entry.path
           ? session.entry
           : await readFile(target, session.directory);
-      const source = `${new URL(context.req.url).origin}${prefix}`;
+      const workspaceId = context.req.header("X-Napier-Workspace-Id");
+      const externalPrefix = workspaceId && validWorkspaceRuntimeId(workspaceId)
+        ? `/api/workspaces/${workspaceId}/${prefix.slice(5)}` : prefix;
+      const source = `${new URL(context.req.url).origin}${externalPrefix}`;
       context.header("Cache-Control", "no-store");
       context.header("Content-Type", file.contentType);
       context.header("X-Content-Type-Options", "nosniff");
