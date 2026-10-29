@@ -1,6 +1,7 @@
 import { filePreviewContentType } from "@napier/contracts/file-preview";
-import type { MouseEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { FileCode2 } from "lucide-react";
+import { WorkspaceArtifactLink } from "./MessageWorkspaceArtifactLink";
 import { workspaceApiUrl } from "./workspace-api-binding";
 
 import type { ArtifactInspection } from "./artifact-inspection";
@@ -396,43 +397,6 @@ function WorkspaceFileLink({
   );
 }
 
-function WorkspaceArtifactLink({
-  code = false,
-  label,
-  link,
-  onInspectArtifact,
-}: {
-  code?: boolean;
-  label: string;
-  link: MessageWorkspaceLink;
-  onInspectArtifact?: (inspection: ArtifactInspection) => void;
-}) {
-  const inspectable =
-    link.artifact && link.planId && link.threadId && onInspectArtifact;
-  const open = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!inspectable) return;
-    event.preventDefault();
-    onInspectArtifact({
-      artifact: link.artifact!,
-      mode: "preview",
-      planId: link.planId!,
-      threadId: link.threadId!,
-    });
-  };
-  return (
-    <a
-      className={`message-workspace-link${code ? " is-code" : ""}`}
-      href={`#${link.targetId}`}
-      onClick={open}
-      data-artifact-path={link.path}
-      aria-label={`Open preview: ${link.path}`}
-    >
-      <FileCode2 size={13} aria-hidden="true" />
-      {code ? <code>{label}</code> : label}
-    </a>
-  );
-}
-
 function safeExternalHref(value: string): boolean {
   try {
     const url = new URL(value);
@@ -494,6 +458,8 @@ export function isWorkspaceFileReference(value: string): boolean {
   }
   const filename = normalized.split("/").at(-1);
   return Boolean(
-    filename && !filename.startsWith(".") && WORKSPACE_FILE_EXTENSION.test(filename),
+    filename &&
+    !filename.startsWith(".") &&
+    WORKSPACE_FILE_EXTENSION.test(filename),
   );
 }

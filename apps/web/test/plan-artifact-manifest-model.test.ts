@@ -12,9 +12,30 @@ import {
   shortPlanArtifactId,
 } from "../src/plan-artifact-manifest-model";
 import type { PlanArtifactManifestState } from "../src/plan-artifact-manifest-types";
+import { artifactVersionKey } from "../src/artifact-version-binding";
 import { planCopy } from "../src/plan-copy";
 
 describe("Plan artifact manifest model", () => {
+  it.each(["revision", "digest", "path", "evidence"])(
+    "discards the prior receipt after a same-id %s change",
+    (field) => {
+      const selected = selection(artifactFixture());
+      const state = artifactState({
+        selectionKey: artifactVersionKey(selected),
+        driftCheck: receipt({
+          artifactId: selected.artifact.id,
+          result: "drifted",
+        }) as unknown as PlanArtifactDriftCheckReceipt,
+      });
+      const next = structuredClone(selected);
+      if (field === "revision") next.planRevision += 1;
+      else if (field === "digest") next.artifact.sha256 = "b".repeat(64);
+      else if (field === "path") next.artifact.path = "other.md";
+      else next.artifact.evidence = "New assertion";
+      expect(planArtifactDetails(next, state).driftCheck).toBeUndefined();
+    },
+  );
+
   it("isolates every receipt to its owning artifact", () => {
     const state = artifactState({
       textPreview: receipt({
@@ -30,14 +51,21 @@ describe("Plan artifact manifest model", () => {
       }) as unknown as PlanArtifactDriftCheckReceipt,
     });
 
-    expect(planArtifactDetails("artifact_current", state)).toMatchObject({
+    expect(
+      planArtifactDetails(selection(artifactFixture()), state),
+    ).toMatchObject({
       textPreview: { text: "current" },
       dataProfile: undefined,
       driftCheck: { result: "drifted" },
     });
-    expect(planArtifactDetails("artifact_other", state)).toMatchObject({
+    expect(
+      planArtifactDetails(
+        selection(artifactFixture({ id: "artifact_other" })),
+        state,
+      ),
+    ).toMatchObject({
       textPreview: undefined,
-      dataProfile: { artifactId: "artifact_other" },
+      dataProfile: undefined,
       driftCheck: undefined,
     });
   });
@@ -45,7 +73,7 @@ describe("Plan artifact manifest model", () => {
   it("projects verified drift follow-up copy and action", () => {
     const artifact = artifactFixture();
     const details = planArtifactDetails(
-      artifact.id,
+      selection(artifact),
       artifactState({
         driftCheck: receipt({
           artifactId: artifact.id,
@@ -71,7 +99,7 @@ describe("Plan artifact manifest model", () => {
   it("does not expose drift follow-up for an unrelated receipt", () => {
     const artifact = artifactFixture();
     const details = planArtifactDetails(
-      artifact.id,
+      selection(artifact),
       artifactState({
         driftCheck: receipt({
           artifactId: "artifact_other",
@@ -101,6 +129,7 @@ function artifactState(
   overrides: Partial<PlanArtifactManifestState> = {},
 ): PlanArtifactManifestState {
   return {
+    selectionKey: artifactVersionKey(selection(artifactFixture())),
     busyId: undefined,
     error: undefined,
     fileDownload: undefined,
@@ -140,4 +169,8 @@ function receipt(value: Record<string, unknown>): Record<string, unknown> {
     ledgerEventSha256: "b".repeat(64),
     ...value,
   };
+}
+
+function selection(artifact: ArtifactManifestEntry) {
+  return { artifact, planId: "plan_1", planRevision: 1, threadId: "thread_1" };
 }

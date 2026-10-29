@@ -9,6 +9,10 @@ import type {
   PlanArtifactDetailState,
   PlanArtifactManifestState,
 } from "./plan-artifact-manifest-types";
+import {
+  artifactVersionKey,
+  type ArtifactVersionSelection,
+} from "./artifact-version-binding";
 import { planCopy } from "./plan-copy";
 
 export interface PlanArtifactManifestItemView {
@@ -53,24 +57,22 @@ export function projectPlanArtifactManifestItem(
 }
 
 export function planArtifactDetails(
-  artifactId: string,
+  selection: ArtifactVersionSelection,
   state: PlanArtifactManifestState,
 ): PlanArtifactDetailState {
+  const artifactId = selection.artifact.id;
+  const bound = state.selectionKey === artifactVersionKey(selection);
+  const receipt = <T extends { artifactId: string }>(value: T | undefined) =>
+    bound ? matchingArtifact(value, artifactId) : undefined;
   return {
-    fileDownload: matchingArtifact(state.fileDownload, artifactId),
-    fileVerification: matchingArtifact(state.fileVerification, artifactId),
-    textPreview: matchingArtifact(state.textPreview, artifactId),
-    dataProfile: matchingArtifact(state.dataProfile, artifactId),
-    dataProfileVerification: matchingArtifact(
-      state.dataProfileVerification,
-      artifactId,
-    ),
-    directoryManifest: matchingArtifact(state.directoryManifest, artifactId),
-    directoryManifestVerification: matchingArtifact(
-      state.directoryManifestVerification,
-      artifactId,
-    ),
-    driftCheck: matchingArtifact(state.driftCheck, artifactId),
+    fileDownload: receipt(state.fileDownload),
+    fileVerification: receipt(state.fileVerification),
+    textPreview: receipt(state.textPreview),
+    dataProfile: receipt(state.dataProfile),
+    dataProfileVerification: receipt(state.dataProfileVerification),
+    directoryManifest: receipt(state.directoryManifest),
+    directoryManifestVerification: receipt(state.directoryManifestVerification),
+    driftCheck: receipt(state.driftCheck),
   };
 }
 

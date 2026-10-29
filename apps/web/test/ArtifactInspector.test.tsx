@@ -26,6 +26,44 @@ afterEach(async () => {
 });
 
 describe("ArtifactInspector", () => {
+  it.each(["supplied", "requested"] as const)(
+    "rejects a %s receipt for a newer manifest revision",
+    async (source) => {
+      const { container } = installDom();
+      const base = htmlInspection();
+      const changed = { ...base.receipt, planRevision: 2 };
+      const inspection: ArtifactInspection =
+        source === "supplied"
+          ? { ...base, planRevision: 1, receipt: changed }
+          : {
+              artifact: base.artifact,
+              planId: base.planId,
+              threadId: base.threadId,
+              planRevision: 1,
+              mode: "preview",
+            };
+      const previewFile = vi.fn();
+      await act(async () =>
+        render(
+          <ArtifactInspector
+            inspection={inspection}
+            onClose={() => undefined}
+            previewArtifact={async () => changed}
+            previewFile={previewFile}
+          />,
+          container,
+        ),
+      );
+      await waitFor(
+        () =>
+          container.textContent?.includes("different artifact version") ===
+          true,
+      );
+      expect(elements(container, "iframe")).toHaveLength(0);
+      expect(previewFile).not.toHaveBeenCalled();
+    },
+  );
+
   it.each(["resolve", "reject"] as const)(
     "ignores a stale %s after switching files during a pending refresh",
     async (outcome) => {
@@ -61,6 +99,7 @@ describe("ArtifactInspector", () => {
           );
         });
       await renderInspection(oldInspection);
+
       await waitFor(() => elements(container, "img").length === 1);
       await click(button(container, "Refresh"));
       await renderInspection(nextInspection);
@@ -269,6 +308,7 @@ describe("ArtifactInspector", () => {
       if (knownSize) inspection.artifact.sizeBytes = 3 * 1024 * 1024;
       const file = {
         ...fileReceipt(inspection.artifact.path),
+        sizeBytes: 3 * 1024 * 1024,
         text: "<main>partial",
         textTruncated: true,
       };
@@ -343,7 +383,7 @@ describe("ArtifactInspector", () => {
           onClose={() => undefined}
           previewArtifact={previewArtifact}
           previewFile={previewFile}
-          previewDiff={async () => diffReceipt()}
+          previewDiff={async () => diffReceipt("outputs/drawing.SVG")}
         />,
         container,
       );
@@ -400,9 +440,9 @@ describe("ArtifactInspector", () => {
     await waitFor(() => elements(container, "img").length === 1);
     const image = elements(container, "img")[0]!;
     const url = image.getAttribute("src")!;
-    await act(async () =>
-      image.dispatchEvent(new document.defaultView!.Event("error")),
-    );
+    await act(async () => {
+      image.dispatchEvent(new document.defaultView!.Event("error"));
+    });
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "SVG preview could not be loaded",
     );
@@ -417,7 +457,7 @@ describe("ArtifactInspector", () => {
   });
 
   it("runs self-contained HTML interactions without granting origin access", async () => {
-    const { document, container } = installDom();
+    const { container } = installDom();
     await act(async () => {
       render(
         <ArtifactInspector
@@ -489,8 +529,7 @@ describe("ArtifactInspector", () => {
 
   it("loads an answer file in place and refreshes its preview evidence", async () => {
     const { container } = installDom();
-    const inspection = htmlInspection();
-    delete inspection.receipt;
+    const { receipt: _receipt, ...inspection } = htmlInspection();
     const previewArtifact = vi.fn(async () => htmlInspection().receipt!);
     const onLedgerChanged = vi.fn(async () => undefined);
 
@@ -568,6 +607,7 @@ function fileReceipt(path: string): PlanArtifactFilePreviewReceipt {
   return {
     ...receipt,
     kind: "napier.plan-artifact-file-preview",
+    pathSha256: pathHash(path),
     path,
     filename: path.split("/").at(-1)!,
     contentType,
@@ -586,7 +626,7 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function diffReceipt() {
+function diffReceipt(path = "slides.html") {
   return {
     kind: "napier.plan-artifact-diff-preview" as const,
     schemaVersion: 1 as const,
@@ -595,7 +635,7 @@ function diffReceipt() {
     planRevision: 1,
     status: "verified",
     artifactKind: "file",
-    pathSha256: "a".repeat(64),
+    pathSha256: pathHash(path),
     scope: "working" as const,
     text: "-before\n+after",
     outputSha256: "b".repeat(64),
@@ -636,7 +676,7 @@ function htmlInspection(): Extract<ArtifactInspection, { mode: "preview" }> & {
       planRevision: 1,
       status: "verified",
       artifactKind: "file",
-      pathSha256: "a".repeat(64),
+      pathSha256: pathHash("slides.html"),
       sha256: "b".repeat(64),
       sizeBytes: 71,
       lineCount: 1,
@@ -659,6 +699,7 @@ function svgInspection(
     artifact: { ...base.artifact, path: "outputs/drawing.SVG" },
     receipt: {
       ...base.receipt,
+      pathSha256: pathHash("outputs/drawing.SVG"),
       text,
       sha256,
       textSha256: sha256,
@@ -709,4 +750,8 @@ async function waitFor(assertion: () => boolean): Promise<void> {
     await act(async () => Promise.resolve());
   }
   throw new Error("Timed out waiting for assertion");
+}
+
+function pathHash(path: string): string {
+  return createHash("sha256").update(path).digest("hex");
 }

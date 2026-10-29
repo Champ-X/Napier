@@ -1,3 +1,4 @@
+import "./artifact-consumer-responsive.css";
 import {
   Code2,
   Download,
@@ -8,6 +9,11 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+import {
+  artifactVersionKey,
+  assertArtifactReceiptVersion,
+} from "./artifact-version-binding";
 
 import { ArtifactReviewActions } from "./ArtifactReviewActions";
 import { formatApiErrorMessage } from "./api-error";
@@ -58,8 +64,21 @@ export function ArtifactInspector({
   const closeRef = useRef<HTMLButtonElement>(null);
   const suspendedRef = useRef(suspended);
   suspendedRef.current = suspended;
+  const versionKey = artifactVersionKey(inspection);
+  const currentKey = useRef(versionKey);
+  currentKey.current = versionKey;
+  useEffect(() => {
+    currentKey.current = versionKey;
+    return () => {
+      currentKey.current = "";
+    };
+  }, [versionKey]);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string>();
+  useEffect(() => {
+    setDownloading(false);
+    setDownloadError(undefined);
+  }, [versionKey]);
   const { diff, error, load, loadingView, preview, supportsText, view } =
     useArtifactInspectorView({
       inspection,
@@ -115,11 +134,14 @@ export function ArtifactInspector({
               inspection.planId,
               inspection.artifact.id,
             );
+      assertArtifactReceiptVersion(inspection, result, "content");
+      if (currentKey.current !== versionKey) return;
       downloadBlob(result.blob, result.filename);
     } catch (reason) {
-      setDownloadError(formatApiErrorMessage(reason));
+      if (currentKey.current === versionKey)
+        setDownloadError(formatApiErrorMessage(reason));
     } finally {
-      setDownloading(false);
+      if (currentKey.current === versionKey) setDownloading(false);
     }
   };
 

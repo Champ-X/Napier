@@ -5,6 +5,7 @@ export interface MessageWorkspaceLink {
   artifact?: ArtifactManifestEntry;
   path: string;
   planId?: string;
+  planRevision?: number;
   threadId?: string;
   targetId: string;
 }

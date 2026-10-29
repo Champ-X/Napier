@@ -6,6 +6,8 @@ export function inactiveWorkbenchSurface(element: HTMLElement | null): boolean {
 function available(element: HTMLElement | null): element is HTMLElement {
   return Boolean(
     element?.isConnected &&
+    element !== document.body &&
+    element !== document.documentElement &&
     !element.matches(":disabled") &&
     !inactiveWorkbenchSurface(element) &&
     element.getClientRects().length,

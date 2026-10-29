@@ -54,6 +54,8 @@ export function taskArtifactHistoryEvent(
       planRevision: snapshot.revision as number,
       eventId: event.id,
       eventSeq: event.seq,
+      eventRunId: event.runId,
+      eventCreatedAt: event.createdAt,
       path: p.path as string,
       status: p.status as ArtifactManifestEntry["status"],
       source: "recorded_assertion",

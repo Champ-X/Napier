@@ -124,7 +124,7 @@ export const CONVERSATION_ARTIFACTS_PROJECTION: KernelProjectionDefinition<
   ConversationArtifactEventState
 > = {
   id: "conversation.artifacts",
-  version: 1,
+  version: 2,
   init: () => createConversationArtifactEventState(),
   apply: applyConversationArtifactEvent,
   view: (state) => structuredClone(state),

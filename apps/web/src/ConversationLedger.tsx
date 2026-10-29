@@ -148,6 +148,7 @@ export function ConversationLedger({
           onInspectArtifact,
           onOpenWorkspaceFile,
           onOpenSkillResource,
+          detail?.taskNarrative?.deliverables,
         ),
       )}
       {streamingText ? (
@@ -174,6 +175,7 @@ function renderFeedItem(
   onInspectArtifact: ConversationLedgerProps["onInspectArtifact"],
   onOpenWorkspaceFile: ConversationLedgerProps["onOpenWorkspaceFile"],
   onOpenSkillResource: ConversationLedgerProps["onOpenSkillResource"],
+  deliverables: NonNullable<WebThreadDetail["taskNarrative"]>["deliverables"],
 ) {
   if (item.kind === "activity-group") {
     return (
@@ -215,6 +217,7 @@ function renderFeedItem(
         item={item.artifact}
         threadId={item.artifact.threadId}
         onLedgerChanged={onLedgerChanged}
+        {...(deliverables ? { deliverables } : {})}
         {...(onInspectArtifact ? { onInspect: onInspectArtifact } : {})}
       />
     );

@@ -10,9 +10,13 @@ import { PlanArtifactActions } from "./PlanArtifactActions";
 import { PlanArtifactDirectoryManifestDetails } from "./PlanArtifactDirectoryManifestDetails";
 import { PlanArtifactDriftDetails } from "./PlanArtifactDriftDetails";
 import { PlanArtifactFileDetails } from "./PlanArtifactFileDetails";
+import { taskSurfaceCopy } from "./task-surface-copy";
 
 export function PlanArtifactManifest({
   artifacts,
+  threadId,
+  planId,
+  planRevision,
   latestReplan,
   state,
   actions,
@@ -29,7 +33,10 @@ export function PlanArtifactManifest({
         <span>{String(artifacts.length).padStart(2, "0")}</span>
       </header>
       {artifacts.map((artifact) => {
-        const details = planArtifactDetails(artifact.id, state);
+        const details = planArtifactDetails(
+          { artifact, threadId, planId, planRevision },
+          state,
+        );
         const view = projectPlanArtifactManifestItem(artifact, details);
         const replanRoles = projectReplanArtifactRoles(
           artifact.id,
@@ -41,7 +48,9 @@ export function PlanArtifactManifest({
               <code>{artifact.path}</code>
               <div className="plan-entity-status">
                 <span className="plan-status-badge">
-                  {planCopy.statuses[artifact.status]}
+                  {artifact.status === "verified"
+                    ? taskSurfaceCopy.completion.integrityRecorded
+                    : planCopy.statuses[artifact.status]}
                 </span>
                 {replanRoles.length > 0 ? (
                   <div

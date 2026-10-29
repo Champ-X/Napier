@@ -1,15 +1,18 @@
 import { FileText, Link2 } from "lucide-react";
 import { lazy, Suspense } from "react";
 
+import { projectTaskDeliverables } from "@napier/contracts/task-narrative";
 import type { ThreadDetail } from "@napier/contracts";
 import { ArtifactActionSurface } from "./ArtifactActionSurface";
 import { copy } from "./copy";
+import { artifactSelectionCurrentFact } from "./artifact-version-binding";
+import { conversationDetailCopy } from "./conversation-detail-copy";
 
 const LazyFilesPanel = lazy(() => import("./FilesPanel"));
 
 type ChangesDetail = Pick<
   ThreadDetail,
-  "thread" | "plans" | "artifacts" | "citations"
+  "thread" | "plans" | "artifacts" | "citations" | "taskNarrative"
 >;
 
 export function TaskChangesPanel({
@@ -36,7 +39,7 @@ export function TaskChangesPanel({
 
       {artifacts.length > 0 ? (
         <div className="task-artifact-grid">
-          {artifacts.map(({ artifact, planId }) => (
+          {artifacts.map(({ artifact, planId, planRevision }) => (
             <article
               className={`task-artifact-card is-${artifact.status}`}
               data-artifact-path={artifact.path}
@@ -49,11 +52,15 @@ export function TaskChangesPanel({
                 <p>{artifact.description}</p>
               </div>
               <span className={`task-status-badge is-${artifact.status}`}>
-                {taskStatusLabel(artifact.status)}
+                {artifactStatusLabel(
+                  { artifact, planId, planRevision },
+                  detail?.taskNarrative?.deliverables,
+                )}
               </span>
               <ArtifactActionSurface
                 artifact={artifact}
                 planId={planId}
+                planRevision={planRevision}
                 threadId={detail!.thread.id}
                 {...(onLedgerChanged ? { onLedgerChanged } : {})}
               />
@@ -103,27 +110,32 @@ function taskStatusLabel(status: string): string {
   );
 }
 
+function artifactStatusLabel(
+  selection: Parameters<typeof artifactSelectionCurrentFact>[0],
+  deliverables: Parameters<typeof artifactSelectionCurrentFact>[1],
+): string {
+  const fact = artifactSelectionCurrentFact(selection, deliverables);
+  const copy = conversationDetailCopy.artifact;
+  return fact === "unchecked"
+    ? selection.artifact.status === "verified"
+      ? copy.statuses.verified
+      : taskStatusLabel(selection.artifact.status)
+    : copy.currentFacts[fact];
+}
+
 function taskArtifacts(detail: ChangesDetail | undefined) {
   if (!detail) return [];
-  const projected = (detail.artifacts ?? [])
-    .filter((entry) => entry.attemptScope === "current")
-    .map((entry) => ({ artifact: entry.artifact, planId: entry.planId }));
-  const plan =
-    detail.plans.findLast(
-      (candidate) =>
-        candidate.status === "active" || candidate.status === "blocked",
-    ) ?? detail.plans.at(-1);
-  const candidates =
-    projected.length > 0
-      ? projected
-      : (plan?.artifacts ?? []).map((artifact) => ({
-          artifact,
-          planId: plan!.id,
-        }));
-  const unique = new Map(
-    candidates.map((item) => [item.artifact.path, item]),
-  );
-  return [...unique.values()].filter(
-    ({ artifact }) => artifact.status !== "superseded",
+  return projectTaskDeliverables(detail.plans).flatMap((entry) =>
+    entry.planId &&
+    entry.planRevision !== undefined &&
+    entry.artifact.status !== "superseded"
+      ? [
+          {
+            artifact: entry.artifact,
+            planId: entry.planId,
+            planRevision: entry.planRevision,
+          },
+        ]
+      : [],
   );
 }

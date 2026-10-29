@@ -3,7 +3,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { WorkspaceTrashItem } from "@napier/contracts";
+import type { ExecutionPlan, WorkspaceTrashItem } from "@napier/contracts";
 import { TaskChangesPanel } from "../src/TaskChangesPanel";
 import {
   listWorkspaceTrash,
@@ -30,6 +30,69 @@ afterEach(async () => {
 });
 
 describe("TaskChangesPanel recovery disclosure", () => {
+  it("shows the newest manifest even when only an older artifact has a conversation event", async () => {
+    listTrash.mockResolvedValue(trashList([]));
+    const container = installDom();
+    const older = {
+      id: "old",
+      threadId: "thread_1",
+      revision: 2,
+      status: "completed",
+      createdAt: "2026-10-29T00:00:00Z",
+      artifacts: [
+        {
+          id: "report",
+          path: "report.md",
+          kind: "file",
+          status: "verified",
+          description: "Older report",
+          evidence: "Recorded",
+          sha256: "a".repeat(64),
+          sizeBytes: 16,
+          createdAt: "2026-10-29T00:00:00Z",
+          updatedAt: "2026-10-29T00:00:00Z",
+        },
+      ],
+    } as ExecutionPlan;
+    const newer = structuredClone(older);
+    newer.id = "new";
+    newer.createdAt = "2026-10-30T00:00:00Z";
+    newer.artifacts[0]!.createdAt = newer.createdAt;
+    newer.artifacts[0]!.description = "Newest report missing";
+    newer.artifacts[0]!.status = "missing";
+    await act(async () =>
+      render(
+        <TaskChangesPanel
+          detail={{
+            thread: { id: "thread_1" } as never,
+            plans: [older, newer],
+            citations: [],
+            artifacts: [
+              {
+                id: "event_old",
+                seq: 1,
+                createdAt: older.createdAt,
+                attemptScope: "current",
+                threadId: "thread_1",
+                runId: "run_1",
+                planId: older.id,
+                planRevision: older.revision,
+                artifact: older.artifacts[0]!,
+              },
+            ],
+          }}
+        />,
+        container,
+      ),
+    );
+    expect(container.textContent).toContain("Newest report missing");
+    expect(container.textContent).not.toContain("Older report");
+    expect(
+      container.querySelector(".task-artifact-card .task-status-badge")
+        ?.textContent,
+    ).toBe("Missing");
+  });
+
   it("does not advertise recovery when the managed trash is empty", async () => {
     listTrash.mockResolvedValue(trashList([]));
     const container = installDom();

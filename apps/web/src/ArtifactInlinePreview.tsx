@@ -1,3 +1,4 @@
+import "./artifact-consumer-responsive.css";
 import { FileCode2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -17,6 +18,10 @@ import type { ConversationArtifact } from "./conversation-artifact-view-model";
 import { conversationDetailCopy } from "./conversation-detail-copy";
 import { HtmlArtifactPreview } from "./HtmlArtifactPreview";
 import { previewWorkspaceFile } from "./workspace-directory-api";
+import {
+  artifactVersionKey,
+  assertArtifactReceiptVersion,
+} from "./artifact-version-binding";
 
 export function ArtifactInlinePreview({
   item,
@@ -35,13 +40,16 @@ export function ArtifactInlinePreview({
     PlanArtifactTextPeek | PlanArtifactFilePreview
   >();
   const [error, setError] = useState<string>();
+  const [loadedKey, setLoadedKey] = useState<string>();
   const isHtml = /\.html?$/iu.test(item.artifact.path);
+  const versionKey = artifactVersionKey(item);
 
   useEffect(() => {
-    if (!isHtml || !isAvailable(item)) return;
-    let active = true;
     setPreview(undefined);
     setError(undefined);
+    setLoadedKey(versionKey);
+    if (!isHtml || !isAvailable(item)) return;
+    let active = true;
     const peek = async () => {
       if (artifactNeedsFilePreview(item.artifact)) {
         return peekArtifactFile(item.threadId, item.planId, item.artifact.id);
@@ -54,7 +62,8 @@ export function ArtifactInlinePreview({
       }
     };
     void peek()
-      .then((receipt) => {
+      .then(async (receipt) => {
+        assertArtifactReceiptVersion(item, receipt, "content");
         if (active) setPreview(receipt);
       })
       .catch((reason: unknown) => {
@@ -63,32 +72,24 @@ export function ArtifactInlinePreview({
     return () => {
       active = false;
     };
-  }, [
-    isHtml,
-    item.artifact.id,
-    item.artifact.path,
-    item.artifact.sizeBytes,
-    item.artifact.status,
-    item.artifact.updatedAt,
-    item.planId,
-    item.threadId,
-    peekArtifact,
-    peekArtifactFile,
-  ]);
+  }, [isHtml, versionKey, peekArtifact, peekArtifactFile]);
 
   if (!isHtml || !isAvailable(item)) return null;
   const copy = conversationDetailCopy.artifact;
+  const currentPreview = loadedKey === versionKey ? preview : undefined;
+  const currentError = loadedKey === versionKey ? error : undefined;
   const inspect = () =>
     onInspect?.({
       artifact: item.artifact,
       mode: "preview",
       planId: item.planId,
+      planRevision: item.planRevision,
       threadId: item.threadId,
     });
 
   return (
     <section
-      className={`artifact-inline-preview${preview ? " is-ready" : " is-loading"}`}
+      className={`artifact-inline-preview${currentPreview ? " is-ready" : " is-loading"}`}
       aria-label={`${copy.previewLabel}: ${item.artifact.path}`}
     >
       <header>
@@ -97,18 +98,18 @@ export function ArtifactInlinePreview({
           {fileName(item.artifact.path)}
         </span>
         <small>
-          {preview
+          {currentPreview
             ? copy.livePreview
-            : error
+            : currentError
               ? copy.previewUnavailable
               : copy.loadingPreview}
         </small>
       </header>
-      {preview ? (
+      {currentPreview ? (
         <HtmlArtifactPreview
           path={item.artifact.path}
-          refreshKey={preview}
-          sha256={preview.sha256}
+          refreshKey={currentPreview}
+          sha256={currentPreview.sha256}
           previewFile={previewFile}
         />
       ) : (

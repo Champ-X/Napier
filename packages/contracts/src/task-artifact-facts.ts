@@ -10,6 +10,8 @@ export interface TaskArtifactVersion {
   planRevision?: number;
   eventId?: string;
   eventSeq?: number;
+  eventRunId?: string;
+  eventCreatedAt?: string;
   path?: string;
   sizeBytes?: number;
   status?: ArtifactManifestEntry["status"];
@@ -64,6 +66,30 @@ export function taskArtifactBinding(entry: TaskDeliverable): string {
   );
 }
 
+/** Interpret only the observation bound to this exact manifest snapshot. */
+export function taskArtifactCurrentFact(entry: TaskDeliverable) {
+  const observed = entry.observation;
+  if (
+    observed?.source !== "workspace" ||
+    observed.bindingSha256 !== taskArtifactBinding(entry)
+  )
+    return "unchecked" as const;
+  if (observed.status === "missing") return "missing" as const;
+  if (observed.status === "mismatched") return "drifted" as const;
+  if (
+    observed.status === "matched" &&
+    entry.artifact.status === "verified" &&
+    /^[a-f0-9]{64}$/u.test(observed.sha256 ?? "") &&
+    Number.isSafeInteger(observed.sizeBytes) &&
+    (observed.sizeBytes ?? -1) >= 0 &&
+    observed.sha256 === entry.artifact.sha256 &&
+    observed.sizeBytes === entry.artifact.sizeBytes
+  )
+    return "integrity_observed" as const;
+  if (observed.status === "observed") return "available" as const;
+  return "unchecked" as const;
+}
+
 /** Shared interpretation: manifest assertions alone never pass current integrity. */
 export function taskArtifactFacts(
   plans: readonly ExecutionPlan[],
@@ -89,22 +115,12 @@ export function taskArtifactFacts(
         candidate.path === artifact.path &&
         canonical(candidate.artifact) === canonical(artifact),
     );
-    const observed = entry?.observation;
-    const bound =
-      entry &&
-      observed?.source === "workspace" &&
-      observed.bindingSha256 === taskArtifactBinding(entry);
-    if (bound && observed.status === "mismatched") {
+    const currentFact = entry ? taskArtifactCurrentFact(entry) : "unchecked";
+    if (currentFact === "drifted") {
       driftedArtifactCount += 1;
-    } else if (bound && observed.status === "missing") {
+    } else if (currentFact === "missing") {
       missingArtifactCount += 1;
-    } else if (
-      bound &&
-      observed.status === "matched" &&
-      artifact.status === "verified" &&
-      observed.sha256 === artifact.sha256 &&
-      observed.sizeBytes === artifact.sizeBytes
-    ) {
+    } else if (currentFact === "integrity_observed") {
       verifiedArtifactCount += 1;
     } else if (artifact.status === "produced") {
       producedArtifactCount += 1;

@@ -121,6 +121,10 @@ function version(value: unknown): boolean {
     optionalString(value["sha256"]) &&
     optionalString(value["path"]) &&
     optionalString(value["eventId"]) &&
+    optionalString(value["eventRunId"]) &&
+    (value["eventCreatedAt"] === undefined ||
+      (typeof value["eventCreatedAt"] === "string" &&
+        Number.isFinite(Date.parse(value["eventCreatedAt"])))) &&
     (value["planRevision"] === undefined ||
       positiveInteger(value["planRevision"])) &&
     (value["eventSeq"] === undefined || positiveInteger(value["eventSeq"])) &&

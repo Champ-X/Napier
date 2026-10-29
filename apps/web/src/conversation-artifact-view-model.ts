@@ -3,36 +3,34 @@ import type {
   ExecutionPlan,
   RunEvent,
   RunRecord,
+  ThreadDetail,
 } from "@napier/contracts";
+import {
+  applyConversationArtifactEvent,
+  createConversationArtifactEventState,
+  projectConversationArtifacts,
+  taskArtifactBinding,
+  type ConversationArtifact,
+} from "@napier/contracts/task-narrative";
+import { conversationArtifactAnchorId } from "./conversation-artifact-anchor";
 import {
   currentRunAttempt,
   projectRunIntentIds,
   runIdsBelongToCurrentAttempt,
 } from "./run-intent-id";
-import { conversationArtifactAnchorId } from "./conversation-artifact-anchor";
-
-export interface ConversationArtifact {
-  id: string;
-  seq: number;
-  createdAt: string;
-  attemptScope: "current" | "previous";
-  threadId: string;
-  runId: string;
-  planId: string;
-  planRevision: number;
-  artifact: ArtifactManifestEntry;
-}
+export {
+  conversationArtifactEventKey,
+  type ConversationArtifact,
+} from "@napier/contracts/task-narrative";
 
 export interface ConversationArtifactWorkspaceLink {
   artifact: ArtifactManifestEntry;
   path: string;
   planId: string;
+  planRevision: number;
   threadId: string;
   targetId: string;
 }
-
-const ARTIFACT_STATUS_EVENT =
-  /^plan\.artifact\.(candidate|produced|verified|missing|superseded)$/u;
 
 export function conversationArtifacts(
   events: RunEvent[],
@@ -40,51 +38,124 @@ export function conversationArtifacts(
   limit = 6,
   runs: RunRecord[] = [],
 ): ConversationArtifact[] {
-  const intentIds = projectRunIntentIds(events);
-  const current = currentRunAttempt(runs, events, intentIds);
-  const plansById = new Map(plans.map((plan) => [plan.id, plan]));
-  const latestByArtifact = new Map<string, ConversationArtifact>();
-  for (const event of events) {
-    const key = conversationArtifactEventKey(event);
-    if (!key) continue;
-    const [planId, artifactId] = key;
-    const plan = plansById.get(planId);
-    const artifact = plan?.artifacts.find(
-      (candidate) => candidate.id === artifactId,
-    );
-    if (!plan || !artifact) continue;
-    latestByArtifact.set(`${planId}:${artifactId}`, {
-      id: event.id,
-      seq: event.seq,
-      createdAt: event.createdAt,
+  return projectConversationArtifacts(
+    plans,
+    runs,
+    events.reduce(
+      applyConversationArtifactEvent,
+      createConversationArtifactEventState(),
+    ),
+    limit,
+  );
+}
+
+/** A late/legacy server projection cannot attach current bytes to an old event. */
+export function currentConversationArtifacts(input: {
+  events: RunEvent[];
+  plans: ExecutionPlan[];
+  runs: RunRecord[];
+  projected?: ConversationArtifact[];
+  deliverables?: NonNullable<ThreadDetail["taskNarrative"]>["deliverables"];
+}): ConversationArtifact[] {
+  let replay: ConversationArtifact[] | undefined;
+  const replayed = () =>
+    (replay ??= conversationArtifacts(
+      input.events,
+      input.plans,
+      6,
+      input.runs,
+    ));
+  if (!input.projected) return replayed();
+  const orderedEvents = input.events.toSorted(
+    (left, right) => left.seq - right.seq,
+  );
+  const intentIds = projectRunIntentIds(orderedEvents);
+  const current = currentRunAttempt(input.runs, orderedEvents, intentIds);
+  return input.projected
+    .filter((item) => {
+      const plan = input.plans.find(
+        (value) => value.id === item.planId && value.threadId === item.threadId,
+      );
+      const artifact = plan?.artifacts.find(
+        (value) => value.id === item.artifact.id,
+      );
+      if (
+        !plan ||
+        !artifact ||
+        selectionBinding(item.planId, item.planRevision, item.artifact) !==
+          selectionBinding(plan.id, plan.revision, artifact)
+      )
+        return false;
+      const entry = input.deliverables?.find(
+        (value) =>
+          value.planId === item.planId &&
+          value.artifact.id === item.artifact.id,
+      );
+      if (
+        !entry?.history ||
+        !entry.currentVersion?.eventRunId ||
+        !entry.currentVersion.eventCreatedAt
+      )
+        return replayed().some(
+          (value) =>
+            value.id === item.id &&
+            value.seq === item.seq &&
+            value.runId === item.runId &&
+            value.planId === item.planId &&
+            value.planRevision === item.planRevision &&
+            value.createdAt === item.createdAt,
+        );
+      const version = entry.currentVersion;
+      return (
+        version?.source === "recorded_assertion" &&
+        version.eventId === item.id &&
+        version.eventSeq === item.seq &&
+        version.planRevision === item.planRevision &&
+        entry.sourceEventId === item.id &&
+        version.planId === item.planId &&
+        version.eventRunId === item.runId &&
+        version.eventCreatedAt === item.createdAt &&
+        version.artifactId === item.artifact.id &&
+        version.path === item.artifact.path &&
+        version.sha256 === item.artifact.sha256 &&
+        version.sizeBytes === item.artifact.sizeBytes &&
+        version.status === item.artifact.status &&
+        version.runId === item.artifact.sourceRunId &&
+        (version.runId === undefined || version.runId === item.runId) &&
+        taskArtifactBinding(entry) ===
+          selectionBinding(item.planId, item.planRevision, item.artifact)
+      );
+    })
+    .map((item) => ({
+      ...item,
       attemptScope: runIdsBelongToCurrentAttempt(
-        [event.runId, ...(artifact.sourceRunId ? [artifact.sourceRunId] : [])],
+        [
+          item.runId,
+          ...(item.artifact.sourceRunId ? [item.artifact.sourceRunId] : []),
+        ],
         current,
         intentIds,
       )
         ? "current"
         : "previous",
-      threadId: plan.threadId,
-      runId: event.runId,
-      planId,
-      planRevision: plan.revision,
-      artifact,
-    });
-  }
-  return [...latestByArtifact.values()]
-    .sort((left, right) => left.seq - right.seq)
-    .slice(-limit);
+    }));
 }
 
-export function conversationArtifactEventKey(
-  event: RunEvent,
-): readonly [planId: string, artifactId: string] | undefined {
-  if (event.visibility !== "user" || !ARTIFACT_STATUS_EVENT.test(event.type)) {
-    return undefined;
-  }
-  const planId = payloadString(event.payload, "planId");
-  const artifactId = payloadString(event.payload, "artifactId");
-  return planId && artifactId ? [planId, artifactId] : undefined;
+function selectionBinding(
+  planId: string,
+  planRevision: number,
+  artifact: ArtifactManifestEntry,
+): string {
+  return taskArtifactBinding({
+    planId,
+    planRevision,
+    artifact,
+    path: artifact.path,
+    source: "plan",
+    accessibility: "unchecked",
+    verification: "unverified",
+    previousVersions: [],
+  });
 }
 
 export function conversationArtifactWorkspaceLinks(
@@ -98,6 +169,7 @@ export function conversationArtifactWorkspaceLinks(
             artifact: item.artifact,
             path: item.artifact.path,
             planId: item.planId,
+            planRevision: item.planRevision,
             threadId: item.threadId,
             targetId: conversationArtifactTargetId(item),
           },
@@ -116,12 +188,4 @@ export function conversationArtifactTargetId(
     artifactId: item.artifact.id,
     eventSeq: item.seq,
   });
-}
-
-function payloadString(value: unknown, key: string): string | undefined {
-  if (!value || Array.isArray(value) || typeof value !== "object") {
-    return undefined;
-  }
-  const entry = (value as Record<string, unknown>)[key];
-  return typeof entry === "string" ? entry : undefined;
 }

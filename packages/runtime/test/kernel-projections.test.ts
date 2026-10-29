@@ -25,6 +25,7 @@ import {
   OperatorDecisionsProjectionService,
 } from "../src/kernel-detail-projections.js";
 import { LocalStore } from "../src/store.js";
+import { createPlanArtifactEventPayload } from "../src/plans.js";
 import {
   createOperatorDecisionAnsweredPayload,
   createOperatorDecisionRequestedPayload,
@@ -524,11 +525,7 @@ describe("Conversation Artifacts projection", () => {
         type: "plan.artifact.produced",
         category: "plan",
         visibility: "user",
-        payload: {
-          planId: plan.id,
-          artifactId: "report",
-          status: "produced",
-        },
+        payload: createPlanArtifactEventPayload(updated, updated.artifacts[0]!),
       });
       const tail = await service.project(thread.id);
       expect(tail).toEqual(

@@ -136,6 +136,9 @@ export default function PlanPanel({
       {plan ? (
         <>
           <PlanArtifactManifest
+            threadId={plan.threadId}
+            planId={plan.id}
+            planRevision={plan.revision}
             artifacts={plan.artifacts}
             latestReplan={plan.replans.at(-1)}
             {...artifact}

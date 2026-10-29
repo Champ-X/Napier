@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { formatApiErrorMessage } from "./api-error";
+import { assertArtifactReceiptVersion } from "./artifact-version-binding";
 import {
   artifactUsesTextPreview,
   requestArtifactPreview,
@@ -36,12 +37,8 @@ export function useArtifactInspectorView({
   const [loadingView, setLoadingView] = useState<ArtifactInspectorView>();
   const [error, setError] = useState<string>();
   const [stateInspection, setStateInspection] = useState(inspection);
-  const [preview, setPreview] = useState<ArtifactPreviewReceipt | undefined>(
-    inspection.mode === "preview" ? inspection.receipt : undefined,
-  );
-  const [diff, setDiff] = useState<PlanArtifactDiffPreviewReceipt | undefined>(
-    inspection.mode === "diff" ? inspection.receipt : undefined,
-  );
+  const [preview, setPreview] = useState<ArtifactPreviewReceipt>();
+  const [diff, setDiff] = useState<PlanArtifactDiffPreviewReceipt>();
   const onLedgerChangedRef = useRef(onLedgerChanged);
   onLedgerChangedRef.current = onLedgerChanged;
   const inspectionRef = useRef(inspection);
@@ -58,22 +55,31 @@ export function useArtifactInspectorView({
     };
     setStateInspection(inspection);
     setView(initialView);
-    setPreview(inspection.mode === "preview" ? inspection.receipt : undefined);
-    setDiff(inspection.mode === "diff" ? inspection.receipt : undefined);
+    setPreview(undefined);
+    setDiff(undefined);
     setError(undefined);
-    if (inspection.receipt && inspection.mode === initialView) {
-      setLoadingView(undefined);
-      return invalidate;
-    }
     setLoadingView(initialView);
     void (async () => {
       try {
+        if (inspection.receipt && inspection.mode === initialView) {
+          assertArtifactReceiptVersion(
+            inspection,
+            inspection.receipt,
+            inspection.mode === "diff" ? "identity" : "content",
+          );
+          if (isCurrent()) {
+            if (inspection.mode === "diff") setDiff(inspection.receipt);
+            else setPreview(inspection.receipt);
+          }
+          return;
+        }
         if (initialView === "diff") {
           const receipt = await previewDiff(
             inspection.threadId,
             inspection.planId,
             inspection.artifact.id,
           );
+          assertArtifactReceiptVersion(inspection, receipt);
           if (isCurrent()) setDiff(receipt);
         } else {
           const receipt = await requestArtifactPreview(
@@ -121,6 +127,7 @@ export function useArtifactInspectorView({
           inspection.planId,
           inspection.artifact.id,
         );
+        assertArtifactReceiptVersion(inspection, receipt);
         if (!isCurrent()) return;
         setDiff(receipt);
       } else {

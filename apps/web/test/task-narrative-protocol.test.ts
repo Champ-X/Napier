@@ -8,6 +8,67 @@ import {
 import { isTaskNarrativeProjection } from "../src/task-narrative-protocol";
 
 describe("Task Narrative protocol", () => {
+  it("validates optional recorder identity and time while accepting legacy history", () => {
+    const artifact = {
+      id: "report",
+      path: "report.txt",
+      kind: "file",
+      description: "Report",
+      evidence: "Recorded assertion",
+      status: "verified",
+      sha256: "a".repeat(64),
+      sizeBytes: 1,
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+    };
+    const version = {
+      planId: "plan_a",
+      artifactId: "report",
+      source: "recorded_assertion",
+      eventId: "event_a",
+      eventSeq: 1,
+      planRevision: 2,
+    };
+    const withVersion = (candidate: unknown) => ({
+      phase: "ended",
+      phaseLabel: "Ended",
+      currentAction: "Inspect",
+      completedItems: [],
+      deliverables: [
+        {
+          path: artifact.path,
+          source: "plan",
+          planId: "plan_a",
+          planRevision: 2,
+          artifact,
+          accessibility: "unchecked",
+          verification: "integrity_recorded",
+          previousVersions: [],
+          currentVersion: candidate,
+        },
+      ],
+    });
+    expect(isTaskNarrativeProjection(withVersion(version))).toBe(true);
+    expect(
+      isTaskNarrativeProjection(
+        withVersion({
+          ...version,
+          eventRunId: "run_a",
+          eventCreatedAt: "2026-01-01T00:00:00Z",
+        }),
+      ),
+    ).toBe(true);
+    for (const invalid of [
+      { eventRunId: 2 },
+      { eventCreatedAt: 2 },
+      { eventCreatedAt: "invalid" },
+    ]) {
+      expect(
+        isTaskNarrativeProjection(withVersion({ ...version, ...invalid })),
+      ).toBe(false);
+    }
+  });
+
   it("accepts the bounded server projection and rejects malformed items", () => {
     expect(
       isTaskNarrativeProjection({

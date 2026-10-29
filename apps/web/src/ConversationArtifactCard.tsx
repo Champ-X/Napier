@@ -1,5 +1,11 @@
 import { Download, FileCheck2, FileWarning } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ThreadDetail } from "@napier/contracts";
+import {
+  artifactSelectionCurrentFact,
+  artifactVersionKey,
+  assertArtifactReceiptVersion,
+} from "./artifact-version-binding";
 
 import "./conversation-artifact-card.css";
 import { ArtifactActionSurface } from "./ArtifactActionSurface";
@@ -27,6 +33,7 @@ export interface ConversationArtifactCardProps {
   previewDiff?: typeof previewPlanArtifactDiff;
   downloadArtifact?: typeof downloadPlanArtifactFile;
   onInspect?(inspection: ArtifactInspection): void;
+  deliverables?: NonNullable<ThreadDetail["taskNarrative"]>["deliverables"];
 }
 export function ConversationArtifactCard({
   item,
@@ -36,6 +43,7 @@ export function ConversationArtifactCard({
   previewDiff = previewPlanArtifactDiff,
   downloadArtifact = downloadPlanArtifactFile,
   onInspect,
+  deliverables,
 }: ConversationArtifactCardProps) {
   const copy = conversationDetailCopy.artifact;
   const [busy, setBusy] = useState<"download">();
@@ -44,7 +52,25 @@ export function ConversationArtifactCard({
     item.artifact.kind === "file" &&
     (item.artifact.status === "produced" ||
       item.artifact.status === "verified");
-  const Icon = item.artifact.status === "verified" ? FileCheck2 : FileWarning;
+  const currentFact = artifactSelectionCurrentFact(item, deliverables);
+  const Icon = currentFact === "integrity_observed" ? FileCheck2 : FileWarning;
+  const versionKey = artifactVersionKey(item);
+  const currentKey = useRef(versionKey);
+  currentKey.current = versionKey;
+  useEffect(() => {
+    currentKey.current = versionKey;
+    return () => {
+      currentKey.current = "";
+    };
+  }, [versionKey]);
+  useEffect(() => {
+    setBusy(undefined);
+    setError(undefined);
+  }, [versionKey]);
+  const statusLabel =
+    currentFact === "unchecked"
+      ? copy.statuses[item.artifact.status]
+      : copy.currentFacts[currentFact];
 
   const download = async () => {
     if (!available || busy) return;
@@ -56,12 +82,15 @@ export function ConversationArtifactCard({
         item.planId,
         item.artifact.id,
       );
+      assertArtifactReceiptVersion(item, result, "content");
+      if (currentKey.current !== versionKey) return;
       downloadBlob(result.blob, result.filename);
       await onLedgerChanged();
     } catch (reason) {
-      setError(formatApiErrorMessage(reason));
+      if (currentKey.current === versionKey)
+        setError(formatApiErrorMessage(reason));
     } finally {
-      setBusy(undefined);
+      if (currentKey.current === versionKey) setBusy(undefined);
     }
   };
 
@@ -70,6 +99,7 @@ export function ConversationArtifactCard({
       id={conversationArtifactTargetId(item)}
       className={`conversation-artifact status-${item.artifact.status}`}
       data-artifact-path={item.artifact.path}
+      data-artifact-current-fact={currentFact}
       tabIndex={-1}
     >
       <header>
@@ -77,7 +107,7 @@ export function ConversationArtifactCard({
         <div>
           <span>
             {item.attemptScope === "current" ? copy.current : copy.previous}{" "}
-            {copy.label} · {copy.statuses[item.artifact.status]}
+            {copy.label} · {statusLabel}
           </span>
           <strong>{item.artifact.path}</strong>
         </div>
@@ -111,6 +141,7 @@ export function ConversationArtifactCard({
       <ArtifactActionSurface
         artifact={item.artifact}
         planId={item.planId}
+        planRevision={item.planRevision}
         threadId={threadId}
         onLedgerChanged={onLedgerChanged}
         previewArtifact={previewArtifact}

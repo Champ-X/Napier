@@ -1,15 +1,24 @@
 import type { ExecutionPlan, RunEvent, RunRecord } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
+import { createPlanArtifactEventPayload } from "../../../packages/runtime/src/plans.js";
+import {
+  applyTaskNarrativeEvent,
+  createTaskNarrativeEventState,
+  projectTaskDeliverables,
+  applyConversationArtifactEvent,
+  createConversationArtifactEventState,
+} from "@napier/contracts/task-narrative";
 
 import {
   conversationArtifactEventKey,
   conversationArtifactTargetId,
   conversationArtifactWorkspaceLinks,
   conversationArtifacts,
+  currentConversationArtifacts,
 } from "../src/conversation-artifact-view-model";
 
 describe("Conversation artifacts", () => {
-  it("joins user-visible artifact events to the authoritative plan manifest", () => {
+  it("joins only exact-bound artifact events to the current plan manifest", () => {
     const artifacts = conversationArtifacts(
       [
         event(1, "plan.artifact.produced", "user", {
@@ -18,10 +27,12 @@ describe("Conversation artifacts", () => {
           path: "SPOOFED_PRIVATE_PATH",
           evidence: "SPOOFED_PRIVATE_EVIDENCE",
         }),
-        event(2, "plan.artifact.verified", "user", {
-          planId: "plan_1",
-          artifactId: "artifact_report",
-        }),
+        event(
+          2,
+          "plan.artifact.verified",
+          "user",
+          createPlanArtifactEventPayload(plan(), plan().artifacts[0]!),
+        ),
       ],
       [plan()],
     );
@@ -63,10 +74,12 @@ describe("Conversation artifacts", () => {
         planId: "plan_1",
         artifactId: "missing_artifact",
       }),
-      event(5, "plan.artifact.verified", "user", {
-        planId: "plan_1",
-        artifactId: "artifact_report",
-      }),
+      event(
+        5,
+        "plan.artifact.verified",
+        "user",
+        createPlanArtifactEventPayload(plan(), plan().artifacts[0]!),
+      ),
     ];
 
     expect(conversationArtifacts(events, [plan()], 1)).toHaveLength(1);
@@ -81,10 +94,12 @@ describe("Conversation artifacts", () => {
   it("links only produced or verified file artifacts with safe DOM targets", () => {
     const verified = conversationArtifacts(
       [
-        event(5, "plan.artifact.verified", "user", {
-          planId: "plan_1",
-          artifactId: "artifact_report",
-        }),
+        event(
+          5,
+          "plan.artifact.verified",
+          "user",
+          createPlanArtifactEventPayload(plan(), plan().artifacts[0]!),
+        ),
       ],
       [plan()],
     )[0]!;
@@ -131,6 +146,7 @@ describe("Conversation artifacts", () => {
         artifact: verified.artifact,
         path: "artifacts/report.md",
         planId: "plan_1",
+        planRevision: 3,
         threadId: "thread_1",
         targetId: conversationArtifactTargetId(verified),
       },
@@ -138,6 +154,7 @@ describe("Conversation artifacts", () => {
         artifact: produced.artifact,
         path: "artifacts/output.txt",
         planId: "plan_1",
+        planRevision: 3,
         threadId: "thread_1",
         targetId: conversationArtifactTargetId(produced),
       },
@@ -155,10 +172,16 @@ describe("Conversation artifacts", () => {
     const artifacts = conversationArtifacts(
       [
         startedEvent(1, "run_interrupted", "intent_delivery0001"),
-        eventForRun(2, "run_interrupted", "plan.artifact.candidate", "user", {
-          planId: "plan_1",
-          artifactId: "artifact_report",
-        }),
+        eventForRun(
+          2,
+          "run_interrupted",
+          "plan.artifact.candidate",
+          "user",
+          createPlanArtifactEventPayload(
+            currentPlan,
+            currentPlan.artifacts[0]!,
+          ),
+        ),
         startedEvent(3, "run_recovery", "intent_delivery0001"),
       ],
       [currentPlan],
@@ -175,23 +198,267 @@ describe("Conversation artifacts", () => {
   });
 
   it("marks artifacts previous after a newer unrelated intent starts", () => {
+    const previousPlan = plan();
+    previousPlan.artifacts[0]!.sourceRunId = "run_previous";
     const artifacts = conversationArtifacts(
       [
         startedEvent(1, "run_previous", "intent_previous0001"),
-        eventForRun(2, "run_previous", "plan.artifact.verified", "user", {
-          planId: "plan_1",
-          artifactId: "artifact_report",
-        }),
+        eventForRun(
+          2,
+          "run_previous",
+          "plan.artifact.verified",
+          "user",
+          createPlanArtifactEventPayload(
+            previousPlan,
+            previousPlan.artifacts[0]!,
+          ),
+        ),
         startedEvent(3, "run_current", "intent_current00001"),
       ],
-      [plan()],
+      [previousPlan],
       6,
       [run("run_previous", "completed"), run("run_current", "running")],
     );
 
     expect(artifacts[0]?.attemptScope).toBe("previous");
   });
+
+  it("accepts an exact native version from shared history when the event window omits its event", () => {
+    const f = versionFixture();
+    expect(
+      currentConversationArtifacts({
+        ...f,
+        events: [],
+        runs: [run("run_1", "completed")],
+      }),
+    ).toEqual(f.projected);
+    expect(
+      currentConversationArtifacts({ ...f, events: [], runs: [] })[0]
+        ?.attemptScope,
+    ).toBe("previous");
+    expect(
+      currentConversationArtifacts({
+        ...f,
+        events: [],
+        runs: [],
+        projected: [{ ...f.projected[0]!, runId: "run_unrelated" }],
+      }),
+    ).toEqual([]);
+  });
+
+  it("rejects a legacy server joining an old event to a changed manifest", () => {
+    const f = versionFixture();
+    const changed = structuredClone(f.plans[0]!);
+    changed.revision++;
+    changed.artifacts[0]!.sha256 = "b".repeat(64);
+    const projected = [
+      {
+        ...f.projected[0]!,
+        planRevision: changed.revision,
+        artifact: changed.artifacts[0]!,
+      },
+    ];
+    expect(
+      currentConversationArtifacts({
+        events: f.events,
+        plans: [changed],
+        runs: [],
+        projected,
+      }),
+    ).toEqual([]);
+    const state = f.events.reduce(
+      applyTaskNarrativeEvent,
+      createTaskNarrativeEventState(),
+    );
+    expect(
+      currentConversationArtifacts({
+        events: [],
+        plans: [changed],
+        runs: [],
+        projected,
+        deliverables: projectTaskDeliverables([changed], {
+          history: state.artifactHistory,
+        }),
+      }),
+    ).toEqual([]);
+  });
+
+  it("rejects a late native card and narrative after the current plan revision changed", () => {
+    const f = versionFixture();
+    const changed = structuredClone(f.plans[0]!);
+    changed.revision++;
+    expect(
+      currentConversationArtifacts({ ...f, plans: [changed], runs: [] }),
+    ).toEqual([]);
+  });
 });
+
+it("reclassifies a history-bound native card when a newer primary attempt exists", () => {
+  const f = versionFixture();
+  const events = [
+    ...f.events,
+    startedEvent(3, "run_current", "intent_current00001"),
+  ];
+  const runs = [run("run_1", "completed"), run("run_current", "running")];
+  const fresh = conversationArtifacts(events, f.plans, 6, runs);
+  const native = currentConversationArtifacts({ ...f, events, runs });
+  expect(fresh[0]?.attemptScope).toBe("previous");
+  expect(native[0]?.attemptScope).toBe("previous");
+});
+it("does not accept a different event run when sourceRunId was omitted", () => {
+  const current = plan();
+  delete current.artifacts[0]!.sourceRunId;
+  const events = [
+    event(
+      2,
+      "plan.artifact.verified",
+      "user",
+      createPlanArtifactEventPayload(current, current.artifacts[0]!),
+    ),
+  ];
+  const state = events.reduce(
+    applyTaskNarrativeEvent,
+    createTaskNarrativeEventState(),
+  );
+  const projected = conversationArtifacts(events, [current]);
+  expect(projected).toHaveLength(1);
+  const spoofed = {
+    ...projected[0]!,
+    runId: "run_unrelated",
+    createdAt: "2026-10-30T00:00:00Z",
+  };
+  const output = currentConversationArtifacts({
+    plans: [current],
+    events: [],
+    runs: [],
+    projected: [spoofed],
+    deliverables: projectTaskDeliverables([current], {
+      history: state.artifactHistory,
+    }),
+  });
+  expect(output).toEqual([]);
+});
+it("retains immutable incremental states and sorts artifact history by sequence", () => {
+  const f = versionFixture();
+  const first = createConversationArtifactEventState();
+  const before = structuredClone(first);
+  const state = f.events.reduce(applyConversationArtifactEvent, first);
+  expect(first).toEqual(before);
+  const saved = structuredClone(state);
+  applyConversationArtifactEvent(
+    state,
+    startedEvent(3, "run_current", "intent_current00001"),
+  );
+  expect(state).toEqual(saved);
+  const reversed = conversationArtifacts([...f.events].reverse(), f.plans);
+  expect(reversed).toEqual(f.projected);
+});
+
+it("uses primary event fallback despite newer child activity, with sorted and reversed inputs", () => {
+  const f = versionFixture();
+  const child = {
+    ...startedEvent(3, "run_child", "intent_child0000001"),
+    payload: { intentId: "intent_child0000001", source: "subagent" },
+  };
+  const activity = eventForRun(4, "run_child", "model.response", "user", {});
+  const events = [
+    startedEvent(1, "run_1", "intent_primary00001"),
+    ...f.events,
+    child,
+    activity,
+  ];
+  expect(conversationArtifacts(events, f.plans)[0]?.attemptScope).toBe(
+    "current",
+  );
+  expect(
+    conversationArtifacts([...events].reverse(), f.plans)[0]?.attemptScope,
+  ).toBe("current");
+  const childRecord = {
+    ...run("run_child", "running"),
+    source: "subagent" as const,
+  };
+  expect(
+    conversationArtifacts(events, f.plans, 6, [
+      run("run_1", "completed"),
+      childRecord,
+    ])[0]?.attemptScope,
+  ).toBe("current");
+  expect(
+    conversationArtifacts(events, f.plans, 6, [childRecord])[0]?.attemptScope,
+  ).toBe("previous");
+});
+it("binds only the latest matching revision independently of artifact event insertion order", () => {
+  const first = plan();
+  const old = event(
+    2,
+    "plan.artifact.verified",
+    "user",
+    createPlanArtifactEventPayload(first, first.artifacts[0]!),
+  );
+  const next = structuredClone(first);
+  next.revision = 4;
+  next.artifacts[0]!.updatedAt = "2026-08-08T00:00:03.000Z";
+  next.artifacts[0]!.sha256 = "b".repeat(64);
+  const current = event(
+    3,
+    "plan.artifact.verified",
+    "user",
+    createPlanArtifactEventPayload(next, next.artifacts[0]!),
+  );
+  expect(conversationArtifacts([current, old], [next])).toEqual(
+    conversationArtifacts([old, current], [next]),
+  );
+  expect(conversationArtifacts([current, old], [next])).toMatchObject([
+    { id: current.id, planRevision: 4, artifact: { sha256: "b".repeat(64) } },
+  ]);
+});
+
+it("reclassifies a native card consistently for reversed event fallback", () => {
+  const f = versionFixture();
+  const events = [
+    ...f.events,
+    startedEvent(3, "run_current", "intent_current00001"),
+  ];
+  for (const order of [events, [...events].reverse()]) {
+    expect(
+      currentConversationArtifacts({ ...f, events: order, runs: [] })[0]
+        ?.attemptScope,
+    ).toBe("previous");
+  }
+});
+it("requires raw replay for legacy history lacking event recorder identity", () => {
+  const f = versionFixture();
+  delete f.deliverables[0]!.currentVersion!.eventRunId;
+  delete f.deliverables[0]!.currentVersion!.eventCreatedAt;
+  expect(currentConversationArtifacts({ ...f, runs: [] })).toEqual(f.projected);
+  expect(currentConversationArtifacts({ ...f, events: [], runs: [] })).toEqual(
+    [],
+  );
+});
+
+function versionFixture() {
+  const current = plan();
+  const events = [
+    event(
+      2,
+      "plan.artifact.verified",
+      "user",
+      createPlanArtifactEventPayload(current, current.artifacts[0]!),
+    ),
+  ];
+  const state = events.reduce(
+    applyTaskNarrativeEvent,
+    createTaskNarrativeEventState(),
+  );
+  return {
+    plans: [current],
+    events,
+    projected: conversationArtifacts(events, [current]),
+    deliverables: projectTaskDeliverables([current], {
+      history: state.artifactHistory,
+    }),
+  };
+}
 
 function plan(): ExecutionPlan {
   return {

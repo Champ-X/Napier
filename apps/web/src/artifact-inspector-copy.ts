@@ -11,6 +11,8 @@ const en = {
   openInTab: "Open in new tab",
   fileChanged:
     "The file changed since inspection. Refresh to preview its current version.",
+  versionChanged:
+    "This result belongs to a different artifact version. Reopen the artifact from its current entry.",
   siteUnavailable: "HTML preview is unavailable. Refresh and try again.",
   svgUnavailable:
     "SVG preview could not be loaded. View the source to check the file, or refresh to try again.",
@@ -44,6 +46,7 @@ const zh: LocaleOverride<typeof en> = {
   download: "下载",
   openInTab: "在新标签页打开",
   fileChanged: "文件在检查后发生了变化，请刷新后查看当前版本。",
+  versionChanged: "此结果属于另一个产物版本，请从当前产物条目重新打开。",
   siteUnavailable: "HTML 预览暂不可用，请刷新后重试。",
   svgUnavailable: "SVG 预览加载失败。可切换到源码检查文件，或刷新后重试。",
   imageUnavailable: "图片预览加载失败。可刷新后重试，或下载文件检查内容。",

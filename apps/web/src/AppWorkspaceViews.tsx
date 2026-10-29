@@ -20,7 +20,10 @@ import { SkillResourceInspector } from "./SkillResourceInspector";
 import { workspaceEvidenceCopy as workspaceCopy } from "./workspace-evidence-copy";
 import type { ArtifactInspection } from "./artifact-inspection";
 import type { MessageSkillResourceLink } from "./message-markdown";
-import { taskArtifactTargets } from "./task-completion-output-paths";
+import {
+  artifactInspectionForPath,
+  taskArtifactTargetForPath,
+} from "./artifact-inspection-target";
 import {
   ConversationWorkspace,
   shouldShowConversationWelcome,
@@ -130,17 +133,8 @@ export function AppWorkspaceViews({
       }
       setArtifactInspection(undefined);
       setWorkspaceFileSha256(
-        vm.detail
-          ? taskArtifactTargets(
-              vm.detail.plans,
-              vm.detail.activePlan,
-              vm.detail.taskNarrative?.deliverables,
-            ).find(
-              (target) =>
-                absoluteWorkspacePath(bootstrap.workspace.root, target.path) ===
-                absoluteWorkspacePath(bootstrap.workspace.root, path),
-            )?.expectedSha256
-          : undefined,
+        taskArtifactTargetForPath(vm.detail, bootstrap.workspace.root, path)
+          ?.expectedSha256,
       );
       setWorkspaceFilePath(path);
     },
@@ -197,9 +191,11 @@ export function AppWorkspaceViews({
           role="tabpanel"
           aria-labelledby="workspace-view-conversation"
         >
-          <WorkbenchDeferredNotices vm={vm}
+          <WorkbenchDeferredNotices
+            vm={vm}
             onInspect={() => shell.setWorkspaceView("trajectory")}
-            onOpenWorkflow={() => shell.routeInspector("plan")} />
+            onOpenWorkflow={() => shell.routeInspector("plan")}
+          />
           <ConversationWorkspace
             vm={vm}
             endRef={conversationEnd}
@@ -460,40 +456,4 @@ function AppWorkspaceEvidenceSurfaces({
       />
     </>
   );
-}
-
-function artifactInspectionForPath(
-  detail: WorkspaceViewModel["detail"],
-  workspaceRoot: string,
-  path: string,
-): ArtifactInspection | undefined {
-  if (!detail) return undefined;
-  const target = taskArtifactTargets(
-    detail.plans,
-    detail.activePlan,
-    detail.taskNarrative?.deliverables,
-  ).find(
-    (candidate) =>
-      absoluteWorkspacePath(workspaceRoot, candidate.path) ===
-      absoluteWorkspacePath(workspaceRoot, path),
-  );
-  if (!target?.artifact || !target.planId) return undefined;
-  return {
-    artifact: target.artifact,
-    mode: "preview",
-    planId: target.planId,
-    threadId: detail.thread.id,
-  };
-}
-
-function absoluteWorkspacePath(
-  workspaceRoot: string,
-  filePath: string,
-): string {
-  const normalized = filePath.replaceAll("\\", "/");
-  if (normalized.startsWith("/") || /^[A-Za-z]:\//u.test(normalized)) {
-    return filePath;
-  }
-  const separator = workspaceRoot.includes("\\") ? "\\" : "/";
-  return `${workspaceRoot.replace(/[\\/]$/u, "")}${separator}${filePath}`;
 }

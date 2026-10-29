@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { parseHTML } from "linkedom";
 import { useLayoutEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -22,6 +23,18 @@ afterEach(async () => {
 });
 
 describe("workbench overlay suspension", () => {
+  it.each(["body", "documentElement"] as const)(
+    "returns to a visible control when async opening captured document %s",
+    (name) => {
+      const dom = installDom();
+      const fallback = document.createElement("button");
+      fallback.id = "workspace-rail-toggle";
+      dom.container.append(fallback);
+      restoreWorkbenchOverlayFocus(document[name]);
+      expect(document.activeElement).toBe(fallback);
+    },
+  );
+
   const entryPoints: Array<[string, (shell: Shell) => void]> = [
     ["Settings button", (shell) => shell.openSettings()],
     ["Developer button", (shell) => shell.openDeveloperWorkbench()],
@@ -209,6 +222,7 @@ describe("workbench overlay suspension", () => {
         mode: "preview",
         threadId: "thread_overlay",
         planId: "plan_overlay",
+        planRevision: 1,
         artifact: {
           id: "artifact_overlay",
           path: "report.md",
@@ -216,6 +230,8 @@ describe("workbench overlay suspension", () => {
           description: "Retained preview",
           status: "verified",
           evidence: "Fixture preview",
+          sha256: "a".repeat(64),
+          sizeBytes: text.length,
           createdAt: "2026-10-29T00:00:00.000Z",
           updatedAt: "2026-10-29T00:00:00.000Z",
         },
@@ -227,7 +243,7 @@ describe("workbench overlay suspension", () => {
           planRevision: 1,
           status: "verified",
           artifactKind: "file",
-          pathSha256: "b".repeat(64),
+          pathSha256: createHash("sha256").update("report.md").digest("hex"),
           sha256: "a".repeat(64),
           sizeBytes: text.length,
           lineCount: 1,

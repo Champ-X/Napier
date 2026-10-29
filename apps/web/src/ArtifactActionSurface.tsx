@@ -1,6 +1,11 @@
 import type { ArtifactManifestEntry } from "@napier/contracts";
 import { Download, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import {
+  artifactVersionKey,
+  assertArtifactReceiptVersion,
+} from "./artifact-version-binding";
 
 import { ArtifactActionBar } from "./ArtifactActionBar";
 import {
@@ -28,6 +33,7 @@ import { ArtifactInspectionContent } from "./ArtifactInspectionContent";
 export function ArtifactActionSurface({
   artifact,
   planId,
+  planRevision,
   threadId,
   onLedgerChanged,
   onOpen,
@@ -42,6 +48,7 @@ export function ArtifactActionSurface({
 }: {
   artifact: ArtifactManifestEntry;
   planId: string;
+  planRevision?: number;
   threadId: string;
   onLedgerChanged?(): void | Promise<void>;
   onOpen?(): void | Promise<void>;
@@ -54,6 +61,21 @@ export function ArtifactActionSurface({
   previewArtifactFile?: typeof previewPlanArtifactFile;
   previewDiff?: typeof previewPlanArtifactDiff;
 }) {
+  const selection = {
+    artifact,
+    planId,
+    threadId,
+    ...(planRevision !== undefined ? { planRevision } : {}),
+  };
+  const versionKey = artifactVersionKey(selection);
+  const currentKey = useRef(versionKey);
+  currentKey.current = versionKey;
+  useEffect(() => {
+    currentKey.current = versionKey;
+    return () => {
+      currentKey.current = "";
+    };
+  }, [versionKey]);
   const availability = artifactActionAvailability(artifact, {
     reveal: Boolean(onReveal),
     restore: Boolean(onRestore),
@@ -66,6 +88,12 @@ export function ArtifactActionSurface({
   const [diff, setDiff] = useState<PlanArtifactDiffPreviewReceipt>();
   const [error, setError] = useState<string>();
   const [copied, setCopied] = useState(false);
+  const [receiptKey, setReceiptKey] = useState<string>();
+  useEffect(() => {
+    setBusy(undefined);
+    setError(undefined);
+    setCopied(false);
+  }, [versionKey]);
   const supportsText = artifactUsesTextPreview(artifact.path);
 
   const inspect = async (mode: "preview" | "diff") => {
@@ -76,12 +104,14 @@ export function ArtifactActionSurface({
     try {
       if (mode === "preview") {
         const receipt = await requestArtifactPreview(
-          { artifact, threadId, planId },
+          selection,
           previewArtifact,
           previewArtifactFile,
         );
+        if (currentKey.current !== versionKey) return;
+        setReceiptKey(versionKey);
         if (onInspect) {
-          onInspect({ artifact, mode, planId, threadId, receipt });
+          onInspect({ ...selection, mode, receipt });
           setPreview(undefined);
         } else {
           setPreview(receipt);
@@ -89,8 +119,11 @@ export function ArtifactActionSurface({
         setDiff(undefined);
       } else {
         const receipt = await previewDiff(threadId, planId, artifact.id);
+        assertArtifactReceiptVersion(selection, receipt);
+        if (currentKey.current !== versionKey) return;
+        setReceiptKey(versionKey);
         if (onInspect) {
-          onInspect({ artifact, mode, planId, threadId, receipt });
+          onInspect({ ...selection, mode, receipt });
           setDiff(undefined);
         } else {
           setDiff(receipt);
@@ -99,9 +132,10 @@ export function ArtifactActionSurface({
       }
       await onLedgerChanged?.();
     } catch (reason) {
-      setError(formatApiErrorMessage(reason));
+      if (currentKey.current === versionKey)
+        setError(formatApiErrorMessage(reason));
     } finally {
-      setBusy(undefined);
+      if (currentKey.current === versionKey) setBusy(undefined);
     }
   };
   const open = () => {
@@ -137,9 +171,10 @@ export function ArtifactActionSurface({
         await onLedgerChanged?.();
       }
     } catch (reason) {
-      setError(formatApiErrorMessage(reason));
+      if (currentKey.current === versionKey)
+        setError(formatApiErrorMessage(reason));
     } finally {
-      setBusy(undefined);
+      if (currentKey.current === versionKey) setBusy(undefined);
     }
   };
   const actions = availability.actions.filter(
@@ -176,7 +211,7 @@ export function ArtifactActionSurface({
           {error}
         </p>
       ) : null}
-      {preview ? (
+      {preview && receiptKey === versionKey ? (
         <ArtifactInspection
           title={copy.previewTitle}
           path={artifact.path}
@@ -201,7 +236,7 @@ export function ArtifactActionSurface({
           />
         </ArtifactInspection>
       ) : null}
-      {diff ? (
+      {diff && receiptKey === versionKey ? (
         <ArtifactInspection
           title={copy.diffTitle}
           path={artifact.path}

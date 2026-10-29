@@ -9,7 +9,7 @@ import {
   conversationArtifactEventKey,
   conversationArtifactTargetId,
   conversationArtifactWorkspaceLinks,
-  conversationArtifacts,
+  currentConversationArtifacts,
 } from "./conversation-artifact-view-model";
 import { conversationBrowserActivities } from "./conversation-browser-activity-view-model";
 import {
@@ -90,8 +90,15 @@ export function conversationFeedProjection(
   const activitySource = events;
   const plans = detail?.plans ?? [];
   const runs = detail?.runs ?? [];
-  const artifacts =
-    detail?.artifacts ?? conversationArtifacts(events, plans, 6, runs);
+  const artifacts = currentConversationArtifacts({
+    events,
+    plans,
+    runs,
+    ...(detail?.artifacts ? { projected: detail.artifacts } : {}),
+    ...(detail?.taskNarrative?.deliverables
+      ? { deliverables: detail.taskNarrative.deliverables }
+      : {}),
+  });
   const artifactAnchorIds = artifacts.map(conversationArtifactTargetId);
   const artifactKeys = new Set(
     artifacts.map((item) => `${item.planId}:${item.artifact.id}`),

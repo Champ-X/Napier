@@ -1,7 +1,10 @@
+import { createHash } from "node:crypto";
 import { parseHTML } from "linkedom";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ThreadDetail } from "@napier/contracts";
+import { taskArtifactBinding } from "@napier/contracts/task-narrative";
 
 import type {
   PlanArtifactFileDownload,
@@ -23,6 +26,46 @@ afterEach(async () => {
 });
 
 describe("ConversationArtifactCard", () => {
+  it.each([
+    ["matched", "File integrity observed"],
+    ["mismatched", "Current file differs"],
+    ["missing", "Current file missing"],
+    ["unchecked", "Integrity recorded"],
+    ["observed", "Current file available · unverified"],
+  ] as const)(
+    "renders the shared %s observation without claiming declaration-only verification",
+    async (status, label) => {
+      const { container } = installDom();
+      const selected = artifact();
+      const entry = {
+        artifact: selected.artifact,
+        path: selected.artifact.path,
+        planId: selected.planId,
+        planRevision: selected.planRevision,
+        source: "plan" as const,
+        accessibility: "unchecked" as const,
+        verification: "integrity_recorded" as const,
+        previousVersions: [],
+      };
+      await renderCard(container, {
+        deliverables: [
+          {
+            ...entry,
+            observation: {
+              source: "workspace",
+              bindingSha256: taskArtifactBinding(entry),
+              status,
+              sha256: selected.artifact.sha256!,
+              sizeBytes: selected.artifact.sizeBytes!,
+            },
+          },
+        ],
+      });
+      expect(container.textContent).toContain(label);
+      expect(container.textContent).not.toContain("Artifact · Verified");
+    },
+  );
+
   it("previews verified text and closes it without leaking receipt hashes", async () => {
     const { container } = installDom();
     const previewArtifact = vi.fn(async () => preview());
@@ -90,6 +133,7 @@ async function renderCard(
     previewArtifact?: () => Promise<PlanArtifactTextPreviewReceipt>;
     downloadArtifact?: () => Promise<PlanArtifactFileDownload>;
     onLedgerChanged?: () => Promise<void>;
+    deliverables?: NonNullable<ThreadDetail["taskNarrative"]>["deliverables"];
   },
 ) {
   await act(async () => {
@@ -98,6 +142,9 @@ async function renderCard(
         item={artifact()}
         threadId="thread_1"
         onLedgerChanged={options.onLedgerChanged ?? (async () => undefined)}
+        {...(options.deliverables
+          ? { deliverables: options.deliverables }
+          : {})}
         {...(options.previewArtifact
           ? { previewArtifact: options.previewArtifact }
           : {})}
@@ -127,7 +174,7 @@ function artifact(): ConversationArtifact {
       description: "Verified delivery report",
       status: "verified",
       sha256: "a".repeat(64),
-      sizeBytes: 128,
+      sizeBytes: 16,
       sourceRunId: "run_1",
       evidence: "Runtime verified the report bytes.",
       createdAt: "2026-08-08T00:00:00.000Z",
@@ -145,7 +192,7 @@ function preview(): PlanArtifactTextPreviewReceipt {
     planRevision: 3,
     status: "verified",
     artifactKind: "file",
-    pathSha256: "b".repeat(64),
+    pathSha256: pathHash("artifacts/report.md"),
     sha256: "a".repeat(64),
     sizeBytes: 16,
     lineCount: 2,
@@ -159,6 +206,12 @@ function preview(): PlanArtifactTextPreviewReceipt {
 
 function download(): PlanArtifactFileDownload {
   return {
+    threadId: "thread_1",
+    planId: "plan_1",
+    artifactId: "artifact_report",
+    planRevision: 3,
+    status: "verified",
+    pathSha256: pathHash("artifacts/report.md"),
     blob: new Blob(["# Delivery\nDone."]),
     filename: "report.md",
     sha256: "a".repeat(64),
@@ -223,4 +276,8 @@ async function waitFor(predicate: () => boolean): Promise<void> {
     await act(async () => flush());
   }
   throw new Error("Timed out waiting for component state");
+}
+
+function pathHash(path: string): string {
+  return createHash("sha256").update(path).digest("hex");
 }

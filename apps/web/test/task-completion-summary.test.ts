@@ -1,5 +1,9 @@
 import type { ExecutionPlan } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
+import {
+  projectTaskDeliverables,
+  taskArtifactBinding,
+} from "@napier/contracts/task-narrative";
 
 import {
   taskArtifactPaths,
@@ -7,6 +11,27 @@ import {
 } from "../src/task-completion-output-paths";
 
 describe("Task completion summary", () => {
+  it.each(["missing", "mismatched"] as const)(
+    "does not reopen an observed %s output through legacy path fallback",
+    (status) => {
+      const current = plan("active");
+      current.artifacts = [artifact("report", "verified", "report.md", 1)];
+      const entries = projectTaskDeliverables([current]);
+      entries[0]!.observation = {
+        source: "workspace",
+        status,
+        bindingSha256: taskArtifactBinding(entries[0]!),
+      };
+      expect(
+        taskArtifactTargets([current], { outputPaths: ["report.md"] }, entries),
+      ).toEqual([]);
+      entries[0]!.observation.bindingSha256 = "b".repeat(64);
+      expect(taskArtifactTargets([current], undefined, entries)).toHaveLength(
+        1,
+      );
+    },
+  );
+
   it("shows recent authoritative outputs without missing artifacts", () => {
     const current = plan("active");
     current.artifacts = [
@@ -47,6 +72,8 @@ describe("Task completion summary", () => {
       {
         path: "artifacts/report.md",
         planId: "plan_1",
+        planRevision: current.revision,
+        expectedSha256: current.artifacts[0]?.sha256,
         artifact: current.artifacts[0],
       },
       { path: "legacy/output.txt" },

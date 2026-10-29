@@ -24,6 +24,7 @@ export type PlanArtifactFileDownloadReceipt = PlanArtifactLedgerEventReceipt & {
 };
 
 export interface PlanArtifactManifestState {
+  selectionKey?: string;
   busyId: string | undefined;
   error: string | undefined;
   fileDownload: PlanArtifactFileDownloadReceipt | undefined;
@@ -77,6 +78,9 @@ export interface PlanArtifactManifestActions {
 }
 
 export interface PlanArtifactManifestProps {
+  threadId: string;
+  planId: string;
+  planRevision: number;
   artifacts: ArtifactManifestEntry[];
   latestReplan: ExecutionPlanReplanRecord | undefined;
   state: PlanArtifactManifestState;

@@ -3,11 +3,16 @@ import type {
   ExecutionPlan,
   ThreadDetail,
 } from "@napier/contracts";
-import { projectTaskDeliverables } from "@napier/contracts/task-narrative";
+import {
+  projectTaskDeliverables,
+  taskArtifactCurrentFact,
+} from "@napier/contracts/task-narrative";
+import { canonicalJson } from "./stable-digest";
 
 export interface TaskArtifactTarget {
   path: string;
   planId?: string;
+  planRevision?: number;
   artifact?: ArtifactManifestEntry;
   expectedSha256?: string;
 }
@@ -28,19 +33,32 @@ export function taskArtifactTargets(
   const targets: TaskArtifactTarget[] = projected
     .filter(
       (entry) =>
-        entry.artifact.status === "produced" ||
-        entry.artifact.status === "verified" ||
-        (entry.source === "final_reference" &&
-          entry.accessibility === "available" &&
-          Boolean(entry.artifact.sha256)),
+        entry.source !== "plan" ||
+        plans.some(
+          (plan) =>
+            plan.id === entry.planId &&
+            plan.revision === entry.planRevision &&
+            plan.artifacts.some(
+              (artifact) =>
+                canonicalJson(artifact) === canonicalJson(entry.artifact),
+            ),
+        ),
     )
-    .map(({ path, planId, artifact, source }) => ({
+    .filter(
+      (entry) =>
+        !["missing", "drifted"].includes(taskArtifactCurrentFact(entry)) &&
+        (entry.artifact.status === "produced" ||
+          entry.artifact.status === "verified" ||
+          (entry.source === "final_reference" &&
+            entry.accessibility === "available" &&
+            Boolean(entry.artifact.sha256))),
+    )
+    .map(({ path, planId, planRevision, artifact }) => ({
       path,
       artifact,
       ...(planId ? { planId } : {}),
-      ...(source === "final_reference" && artifact.sha256
-        ? { expectedSha256: artifact.sha256 }
-        : {}),
+      ...(planRevision !== undefined ? { planRevision } : {}),
+      ...(artifact.sha256 ? { expectedSha256: artifact.sha256 } : {}),
     }));
   // Historical snapshots may contain only outputPaths. An empty list never
   // hides declared artifacts, and a known missing/replaced version stays closed.

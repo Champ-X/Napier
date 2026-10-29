@@ -13,6 +13,10 @@ import type {
   previewPlanArtifactFile,
   previewPlanArtifactText,
 } from "./artifact-file-api";
+import {
+  assertArtifactReceiptVersion,
+  type ArtifactVersionSelection,
+} from "./artifact-version-binding";
 
 export type ArtifactPreviewReceipt =
   | PlanArtifactTextPreview
@@ -45,22 +49,24 @@ export function artifactTextPreviewNeedsFileFallback(reason: unknown): boolean {
 }
 
 export async function requestArtifactPreview(
-  inspection: Pick<ArtifactInspection, "artifact" | "threadId" | "planId">,
+  inspection: ArtifactVersionSelection & { threadId: string },
   previewText: typeof previewPlanArtifactText,
   previewFile: typeof previewPlanArtifactFile,
 ): Promise<ArtifactPreviewReceipt> {
   const { artifact, threadId, planId } = inspection;
+  let receipt: ArtifactPreviewReceipt;
   if (artifactNeedsFilePreview(artifact)) {
-    return previewFile(threadId, planId, artifact.id);
-  }
-  try {
-    return await previewText(threadId, planId, artifact.id);
-  } catch (reason) {
-    if (artifactTextPreviewNeedsFileFallback(reason)) {
-      return previewFile(threadId, planId, artifact.id);
+    receipt = await previewFile(threadId, planId, artifact.id);
+  } else {
+    try {
+      receipt = await previewText(threadId, planId, artifact.id);
+    } catch (reason) {
+      if (!artifactTextPreviewNeedsFileFallback(reason)) throw reason;
+      receipt = await previewFile(threadId, planId, artifact.id);
     }
-    throw reason;
   }
+  assertArtifactReceiptVersion(inspection, receipt, "content");
+  return receipt;
 }
 
 export type ArtifactInspection =
@@ -68,6 +74,7 @@ export type ArtifactInspection =
       artifact: ArtifactManifestEntry;
       mode: "preview";
       planId: string;
+      planRevision?: number;
       threadId: string;
       receipt?: ArtifactPreviewReceipt;
     }
@@ -75,6 +82,7 @@ export type ArtifactInspection =
       artifact: ArtifactManifestEntry;
       mode: "diff";
       planId: string;
+      planRevision?: number;
       threadId: string;
       receipt?: PlanArtifactDiffPreviewReceipt;
     };

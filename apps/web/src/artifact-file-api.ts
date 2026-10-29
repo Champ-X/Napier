@@ -16,6 +16,12 @@ export {
 } from "./artifact-preview-file-api";
 
 export interface PlanArtifactFileDownload extends PlanArtifactLedgerEventReceipt {
+  threadId: string;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  pathSha256: string;
   blob: Blob;
   filename: string;
   sha256: string;
@@ -230,6 +236,20 @@ export async function downloadPlanArtifactFile(
   if (!response.ok) {
     await throwNapierApiError(response, "Request failed", path);
   }
+  const planRevision = Number(response.headers.get("X-Napier-Plan-Revision"));
+  const status = response.headers.get("X-Napier-Plan-Artifact-Status");
+  const pathSha256 = response.headers.get("X-Napier-Plan-Artifact-Path-SHA256");
+  if (
+    response.headers.get("X-Napier-Thread-Id") !== threadId ||
+    response.headers.get("X-Napier-Plan-Id") !== planId ||
+    response.headers.get("X-Napier-Plan-Artifact-Id") !== artifactId ||
+    !Number.isSafeInteger(planRevision) ||
+    planRevision < 1 ||
+    (status !== "produced" && status !== "verified") ||
+    !pathSha256 ||
+    !/^[a-f0-9]{64}$/u.test(pathSha256)
+  )
+    throw new Error(`Response artifact identity invalid for ${path}`);
   const expectedSha256 = response.headers.get("X-Napier-Content-SHA256");
   if (!expectedSha256 || !/^[a-f0-9]{64}$/u.test(expectedSha256)) {
     throw new Error(`Response hash missing for ${path}`);
@@ -241,11 +261,21 @@ export async function downloadPlanArtifactFile(
   }
   const headerSize = response.headers.get("X-Napier-Plan-Artifact-Size-Bytes");
   const sizeBytes = Number(headerSize ?? Number.NaN);
-  if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
+  if (
+    !Number.isSafeInteger(sizeBytes) ||
+    sizeBytes < 0 ||
+    sizeBytes !== bytes.byteLength
+  ) {
     throw new Error(`Response artifact size invalid for ${path}`);
   }
   const receipt = ledgerEventReceiptFromHeaders(response, path);
   return {
+    threadId,
+    planId,
+    artifactId,
+    planRevision,
+    status,
+    pathSha256,
     blob: new Blob([bytes], {
       type: response.headers.get("Content-Type") ?? "application/octet-stream",
     }),

@@ -125,6 +125,9 @@ export default function TaskCompletionSummary({
                       <ArtifactActionSurface
                         artifact={target.artifact}
                         planId={target.planId}
+                        {...(target.planRevision !== undefined
+                          ? { planRevision: target.planRevision }
+                          : {})}
                         threadId={threadId}
                         {...(onLedgerChanged ? { onLedgerChanged } : {})}
                       />
@@ -168,6 +171,9 @@ function PrimaryArtifactAction({
       <ArtifactActionSurface
         artifact={target.artifact!}
         planId={target.planId}
+        {...(target.planRevision !== undefined
+          ? { planRevision: target.planRevision }
+          : {})}
         threadId={threadId}
         onOpen={() => onOpenArtifact(target.path)}
         {...(onLedgerChanged ? { onLedgerChanged } : {})}

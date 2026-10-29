@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { parseHTML } from "linkedom";
 import { render } from "preact";
 import { act } from "preact/test-utils";
@@ -82,6 +83,7 @@ describe("ArtifactActionSurface", () => {
       artifact: artifact({ path: "artifacts/drawing.svg" }),
       previewArtifact: async () => ({
         ...preview(),
+        pathSha256: pathHash("artifacts/drawing.svg"),
         text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle r="2"/></svg>',
       }),
     });
@@ -313,7 +315,7 @@ function preview(): PlanArtifactTextPreviewReceipt {
     planRevision: 1,
     status: "verified",
     artifactKind: "file",
-    pathSha256: "a".repeat(64),
+    pathSha256: pathHash("artifacts/report.md"),
     sha256: "b".repeat(64),
     sizeBytes: 16,
     lineCount: 2,
@@ -331,7 +333,7 @@ function binaryPreview(): PlanArtifactFilePreviewReceipt {
     planRevision: 1,
     status: "verified",
     artifactKind: "file",
-    pathSha256: "a".repeat(64),
+    pathSha256: pathHash("artifacts/drawing.png"),
     path: "artifacts/drawing.png",
     filename: "drawing.png",
     contentType: "image/png",
@@ -351,7 +353,7 @@ function diff(): PlanArtifactDiffPreviewReceipt {
     planRevision: 1,
     status: "verified",
     artifactKind: "file",
-    pathSha256: "a".repeat(64),
+    pathSha256: pathHash("artifacts/report.md"),
     scope: "working",
     text: "-Before\n+Changed",
     outputSha256: "d".repeat(64),
@@ -429,4 +431,8 @@ async function waitFor(predicate: () => boolean): Promise<void> {
     await act(async () => flush());
   }
   throw new Error("Timed out waiting for component state");
+}
+
+function pathHash(path: string): string {
+  return createHash("sha256").update(path).digest("hex");
 }

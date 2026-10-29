@@ -1,4 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import {
+  artifactVersionKey,
+  assertArtifactReceiptVersion,
+  type ArtifactVersionReceipt,
+  type ArtifactReceiptMode,
+} from "./artifact-version-binding";
+import { canonicalJson } from "./stable-digest";
 
 import type { ArtifactManifestEntry, ExecutionPlan } from "@napier/contracts";
 
@@ -63,22 +71,51 @@ export function usePlanArtifactController({
   const [state, setState] =
     useState<PlanArtifactManifestState>(EMPTY_ARTIFACT_STATE);
 
-  useEffect(() => setState(EMPTY_ARTIFACT_STATE), [resetKey]);
+  const scopeKey = canonicalJson({ threadId, plan, resetKey });
+  const currentScope = useRef(scopeKey);
+  currentScope.current = scopeKey;
+  useEffect(() => {
+    setState(EMPTY_ARTIFACT_STATE);
+  }, [scopeKey]);
+  useEffect(() => {
+    currentScope.current = scopeKey;
+    return () => {
+      currentScope.current = "";
+    };
+  }, [scopeKey]);
 
   const execute = async <T>(
+    artifact: ArtifactManifestEntry,
     busyId: string,
     operation: () => Promise<T>,
     commit: (result: T) => Partial<PlanArtifactManifestState>,
+    mode: ArtifactReceiptMode | "mutation",
     formatError: (error: unknown) => string = formatApiErrorMessage,
   ): Promise<void> => {
     if (!threadId || !plan || state.busyId) return;
+    const selection = {
+      artifact,
+      threadId,
+      planId: plan.id,
+      planRevision: plan.revision,
+    };
+    const selectionKey = artifactVersionKey(selection);
     setState({ ...EMPTY_ARTIFACT_STATE, busyId });
     try {
       const result = await operation();
-      setState({ ...EMPTY_ARTIFACT_STATE, ...commit(result) });
+      if (mode !== "mutation") {
+        assertArtifactReceiptVersion(
+          selection,
+          result as unknown as ArtifactVersionReceipt,
+          mode,
+        );
+      }
+      if (currentScope.current !== scopeKey) return;
+      setState({ ...EMPTY_ARTIFACT_STATE, selectionKey, ...commit(result) });
       await onChanged();
     } catch (error) {
-      setState({ ...EMPTY_ARTIFACT_STATE, error: formatError(error) });
+      if (currentScope.current === scopeKey)
+        setState({ ...EMPTY_ARTIFACT_STATE, error: formatError(error) });
     }
   };
 
@@ -87,6 +124,7 @@ export function usePlanArtifactController({
     action: "produced" | "verified" | "missing",
   ): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:${action}`,
       () =>
         updatePlanArtifact(threadId!, plan!.id, artifact.id, {
@@ -98,10 +136,12 @@ export function usePlanArtifactController({
             : {}),
         }),
       () => ({}),
+      "mutation",
     );
 
   const download = async (artifact: ArtifactManifestEntry): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:download`,
       () => downloadPlanArtifactFile(threadId!, plan!.id, artifact.id),
       (result) => {
@@ -118,13 +158,16 @@ export function usePlanArtifactController({
           },
         };
       },
+      "content",
     );
 
   const previewText = async (artifact: ArtifactManifestEntry): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:preview`,
       () => previewPlanArtifactText(threadId!, plan!.id, artifact.id),
       (textPreview) => ({ textPreview }),
+      "content",
     );
 
   const verifyFile = async (
@@ -132,16 +175,20 @@ export function usePlanArtifactController({
     file: File,
   ): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:file-verify`,
       () => verifyPlanArtifactFile(threadId!, plan!.id, artifact.id, file),
       (fileVerification) => ({ fileVerification }),
+      "expected",
     );
 
   const profileData = async (artifact: ArtifactManifestEntry): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:data`,
       () => previewPlanArtifactDataProfile(threadId!, plan!.id, artifact.id),
       (dataProfile) => ({ dataProfile }),
+      "content",
     );
 
   const verifyDataProfile = async (
@@ -149,6 +196,7 @@ export function usePlanArtifactController({
     file: File,
   ): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:data-verify`,
       async () =>
         verifyPlanArtifactDataProfile(
@@ -158,6 +206,7 @@ export function usePlanArtifactController({
           JSON.parse(await file.text()) as PlanArtifactDataProfile,
         ),
       (dataProfileVerification) => ({ dataProfileVerification }),
+      "identity",
       (error) =>
         error instanceof SyntaxError
           ? planCopy.artifactActions.dataProfileVerifyInvalidJson
@@ -168,10 +217,12 @@ export function usePlanArtifactController({
     artifact: ArtifactManifestEntry,
   ): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:manifest`,
       () =>
         previewPlanArtifactDirectoryManifest(threadId!, plan!.id, artifact.id),
       (directoryManifest) => ({ directoryManifest }),
+      "content",
     );
 
   const verifyDirectory = async (
@@ -179,6 +230,7 @@ export function usePlanArtifactController({
     file: File,
   ): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:manifest-verify`,
       async () =>
         verifyPlanArtifactDirectoryManifest(
@@ -190,6 +242,7 @@ export function usePlanArtifactController({
       (directoryManifestVerification) => ({
         directoryManifestVerification,
       }),
+      "identity",
       (error) =>
         error instanceof SyntaxError
           ? planCopy.artifactActions.manifestVerifyInvalidJson
@@ -198,9 +251,11 @@ export function usePlanArtifactController({
 
   const checkDrift = async (artifact: ArtifactManifestEntry): Promise<void> =>
     execute(
+      artifact,
       `${artifact.id}:drift-check`,
       () => checkPlanArtifactDrift(threadId!, plan!.id, artifact.id),
       (driftCheck) => ({ driftCheck }),
+      "expected",
     );
 
   return {

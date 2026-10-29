@@ -1,0 +1,59 @@
+.conversation-artifact {
+  container: artifact-card / inline-size;
+}
+
+@container artifact-card (max-width: 400px) {
+  article.conversation-artifact > header {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  article.conversation-artifact > header time {
+    grid-column: 2;
+  }
+
+  article.conversation-artifact > header strong {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .conversation-artifact .artifact-inline-preview {
+    grid-template-rows: auto minmax(204px, 1fr);
+  }
+
+  .conversation-artifact .artifact-inline-preview > header {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-2);
+  }
+
+  .conversation-artifact .artifact-inline-preview > header span {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .conversation-artifact .artifact-inline-preview > header span svg {
+    flex-shrink: 0;
+  }
+
+  .conversation-artifact .artifact-inline-preview > iframe,
+  .conversation-artifact .artifact-inline-preview-placeholder,
+  .conversation-artifact .artifact-inline-preview > button {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .conversation-artifact .artifact-inline-preview > button {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+  }
+}
+
+@container artifact-panel (max-width: 360px) {
+  .artifact-inspector .artifact-inspector-header .artifact-inspector-views {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
