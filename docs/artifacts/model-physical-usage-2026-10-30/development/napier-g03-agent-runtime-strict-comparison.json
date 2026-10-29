@@ -1,0 +1,9 @@
+{
+  "baselineCount": 48,
+  "currentCount": 48,
+  "sameNormalizedDiagnosticMultiset": true,
+  "added": [],
+  "removed": [],
+  "normalization": "strip absolute or relative file prefix and line,column; retain full error code/message/continuation text with multiplicity",
+  "baselineSource": "git archive d2e33ac3 runtime+contracts with same installed dependencies"
+}

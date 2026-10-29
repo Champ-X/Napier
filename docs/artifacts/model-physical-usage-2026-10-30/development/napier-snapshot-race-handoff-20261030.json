@@ -1,0 +1,35 @@
+{
+  "scope": "coherent Store startup and refresh snapshot correction",
+  "files": [
+    {
+      "path": "packages/runtime/src/sqlite-ledger.ts",
+      "sha256": "10c5eef90130c1a6ff58b693287dccbb9f0246d1cd8b1a21744d2c20e99df97d"
+    },
+    {
+      "path": "packages/runtime/src/store.ts",
+      "sha256": "0b43667c42d4824a1a328fd4c4187c787dcb718d91a0c3e07b04fdf50c0f05b1"
+    },
+    {
+      "path": "packages/runtime/src/store-thread-evidence-validation.ts",
+      "sha256": "9b6fbb4defba027237f2b70e1cf04715f594c7d13f7f08c158c15232fba572c9"
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-query.ts",
+      "sha256": "2ac570a37cc875540aff02241a800a3592f45d7abf62913596bd53f4d074458f"
+    },
+    {
+      "path": "packages/runtime/test/store-snapshot-consistency.test.ts",
+      "sha256": "1682d882e9043435b0cfb4a0e9d5236cddf50d611c22c1af30b0b27f7037e8bd"
+    }
+  ],
+  "verification": {
+    "before": "/tmp/napier-snapshot-race-before.json (5 race failures, 2 corruption passes)",
+    "final": "/tmp/napier-snapshot-race-final.json (9/9)",
+    "regression": "/tmp/napier-snapshot-race-regression.json (46/46, includes original 7 race suite cases)",
+    "runtimeTypes": "/tmp/napier-snapshot-race-types.log (exit 0, empty)",
+    "strictTestTypes": "/tmp/napier-snapshot-race-strict-types.log (exit 0, empty)",
+    "architecture": "/tmp/napier-snapshot-race-architecture.log (no new violation; Store stale override 3741 -> 3722)"
+  },
+  "emittedBuilds": false,
+  "commits": false
+}

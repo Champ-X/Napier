@@ -358,6 +358,13 @@
 - [证据索引](docs/artifacts/harness-corpus-evidence-index-2026-10-30.json) 原样保存 121 pass／50 fail 的早期 aggregate；50 个旧 release tests 在 fixture construction 失败，精确旧 HEAD `31e9edb9` 的独立 checkout／五包编译后复现相同名称／状态／错误／完整栈（仅归一化路径），不计为通过。临时 OCI fixture 修正已撤销，没有改写历史 stage11–22 证据或提高预算。
 - **G02 仍未完成**：真实独立 curator cohort、研究／候选范围的 tuning exclusion、首揭示与后续使用记录，以及目标模型的有效 live-quality 观察仍缺失。合成 sealed-family 只证明机制，声明时间只证明内部一致性，不是外部认证或 universal non-exposure。详见 [语料来源与暴露边界](docs/harness-corpus-provenance.md)。后续继续 G03 持久迟到用量、coder 恢复／完整编译管线／共享额度，以及 G01–G07 所有保留目标；未 push。
 
+### 后续推进：G03 持久物理用量与迟到对账（2026-10-30）
+
+- 实现本地提交 `58e61c30`，未 push：原生归属／source outbox／Store 原子 claim 覆盖主子及辅助调用、独立评审、Host 非执行恢复与 standalone source。正常和迟到响应同路计费；Task／parent 汇总不双计，逻辑取消不交付迟到内容，已封存完成／续跑证明不能被计量改写。`physicalId` 只代表一次 admitted Models API 调用，不宣称 SDK 隐藏 HTTP 重试已逐次计量。
+- [冻结回归](docs/artifacts/model-physical-usage-regression-2026-10-30.json) 为 **78 文件／601 测试通过**。Contracts／Runtime／Server 编译、Web／Harness／Benchmark 类型检查及新增／其余修改测试严格检查通过；4,004 源码／配置、4,811 emitted 和 28 用户文件摘要无漂移。原始 `agent-runtime.test.ts` 的 48 个严格类型错误在旧 HEAD 精确复现，仍保留为未通过检查，不计作通过覆盖。
+- [证据索引](docs/artifacts/model-physical-usage-evidence-index-2026-10-30.json) 保留首次冻结 590／592 失败、复制零值 DTO 绕过证明反例与夹具错误。修复了双 replayer 启动的混合 revision 读取、stale finish、未知总额抹掉已知费用下界、advisor 导入哈希、续跑加权／计价准入；确定性并发／损坏专项 9／9，最终真实 SIGKILL／双进程 replay 通过。仅本地 faux／loopback HTTP，零外部付费调用。
+- **门禁仍不完整**：8 项既有架构失败、根 API 1897／1896 与 digest、历史 release manifest 失败保留；新增 5 项生产必需 internal 接口带来 21／16 与内部 digest 门禁失败，尚未通过接口验收。没有提高预算或宣称发布完成。完整 child compiler／thinking／overflow、coder 恢复、并发共享预留额度及其他目标继续推进；详见 [实现边界](docs/model-physical-usage-accounting.md)。G03、G02 与 G01–G07 总目标保持 **active**。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -478,7 +485,7 @@
 **实施任务**
 
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
-- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 source checkpoint、原子调用用量／事件结算与工具归属已实现；完整 child context compiler／overflow／thinking parity 和迟到物理用量归属仍待完成。）
+- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 checkpoint、持久物理用量与迟到对账已完成本地功能回归；完整 child compiler／overflow／thinking parity 和新增内部接口门禁仍待完成。）
 - [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查与 mailbox 稀疏消费持久化已实现；并发共享父 token／cost 原子额度仍待完成。）
 - [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明、安全恢复授权、严格 tail 校验、原生只读 continuation 和具备完整原生证明的历史 v1 候选受限对账已实现；coder／工作区重建、未覆盖尾部及缺失证明的历史记录仍待完成。）
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。
