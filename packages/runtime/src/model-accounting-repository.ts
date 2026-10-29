@@ -20,6 +20,7 @@ import { createUndispatchedModelObservation, freezeModelAccountingBasis, validat
 import type { ModelUsageSource } from "./model-usage-source.js";
 import { assertChildRunFence } from "./subagent-child-run-fence.js";
 import { readModelAttemptReceipt, type ModelAttemptReceiptInput } from "./model-attempt-receipt.js";
+import type { LedgerSnapshot } from "./sqlite-ledger-model.js";
 
 export interface ModelAccountingPrepareInput {
   owner: ModelUsagePreparationAuthority;
@@ -145,10 +146,11 @@ export class ModelAccountingRepository {
     const source = this.#config().source;
     this.#host.assertInitialized();
     this.#assertAttribution(attribution);
-    const claim = this.#host.requireLedger().modelUsageClaim(attribution.physicalId);
+    const attempt = this.#host.requireLedger().readModelAttemptView(attribution.physicalId);
+    const claim = attempt.claim;
     if (claim) {
       if (JSON.parse(claim.receiptJson).terminal !== "undispatched") throw new Error("Final physical receipt conflicts with undispatched proof");
-      return this.#result("duplicate", attribution, claim.receiptSha256);
+      return this.#result("duplicate", attribution, claim.receiptSha256, attempt.snapshot);
     }
     source.reserve(attribution);
     let delivery = source.pending({ physicalId: attribution.physicalId, limit: 1 })[0];
@@ -194,7 +196,7 @@ export class ModelAccountingRepository {
       if (previous) {
         if (previous.attributionSha256 !== attribution.contentSha256 || previous.receiptJson !== canonicalJson(observation))
           throw new Error("Final model accounting claim conflicts; reconciliation is required");
-        return this.#result("duplicate", attribution, observation.contentSha256);
+        return this.#result("duplicate", attribution, observation.contentSha256, attempt.snapshot);
       }
       try {
         if (attribution.owner.kind !== "operation") {
@@ -265,10 +267,23 @@ export class ModelAccountingRepository {
     return this.#host.appendEventsToThread(this.#host.mutableThread(attribution.owner.threadId), [{ threadId: attribution.owner.threadId,
       runId: attribution.owner.runId, type, category: "model", visibility: "debug", payload }]);
   }
-  #result(outcome: "applied" | "duplicate", attribution: ModelCallAttributionV1, receiptSha256: string): ModelUsageReconciliation {
-    const run = attribution.owner.kind === "operation" ? undefined : this.#host.mutableRun(attribution.owner.runId);
+  #result(outcome: "applied" | "duplicate", attribution: ModelCallAttributionV1, receiptSha256: string,
+    snapshot?: LedgerSnapshot): ModelUsageReconciliation {
+    let readRun = this.#host.mutableRun.bind(this.#host);
+    if (outcome === "duplicate" && attribution.owner.kind !== "operation") {
+      if (!snapshot) throw new Error("Workspace accounting snapshot is unavailable");
+      // The claim and both revisions share one native read transaction. A peer
+      // may have committed after queue refresh; do not reload or mutate our heap.
+      const state = JSON.parse(snapshot.stateJson) as ModelAccountingHost["state"];
+      readRun = (runId) => {
+        const value = state.runs.find((run) => run.id === runId);
+        if (!value) throw new Error("Accounting Run is unavailable");
+        return value;
+      };
+    }
+    const run = attribution.owner.kind === "operation" ? undefined : readRun(attribution.owner.runId);
     return { outcome, physicalId: attribution.physicalId, receiptSha256, accountingRevision: run?.accounting?.revision ?? 0,
-      ...(run?.parentRunId && run.subagent ? { parentAccountingRevision: this.#host.mutableRun(run.parentRunId).accounting?.revision ?? 0 } : {}) };
+      ...(run?.parentRunId && run.subagent ? { parentAccountingRevision: readRun(run.parentRunId).accounting?.revision ?? 0 } : {}) };
   }
   #assertBudget(runId: string, attribution: ModelCallAttributionV1, seen = new Set<string>()): void {
     if (seen.has(runId)) throw new Error("Model budget ancestor lineage contains a cycle");
