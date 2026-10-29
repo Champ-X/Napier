@@ -1,0 +1,11 @@
+{
+  "baselineHead": "d2e33ac341f19bbefd112c27a1d254075c6f4287",
+  "baselineLog": "/tmp/napier-g03-agent-runtime-baseline-strict.log",
+  "baselineSha256": "1fa5fe6dd8c083ff1f2db9f9697d29a32e4c2ef8e7f97e2a9df9fb19e9d9587e",
+  "baselineCount": 48,
+  "currentCount": 48,
+  "sameNormalizedDiagnosticMultiset": true,
+  "added": [],
+  "removed": [],
+  "normalization": "strip file path and line,column, retain full error code/message/continuations with multiplicity"
+}

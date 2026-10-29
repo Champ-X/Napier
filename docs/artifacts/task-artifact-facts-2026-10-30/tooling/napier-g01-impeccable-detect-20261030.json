@@ -1,0 +1,12 @@
+[
+  {
+    "antipattern": "side-tab",
+    "name": "Side-tab accent border",
+    "description": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "/Users/champ/orca/Napier/apps/web/src/workspace-shell.css",
+    "line": 1772,
+    "snippet": "border-left: 3px solid var(--color-accent)"
+  }
+]

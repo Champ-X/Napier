@@ -1,0 +1,7 @@
+{
+  "setupFailure": true,
+  "browserCasesExecuted": 0,
+  "reason": "Reappearance fixture attempted verified-to-missing downgrade that production correctly ignores; unconditional manually appended missing event had mismatched actual status. Fixture now uses produced-to-missing transition exercised by independent HTTP regression.",
+  "productionSourceChanged": false,
+  "rawStartupLog": "/tmp/napier-artifact-facts-browser-result-v2-server-start.log"
+}

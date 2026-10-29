@@ -1,0 +1,65 @@
+{
+  "entry": {
+    "path": "report.txt",
+    "planId": "plan_c4f3d9481b524f5d95ad",
+    "planRevision": 3,
+    "artifact": {
+      "id": "report",
+      "path": "report.txt",
+      "kind": "file",
+      "description": "Declared report",
+      "status": "missing",
+      "evidence": "was missing",
+      "createdAt": "2026-10-29T21:58:16.653Z",
+      "updatedAt": "2026-10-29T21:58:16.664Z",
+      "sourceRunId": "run_f8a9af8683a54c8488be"
+    },
+    "source": "plan",
+    "verification": "unverified",
+    "accessibility": "available",
+    "currentVersion": {
+      "planId": "plan_c4f3d9481b524f5d95ad",
+      "artifactId": "report",
+      "planRevision": 3,
+      "eventId": "event_9574b583f9554b909c90",
+      "eventSeq": 2,
+      "path": "report.txt",
+      "status": "missing",
+      "source": "recorded_assertion",
+      "runId": "run_f8a9af8683a54c8488be"
+    },
+    "sourceEventId": "event_9574b583f9554b909c90",
+    "previousVersions": [
+      {
+        "planId": "plan_c4f3d9481b524f5d95ad",
+        "artifactId": "report",
+        "planRevision": 2,
+        "eventId": "event_1e3184411f1a476685e2",
+        "eventSeq": 1,
+        "path": "report.txt",
+        "status": "produced",
+        "source": "recorded_assertion",
+        "runId": "run_f8a9af8683a54c8488be"
+      }
+    ],
+    "history": {
+      "status": "incomplete",
+      "reason": "event_history_only"
+    },
+    "observation": {
+      "status": "observed",
+      "sizeBytes": 16,
+      "sha256": "fc88fbc76a809c578a982f89b2b6761ba1fff37416d078c66e45bef67ec278ff",
+      "source": "workspace",
+      "bindingSha256": "d019d3b8e97e73039a81653889985ad384e4693d052e9502409ca863bcd15730"
+    }
+  },
+  "facts": {
+    "status": "unknown",
+    "artifactCount": 1,
+    "verifiedArtifactCount": 0,
+    "producedArtifactCount": 0,
+    "missingArtifactCount": 0,
+    "driftedArtifactCount": 0
+  }
+}

@@ -1,0 +1,10 @@
+packages/contracts/src/task-artifact-facts.ts 25ms
+packages/contracts/src/task-artifact-history.ts 9ms
+packages/contracts/src/task-deliverables.ts 6ms
+packages/runtime/src/task-deliverable-inspection.ts 8ms
+apps/web/src/task-narrative-protocol.ts 6ms
+apps/web/src/task-validation-matrix.ts 4ms
+apps/server/test/task-deliverable-facts.test.ts 10ms
+packages/runtime/test/task-deliverable-inspection.test.ts 8ms
+apps/web/test/task-validation-matrix.test.ts 4ms
+apps/web/test/task-narrative-protocol.test.ts 3ms

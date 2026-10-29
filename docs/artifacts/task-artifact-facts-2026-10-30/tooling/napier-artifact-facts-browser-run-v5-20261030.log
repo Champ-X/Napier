@@ -1,0 +1,1567 @@
+{
+  "kind": "napier.task-artifact-facts-browser",
+  "schemaVersion": 1,
+  "snapshot": "/tmp/napier-artifact-facts-browser-20261030",
+  "root": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-web-ui-e2e-eL6gof",
+  "startedAt": "2026-10-29T22:11:32.630Z",
+  "paidModelCalls": 0,
+  "themeBoundary": "Product supports light only; no dark theme acceptance",
+  "cases": [
+    {
+      "name": "match-en-desktop",
+      "status": "passed",
+      "rowText": "Verified\nArtifacts\n\nintegrity checked 1 · declared produced 0 · missing 0 · changed 0 · total 1\n\nWorkspace observation",
+      "geometry": {
+        "viewport": 1440,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "panelWidth": 1056,
+        "colorScheme": "light",
+        "focusedId": "task-section-validation",
+        "tableRoles": [
+          "table",
+          "row",
+          "columnheader",
+          "columnheader",
+          "columnheader",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell"
+        ],
+        "elementVisibility": {
+          "checked": 20,
+          "bounds": [
+            {
+              "label": "TASK WORKSPACE",
+              "left": 318,
+              "right": 438.984375,
+              "width": 120.984375,
+              "height": 14,
+              "clientWidth": 121,
+              "scrollWidth": 121
+            },
+            {
+              "label": "Overview",
+              "left": 1051.640625,
+              "right": 1156.421875,
+              "width": 104.78125,
+              "height": 40,
+              "clientWidth": 105,
+              "scrollWidth": 105
+            },
+            {
+              "label": "Changes",
+              "left": 1160.421875,
+              "right": 1261.890625,
+              "width": 101.46875,
+              "height": 40,
+              "clientWidth": 101,
+              "scrollWidth": 101
+            },
+            {
+              "label": "Validation",
+              "left": 1265.890625,
+              "right": 1374,
+              "width": 108.109375,
+              "height": 40,
+              "clientWidth": 108,
+              "scrollWidth": 108
+            },
+            {
+              "label": "UnknownTypecheck",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Typecheck",
+              "left": 411.53125,
+              "right": 482.140625,
+              "width": 70.609375,
+              "height": 16,
+              "clientWidth": 71,
+              "scrollWidth": 71
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Verification receipt",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "UnknownTests",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Tests",
+              "left": 411.53125,
+              "right": 446.34375,
+              "width": 34.8125,
+              "height": 16,
+              "clientWidth": 35,
+              "scrollWidth": 35
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Verification receipt",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "UnknownLint / diagnostics",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Lint / diagnostics",
+              "left": 411.53125,
+              "right": 522.109375,
+              "width": 110.578125,
+              "height": 16,
+              "clientWidth": 111,
+              "scrollWidth": 111
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "LSP",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "VerifiedArtifacts",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Artifacts",
+              "left": 402.4375,
+              "right": 459.3125,
+              "width": 56.875,
+              "height": 16,
+              "clientWidth": 57,
+              "scrollWidth": 57
+            },
+            {
+              "label": "integrity checked 1 · declared produced 0 · missing 0 · changed 0 · total 1",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Workspace observation",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            }
+          ],
+          "violations": []
+        }
+      },
+      "navigation": [
+        {
+          "label": "Overview",
+          "clickable": true,
+          "left": 1051.640625,
+          "right": 1156.421875,
+          "top": 120,
+          "bottom": 160
+        },
+        {
+          "label": "Changes",
+          "clickable": true,
+          "left": 1160.421875,
+          "right": 1261.890625,
+          "top": 120,
+          "bottom": 160
+        },
+        {
+          "label": "Validation",
+          "clickable": true,
+          "left": 1265.890625,
+          "right": 1374,
+          "top": 120,
+          "bottom": 160
+        }
+      ],
+      "refreshStable": true,
+      "keyboardSelection": true
+    },
+    {
+      "name": "match-en-320",
+      "status": "passed",
+      "rowText": "Verified\nArtifacts\n\nintegrity checked 1 · declared produced 0 · missing 0 · changed 0 · total 1\n\nWorkspace observation",
+      "geometry": {
+        "viewport": 320,
+        "documentWidth": 320,
+        "bodyWidth": 320,
+        "panelWidth": 200,
+        "colorScheme": "light",
+        "focusedId": "task-section-validation",
+        "tableRoles": [
+          "table",
+          "row",
+          "columnheader",
+          "columnheader",
+          "columnheader",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell"
+        ],
+        "elementVisibility": {
+          "checked": 20,
+          "bounds": [
+            {
+              "label": "TASK WORKSPACE",
+              "left": 88,
+              "right": 208.984375,
+              "width": 120.984375,
+              "height": 14,
+              "clientWidth": 121,
+              "scrollWidth": 121
+            },
+            {
+              "label": "Overview",
+              "left": 88,
+              "right": 192.78125,
+              "width": 104.78125,
+              "height": 40,
+              "clientWidth": 105,
+              "scrollWidth": 105
+            },
+            {
+              "label": "Changes",
+              "left": 88,
+              "right": 189.46875,
+              "width": 101.46875,
+              "height": 40,
+              "clientWidth": 101,
+              "scrollWidth": 101
+            },
+            {
+              "label": "Validation",
+              "left": 88,
+              "right": 196.109375,
+              "width": 108.109375,
+              "height": 40,
+              "clientWidth": 108,
+              "scrollWidth": 108
+            },
+            {
+              "label": "UnknownTypecheck",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 32,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "Typecheck",
+              "left": 181.53125,
+              "right": 252.140625,
+              "width": 70.609375,
+              "height": 16,
+              "clientWidth": 71,
+              "scrollWidth": 71
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17.390625,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "Verification receipt",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 14,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "UnknownTests",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 32,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "Tests",
+              "left": 181.53125,
+              "right": 216.34375,
+              "width": 34.8125,
+              "height": 16,
+              "clientWidth": 35,
+              "scrollWidth": 35
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17.390625,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "Verification receipt",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 14,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "UnknownLint / diagnostics",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 56,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "Lint / diagnostics",
+              "left": 105,
+              "right": 215.578125,
+              "width": 110.578125,
+              "height": 16,
+              "clientWidth": 111,
+              "scrollWidth": 111
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17.390625,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "LSP",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 14,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "VerifiedArtifacts",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 32,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "Artifacts",
+              "left": 172.4375,
+              "right": 229.3125,
+              "width": 56.875,
+              "height": 16,
+              "clientWidth": 57,
+              "scrollWidth": 57
+            },
+            {
+              "label": "integrity checked 1 · declared produced 0 · missing 0 · changed 0 · total 1",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 69.5625,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "Workspace observation",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 14,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            }
+          ],
+          "violations": []
+        }
+      },
+      "navigation": [
+        {
+          "label": "Overview",
+          "clickable": true,
+          "left": 88,
+          "right": 192.78125,
+          "top": 142,
+          "bottom": 182
+        },
+        {
+          "label": "Changes",
+          "clickable": true,
+          "left": 88,
+          "right": 189.46875,
+          "top": 186,
+          "bottom": 226
+        },
+        {
+          "label": "Validation",
+          "clickable": true,
+          "left": 88,
+          "right": 196.109375,
+          "top": 230,
+          "bottom": 270
+        }
+      ],
+      "refreshStable": true,
+      "keyboardSelection": true
+    },
+    {
+      "name": "missing-en-desktop",
+      "status": "failed",
+      "rowText": "Failed\nArtifacts\n\nintegrity checked 0 · declared produced 0 · missing 1 · changed 0 · total 1\n\nWorkspace observation",
+      "geometry": {
+        "viewport": 1440,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "panelWidth": 1056,
+        "colorScheme": "light",
+        "focusedId": "task-section-validation",
+        "tableRoles": [
+          "table",
+          "row",
+          "columnheader",
+          "columnheader",
+          "columnheader",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell"
+        ],
+        "elementVisibility": {
+          "checked": 20,
+          "bounds": [
+            {
+              "label": "TASK WORKSPACE",
+              "left": 318,
+              "right": 438.984375,
+              "width": 120.984375,
+              "height": 14,
+              "clientWidth": 121,
+              "scrollWidth": 121
+            },
+            {
+              "label": "Overview",
+              "left": 1051.640625,
+              "right": 1156.421875,
+              "width": 104.78125,
+              "height": 40,
+              "clientWidth": 105,
+              "scrollWidth": 105
+            },
+            {
+              "label": "Changes",
+              "left": 1160.421875,
+              "right": 1261.890625,
+              "width": 101.46875,
+              "height": 40,
+              "clientWidth": 101,
+              "scrollWidth": 101
+            },
+            {
+              "label": "Validation",
+              "left": 1265.890625,
+              "right": 1374,
+              "width": 108.109375,
+              "height": 40,
+              "clientWidth": 108,
+              "scrollWidth": 108
+            },
+            {
+              "label": "UnknownTypecheck",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Typecheck",
+              "left": 411.53125,
+              "right": 482.140625,
+              "width": 70.609375,
+              "height": 16,
+              "clientWidth": 71,
+              "scrollWidth": 71
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Verification receipt",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "UnknownTests",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Tests",
+              "left": 411.53125,
+              "right": 446.34375,
+              "width": 34.8125,
+              "height": 16,
+              "clientWidth": 35,
+              "scrollWidth": 35
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Verification receipt",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "UnknownLint / diagnostics",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Lint / diagnostics",
+              "left": 411.53125,
+              "right": 522.109375,
+              "width": 110.578125,
+              "height": 16,
+              "clientWidth": 111,
+              "scrollWidth": 111
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "LSP",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "FailedArtifacts",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Artifacts",
+              "left": 392.3125,
+              "right": 449.1875,
+              "width": 56.875,
+              "height": 16,
+              "clientWidth": 57,
+              "scrollWidth": 57
+            },
+            {
+              "label": "integrity checked 0 · declared produced 0 · missing 1 · changed 0 · total 1",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Workspace observation",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            }
+          ],
+          "violations": []
+        }
+      },
+      "navigation": [
+        {
+          "label": "Overview",
+          "clickable": true,
+          "left": 1051.640625,
+          "right": 1156.421875,
+          "top": 120,
+          "bottom": 160
+        },
+        {
+          "label": "Changes",
+          "clickable": true,
+          "left": 1160.421875,
+          "right": 1261.890625,
+          "top": 120,
+          "bottom": 160
+        },
+        {
+          "label": "Validation",
+          "clickable": true,
+          "left": 1265.890625,
+          "right": 1374,
+          "top": 120,
+          "bottom": 160
+        }
+      ],
+      "refreshStable": true,
+      "keyboardSelection": true
+    },
+    {
+      "name": "drift-zh-narrow",
+      "status": "failed",
+      "rowText": "失败\n产物\n\n完整性已核对 0 · 声明产出 0 · 缺失 0 · 已变化 1 · 总计 1\n\n工作区当前观察",
+      "geometry": {
+        "viewport": 390,
+        "documentWidth": 390,
+        "bodyWidth": 390,
+        "panelWidth": 270,
+        "colorScheme": "light",
+        "focusedId": "task-section-validation",
+        "tableRoles": [
+          "table",
+          "row",
+          "columnheader",
+          "columnheader",
+          "columnheader",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell"
+        ],
+        "elementVisibility": {
+          "checked": 20,
+          "bounds": [
+            {
+              "label": "任务工作区",
+              "left": 88,
+              "right": 155.203125,
+              "width": 67.203125,
+              "height": 17,
+              "clientWidth": 67,
+              "scrollWidth": 67
+            },
+            {
+              "label": "概览",
+              "left": 88,
+              "right": 161,
+              "width": 73,
+              "height": 40,
+              "clientWidth": 73,
+              "scrollWidth": 73
+            },
+            {
+              "label": "变更",
+              "left": 165,
+              "right": 238,
+              "width": 73,
+              "height": 40,
+              "clientWidth": 73,
+              "scrollWidth": 73
+            },
+            {
+              "label": "验证",
+              "left": 242,
+              "right": 315,
+              "width": 73,
+              "height": 40,
+              "clientWidth": 73,
+              "scrollWidth": 73
+            },
+            {
+              "label": "未知类型检查",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 32,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "类型检查",
+              "left": 153,
+              "right": 205,
+              "width": 52,
+              "height": 18,
+              "clientWidth": 52,
+              "scrollWidth": 52
+            },
+            {
+              "label": "未记录直接证据",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 17.390625,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "验证回执",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 17,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "未知测试",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 32,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "测试",
+              "left": 153,
+              "right": 179,
+              "width": 26,
+              "height": 18,
+              "clientWidth": 26,
+              "scrollWidth": 26
+            },
+            {
+              "label": "未记录直接证据",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 17.390625,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "验证回执",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 17,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "未知Lint / 诊断",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 32,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "Lint / 诊断",
+              "left": 153,
+              "right": 214.515625,
+              "width": 61.515625,
+              "height": 18,
+              "clientWidth": 62,
+              "scrollWidth": 62
+            },
+            {
+              "label": "未记录直接证据",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 17.390625,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "LSP",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 14,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "失败产物",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 32,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "产物",
+              "left": 153,
+              "right": 179,
+              "width": 26,
+              "height": 18,
+              "clientWidth": 26,
+              "scrollWidth": 26
+            },
+            {
+              "label": "完整性已核对 0 · 声明产出 0 · 缺失 0 · 已变化 1 · 总计 1",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 34.78125,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            },
+            {
+              "label": "工作区当前观察",
+              "left": 105,
+              "right": 341,
+              "width": 236,
+              "height": 17,
+              "clientWidth": 236,
+              "scrollWidth": 236
+            }
+          ],
+          "violations": []
+        }
+      },
+      "navigation": [
+        {
+          "label": "概览",
+          "clickable": true,
+          "left": 88,
+          "right": 161,
+          "top": 145,
+          "bottom": 185
+        },
+        {
+          "label": "变更",
+          "clickable": true,
+          "left": 165,
+          "right": 238,
+          "top": 145,
+          "bottom": 185
+        },
+        {
+          "label": "验证",
+          "clickable": true,
+          "left": 242,
+          "right": 315,
+          "top": 145,
+          "bottom": 185
+        }
+      ],
+      "refreshStable": true,
+      "keyboardSelection": true
+    },
+    {
+      "name": "missing-zh-320",
+      "status": "failed",
+      "rowText": "失败\n产物\n\n完整性已核对 0 · 声明产出 0 · 缺失 1 · 已变化 0 · 总计 1\n\n工作区当前观察",
+      "geometry": {
+        "viewport": 320,
+        "documentWidth": 320,
+        "bodyWidth": 320,
+        "panelWidth": 200,
+        "colorScheme": "light",
+        "focusedId": "task-section-validation",
+        "tableRoles": [
+          "table",
+          "row",
+          "columnheader",
+          "columnheader",
+          "columnheader",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell"
+        ],
+        "elementVisibility": {
+          "checked": 20,
+          "bounds": [
+            {
+              "label": "任务工作区",
+              "left": 88,
+              "right": 155.203125,
+              "width": 67.203125,
+              "height": 17,
+              "clientWidth": 67,
+              "scrollWidth": 67
+            },
+            {
+              "label": "概览",
+              "left": 88,
+              "right": 161,
+              "width": 73,
+              "height": 40,
+              "clientWidth": 73,
+              "scrollWidth": 73
+            },
+            {
+              "label": "变更",
+              "left": 165,
+              "right": 238,
+              "width": 73,
+              "height": 40,
+              "clientWidth": 73,
+              "scrollWidth": 73
+            },
+            {
+              "label": "验证",
+              "left": 88,
+              "right": 161,
+              "width": 73,
+              "height": 40,
+              "clientWidth": 73,
+              "scrollWidth": 73
+            },
+            {
+              "label": "未知类型检查",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 32,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "类型检查",
+              "left": 153,
+              "right": 205,
+              "width": 52,
+              "height": 18,
+              "clientWidth": 52,
+              "scrollWidth": 52
+            },
+            {
+              "label": "未记录直接证据",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17.390625,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "验证回执",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "未知测试",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 32,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "测试",
+              "left": 153,
+              "right": 179,
+              "width": 26,
+              "height": 18,
+              "clientWidth": 26,
+              "scrollWidth": 26
+            },
+            {
+              "label": "未记录直接证据",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17.390625,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "验证回执",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "未知Lint / 诊断",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 32,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "Lint / 诊断",
+              "left": 153,
+              "right": 214.515625,
+              "width": 61.515625,
+              "height": 18,
+              "clientWidth": 62,
+              "scrollWidth": 62
+            },
+            {
+              "label": "未记录直接证据",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17.390625,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "LSP",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 14,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "失败产物",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 32,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "产物",
+              "left": 153,
+              "right": 179,
+              "width": 26,
+              "height": 18,
+              "clientWidth": 26,
+              "scrollWidth": 26
+            },
+            {
+              "label": "完整性已核对 0 · 声明产出 0 · 缺失 1 · 已变化 0 · 总计 1",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 34.78125,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            },
+            {
+              "label": "工作区当前观察",
+              "left": 105,
+              "right": 271,
+              "width": 166,
+              "height": 17,
+              "clientWidth": 166,
+              "scrollWidth": 166
+            }
+          ],
+          "violations": []
+        }
+      },
+      "navigation": [
+        {
+          "label": "概览",
+          "clickable": true,
+          "left": 88,
+          "right": 161,
+          "top": 145,
+          "bottom": 185
+        },
+        {
+          "label": "变更",
+          "clickable": true,
+          "left": 165,
+          "right": 238,
+          "top": 145,
+          "bottom": 185
+        },
+        {
+          "label": "验证",
+          "clickable": true,
+          "left": 88,
+          "right": 161,
+          "top": 189,
+          "bottom": 229
+        }
+      ],
+      "refreshStable": true,
+      "keyboardSelection": true
+    },
+    {
+      "name": "reappeared-en-desktop",
+      "status": "unknown",
+      "rowText": "Unknown\nArtifacts\n\nNo direct evidence recorded\n\nWorkspace observation",
+      "geometry": {
+        "viewport": 1440,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "panelWidth": 1056,
+        "colorScheme": "light",
+        "focusedId": "task-section-validation",
+        "tableRoles": [
+          "table",
+          "row",
+          "columnheader",
+          "columnheader",
+          "columnheader",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell",
+          "row",
+          "cell",
+          "cell",
+          "cell"
+        ],
+        "elementVisibility": {
+          "checked": 20,
+          "bounds": [
+            {
+              "label": "TASK WORKSPACE",
+              "left": 318,
+              "right": 438.984375,
+              "width": 120.984375,
+              "height": 14,
+              "clientWidth": 121,
+              "scrollWidth": 121
+            },
+            {
+              "label": "Overview",
+              "left": 1051.640625,
+              "right": 1156.421875,
+              "width": 104.78125,
+              "height": 40,
+              "clientWidth": 105,
+              "scrollWidth": 105
+            },
+            {
+              "label": "Changes",
+              "left": 1160.421875,
+              "right": 1261.890625,
+              "width": 101.46875,
+              "height": 40,
+              "clientWidth": 101,
+              "scrollWidth": 101
+            },
+            {
+              "label": "Validation",
+              "left": 1265.890625,
+              "right": 1374,
+              "width": 108.109375,
+              "height": 40,
+              "clientWidth": 108,
+              "scrollWidth": 108
+            },
+            {
+              "label": "UnknownTypecheck",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Typecheck",
+              "left": 411.53125,
+              "right": 482.140625,
+              "width": 70.609375,
+              "height": 16,
+              "clientWidth": 71,
+              "scrollWidth": 71
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Verification receipt",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "UnknownTests",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Tests",
+              "left": 411.53125,
+              "right": 446.34375,
+              "width": 34.8125,
+              "height": 16,
+              "clientWidth": 35,
+              "scrollWidth": 35
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Verification receipt",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "UnknownLint / diagnostics",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Lint / diagnostics",
+              "left": 411.53125,
+              "right": 522.109375,
+              "width": 110.578125,
+              "height": 16,
+              "clientWidth": 111,
+              "scrollWidth": 111
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "LSP",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            },
+            {
+              "label": "UnknownArtifacts",
+              "left": 335,
+              "right": 605.640625,
+              "width": 270.640625,
+              "height": 32,
+              "clientWidth": 271,
+              "scrollWidth": 271
+            },
+            {
+              "label": "Artifacts",
+              "left": 411.53125,
+              "right": 468.40625,
+              "width": 56.875,
+              "height": 16,
+              "clientWidth": 57,
+              "scrollWidth": 57
+            },
+            {
+              "label": "No direct evidence recorded",
+              "left": 617.640625,
+              "right": 1125.09375,
+              "width": 507.453125,
+              "height": 17.390625,
+              "clientWidth": 507,
+              "scrollWidth": 507
+            },
+            {
+              "label": "Workspace observation",
+              "left": 1137.09375,
+              "right": 1357,
+              "width": 219.90625,
+              "height": 14,
+              "clientWidth": 220,
+              "scrollWidth": 220
+            }
+          ],
+          "violations": []
+        }
+      },
+      "navigation": [
+        {
+          "label": "Overview",
+          "clickable": true,
+          "left": 1051.640625,
+          "right": 1156.421875,
+          "top": 120,
+          "bottom": 160
+        },
+        {
+          "label": "Changes",
+          "clickable": true,
+          "left": 1160.421875,
+          "right": 1261.890625,
+          "top": 120,
+          "bottom": 160
+        },
+        {
+          "label": "Validation",
+          "clickable": true,
+          "left": 1265.890625,
+          "right": 1374,
+          "top": 120,
+          "bottom": 160
+        }
+      ],
+      "refreshStable": true,
+      "keyboardSelection": true
+    }
+  ],
+  "screenshots": [
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/match-en-desktop.png",
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/match-en-320-task-top.png",
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/match-en-320.png",
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/missing-en-desktop.png",
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/drift-zh-narrow-task-top.png",
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/drift-zh-narrow.png",
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/missing-zh-320-task-top.png",
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/missing-zh-320.png",
+    "/tmp/napier-artifact-facts-browser-result-v5-20261030/reappeared-en-desktop.png"
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "fixtures": {
+    "match": {
+      "threadId": "thread_8276b40d68a1442ba903",
+      "runId": "run_fa2b022afbcd4528b7ed",
+      "planId": "plan_02ba3db7ba994f4bbe40"
+    },
+    "missing": {
+      "threadId": "thread_58eeeb93a7464313bcee",
+      "runId": "run_7f8f01e177424b3780ed",
+      "planId": "plan_8f09757f24bc408b810d"
+    },
+    "reappeared": {
+      "threadId": "thread_f385570e722d403297f9",
+      "runId": "run_6821c28037d34532bbee",
+      "planId": "plan_2ffb6d4cbef24790873d"
+    }
+  },
+  "productionEntry": {
+    "serverBuilt": true,
+    "webBuilt": true,
+    "serverSha256": "e365bf4d29f57b71fb645ca363aa7f2f08bdd07a0df4f7ececd84d78df9cbf7f",
+    "webIndexSha256": "c27970d12a1aee5fd118ba65b9c2f896137d1d7666d83dab3a2ebada90796572"
+  },
+  "server": {
+    "origin": "http://127.0.0.1:55806",
+    "loopbackOnly": true,
+    "ephemeralPort": true,
+    "healthReady": true,
+    "startupDurationMs": 570
+  },
+  "browser": {
+    "transport": "playwright-launch",
+    "freshProfile": true,
+    "profilePersistent": false,
+    "osIsolationClaimed": false,
+    "executableSha256": "a596b1cfc6353e987fcec8d71a23a28cd6a9e7a6b4e20b908e4c4fcffe51158e",
+    "startupDurationMs": 214
+  },
+  "status": "passed",
+  "browserClosed": true,
+  "serverClosed": true,
+  "finishedAt": "2026-10-29T22:11:46.307Z"
+}

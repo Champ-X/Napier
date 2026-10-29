@@ -1,0 +1,5 @@
+packages/contracts/src/task-artifact-history.ts 31ms
+packages/runtime/src/task-deliverable-inspection.ts 10ms
+packages/runtime/test/task-deliverable-inspection.test.ts 12ms
+apps/server/src/kernel-thread-projections.ts 4ms
+apps/server/test/task-deliverable-facts.test.ts 11ms

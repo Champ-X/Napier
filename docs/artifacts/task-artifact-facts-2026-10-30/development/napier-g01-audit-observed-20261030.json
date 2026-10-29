@@ -1,0 +1,148 @@
+[
+  {
+    "scenario": "metadata_only_missing_file",
+    "exists": false,
+    "deliverables": [
+      {
+        "path": "report.txt",
+        "planId": "plan_64f07c8d63414ffd9e01",
+        "planRevision": 3,
+        "artifact": {
+          "id": "report",
+          "path": "report.txt",
+          "kind": "file",
+          "description": "Declared report",
+          "status": "verified",
+          "evidence": "caller says verified",
+          "createdAt": "2026-10-29T21:22:00.987Z",
+          "updatedAt": "2026-10-29T21:22:01.002Z",
+          "sourceRunId": "run_1cf6625d97e048f8b2b7",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sizeBytes": 12
+        },
+        "source": "plan",
+        "verification": "integrity_recorded",
+        "accessibility": "unchecked",
+        "previousVersions": []
+      }
+    ],
+    "validation": [
+      {
+        "id": "typecheck",
+        "status": "unknown",
+        "source": "receipt"
+      },
+      {
+        "id": "tests",
+        "status": "unknown",
+        "source": "receipt"
+      },
+      {
+        "id": "diagnostics",
+        "status": "unknown",
+        "source": "lsp"
+      },
+      {
+        "id": "artifact",
+        "status": "passed",
+        "source": "ledger",
+        "artifactCount": 1,
+        "verifiedArtifactCount": 1,
+        "producedArtifactCount": 0,
+        "missingArtifactCount": 0
+      }
+    ]
+  },
+  {
+    "scenario": "same_artifact_overwrite",
+    "hashes": [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    ],
+    "cold": [
+      {
+        "path": "report.txt",
+        "planId": "plan_8a48085684bb43758645",
+        "planRevision": 4,
+        "artifact": {
+          "id": "report",
+          "path": "report.txt",
+          "kind": "file",
+          "description": "Declared report",
+          "status": "verified",
+          "evidence": "v2 asserted",
+          "createdAt": "2026-10-29T21:22:01.061Z",
+          "updatedAt": "2026-10-29T21:22:01.085Z",
+          "sourceRunId": "run_0963a3211e974e7298e3",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "sizeBytes": 2
+        },
+        "source": "plan",
+        "verification": "integrity_recorded",
+        "accessibility": "unchecked",
+        "previousVersions": []
+      }
+    ],
+    "warm": [
+      {
+        "path": "report.txt",
+        "planId": "plan_8a48085684bb43758645",
+        "planRevision": 4,
+        "artifact": {
+          "id": "report",
+          "path": "report.txt",
+          "kind": "file",
+          "description": "Declared report",
+          "status": "verified",
+          "evidence": "v2 asserted",
+          "createdAt": "2026-10-29T21:22:01.061Z",
+          "updatedAt": "2026-10-29T21:22:01.085Z",
+          "sourceRunId": "run_0963a3211e974e7298e3",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "sizeBytes": 2
+        },
+        "source": "plan",
+        "verification": "integrity_recorded",
+        "accessibility": "unchecked",
+        "previousVersions": []
+      }
+    ]
+  },
+  {
+    "scenario": "native_drift_after_verified",
+    "deliverables": [
+      {
+        "path": "report.txt",
+        "planId": "plan_6b993f9c4dda4482a2bb",
+        "planRevision": 3,
+        "artifact": {
+          "id": "report",
+          "path": "report.txt",
+          "kind": "file",
+          "description": "Declared report",
+          "status": "verified",
+          "evidence": "native observed bytes",
+          "createdAt": "2026-10-29T21:22:01.144Z",
+          "updatedAt": "2026-10-29T21:22:01.154Z",
+          "sizeBytes": 11,
+          "sourceRunId": "run_c7593e1934ba48e98216",
+          "sha256": "d67e08ade6e823c063affb00fea95adabffa75cf1a660d8fcea3223d68e8e44d"
+        },
+        "source": "plan",
+        "verification": "integrity_recorded",
+        "accessibility": "unchecked",
+        "previousVersions": []
+      }
+    ],
+    "validation": {
+      "id": "artifact",
+      "status": "passed",
+      "source": "ledger",
+      "artifactCount": 1,
+      "verifiedArtifactCount": 1,
+      "producedArtifactCount": 0,
+      "missingArtifactCount": 0
+    },
+    "previewError": "Error: Verified artifact digest drifted; replan before replacing it"
+  }
+]

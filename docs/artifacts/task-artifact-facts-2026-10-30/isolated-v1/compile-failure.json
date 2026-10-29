@@ -1,0 +1,49 @@
+[
+  {
+    "name": "contracts-runtime-emit",
+    "argv": [
+      "/Users/champ/.local/node/bin/node",
+      "/private/tmp/napier-artifact-facts-verify-20261030/node_modules/typescript/bin/tsc",
+      "-b",
+      "packages/runtime",
+      "apps/cli",
+      "apps/server",
+      "--force"
+    ],
+    "cwd": "/private/tmp/napier-artifact-facts-verify-20261030",
+    "required": true,
+    "exitCode": 2,
+    "startedAt": "2026-10-29T21:44:29.213085+00:00",
+    "finishedAt": "2026-10-29T21:44:37.708379+00:00",
+    "log": "/tmp/napier-artifact-facts-final-v1-20261030/contracts-runtime-emit.log",
+    "logSha256": "0a4f826e1dc8ecf0c84d39f53391551a3f914993aa023b7039aa033ff8a0593a"
+  },
+  {
+    "name": "bundled-skills",
+    "argv": [
+      "/Users/champ/.local/node/bin/node",
+      "scripts/copy-bundled-skills.mjs"
+    ],
+    "cwd": "/private/tmp/napier-artifact-facts-verify-20261030",
+    "required": true,
+    "exitCode": 0,
+    "startedAt": "2026-10-29T21:44:37.708588+00:00",
+    "finishedAt": "2026-10-29T21:44:37.737905+00:00",
+    "log": "/tmp/napier-artifact-facts-final-v1-20261030/bundled-skills.log",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "sandbox-assets",
+    "argv": [
+      "/Users/champ/.local/node/bin/node",
+      "scripts/copy-sandbox-image.mjs"
+    ],
+    "cwd": "/private/tmp/napier-artifact-facts-verify-20261030",
+    "required": true,
+    "exitCode": 0,
+    "startedAt": "2026-10-29T21:44:37.738062+00:00",
+    "finishedAt": "2026-10-29T21:44:37.761034+00:00",
+    "log": "/tmp/napier-artifact-facts-final-v1-20261030/sandbox-assets.log",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

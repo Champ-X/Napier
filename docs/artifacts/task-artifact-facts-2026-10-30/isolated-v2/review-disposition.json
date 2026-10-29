@@ -1,0 +1,9 @@
+{
+  "accepted": false,
+  "candidateVersion": "v3",
+  "reasons": [
+    "late old artifact assertion incorrectly wins over newer continuation generation",
+    "manifest missing claim can override current available observation"
+  ],
+  "rawResultsPreserved": true
+}

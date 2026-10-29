@@ -1,0 +1,45 @@
+{
+  "kind": "napier.task-artifact-facts-browser",
+  "schemaVersion": 1,
+  "snapshot": "/tmp/napier-artifact-facts-browser-20261030",
+  "root": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-web-ui-e2e-mPSlWL",
+  "startedAt": "2026-10-29T22:00:07.725Z",
+  "paidModelCalls": 0,
+  "themeBoundary": "Product supports light only; no dark theme acceptance",
+  "cases": [],
+  "screenshots": [],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "fixtures": {
+    "match": {
+      "threadId": "thread_b7ff9d93f1eb427aaa92",
+      "runId": "run_aa1cb413fce246df8e37",
+      "planId": "plan_213611ad1b0d4308b437"
+    },
+    "missing": {
+      "threadId": "thread_f2a31ac45fc34852a528",
+      "runId": "run_3c9b9f5c9a41442ab7a0",
+      "planId": "plan_127f1d1310c94dcdb77e"
+    },
+    "reappeared": {
+      "threadId": "thread_7d4469786dde4e59b06b",
+      "runId": "run_3cd51ad3bbc44ae6923b",
+      "planId": "plan_89649c43f97045e38471"
+    }
+  },
+  "productionEntry": {
+    "serverBuilt": true,
+    "webBuilt": true,
+    "serverSha256": "e365bf4d29f57b71fb645ca363aa7f2f08bdd07a0df4f7ececd84d78df9cbf7f",
+    "webIndexSha256": "ff2acfbd9f313182440c09a9e19ecb87b4a8bd43499bac9d0c47e491eaee915c"
+  },
+  "status": "failed",
+  "error": {
+    "message": "Production Web server exited before readiness (1/null)",
+    "stack": "Error: Production Web server exited before readiness (1/null)\n    at file:///private/tmp/napier-artifact-facts-browser-20261030/scripts/web-ui-e2e-runtime.mjs:196:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+  },
+  "browserClosed": true,
+  "serverClosed": true,
+  "finishedAt": "2026-10-29T22:00:08.519Z"
+}

@@ -1,0 +1,17 @@
+file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/plans.js:436
+            throw new Error(`${label} plan.artifact event binding mismatch`);
+                  ^
+
+Error: Persisted Thread thread_3740e84045024407bb8e plan.artifact event binding mismatch
+    at assertPlanArtifactEventBindings (file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/plans.js:436:19)
+    at assertThreadEvidenceProjection (file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/store-thread-evidence-validation.js:31:5)
+    at assertLedgerEvidenceProjection (file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/store-thread-evidence-validation.js:15:9)
+    at file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/store.js:243:17
+    at readSqliteTransaction (file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/sqlite-ledger-state.js:30:24)
+    at SqliteLedger.readTransaction (file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/sqlite-ledger.js:79:16)
+    at restore (file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/store.js:238:42)
+    at LocalStore.initialize (file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/store.js:246:24)
+    at async createLocalAgentRuntime (file:///private/tmp/napier-artifact-facts-browser-20261030/packages/runtime/dist/local-agent-runtime.js:44:9)
+    at async createServices (file:///private/tmp/napier-artifact-facts-browser-20261030/apps/server/dist/server-composition-root.js:16:19)
+
+Node.js v24.19.0

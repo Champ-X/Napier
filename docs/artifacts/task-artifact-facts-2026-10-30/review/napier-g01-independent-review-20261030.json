@@ -1,0 +1,226 @@
+{
+  "kind": "napier.g01-independent-artifact-facts-review",
+  "schemaVersion": 1,
+  "reviewer": "/root/sandbox_admission_design",
+  "completedAtUtc": "2026-10-29T21:59:49.545863+00:00",
+  "candidateManifest": "/tmp/napier-g01-artifact-facts-handoff-20261030-v4.json",
+  "candidateManifestSha256": "ccb9830215ebbae9fde9f732243aeea8d80812a81f9f8ef66fe7bfaefd69f51e",
+  "sourceRoot": "/private/tmp/napier-artifact-facts-verify-20261030",
+  "rootReportedStagedTree": "2429b60835e78659eccf1ea3812c1e56f2fda83d",
+  "verdict": "no_remaining_blocker_in_reviewed_scope",
+  "remainingBlockingFindings": [],
+  "reviewedScope": [
+    "current native file observation and full manifest/revision binding",
+    "history recorded assertions and exact current revision binding",
+    "HTTP metadata missing size and byte drift",
+    "bounded filesystem inspection and conservative uncertainty",
+    "warm projection and cold Store restart equivalence",
+    "current-generation selection source review"
+  ],
+  "independentlyFoundAndResolved": [
+    {
+      "id": "same_tick_missing_event_borrowed_old_current_binding",
+      "initialCandidate": "v1",
+      "severity": "current history provenance mismatch",
+      "reproduction": "Actual Hono handler and temporary SQLite Store; Date only fixed to one millisecond. produced then verified(a), followed by identical verified(a) whose state write succeeds and event append is faulted. Plan advances 3 to 4 while artifact timestamp and metadata are identical.",
+      "observedBeforeFix": "currentVersion and sourceEventId still identify revision-3 event; history reason event_history_only instead of missing_current_event. Native current integrity was not falsely passed.",
+      "fix": "Final history requires latest recorded event planRevision exactly equal current planRevision; older assertion remains previousVersions and history incomplete.",
+      "source": "packages/contracts/src/task-artifact-history.ts:177-199",
+      "initialReport": "/tmp/napier-g01-independent-history-20261030/result-v1.json",
+      "initialObserved": "/tmp/napier-g01-independent-history-20261030/observed-gap.json",
+      "initialReproducer": "/tmp/napier-g01-independent-history-20261030/history-gap-v1.test.ts",
+      "finalCoverage": "Final probe case 1 passes through getDetail, warm projection and cold Store restart."
+    },
+    {
+      "id": "reappeared_file_overridden_by_missing_assertion",
+      "initialCandidate": "v1, unchanged in v3 facts source",
+      "severity": "current file facts contradiction",
+      "reproduction": "Actual Hono produced then missing declaration; external file creation without an event; next getDetail observes regular bytes.",
+      "observedBeforeFix": "Deliverable accessibility available and observation observed, but taskArtifactFacts still reports missingArtifactCount=1 and status failed from old manifest status missing.",
+      "fix": "Only a bound current observation missing contributes current missing count. No-observation legacy missing and reappeared-but-unverified bytes remain unknown; pure projection accessibility is unchecked.",
+      "source": "packages/contracts/src/task-artifact-facts.ts:95-112; packages/contracts/src/task-deliverables.ts:40-47",
+      "initialReport": "/tmp/napier-g01-independent-history-20261030/reappeared-v1.json",
+      "initialObserved": "/tmp/napier-g01-independent-history-20261030/observed-reappeared.json",
+      "finalCoverage": "Final probe case 3 passes with current missing count 0 and unknown/unverified facts."
+    }
+  ],
+  "confirmedBoundaries": [
+    {
+      "claim": "Full observation binding includes planId, planRevision, path and complete artifact manifest; shared facts also require exact artifact object equality and observed digest/size agreement. Missing HTTP size never grants integrity pass.",
+      "source": [
+        "packages/contracts/src/task-artifact-facts.ts:55-64,80-111",
+        "packages/runtime/src/task-deliverable-inspection.ts:83-113"
+      ],
+      "evidence": "Final independent case 2."
+    },
+    {
+      "claim": "Cache retains narrative event state only. Projection version 4 rebuilds historical facts; every task narrative request assembles current plan state and calls inspectTaskDeliverables again. Unchanged event watermark does not reuse previous filesystem observation.",
+      "source": [
+        "packages/runtime/src/kernel-projections.ts:300-306,331-368",
+        "packages/runtime/src/thread-detail.ts:78-110"
+      ],
+      "evidence": "Source review plus final independent cases 1 and 2."
+    },
+    {
+      "claim": "History is recorded_assertion and always incomplete, not an archive of old bytes or creator attribution. Invalid metadata/snapshot/thread/path/revision cannot become current binding; exact current revision requirement is intentionally conservative after other plan changes.",
+      "source": [
+        "packages/contracts/src/task-artifact-history.ts:23-148,152-205",
+        "packages/contracts/src/task-artifact-facts.ts:41-51"
+      ]
+    },
+    {
+      "claim": "File observation is limited to 64 candidate checks, at most 64 path segments, 8 MiB per file and 32 MiB read bytes in total. Native descriptor/path identity, size, mtime and ctime are checked. Symlink, FIFO/non-file, unsupported kind, exhausted budget, unstable and unreadable observations stay unchecked.",
+      "source": [
+        "packages/runtime/src/task-deliverable-inspection.ts:13-15,32-70,116-139,146-230"
+      ],
+      "evidence": "Read final v3/v4 implementation and owner exact-byte-growth regression; these filesystem boundary tests were not independently rerun in this review."
+    },
+    {
+      "claim": "Current identity selection no longer lets a late update of an older artifact reclaim a newer generation. It uses artifact createdAt, plan createdAt and stable declaration order for same-clock ties; mutable update time does not select generation.",
+      "source": [
+        "packages/contracts/src/task-deliverables.ts:29-75"
+      ],
+      "evidence": "Reviewed final v4 source; root discovered the original compatibility counterexample and owner reports final generation regressions. This review did not independently rerun that test."
+    }
+  ],
+  "finalIndependentTests": {
+    "tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "source": "/tmp/napier-g01-independent-history-20261030/history.test.ts",
+    "config": "/tmp/napier-g01-independent-history-20261030/vitest.config.mts",
+    "result": "/tmp/napier-g01-independent-history-20261030/result-final-v4.json",
+    "stdout": "/tmp/napier-g01-independent-history-20261030/stdout-final-v4.log",
+    "sourceHashesBefore": "/tmp/napier-g01-independent-history-20261030/source-hashes-before-v4.json",
+    "sourceHashesAfter": "/tmp/napier-g01-independent-history-20261030/source-hashes-after-v4.json",
+    "matchedOwnedPaths": 19,
+    "cases": [
+      "Same-millisecond identical metadata with real state-to-event commit gap does not borrow old binding; warm projection and cold Store restart agree.",
+      "HTTP verified metadata lacking size remains observed/unverified/unknown; complete metadata can match current bytes; old revision observation cannot be reused; no-event same-size byte drift fails next request.",
+      "File reappearance without an event overrides old missing assertion for current missing count while remaining unverified/unknown."
+    ]
+  },
+  "retainedIntermediateResults": [
+    {
+      "result": "/tmp/napier-g01-independent-history-20261030/result-v1.json",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "disposition": "Expected safety assertion failure exposing same-tick commit-gap defect, not a setup failure."
+    },
+    {
+      "result": "/tmp/napier-g01-independent-history-20261030/metadata-v1.json",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 1,
+      "disposition": "Metadata-only case selected by test-name filter; skipped gap case is not counted as passed."
+    },
+    {
+      "result": "/tmp/napier-g01-independent-history-20261030/reappeared-v1.json",
+      "passed": 0,
+      "failed": 1,
+      "skipped": 2,
+      "disposition": "Expected safety assertion failure exposing old missing assertion overriding current native observation; other cases filtered out."
+    }
+  ],
+  "nonClaims": [
+    "Current observation establishes only bytes seen while producing that response; it does not establish creation by a Run, objective acceptance, future immutability, or a complete historical byte archive.",
+    "Scope is shared current facts, history facts and validation matrix/protocol integration. Other artifact cards and full version-review UI are not claimed migrated or browser accepted by this review.",
+    "Root owns production browser acceptance and broad compile/regression checks. Owner reports 16 files / 110 tests separately; this independent review executed final 3 cases only and does not sum overlapping packs.",
+    "Nineteen owned candidate source files were hash-checked before and after the final probe. Root owns whole snapshot source/build provenance.",
+    "No repository source edits, build emission, staging, commit, paid model calls or protected-user-file modifications were performed by this review. Only temporary probes, reports and local disposable test stores were written."
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/napier-g01-artifact-facts-handoff-20261030-v4.json",
+      "bytes": 17464,
+      "sha256": "ccb9830215ebbae9fde9f732243aeea8d80812a81f9f8ef66fe7bfaefd69f51e"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/history-gap-v1.test.ts",
+      "bytes": 4346,
+      "sha256": "8b0482de0cd8b60493d77f58d4a1cca785e09d3bc766ff1c8205def28ef7a69d"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/history.test.ts",
+      "bytes": 7500,
+      "sha256": "d0320ae5991e83694560f81ab804e1f4046bf5876e991dc58e9c0ca1d1178db0"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/metadata-stdout-v1.log",
+      "bytes": 85,
+      "sha256": "960331a36ef537fe994daf1c3e9687d88f20889ca804c3e1f9164b611d72adb6"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/metadata-v1.json",
+      "bytes": 1333,
+      "sha256": "b51b936edeefd07d2813e388791e113bcfa10d9029dbe56d423e4d1d33991af5"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/observed-gap-final.json",
+      "bytes": 3524,
+      "sha256": "8a6f33e6b29587179fe6cc62c6f98b32897d22e7a48c5cf09b6f96fe40d89cdd"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/observed-gap.json",
+      "bytes": 3564,
+      "sha256": "c130350984a7305d9e97f5e33293a59d187b81560c2e2f82096eda30a0596773"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/observed-reappeared-final.json",
+      "bytes": 1861,
+      "sha256": "956925853dab3dd230c6abb988e359c8f398c2cc6798ea59c7e3f242e247bd27"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/observed-reappeared.json",
+      "bytes": 1860,
+      "sha256": "49581161cdf5c9ee197a35e381ff908e13c323d872bb9a8458400a3e376c306d"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/reappeared-stdout-v1.log",
+      "bytes": 87,
+      "sha256": "7016425b54e98b7fb03c851cba1faea9d6ddf878887790d16c3b8b682c7a51c9"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/reappeared-v1.json",
+      "bytes": 1856,
+      "sha256": "fa6ba7e391886afd9a0af19c33679cc15d21f86a42cad23d2afab905b9bc73a5"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/result-final-v4.json",
+      "bytes": 1671,
+      "sha256": "1e293c4c9bb748a09145d91bee60934ef71b57241e94ded16c37af3d1cbe6c12"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/result-v1.json",
+      "bytes": 1250,
+      "sha256": "d397ac793fcbbd058c32bfbf92bd7331d2c049b959a74d91c2e307b7b6fb5f2b"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/source-hashes-after-v4.json",
+      "bytes": 5004,
+      "sha256": "702514fc4bcb8d01df0d2527b97f5accbef68a2a751cb35dddad3c8c9f0f6ebb"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/source-hashes-before-v4.json",
+      "bytes": 5077,
+      "sha256": "faa7134bed2fc5fbff072b60f90a71d242479cb3b1ea187223e22d77d4f02659"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/stdout-final-v4.log",
+      "bytes": 89,
+      "sha256": "9931bbda7894f38e109efd5b9e30c40baa6802b89bc4439711d717340ae54cd0"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/stdout-v1.log",
+      "bytes": 83,
+      "sha256": "c396dda21413894204f1fea15e2acf840697e6b5fe7958c44aa45b8fe5516fc8"
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/vitest.config.mts",
+      "bytes": 18508,
+      "sha256": "8ef45199dd5242cfa5f7da4b1503fbb2f7ca2612525de544b6833beb3055ada5"
+    }
+  ]
+}

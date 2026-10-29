@@ -410,6 +410,15 @@
 - 最终隔离快照 **105文件／831测试**通过（Runtime785、Server46），编译、相关类型与strict owned检查通过；4,036源文件／5,090产物摘要稳定，28个用户文件不变，旧48项strict诊断与原始基线一致。保留7项架构、root1897/1896、internal18/16及两份digest失败；未改预算或历史release证据，外部付费模型调用0。
 - 本片完成原生不确定调用的安全停止及legacy有界恢复，**尚未证明原生overflow成功恢复**，不据此完成G03。完整child compiler／extension parity、并发父token／cost原子预留和coder恢复仍待实施；G01–G07总目标继续 **active**。见[边界说明](docs/overflow-recovery-safety.md)、[最终收据](docs/artifacts/overflow-recovery-safety-regression-2026-10-30.json)与[证据索引](docs/artifacts/overflow-recovery-safety-evidence-index-2026-10-30.json)。
 
+### 后续推进：G01 当前成果事实与事件版本绑定（2026-10-30）
+
+- 本地实现提交 `53e2eaf2`，未 push。正式文件成果在每次 detail／缓存 narrative 请求时重新检查，观察绑定完整 manifest、plan ID／revision、路径与摘要／字节数；metadata-only `verified` 不再直接使 Task validation 通过。当前 missing、drift 和 unchecked 分开；文件重现时历史 missing 声明不覆盖真实 available。纯 metadata 投影保持 accessibility unchecked，来源 Run 仅表示记录／验证者，不冒称创建者。
+- 检查有界为最多64个文件、64段路径、单文件8MiB、总实际读取32MiB；拒绝符号链接、FIFO／非普通文件，核对descriptor／path的dev／ino／size／mtime／ctime。读中增长探针也受预算夹限；超限、不可读、竞态和不支持类型保持unchecked，不扫描全工作区。
+- 从既有 `plan.artifact.*` 恢复 event identity／seq／revision／path／digest 绑定的 metadata history，明确为 recorded assertions 且始终不完整，不声称旧字节可下载或独立生产来源。当前event须精确匹配当前plan revision，修复同毫秒同metadata状态落盘而event失败时借旧event的问题；其它计划修订可将其降为历史，而当前字节重新匹配仍可通过完整性检查。不同artifact代际按创建／声明顺序选择，旧版本晚更新不能夺回新continuation，新版缺失不复活旧verified。
+- 隔离逻辑候选 **47文件／279测试**通过（Runtime143、Server36、Web92、CLI8），声明emit、相关types／strict检查通过；4,040源码／5,096产物哈希稳定。实现侧16文件110测试和独立3探针另列且不累加，独立探针覆盖真实HTTP／SQLite提交间隙、缺size、旧revision、无event漂移／重现及warm／cold restart。7项既有架构、root1897/1896、internal18/16、两份digest失败及原48项strict诊断保留，不改预算。
+- 初次browser v3虽raw receipt为passed，但截图发现窄屏证据／来源列及导航裁切，明确拒绝其视觉验收并保留原图／回执。最终追加 `workspace-shell.css` 修复，production Web v5在light Chromium／1440、390、320 CSS px／EN-ZH下通过6场景、9截图、刷新／键盘、单元格与tab水平范围和点击命中检查；root已查看panel及顶部截图。4,040源码／5,096emit／339Web产物前后稳定，28个已有用户文件不变，模型调用0；浏览器快照含精确保留的用户overlay，不当作纯commit发布或物理移动端／dark／读屏验收。
+- 所有原始反例、中间测试／emit失败、同毫秒history、文件重现、预算越界、continuation回退以及browser误报均归档。见[说明](docs/task-artifact-facts.md)、[交付收据](docs/artifacts/task-artifact-facts-regression-2026-10-30.json)与[证据索引](docs/artifacts/task-artifact-facts-evidence-index-2026-10-30.json)。本片不新增人为验收关卡；whole objective仍为unverified／partial等既有语义。tool-only来源、完整历史字节、更多artifact卡消费者、独立整体目标验收来源及完整G01仍未完成，总目标继续 **active**。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -475,8 +484,8 @@
 **实施任务**
 
 - [x] 梳理 Runtime 与前端已有状态投影，统一优先级和语义，覆盖无计划任务。（共享事实切片已验证；独立验收生产者仍是 G01 待办。）
-- [ ] 统一成果来源、去重、版本关系和主次排序，修复空 outputPaths 屏蔽已有产物的问题。
-- [ ] 让顶部、计划、Task 页和结果栏消费一致投影，移除重复推断。
+- [ ] 统一成果来源、去重、版本关系和主次排序，修复空 outputPaths 屏蔽已有产物的问题。（当前文件观察、正式声明与事件metadata版本绑定已验证，晚到旧代际不回退；tool-only来源和完整历史字节仍未完成。）
+- [ ] 让顶部、计划、Task 页和结果栏消费一致投影，移除重复推断。（Task validation已消费共享当前成果事实，EN/ZH及窄屏验证通过；所有artifact卡消费者迁移仍未完成。）
 - [x] 主成果提供打开预览、下载或复制路径、验证状态、继续修改入口；辅助证据渐进展开。（已登记产物与通过边界/摘要检查的显式引用候选均完成浏览器验收；候选发现范围限制另列待办。）
 - [x] 将本轮发现的状态和成果反例纳入回归用例。（含真实 SQLite、Web/CLI 与隔离浏览器检查；不代表全部 G01 验收通过。）
 

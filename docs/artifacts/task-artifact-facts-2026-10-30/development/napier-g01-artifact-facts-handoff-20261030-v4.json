@@ -1,0 +1,410 @@
+{
+  "kind": "napier.g01-artifact-facts-handoff",
+  "schemaVersion": 1,
+  "frozenAtUtc": "2026-10-29T21:57:08.157340+00:00",
+  "workspace": "/Users/champ/orca/Napier",
+  "head": "5adf1d9d6ebc30cc9fc0b6e503f7356308800f1f",
+  "branch": "main",
+  "ownedFileCount": 19,
+  "ownedFiles": [
+    {
+      "path": "packages/contracts/src/workspace-bootstrap-v1.ts",
+      "sha256": "f53637975e7100f8867b272cc52e3d8edf07ace40bc1fe33aedd9389da1c2bec",
+      "bytes": 10516,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/contracts/src/workspace-bootstrap-v1.ts"
+    },
+    {
+      "path": "packages/contracts/src/task-deliverables.ts",
+      "sha256": "021e2398088bc2bd1951d9fb30091e602a3c08069fe1c21ef662c8a82503e4a4",
+      "bytes": 3872,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/contracts/src/task-deliverables.ts"
+    },
+    {
+      "path": "packages/contracts/src/task-narrative-event-state.ts",
+      "sha256": "cf28e928cea11f4be0dac504568e3ccc856deb2898ca752f2025e0d609faaa15",
+      "bytes": 7193,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/contracts/src/task-narrative-event-state.ts"
+    },
+    {
+      "path": "packages/contracts/src/task-narrative-projection.ts",
+      "sha256": "9ed47a002b791798ce4bac415a3366c8ebf08042a116f0e6a55f2da3d34ed6f9",
+      "bytes": 12183,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/contracts/src/task-narrative-projection.ts"
+    },
+    {
+      "path": "packages/contracts/src/task-narrative.ts",
+      "sha256": "23e8c372171b1bda2c3f7aab1cbe79211c9ff2b1be8d7c47317897723e6f1227",
+      "bytes": 507,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/contracts/src/task-narrative.ts"
+    },
+    {
+      "path": "packages/contracts/src/task-artifact-history.ts",
+      "sha256": "3bcc75b77ada4241230f133c1cfb61c1bb60f6050825813bb0bbfd49b1420f6d",
+      "bytes": 6520,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/contracts/src/task-artifact-history.ts"
+    },
+    {
+      "path": "packages/contracts/src/task-artifact-facts.ts",
+      "sha256": "8f5ab4e37dd69f24763f083e728845b298b1cdbc0efee221330ec8bfefa2586f",
+      "bytes": 4008,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/contracts/src/task-artifact-facts.ts"
+    },
+    {
+      "path": "packages/runtime/src/task-deliverable-inspection.ts",
+      "sha256": "06b8f674390eae1aabc42da3b3ccce1bd823ae2055989ca7409ed286ffd71347",
+      "bytes": 7612,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/runtime/src/task-deliverable-inspection.ts"
+    },
+    {
+      "path": "packages/runtime/src/kernel-projections.ts",
+      "sha256": "b9c1ff50f29f4e09d32af1b19e2cfab68290301c1b20a3e0b493926c0340ac40",
+      "bytes": 13715,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/runtime/src/kernel-projections.ts"
+    },
+    {
+      "path": "apps/web/src/task-validation-matrix.ts",
+      "sha256": "09fb11213fe319282b4f77d5dea93c7e2a885637cf024b5756f80e2341a65356",
+      "bytes": 5121,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/web/src/task-validation-matrix.ts"
+    },
+    {
+      "path": "apps/web/src/TaskValidationPanel.tsx",
+      "sha256": "d18e161183357e7f4b1a5da42acdb1fb874b28fb52d8835739800d4b34b4dcd3",
+      "bytes": 4785,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/web/src/TaskValidationPanel.tsx"
+    },
+    {
+      "path": "apps/web/src/task-narrative-protocol.ts",
+      "sha256": "4337cb26d18fecebdc3884e782f0cff22f2b5991ab01dfd78a809b5528f79890",
+      "bytes": 6731,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/web/src/task-narrative-protocol.ts"
+    },
+    {
+      "path": "apps/web/src/desktop-workbench-copy.ts",
+      "sha256": "59d4336e28b9c24f16a66d134a5e173e68324c620ec8a4cc4e6b19d7057e30fc",
+      "bytes": 17864,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/web/src/desktop-workbench-copy.ts"
+    },
+    {
+      "path": "apps/web/src/copy.zh.ts",
+      "sha256": "1a3a5ab404fef29479c8f51ad06c9c4a3e113f11603e888e6bb531bd7a5e74bb",
+      "bytes": 17124,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/web/src/copy.zh.ts"
+    },
+    {
+      "path": "apps/server/test/task-deliverable-facts.test.ts",
+      "sha256": "607252b3888066ea9d98aea2a2d8d44f2b5ebd7c5ce787b4b707917f259681b7",
+      "bytes": 16455,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/server/test/task-deliverable-facts.test.ts"
+    },
+    {
+      "path": "packages/runtime/test/task-deliverable-inspection.test.ts",
+      "sha256": "dfc53fa449a89f39f12ee9e2a3edc0b7b9ad1f5abf3e977fd0efff566efb9b80",
+      "bytes": 9010,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/packages/runtime/test/task-deliverable-inspection.test.ts"
+    },
+    {
+      "path": "apps/web/test/task-validation-matrix.test.ts",
+      "sha256": "2ee2ca36c65347f0cf52b5d5b42222cce222a3e7f80ceee2881943d1f989ed03",
+      "bytes": 5781,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/web/test/task-validation-matrix.test.ts"
+    },
+    {
+      "path": "apps/web/test/task-narrative-protocol.test.ts",
+      "sha256": "ccb4927a35b34f71e9e14991d14390f2e2dc670cae8d7f1c4b7829aefad7b2ed",
+      "bytes": 4277,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/web/test/task-narrative-protocol.test.ts"
+    },
+    {
+      "path": "apps/server/src/kernel-thread-projections.ts",
+      "sha256": "0b5b69d2013acd6a9ee9ef3f59a14159139cc9e584c2966fde2b40bfd0a70313",
+      "bytes": 4345,
+      "frozenPath": "/tmp/napier-g01-source-freeze-20261030-v4/apps/server/src/kernel-thread-projections.ts"
+    }
+  ],
+  "freezeDirectory": "/tmp/napier-g01-source-freeze-20261030-v4",
+  "artifacts": [
+    {
+      "path": "/tmp/napier-g01-audit-handoff-20261030-v1.json",
+      "sha256": "84a409a3bd0d6f4e4e033133a1c2a37e7efe8d258f060d2e9cfa8c2c37356b59",
+      "bytes": 5614
+    },
+    {
+      "path": "/tmp/napier-g01-audit-probe.test.ts",
+      "sha256": "5511af7c97c2ea46e5de5d4ce378c964ae3659e2e7d11db1b54ff9d7dd82aa6d",
+      "bytes": 5783
+    },
+    {
+      "path": "/tmp/napier-g01-audit-counterexamples-20261030.json",
+      "sha256": "469ac7c706c80009d6d4180e3122660dba59b4ca57f76b2df9afefdc246a8bb8",
+      "bytes": 5612
+    },
+    {
+      "path": "/tmp/napier-g01-audit-observed-20261030.json",
+      "sha256": "ee0f990634dc4bdf31cfcf4c58a19035afc9c6e4bedb30306382b68ecc4c53ba",
+      "bytes": 4387
+    },
+    {
+      "path": "/tmp/napier-g01-facts-v3-20261030.json",
+      "sha256": "deaa239e77f0562a1a5e9d9334bc0492b78644de7651cbc5b09983578b9c8dcc",
+      "bytes": 19138
+    },
+    {
+      "path": "/tmp/napier-g01-facts-v3-20261030.log",
+      "sha256": "39060353277a5f88b49dabb6231d3ce5e7f55c419d8c0a1db59a4fd9da962e20",
+      "bytes": 62
+    },
+    {
+      "path": "/tmp/napier-g01-typecheck-v4.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/napier-g01-facts-tsconfig.json",
+      "sha256": "ada484b290b80d5397ba4577b0e8b75f55bb68086372d44362d8bd308dba16e4",
+      "bytes": 11785
+    },
+    {
+      "path": "/tmp/napier-g01-facts-vitest.config.mts",
+      "sha256": "9b422d7c693e910285a98bbde756d9e716f72474bd4db13e609c861f9e1d1736",
+      "bytes": 552
+    },
+    {
+      "path": "/tmp/napier-host-accounting-vitest-v6.config.mts",
+      "sha256": "d1b50211f72420cd9d09f56d6e16ff2967bc6ee1991db1e25f66d4d82c4e4f90",
+      "bytes": 15571
+    },
+    {
+      "path": "/tmp/napier-g01-architecture-v3.log",
+      "sha256": "8a0933141e076e7b7437ebd39422ad410215655f8918324810b60d88cb20667b",
+      "bytes": 777
+    },
+    {
+      "path": "/tmp/napier-g01-public-api.log",
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277
+    },
+    {
+      "path": "/tmp/napier-g01-modern-web-guides.json",
+      "sha256": "716116f3b76688918725c3d74e09eb3acc0b1b0f48ecefdde5fd40186f0a563c",
+      "bytes": 48090
+    },
+    {
+      "path": "/tmp/napier-g01-modern-web-responsive-table.md",
+      "sha256": "d4836dfb56fdbbbea463b574a1a628cfea962063febd97361136f46e5c5d2c84",
+      "bytes": 4293
+    },
+    {
+      "path": "/tmp/napier-g01-facts-initial-20261030.json",
+      "sha256": "6b045752e2347070261348fa4063af3c8265f0a58af57f8a0949ee009d0debcc",
+      "bytes": 19421
+    },
+    {
+      "path": "/tmp/napier-g01-facts-v2-20261030.json",
+      "sha256": "29b015ef513f1289982d1c21413815bd288304f68209ceda6f82e78235c8c266",
+      "bytes": 19420
+    },
+    {
+      "path": "/tmp/napier-g01-regression-v1-20261030.json",
+      "sha256": "b5585f11c16fd76c1f14d15821e46b0bfafd56f4d08683f7a082b9eaa1c76a53",
+      "bytes": 34632
+    },
+    {
+      "path": "/tmp/napier-g01-regression-v1-20261030.log",
+      "sha256": "78233887b6655804a7127be2c404096420af6638d4e33410d2cfa65d92c7910c",
+      "bytes": 67
+    },
+    {
+      "path": "/tmp/napier-g01-regression-v3-20261030.json",
+      "sha256": "a15f7ce757bbf061c1935df28d633837f8171d99e65ff36f6b50b6e09a9d3e51",
+      "bytes": 35243
+    },
+    {
+      "path": "/tmp/napier-g01-regression-v3-20261030.log",
+      "sha256": "a95fb33f58948fe9ddffcc3a9d52b814cdcba236ddb677e4e7d58e87fc57611d",
+      "bytes": 67
+    },
+    {
+      "path": "/tmp/napier-g01-typecheck-v5.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/napier-g01-architecture-v4.log",
+      "sha256": "173137c20ee852371282687832bdd4fad9fb5a5bba17720391596e7b47eddf97",
+      "bytes": 996
+    },
+    {
+      "path": "/tmp/napier-g01-budget-before-inspector.ts",
+      "sha256": "f1d2a8ef4cdc683bb665567f1df7c428c7b75fd7a7c673a2439dec476f099a6f",
+      "bytes": 7653
+    },
+    {
+      "path": "/tmp/napier-g01-budget-before.test.ts",
+      "sha256": "c3fa760b0f9342f7aca8c4bd845b9e3e3672cc499408f6ed4a347b0e5d9267b1",
+      "bytes": 9054
+    },
+    {
+      "path": "/tmp/napier-g01-budget-before-vitest.config.mts",
+      "sha256": "c30ee0f188cb538f362001d30cd46d0764d215429a1e64080003302ce3f31a75",
+      "bytes": 300
+    },
+    {
+      "path": "/tmp/napier-g01-budget-before-20261030.json",
+      "sha256": "a2319abbfee91bcfa562e4348b09e502887ce786e3d69584c483bebb7f0253ae",
+      "bytes": 2923
+    },
+    {
+      "path": "/tmp/napier-g01-budget-before-20261030.log",
+      "sha256": "0bd77676004ee7a6a93b68599ebb892201d7545e339ca9c3b7ce814276835a1f",
+      "bytes": 67
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/history-gap-v1.test.ts",
+      "sha256": "8b0482de0cd8b60493d77f58d4a1cca785e09d3bc766ff1c8205def28ef7a69d",
+      "bytes": 4346
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/result-v1.json",
+      "sha256": "d397ac793fcbbd058c32bfbf92bd7331d2c049b959a74d91c2e307b7b6fb5f2b",
+      "bytes": 1250
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/observed-gap.json",
+      "sha256": "c130350984a7305d9e97f5e33293a59d187b81560c2e2f82096eda30a0596773",
+      "bytes": 3564
+    },
+    {
+      "path": "/tmp/napier-artifact-facts-final-v1-20261030/contracts-runtime-emit.log",
+      "sha256": "0a4f826e1dc8ecf0c84d39f53391551a3f914993aa023b7039aa033ff8a0593a",
+      "bytes": 292
+    },
+    {
+      "path": "/tmp/napier-g01-regression-v6-20261030.json",
+      "sha256": "647bf2f4a98390550724f64a14e17b7989b5f38c48108299af99f57a6f66ef19",
+      "bytes": 37758
+    },
+    {
+      "path": "/tmp/napier-g01-regression-v6-20261030.log",
+      "sha256": "d7df6b46c96373ad9753c46a6f57025b2f070d8b3d8e15a10fa3ad7b54b94ff4",
+      "bytes": 67
+    },
+    {
+      "path": "/tmp/napier-g01-typecheck-v8.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/napier-g01-architecture-v5.log",
+      "sha256": "8a0933141e076e7b7437ebd39422ad410215655f8918324810b60d88cb20667b",
+      "bytes": 777
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/reappeared-v1.json",
+      "sha256": "fa6ba7e391886afd9a0af19c33679cc15d21f86a42cad23d2afab905b9bc73a5",
+      "bytes": 1856
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/observed-reappeared.json",
+      "sha256": "49581161cdf5c9ee197a35e381ff908e13c323d872bb9a8458400a3e376c306d",
+      "bytes": 1860
+    },
+    {
+      "path": "/tmp/napier-g01-independent-history-20261030/reappeared-stdout-v1.log",
+      "sha256": "7016425b54e98b7fb03c851cba1faea9d6ddf878887790d16c3b8b682c7a51c9",
+      "bytes": 87
+    },
+    {
+      "path": "/tmp/napier-artifact-facts-final-v2-20261030/web.json",
+      "sha256": "558aa64b6ec5076cef1ef4aecc3f9000c2c3f56aee1d42b2e46831f2c7d99907",
+      "bytes": 34289
+    },
+    {
+      "path": "/tmp/napier-g01-regression-vitest.config.mts",
+      "sha256": "16f55a51e1bdac2d83bc4b274d381db9f06f86254241b3707fbdf0d4cd39d94b",
+      "bytes": 633
+    }
+  ],
+  "validation": {
+    "strictNoEmit": {
+      "exitCode": 0,
+      "scope": "contracts/runtime/server/web source plus four owned tests",
+      "source": "frozen v4 source"
+    },
+    "architecture": {
+      "retainedFailures": 8,
+      "g01NewFailures": 0,
+      "report": "/tmp/napier-g01-architecture-v5.log"
+    },
+    "publicApi": {
+      "retainedFailures": 4,
+      "newFailures": 0
+    },
+    "diffCheck": {
+      "exitCode": 0
+    },
+    "previousFocused": {
+      "fileCount": 7,
+      "tests": 57,
+      "passed": 57,
+      "failed": 0
+    },
+    "previousRelatedRegression": {
+      "fileCount": 15,
+      "tests": 101,
+      "passed": 101,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "relatedRegression": {
+      "fileCount": 16,
+      "tests": 110,
+      "passed": 110,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "declarationEmit": {
+      "status": "root-owned final v4 recheck pending",
+      "previousV3": "root independently reports compile/type success; earlier v1 TS2742 fixed by explicit ThreadDetail return type"
+    },
+    "previousV3RelatedRegression": {
+      "fileCount": 15,
+      "tests": 103,
+      "passed": 103,
+      "failed": 0,
+      "exitCode": 0
+    }
+  },
+  "evidenceBoundary": "Actual Hono request handlers, temporary SQLite Store, filesystem observations and pure UI matrix/protocol. Root owns production browser acceptance. No paid calls, staging or commits. Intermediate failed runs preserved: restart fixture double shutdown and expected active-Run recovery changed phase; fixed fixture lifecycle before final 57/57.",
+  "scope": [
+    "request-time native file observations separated from manifest assertions",
+    "64 filesystem checks, 8MiB per file, 32MiB total, at most64 path segments; unsupported/symlink/FIFO/budget/unreadable/unstable stay unchecked",
+    "descriptor/path dev/ino/size/mtime/ctime validation; no promise of continued integrity after response",
+    "shared facts reject mismatched manifest/revision/observation bindings; UI matrix no status-only pass",
+    "existing eventId/seq/revision/path/digest history retained as recorded_assertion; currentVersion requires exact current plan revision; always explicitly incomplete because historical commits are non-atomic",
+    "whole objective unchanged, no acceptance gate or creator attribution",
+    "missing declarations never become current missing facts without bound native observation; pure metadata accessibility stays unchecked",
+    "cross-identity selection uses immutable createdAt plus stable declaration order for same-clock ties, never mutable updatedAt/revision"
+  ],
+  "acceptance": [
+    "original HTTP missing-file, same-artifact overwrite, native file drift counterexamples",
+    "warm/cold/replay/restart metadata version equality",
+    "real state-persist then append-event failure shows missing_current_event without sourceEventId",
+    "wrong event path/run/thread and recomputed wrong snapshot plan/revision cannot bind",
+    "same-byte content with changed plan revision does not reuse old current observation",
+    "real same-size concurrent write with restoredmtime is unchecked",
+    "no older-version fallback",
+    "independent same-tick same-metadata reassertion state/event gap cannot reuse prior currentVersion",
+    "a later unrelated plan revision removes current event binding but freshly matched bytes still pass integrity",
+    "actual read return bytes remain <=8MiB per file and <=32MiB total even with real concurrent growth",
+    "HTTP missing declaration followed by external reappearance with no new events yields observed/available, unknown integrity, missingCount0",
+    "real Store cross-plan same path and tied creation clocks preserve newer declaration after older HTTP late reassertion; latest missing never revives older verified",
+    "unchanged task-completion-summary compatibility regression passes"
+  ],
+  "notes": [
+    "Root owns final portable emit and production browser acceptance; no model calls, staging or commits.",
+    "V1/v2/v3 sources and prior success/failure reports remain preserved; older runs do not establish v4 acceptance.",
+    "Directories/URLs stay unchecked. History is metadata only, always incomplete; no complete archive, authenticated provenance, creator attribution or whole-objective acceptance is claimed.",
+    "Final related regression is 16 files/110 tests, overlapping all prior local suites; do not sum counts."
+  ]
+}

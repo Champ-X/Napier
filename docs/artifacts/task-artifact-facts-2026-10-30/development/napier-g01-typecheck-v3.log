@@ -1,0 +1,1 @@
+packages/contracts/src/task-artifact-facts.ts(87,36): error TS18048: 'plan' is possibly 'undefined'.
