@@ -1,4 +1,7 @@
-import { mkdtemp, rm, writeFile, mkdir, symlink } from "node:fs/promises";
+import { mkdtemp, rm, writeFile, mkdir, symlink, open } from "node:fs/promises";
+import { constants } from "node:fs";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -35,6 +38,41 @@ async function setup() {
 }
 
 describe("Shared task facts", () => {
+  it.skipIf(process.platform === "win32")("rejects an explicitly referenced FIFO without blocking task detail or cached projection", async () => {
+    const { store, thread, run } = await setup();
+    const registry = new KernelProjectionRegistry();
+    const service = new TaskNarrativeProjectionService(registry, store);
+    const fifo = path.join(store.workspaceRoot, "output.txt");
+    try {
+      await mkdir(store.workspaceRoot, { recursive: true });
+      await promisify(execFile)("mkfifo", [fifo]);
+      await store.appendEvent({ threadId: thread.id, runId: run.id, type: "message.assistant",
+        category: "message", visibility: "user", payload: { role: "assistant", text: "Open `output.txt`." } });
+      await store.finishRun(run.id, "completed");
+      for (const inspect of [() => store.getDetail(thread.id), () => service.project(thread.id)]) {
+        const result = inspect();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          const settled = await Promise.race([result.then(() => true), new Promise<false>((resolve) => {
+            timer = setTimeout(() => resolve(false), 2_000);
+          })]);
+          expect(settled, "A non-file output reference must not wait for a FIFO writer").toBe(true);
+        } finally {
+          clearTimeout(timer);
+          // Release the old blocking implementation too, so a regression does
+          // not strand a libuv open or prevent fixture cleanup.
+          const release = await open(fifo, constants.O_RDWR | constants.O_NONBLOCK);
+          try { await result; } finally { await release.close(); }
+        }
+      }
+      expect((await store.getDetail(thread.id)).taskNarrative?.deliverables).toEqual([]);
+      expect((await service.project(thread.id)).view.deliverables).toEqual([]);
+    } finally {
+      registry.shutdown();
+      store.close();
+    }
+  });
+
   it("does not accept a completed run with an unfinished plan, on replay or cached projection", async () => {
     const { store, thread, run } = await setup();
     const registry = new KernelProjectionRegistry();

@@ -81,7 +81,9 @@ async function inspectCandidate(root: string, target: string, budget: number) {
     if ((await lstat(target)).isSymbolicLink()) return undefined;
     const resolved = await realpath(target);
     if (!isPathInsideWorkspace(resolved, root)) return undefined;
-    handle = await open(resolved, constants.O_RDONLY | constants.O_NOFOLLOW);
+    // A referenced or raced FIFO must reach the descriptor type check without
+    // waiting for a writer and blocking the entire task detail projection.
+    handle = await open(resolved, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     const before = await handle.stat();
     if (!before.isFile() || before.size > Math.min(budget, MAX_CANDIDATE_BYTES))
       return undefined;
