@@ -1,0 +1,298 @@
+{
+  "kind": "napier.deferred-operation-reinspection-evidence-index",
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T21:23:56.058559+00:00",
+  "implementationCommit": "663a5f5b45a217d954878b095024daa4f3e53e92",
+  "paidModelCalls": 0,
+  "fullG04Complete": false,
+  "artifacts": {
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-deferred-reinspection-coordinator-busy-20261030.json": {
+      "sha256": "7b17fc1cdff0338878b7d825aed1724546a92491f4e39faaa97201aa99319d31",
+      "bytes": 2837
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-deferred-reinspection-development-20261030.json": {
+      "sha256": "985cc26c3005b56e213ce6678330a68bf2438e99bf2ae872bb846c9cd373c8c5",
+      "bytes": 2682
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-deferred-reinspection-source-stage-20261030.json": {
+      "sha256": "4d4e5c3fc97683f1c12497fdc72ed642a08c79568088c9c5d65dd72f2e075079",
+      "bytes": 2123
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-deferred-reinspection-source-stage-v1-20261030.json": {
+      "sha256": "9234a76dabe88a00c19417d3221f5d4f27fcc9cb4e3b2f48cc8b5f90277fb531",
+      "bytes": 2123
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-deferred-reinspection-verify-20261030.py": {
+      "sha256": "cc0e71e7318af3b3c338b213e4f3093efc70f626aba93f3967968d76bdf9a444",
+      "bytes": 9286
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g03-agent-runtime-baseline-strict.log": {
+      "sha256": "1fa5fe6dd8c083ff1f2db9f9697d29a32e4c2ef8e7f97e2a9df9fb19e9d9587e",
+      "bytes": 19151
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-fifo-final-20261030.json": {
+      "sha256": "411880264837b64ad9ffb87da8a230ebdcd72968d0e394e19e7854ca28f1bfd1",
+      "bytes": 3027
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-gates-final-20261030.json": {
+      "sha256": "78da85a1d51e82e98371361fe14988b754aa36c2411d6fe6fd83bd6591543208",
+      "bytes": 5156
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-handoff-20261030.json": {
+      "sha256": "03eaf787b59a303e2dedd100d1dc1e2c77146ef6eb078b9a7e8f82fb09615146",
+      "bytes": 9614
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-handoff-v2-20261030.json": {
+      "sha256": "1b1a483f9f33ad07dae9af63ec5d7aa2eac74150438ca70af6e1967a3b2ba905",
+      "bytes": 10951
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-handoff-v3-20261030.json": {
+      "sha256": "ce9ac26b5bbc5965f18f2ebc27ef52f8400339d84f444f62ef96f0ea925543ae",
+      "bytes": 13379
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-immediate-busy-v2-20261030.json": {
+      "sha256": "0917b66ebee84d09f072f828aef4b69860ee432ad25fb2af2bc5b5b86d6c9974",
+      "bytes": 13422
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-initial-20261030.json": {
+      "sha256": "3e110dc2e8ced77e6b4b1a4adb80ddbd1cad90efb783ccda8f7dd3fa254f10c8",
+      "bytes": 16687
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-locks-final-20261030.json": {
+      "sha256": "3ec5865904a9f3c989754907d0690997c709f6d551c3c657e4fb951fef2ce2c2",
+      "bytes": 10904
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-locks-initial-20261030.json": {
+      "sha256": "30d48ad7066b19c96d40d87a9b9e6accd86f3e2312e94f5938e6b0daab5d08d7",
+      "bytes": 16657
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-own-release-v3-20261030.json": {
+      "sha256": "30acdda9f172afb35ed373380b8cb3406007c40d0b0aead87dd4f54cfee1b875",
+      "bytes": 13806
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-g04-reinspection-pack-final-20261030.json": {
+      "sha256": "6e9e14f4ba42d427bf565b7d0bf76b3efc67caabdbf82e52c211a7b67b3e8ac5",
+      "bytes": 77540
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-lock-release-busy-fixed-v3-20261030.json": {
+      "sha256": "230ddcb61595e3bdbe17e197a1dd074573fbe818e381c4b89df4d857fa7fbe5c",
+      "bytes": 263
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-lock-release-busy-fixed-v3-20261030.mts": {
+      "sha256": "9a1361823d6fee28f856261c2fd1e739e7599908c76a27ddf52c8e00e426b73f",
+      "bytes": 1818
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-lock-release-busy-repro-20261030.json": {
+      "sha256": "e11f7a9a00eff4529844cbbfcdfb10042b7c9d790474da17294e4c0ed7de822d",
+      "bytes": 796
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-lock-release-busy-repro-20261030.mts": {
+      "sha256": "0e73a2af892086d6dbea439d081a5f080b74a9b3ff126c7192b4d5f96b14fcea",
+      "bytes": 1796
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/development/napier-overlay-preserved-user-files-20261029.json": {
+      "sha256": "98005eb6811f8ebbf87e5324d47d6431c9ca1394026ea8a06fe3e4ca74a99157",
+      "bytes": 3046
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/architecture.log": {
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/emitted-after.json": {
+      "sha256": "177a1af035f1d102318bfa4e5e8002630257328e9552c67662549f27dfe67bbe",
+      "bytes": 635339
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/emitted-before.json": {
+      "sha256": "177a1af035f1d102318bfa4e5e8002630257328e9552c67662549f27dfe67bbe",
+      "bytes": 635339
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/legacy-strict-baseline-comparison.json": {
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "bytes": 462
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/legacy-strict-tests.json": {
+      "sha256": "f737bbf1cad7365233decdae24c8227ac663e37398ff65750ffc127db4028fbb",
+      "bytes": 553
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/legacy-strict-tests.log": {
+      "sha256": "21aaf675249de58ac5c24965408d101f5fd1e39cc3553804c1854b79286e93cb",
+      "bytes": 14495
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/public-api.log": {
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/regression.json": {
+      "sha256": "f97d4c282d6f3d1e8669d67361796fb32fa8f81648d1fada82ff2c18ee4d6afd",
+      "bytes": 16327
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/review-disposition.json": {
+      "sha256": "9c0f85bf86bf044617652637adeed0b9c2e6d78740f9e3850cf594727040357d",
+      "bytes": 515
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/runtime-tests.log": {
+      "sha256": "cc9918284565841b3faa16f1fd23b9dc8635ba2aae470aef42e79c1cf9040610",
+      "bytes": 88
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/runtime.json": {
+      "sha256": "472cdbbbe2fbaeab911aeb98c14bf235e34dd0b68c38be8016bca469142e055c",
+      "bytes": 182128
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/selected-tests.json": {
+      "sha256": "fa19a224c901a9a35891165f9f08b72bace86c995ff31be9785ef52d157e6f7b",
+      "bytes": 4573
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/server-tests.log": {
+      "sha256": "8f9c603ad1efda2df33d858fb207cf55f98b9407abf6de661d351a2ed7d55cb8",
+      "bytes": 87
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/server.json": {
+      "sha256": "609fc661499c1fbd98fbec565830cf2a54f8ad4135f1f8239f4527558d9f97b2",
+      "bytes": 5181
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/source-after.json": {
+      "sha256": "8999e4f9cb67afa9bdea6c73d817077b65f2dba714abf99b1f3dc674a0b7bdfb",
+      "bytes": 486512
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/source-before.json": {
+      "sha256": "8999e4f9cb67afa9bdea6c73d817077b65f2dba714abf99b1f3dc674a0b7bdfb",
+      "bytes": 486512
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/strict-tests.json": {
+      "sha256": "04f1811913c43b57395986bc339783416a95f97fa43b89ba4d8723bf2a6c3103",
+      "bytes": 1196
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/strict-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v1/web-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/architecture.log": {
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/emitted-after.json": {
+      "sha256": "b83f1a95be71ccad0d26faab6e3f5c15951779f967682e558a5dcf77d44f802e",
+      "bytes": 635339
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/emitted-before.json": {
+      "sha256": "b83f1a95be71ccad0d26faab6e3f5c15951779f967682e558a5dcf77d44f802e",
+      "bytes": 635339
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/legacy-strict-baseline-comparison.json": {
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "bytes": 462
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/legacy-strict-tests.json": {
+      "sha256": "f737bbf1cad7365233decdae24c8227ac663e37398ff65750ffc127db4028fbb",
+      "bytes": 553
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/legacy-strict-tests.log": {
+      "sha256": "21aaf675249de58ac5c24965408d101f5fd1e39cc3553804c1854b79286e93cb",
+      "bytes": 14495
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/public-api.log": {
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/regression.json": {
+      "sha256": "b52cc49bbec5dee6fe19fce226f1284929d5d7c257cc9576db2aebb4c5228ea6",
+      "bytes": 16327
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/runtime-tests.log": {
+      "sha256": "ee465bd4af2c5410e0e0f79dde31f0c086255c657c8be2790a78927739abc77f",
+      "bytes": 88
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/runtime.json": {
+      "sha256": "a3ea9e736bee23c14c3b8d0fb60abbc80989b016a703ac5b655f3d9ecbef1d5c",
+      "bytes": 182375
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/selected-tests.json": {
+      "sha256": "fa19a224c901a9a35891165f9f08b72bace86c995ff31be9785ef52d157e6f7b",
+      "bytes": 4573
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/server-tests.log": {
+      "sha256": "5bd61f5b13671175d78ebfd458c865e6a97a2e81798ee2ef62e652be4befd687",
+      "bytes": 87
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/server.json": {
+      "sha256": "5d5ab8393755c5ef266c60248e6b724c1af5fde8b1119933651dd3554a6fed43",
+      "bytes": 5188
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/source-after.json": {
+      "sha256": "4b9baa3f03ddfd9a7768ccff56da3f1fcfc335b17ee2011438330e6050da29d4",
+      "bytes": 486512
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/source-before.json": {
+      "sha256": "4b9baa3f03ddfd9a7768ccff56da3f1fcfc335b17ee2011438330e6050da29d4",
+      "bytes": 486512
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/strict-tests.json": {
+      "sha256": "04f1811913c43b57395986bc339783416a95f97fa43b89ba4d8723bf2a6c3103",
+      "bytes": 1196
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/strict-tests.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-2026-10-30/final-v2/web-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/deferred-operation-reinspection-regression-2026-10-30.json": {
+      "sha256": "ae4ccd081fcd3f5330bbf08718fcfd6c55db038a71335b055a24032ab42d47fe",
+      "bytes": 17390
+    }
+  }
+}

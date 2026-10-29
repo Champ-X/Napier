@@ -395,6 +395,13 @@
 - 本地提交 `1ecf0f43` 对候选descriptor增加`O_NONBLOCK`，特殊文件可立即到达类型检查并被排除；原有路径、摘要与未验证候选语义保持。真实Store与缓存projection的FIFO用例、原有正常文件/越界/重复/版本等 **6/6** 测试通过，Runtime/Contracts编译和严格测试类型检查通过，28个已有用户文件不变，模型调用0。
 - [复现与验收收据](docs/artifacts/task-output-special-file-regression-2026-10-30.json)保留前后证据；这是本机POSIX文件系统检查，不是Windows或浏览器验收。未完成的独立目标验收生产者、成果来源/版本完整性、发现限额表达等G01任务仍保留，未 push。
 
+### 后续推进：G04 锁争用后的周期核查与共享锁修正（2026-10-30）
+
+- 本地提交 `663a5f5b`，未 push。仅实际`move_target_busy`产生生命周期调度提示，绑定原Run／lease generation／effect boundary；RecoveryService每轮最多重核8项、退避上限30秒。每次经Store刷新/CAS、确认原生PID死亡、重获路径锁与重新读取证据；状态变化即丢弃提示，不扫描重试普通失败Run或扩大移动重放权限。赢家后续死亡可在同一服务内重新核查。
+- 共享路径锁新增私有SQLite元数据协调，仅同步保护创建/死owner回收，BUSY立即退避，不阻塞事件循环等待秒级超时。活着或不确定owner不接管；旧ownerless/malformed锁不再仅按年龄删除。自有释放以PID/token/fd/dev/ino验证，并利用协作方不回收活PID的不变量脱离协调器，消除正常BUSY造成的永久遗锁。混合旧二进制或外部非协作写入不在原子性保证内；其他unlink/storage失败仍可保守留锁。
+- 首个冻结快照543测试虽通过，追加真实ordinary wrapper反例仍发现释放BUSY遗留当前PID锁，因此未提交；保留反例和修正后的同进程重获锁证据。最终隔离快照 **62文件／544测试**全部通过，含跨进程交接、失主重查及Git/LSP/subagent/capsule/Store共享消费者；编译和相关strict/type检查通过，4,032源文件／5,087产物哈希稳定，28个已有用户文件不变。旧48项strict诊断与原始基线一致。
+- 7项既有架构、root1897/1896、internal18/16及两份digest失败保留，不改预算，历史release失败不重写。后续仍需混合/多操作版本链、已证明未执行move的显式续执行授权、更多adapter与全分类验收；G04及总目标继续 **active**。见[说明](docs/deferred-operation-reinspection.md)、[最终收据](docs/artifacts/deferred-operation-reinspection-regression-2026-10-30.json)与[证据索引](docs/artifacts/deferred-operation-reinspection-evidence-index-2026-10-30.json)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -539,7 +546,7 @@
 
 - [ ] 基于现有 operation 记录区分：尚未执行、已确认完成、结果待对账、不可自动重放。
 - [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态或精确结算结果与私有绑定齐备时，重查后置条件并继续原有只读恢复；当前 26 场景进程故障证据已留存；有写前意图的未结算提交也可独立对账，精确捕获的未提交主 Agent apply_patch 已在显式 verified_patches 策略下继续；其他操作和统一恢复操作区仍待完成。）
-- [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。（有写前意图的 apply_patch 及单个原生普通文件 move 已实现文件身份/摘要对账；混合/多操作、周期失主重核和全 G04 分类恢复矩阵尚未完成。）
+- [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。（有写前意图的 apply_patch 及单个原生普通文件 move 已实现文件身份/摘要对账；已识别原生move锁争用的周期失主重核已实现；混合/多操作和全 G04 分类恢复矩阵尚未完成。）
 - [ ] 对环境漂移、权限变化、证据缺失和不可对账操作保留明确停止原因。
 - [ ] 将恢复建议与用户操作区接通，说明保留了什么、从哪里继续、哪些结果仍不确定。
 

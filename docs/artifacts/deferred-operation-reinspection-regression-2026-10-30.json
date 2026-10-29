@@ -1,0 +1,352 @@
+{
+  "kind": "napier.deferred-operation-reinspection-regression",
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T21:20:35.301576+00:00",
+  "head": "7e9dc49b8ffe6481d6550ed11bfeb410f1777dd6",
+  "stagedTree": "e527766429ea7194ab6e2259d84b7c7b47a311d6",
+  "stagedSourceManifest": {
+    "baseHead": "7e9dc49b8ffe6481d6550ed11bfeb410f1777dd6",
+    "tree": "e527766429ea7194ab6e2259d84b7c7b47a311d6",
+    "fileCount": 14,
+    "files": {
+      "packages/runtime/src/recovery-service.ts": "32cfe05b723eda100ba7c39cfc479dbe26547351c62435da98934ab60a8338a8",
+      "packages/runtime/src/run-interruption-recovery.ts": "2f35f9887be2de71178308e3433a9e876496788c85c9e0a116fe199e1548c536",
+      "packages/runtime/src/run-lifecycle-repository.ts": "4557e307c2bd9b0f214a96c801ba25f8bee032929e085c6f7e65055d686b558f",
+      "packages/runtime/src/run-lost-owner-recovery.ts": "ea645c6af2902b24c6c0ddd9765f810a5e1696abc3c0c041c2f24b68d35c360c",
+      "packages/runtime/src/run-terminal-recovery.ts": "4bc1739e5d994ea28853940fc2cde6649fec1bb22208d6887f1219bd05254c95",
+      "packages/runtime/src/run-deferred-operation-recovery.ts": "ff1ac1708cd689a8379d8b74b9ceb12ff0417e6f9290dd133307ae88838a2472",
+      "packages/runtime/src/workspace-write-lock.ts": "df8987829da23de9bfefe391b922bbf2fb813d79ac70b5ca2a496d20fdf65926",
+      "packages/runtime/src/workspace-lock-coordination.ts": "ddbc2581044648f5dd888e713065f662381031cf32afa090d0b8ce891f6334c2",
+      "packages/runtime/test/deferred-operation-reinspection.test.ts": "58aa24efd75b2c0f373c7bc7e741a31449a7a3cc6f280913575ead6e9237ab1b",
+      "packages/runtime/test/fixtures/deferred-operation-reinspection.ts": "e9451faffd4b1eaef47e98295148ae0d426cd9135a37b8d7a69b1dead951a211",
+      "packages/runtime/test/workspace-write-lock.test.ts": "fb93f88c0efac2a4c77f2f115fa24be923ce79ecab49e2a7b74f8e587b424c71",
+      "packages/runtime/test/fixtures/workspace-write-lock-process.ts": "19de8982e44ff0abe104c1b0a14a0bb142ed302fb85b6af9132b9dd732717c0f",
+      "packages/runtime/test/local-private-capsule-store.test.ts": "b0c76b5628fcd33c7f002b4dfe758b3c98f86971cf9af2d85353f37ba440c0c7",
+      "packages/runtime/test/run-deferred-operation-recovery.test.ts": "7222b338f6da663c73ddd41c05cb933d296dc8367f53b83bd6b397d74c9d6fd0"
+    },
+    "preservedUserCount": 28,
+    "snapshot": "/tmp/napier-deferred-reinspection-verify-20261030",
+    "handoffManifest": "/tmp/napier-g04-reinspection-handoff-v3-20261030.json"
+  },
+  "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+  "originalWorkspace": "/Users/champ/orca/Napier",
+  "verificationScope": "Exact recorded base HEAD plus staged deferred reinspection and shared lock source/test blobs in isolated checkout; concurrent overflow safety work and user changes excluded",
+  "node": "v24.19.0",
+  "providerMode": "local faux and loopback HTTP only; no external model calls",
+  "checks": [
+    {
+      "name": "contracts-runtime-emit",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-deferred-reinspection-verify-20261030/node_modules/typescript/bin/tsc",
+        "-b",
+        "packages/runtime",
+        "apps/cli",
+        "apps/server",
+        "--force"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:16:51.821379+00:00",
+      "finishedAt": "2026-10-29T21:17:00.416983+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/contracts-runtime-emit.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "bundled-skills",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/copy-bundled-skills.mjs"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:00.417238+00:00",
+      "finishedAt": "2026-10-29T21:17:00.446680+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/bundled-skills.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "sandbox-assets",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/copy-sandbox-image.mjs"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:00.446868+00:00",
+      "finishedAt": "2026-10-29T21:17:00.469569+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/sandbox-assets.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "runtime-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-deferred-reinspection-verify-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "packages/runtime/test/agent-manual-run-recovery.test.ts",
+        "packages/runtime/test/agent-recovery-plan-context.test.ts",
+        "packages/runtime/test/agent-runtime-loop-cursor.test.ts",
+        "packages/runtime/test/agent-runtime-memory-provenance.test.ts",
+        "packages/runtime/test/agent-runtime-utils.test.ts",
+        "packages/runtime/test/agent-runtime.test.ts",
+        "packages/runtime/test/agent-workspace-files.test.ts",
+        "packages/runtime/test/automatic-recovery.test.ts",
+        "packages/runtime/test/deferred-operation-reinspection.test.ts",
+        "packages/runtime/test/git-branch-switch-checkout-recovery.test.ts",
+        "packages/runtime/test/git-branch.test.ts",
+        "packages/runtime/test/git-commit-recovery.test.ts",
+        "packages/runtime/test/git-commit.test.ts",
+        "packages/runtime/test/git-review.test.ts",
+        "packages/runtime/test/git-stage.test.ts",
+        "packages/runtime/test/kernel-plugin-state.test.ts",
+        "packages/runtime/test/kernel-recovery-projection.test.ts",
+        "packages/runtime/test/local-private-capsule-store.test.ts",
+        "packages/runtime/test/lsp-code-action-apply-tool.test.ts",
+        "packages/runtime/test/lsp-rename-apply-tool.test.ts",
+        "packages/runtime/test/lsp-rename-commit.test.ts",
+        "packages/runtime/test/operator-decision-recovery.test.ts",
+        "packages/runtime/test/read-only-recovery.test.ts",
+        "packages/runtime/test/run-deferred-operation-recovery.test.ts",
+        "packages/runtime/test/run-lifecycle-atomic-settlement.test.ts",
+        "packages/runtime/test/run-recovery-checkpoint.test.ts",
+        "packages/runtime/test/run-recovery-prompt.test.ts",
+        "packages/runtime/test/settled-patch-recovery.test.ts",
+        "packages/runtime/test/sqlite-ledger-migration.test.ts",
+        "packages/runtime/test/store-compatibility-projections.test.ts",
+        "packages/runtime/test/store-snapshot-consistency.test.ts",
+        "packages/runtime/test/store.test.ts",
+        "packages/runtime/test/subagent-child-effect-fencing.test.ts",
+        "packages/runtime/test/subagent-worktree-mutation.test.ts",
+        "packages/runtime/test/thread-bundles.test.ts",
+        "packages/runtime/test/tool-effect-indeterminate-recovery.test.ts",
+        "packages/runtime/test/tool-execution-admission-structure.test.ts",
+        "packages/runtime/test/tool-execution-retry-lineage.test.ts",
+        "packages/runtime/test/tool-operation-failure-receipt.test.ts",
+        "packages/runtime/test/tool-operation-journal.test.ts",
+        "packages/runtime/test/tool-operation-lease-local-store.test.ts",
+        "packages/runtime/test/tool-operation-result-repair.test.ts",
+        "packages/runtime/test/tool-operation-terminal-fence.test.ts",
+        "packages/runtime/test/tools.test.ts",
+        "packages/runtime/test/unsettled-patch-recovery.test.ts",
+        "packages/runtime/test/verified-patch-recovery.test.ts",
+        "packages/runtime/test/workflow-approval-recovery.test.ts",
+        "packages/runtime/test/workflow-recovery-checkpoint.test.ts",
+        "packages/runtime/test/workflow-recovery.test.ts",
+        "packages/runtime/test/workspace-change-commit.test.ts",
+        "packages/runtime/test/workspace-file-move-recovery.test.ts",
+        "packages/runtime/test/workspace-file-mutations.test.ts",
+        "packages/runtime/test/workspace-patch-input-error.test.ts",
+        "packages/runtime/test/workspace-patch-reconciliation.test.ts",
+        "packages/runtime/test/workspace-patch-tool.test.ts",
+        "packages/runtime/test/workspace-processes.test.ts",
+        "packages/runtime/test/workspace-write-lock.test.ts",
+        "--maxWorkers=2",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-deferred-reinspection-final-v2-20261030/runtime.json"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:00.629655+00:00",
+      "finishedAt": "2026-10-29T21:20:35.013316+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/runtime-tests.log",
+      "logSha256": "ee465bd4af2c5410e0e0f79dde31f0c086255c657c8be2790a78927739abc77f"
+    },
+    {
+      "name": "server-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-deferred-reinspection-verify-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/server/test/partial-run-recovery-http.test.ts",
+        "apps/server/test/workspace-files.test.ts",
+        "apps/server/test/workspace-runtime-host.test.ts",
+        "apps/server/test/workspace-runtime-recovery-process.test.ts",
+        "apps/server/test/workflow-recovery.test.ts",
+        "--maxWorkers=2",
+        "--testTimeout=30000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-deferred-reinspection-final-v2-20261030/server.json"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:00.629813+00:00",
+      "finishedAt": "2026-10-29T21:17:13.248748+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/server-tests.log",
+      "logSha256": "5bd61f5b13671175d78ebfd458c865e6a97a2e81798ee2ef62e652be4befd687"
+    },
+    {
+      "name": "strict-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-deferred-reinspection-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "/tmp/napier-deferred-reinspection-final-v2-20261030/strict-tests.json"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:00.632996+00:00",
+      "finishedAt": "2026-10-29T21:17:05.853757+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/strict-tests.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "legacy-strict-tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-deferred-reinspection-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "/tmp/napier-deferred-reinspection-final-v2-20261030/legacy-strict-tests.json"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": false,
+      "exitCode": 2,
+      "startedAt": "2026-10-29T21:17:05.854311+00:00",
+      "finishedAt": "2026-10-29T21:17:10.902931+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/legacy-strict-tests.log",
+      "logSha256": "21aaf675249de58ac5c24965408d101f5fd1e39cc3553804c1854b79286e93cb"
+    },
+    {
+      "name": "web-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-deferred-reinspection-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "apps/web/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:10.903189+00:00",
+      "finishedAt": "2026-10-29T21:17:16.767519+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/web-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "harness-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-deferred-reinspection-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "packages/harness-eval/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:13.248989+00:00",
+      "finishedAt": "2026-10-29T21:17:13.743820+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/harness-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "benchmark-types",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-deferred-reinspection-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "packages/benchmark-kit/tsconfig.json",
+        "--noEmit"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:13.744102+00:00",
+      "finishedAt": "2026-10-29T21:17:14.478723+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/benchmark-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "architecture",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/check-architecture.mjs"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": false,
+      "exitCode": 1,
+      "startedAt": "2026-10-29T21:17:14.478990+00:00",
+      "finishedAt": "2026-10-29T21:17:16.536349+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/architecture.log",
+      "logSha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af"
+    },
+    {
+      "name": "public-api",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "scripts/check-public-api.mjs"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": false,
+      "exitCode": 1,
+      "startedAt": "2026-10-29T21:17:16.536662+00:00",
+      "finishedAt": "2026-10-29T21:17:19.570164+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/public-api.log",
+      "logSha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3"
+    },
+    {
+      "name": "diff-check",
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "cwd": "/private/tmp/napier-deferred-reinspection-verify-20261030",
+      "required": true,
+      "exitCode": 0,
+      "startedAt": "2026-10-29T21:17:16.767779+00:00",
+      "finishedAt": "2026-10-29T21:17:16.782316+00:00",
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/diff-check.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "legacy-strict-baseline-nonregression",
+      "required": true,
+      "exitCode": 0,
+      "log": "/tmp/napier-deferred-reinspection-final-v2-20261030/legacy-strict-baseline-comparison.json",
+      "logSha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908"
+    }
+  ],
+  "testCounts": [
+    {
+      "suite": "runtime",
+      "files": 57,
+      "total": 533,
+      "passed": 533,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "server",
+      "files": 5,
+      "total": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "sourceCount": 4032,
+  "emittedCount": 5087,
+  "sourceDrift": [],
+  "stagedWorkspaceDrift": [],
+  "emittedDrift": [],
+  "preservedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "passedRequiredChecks": true,
+  "implementationCommit": "663a5f5b45a217d954878b095024daa4f3e53e92",
+  "acceptedScope": "Bounded lifecycle-owned periodic reinspection only for native move operations previously deferred by exact lock contention. No general failed-run replay authority.",
+  "priorPassingPackDisposition": "Final-v1 passed543 but was not accepted: a later actual ordinary-wrapper release under held metadata coordinator left a live-PID lock. Reproduction and fixed counterpart retained; final-v2 adds own-release convergence tests.",
+  "compatibilityBoundary": "Updated cooperating processes share metadata coordination. Valid legacy PID locks remain respected, malformed/ownerless locks no longer age out. Mixed older writers and external noncooperating filesystem writers are outside atomicity claims. Arbitrary unlink/storage failures can leave conservative locks.",
+  "gateBoundary": "Seven preexisting architecture findings; root1897/1896 and internal18/16 plus both digest mismatches retained. Historical release failure unchanged. Concurrent overflow candidate excluded."
+}

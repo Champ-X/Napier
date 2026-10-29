@@ -1,0 +1,24 @@
+{
+  "baseHead": "7e9dc49b8ffe6481d6550ed11bfeb410f1777dd6",
+  "tree": "e527766429ea7194ab6e2259d84b7c7b47a311d6",
+  "fileCount": 14,
+  "files": {
+    "packages/runtime/src/recovery-service.ts": "32cfe05b723eda100ba7c39cfc479dbe26547351c62435da98934ab60a8338a8",
+    "packages/runtime/src/run-interruption-recovery.ts": "2f35f9887be2de71178308e3433a9e876496788c85c9e0a116fe199e1548c536",
+    "packages/runtime/src/run-lifecycle-repository.ts": "4557e307c2bd9b0f214a96c801ba25f8bee032929e085c6f7e65055d686b558f",
+    "packages/runtime/src/run-lost-owner-recovery.ts": "ea645c6af2902b24c6c0ddd9765f810a5e1696abc3c0c041c2f24b68d35c360c",
+    "packages/runtime/src/run-terminal-recovery.ts": "4bc1739e5d994ea28853940fc2cde6649fec1bb22208d6887f1219bd05254c95",
+    "packages/runtime/src/run-deferred-operation-recovery.ts": "ff1ac1708cd689a8379d8b74b9ceb12ff0417e6f9290dd133307ae88838a2472",
+    "packages/runtime/src/workspace-write-lock.ts": "df8987829da23de9bfefe391b922bbf2fb813d79ac70b5ca2a496d20fdf65926",
+    "packages/runtime/src/workspace-lock-coordination.ts": "ddbc2581044648f5dd888e713065f662381031cf32afa090d0b8ce891f6334c2",
+    "packages/runtime/test/deferred-operation-reinspection.test.ts": "58aa24efd75b2c0f373c7bc7e741a31449a7a3cc6f280913575ead6e9237ab1b",
+    "packages/runtime/test/fixtures/deferred-operation-reinspection.ts": "e9451faffd4b1eaef47e98295148ae0d426cd9135a37b8d7a69b1dead951a211",
+    "packages/runtime/test/workspace-write-lock.test.ts": "fb93f88c0efac2a4c77f2f115fa24be923ce79ecab49e2a7b74f8e587b424c71",
+    "packages/runtime/test/fixtures/workspace-write-lock-process.ts": "19de8982e44ff0abe104c1b0a14a0bb142ed302fb85b6af9132b9dd732717c0f",
+    "packages/runtime/test/local-private-capsule-store.test.ts": "b0c76b5628fcd33c7f002b4dfe758b3c98f86971cf9af2d85353f37ba440c0c7",
+    "packages/runtime/test/run-deferred-operation-recovery.test.ts": "7222b338f6da663c73ddd41c05cb933d296dc8367f53b83bd6b397d74c9d6fd0"
+  },
+  "preservedUserCount": 28,
+  "snapshot": "/tmp/napier-deferred-reinspection-verify-20261030",
+  "handoffManifest": "/tmp/napier-g04-reinspection-handoff-v3-20261030.json"
+}

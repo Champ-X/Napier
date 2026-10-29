@@ -1,0 +1,7 @@
+{
+  "behaviorTestsPassed": 543,
+  "acceptedForCommit": false,
+  "reason": "Subsequent real ordinary-wrapper held-coordinator reproduction showed release BUSY leaves a live-PID lock after the lease is dropped; complete broad passing regression does not cover this counterexample.",
+  "reproduction": "/tmp/napier-lock-release-busy-repro-20261030.json",
+  "sourceChangePending": "Remove metadata coordinator only from own live-PID token/fd-bound release, preserving guarded acquisition and dead-owner reclamation."
+}

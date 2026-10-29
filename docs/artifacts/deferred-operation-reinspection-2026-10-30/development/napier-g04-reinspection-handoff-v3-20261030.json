@@ -1,0 +1,256 @@
+{
+  "scope": "Bounded periodic reinspection of remembered native move lock deferrals; shared cooperative workspace path-lock metadata exclusion",
+  "status": "worker source frozen; root isolated exact-source acceptance and commits pending",
+  "workspace": "/Users/champ/orca/Napier",
+  "branch": "main",
+  "initialBaseHead": "df517f5690c8fe6e56dc212d7f31cdb78b3a1a90",
+  "currentHead": "7e9dc49b8ffe6481d6550ed11bfeb410f1777dd6",
+  "createdAt": "2026-10-29T21:16:03.243341+00:00",
+  "ownedFiles": [
+    {
+      "path": "packages/runtime/src/recovery-service.ts",
+      "sha256": "32cfe05b723eda100ba7c39cfc479dbe26547351c62435da98934ab60a8338a8",
+      "bytes": 11615
+    },
+    {
+      "path": "packages/runtime/src/run-interruption-recovery.ts",
+      "sha256": "2f35f9887be2de71178308e3433a9e876496788c85c9e0a116fe199e1548c536",
+      "bytes": 13302
+    },
+    {
+      "path": "packages/runtime/src/run-lifecycle-repository.ts",
+      "sha256": "4557e307c2bd9b0f214a96c801ba25f8bee032929e085c6f7e65055d686b558f",
+      "bytes": 11620
+    },
+    {
+      "path": "packages/runtime/src/run-lost-owner-recovery.ts",
+      "sha256": "ea645c6af2902b24c6c0ddd9765f810a5e1696abc3c0c041c2f24b68d35c360c",
+      "bytes": 7993
+    },
+    {
+      "path": "packages/runtime/src/run-terminal-recovery.ts",
+      "sha256": "4bc1739e5d994ea28853940fc2cde6649fec1bb22208d6887f1219bd05254c95",
+      "bytes": 7223
+    },
+    {
+      "path": "packages/runtime/src/run-deferred-operation-recovery.ts",
+      "sha256": "ff1ac1708cd689a8379d8b74b9ceb12ff0417e6f9290dd133307ae88838a2472",
+      "bytes": 3180
+    },
+    {
+      "path": "packages/runtime/src/workspace-write-lock.ts",
+      "sha256": "df8987829da23de9bfefe391b922bbf2fb813d79ac70b5ca2a496d20fdf65926",
+      "bytes": 6658
+    },
+    {
+      "path": "packages/runtime/src/workspace-lock-coordination.ts",
+      "sha256": "ddbc2581044648f5dd888e713065f662381031cf32afa090d0b8ce891f6334c2",
+      "bytes": 1842
+    },
+    {
+      "path": "packages/runtime/test/deferred-operation-reinspection.test.ts",
+      "sha256": "58aa24efd75b2c0f373c7bc7e741a31449a7a3cc6f280913575ead6e9237ab1b",
+      "bytes": 16163
+    },
+    {
+      "path": "packages/runtime/test/fixtures/deferred-operation-reinspection.ts",
+      "sha256": "e9451faffd4b1eaef47e98295148ae0d426cd9135a37b8d7a69b1dead951a211",
+      "bytes": 3507
+    },
+    {
+      "path": "packages/runtime/test/workspace-write-lock.test.ts",
+      "sha256": "fb93f88c0efac2a4c77f2f115fa24be923ce79ecab49e2a7b74f8e587b424c71",
+      "bytes": 10139
+    },
+    {
+      "path": "packages/runtime/test/fixtures/workspace-write-lock-process.ts",
+      "sha256": "19de8982e44ff0abe104c1b0a14a0bb142ed302fb85b6af9132b9dd732717c0f",
+      "bytes": 1941
+    },
+    {
+      "path": "packages/runtime/test/local-private-capsule-store.test.ts",
+      "sha256": "b0c76b5628fcd33c7f002b4dfe758b3c98f86971cf9af2d85353f37ba440c0c7",
+      "bytes": 15579
+    },
+    {
+      "path": "packages/runtime/test/run-deferred-operation-recovery.test.ts",
+      "sha256": "7222b338f6da663c73ddd41c05cb933d296dc8367f53b83bd6b397d74c9d6fd0",
+      "bytes": 1793
+    }
+  ],
+  "verification": [
+    {
+      "path": "/tmp/napier-g04-reinspection-own-release-v3-20261030.json",
+      "sha256": "30acdda9f172afb35ed373380b8cb3406007c40d0b0aead87dd4f54cfee1b875",
+      "files": 4,
+      "total": 35,
+      "passed": 35,
+      "failed": 0,
+      "pending": 0,
+      "success": true
+    },
+    {
+      "path": "/tmp/napier-g04-reinspection-immediate-busy-v2-20261030.json",
+      "sha256": "0917b66ebee84d09f072f828aef4b69860ee432ad25fb2af2bc5b5b86d6c9974",
+      "files": 4,
+      "total": 34,
+      "passed": 34,
+      "failed": 0,
+      "pending": 0,
+      "success": true
+    },
+    {
+      "path": "/tmp/napier-g04-reinspection-pack-final-20261030.json",
+      "sha256": "6e9e14f4ba42d427bf565b7d0bf76b3efc67caabdbf82e52c211a7b67b3e8ac5",
+      "files": 20,
+      "total": 235,
+      "passed": 235,
+      "failed": 0,
+      "pending": 0,
+      "success": true
+    },
+    {
+      "path": "/tmp/napier-g04-reinspection-locks-final-20261030.json",
+      "sha256": "3ec5865904a9f3c989754907d0690997c709f6d551c3c657e4fb951fef2ce2c2",
+      "files": 3,
+      "total": 27,
+      "passed": 27,
+      "failed": 0,
+      "pending": 0,
+      "success": true
+    },
+    {
+      "path": "/tmp/napier-g04-reinspection-fifo-final-20261030.json",
+      "sha256": "411880264837b64ad9ffb87da8a230ebdcd72968d0e394e19e7854ca28f1bfd1",
+      "files": 1,
+      "total": 8,
+      "passed": 1,
+      "failed": 0,
+      "pending": 7,
+      "success": true
+    },
+    {
+      "path": "/tmp/napier-deferred-reinspection-development-20261030.json",
+      "sha256": "985cc26c3005b56e213ce6678330a68bf2438e99bf2ae872bb846c9cd373c8c5",
+      "files": 1,
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "pending": 0,
+      "success": true
+    },
+    {
+      "path": "/tmp/napier-deferred-reinspection-coordinator-busy-20261030.json",
+      "sha256": "7b17fc1cdff0338878b7d825aed1724546a92491f4e39faaa97201aa99319d31",
+      "files": 1,
+      "total": 7,
+      "passed": 1,
+      "failed": 0,
+      "pending": 6,
+      "success": true
+    },
+    {
+      "path": "/tmp/napier-g04-reinspection-initial-20261030.json",
+      "sha256": "3e110dc2e8ced77e6b4b1a4adb80ddbd1cad90efb783ccda8f7dd3fa254f10c8",
+      "files": 3,
+      "total": 56,
+      "passed": 56,
+      "failed": 0,
+      "pending": 0,
+      "success": true
+    },
+    {
+      "path": "/tmp/napier-g04-reinspection-locks-initial-20261030.json",
+      "sha256": "30d48ad7066b19c96d40d87a9b9e6accd86f3e2312e94f5938e6b0daab5d08d7",
+      "files": 3,
+      "total": 38,
+      "passed": 36,
+      "failed": 2,
+      "pending": 0,
+      "success": false
+    }
+  ],
+  "validationBoundary": "Main 20-file 235/235 pack began before final O_NONBLOCK and regular-descriptor metadata hardening. Final 27/27 focused lock/capsule/queue pack and 1/1 raced-FIFO process case validate final lock source. 236 distinct tests in union. Strict noEmit passed after test-only Reflect.set adjustment. Root isolated final snapshot remains authoritative. V2 replaces SQLite busy_timeout 2500 with 0; its 4-file 34/34 pack covers all 7 real-process reinspection cases plus shared locks, private capsule processes and queue bounds. The held-coordinator case asserts both whole sweep and an independent 25ms timer settle below 500ms, then same Store/Service converges after guard release. This is a bounded regression assertion, not a performance benchmark. V3 fixes the retained ordinary-wrapper release-BUSY counterexample. Its 4-file 35/35 pack includes held-coordinator ordinary wrapper release, 6 rounds of independent-process concurrent release/acquire, unchanged 7 periodic process cases, capsule processes and queue bounds. Root reported prior v2 exact isolated62-file543/543 passing but did not commit it because the release counterexample remained; that is prior-version evidence only.",
+  "checks": {
+    "strictOwnedNoEmit": "npx tsc -p /tmp/napier-g04-reinspection-final-tsconfig.json --noEmit --pretty false: exit 0 after v3 changes",
+    "strictConfigSha256": "45216588a9a4ad910337a94df09519d1df6e7041631f7e6c8dcd23092af9e754",
+    "runtimeNoEmit": "npx tsc -p packages/runtime/tsconfig.json --noEmit --pretty false --tsBuildInfoFile /tmp/napier-g04-reinspection-runtime-v3-20261030.tsbuildinfo: exit 0",
+    "diffCheck": "git diff --check: exit 0 after v3 changes",
+    "gates": {
+      "path": "/tmp/napier-g04-reinspection-gates-final-20261030.json",
+      "sha256": "78da85a1d51e82e98371361fe14988b754aa36c2411d6fe6fd83bd6591543208",
+      "architecture": "8 existing unrelated failures; no new selected finding",
+      "api": "4 existing root/Host export count and digest failures; no baseline change"
+    }
+  },
+  "design": {
+    "hintAuthority": "Only actual move_target_busy produces an in-memory hint. Hint binds original run/thread, complete lease/token generation and exact current boundary; it is never proof or replay authority. Startup rediscovers durable unresolved operation state.",
+    "scheduler": "Existing RecoveryService sweep; initial 1s, exponential backoff capped at 30s, at most 8 due hints per sweep, terminal/changed/live-owner hints removed. No broad periodic startup scan.",
+    "commit": "Fresh stateQueue ledger/CAS attempt; exact native owner ESRCH plus existing move writer check, path locks held through original proof/fence/terminal atomic persist; scoped thread/interaction/plan/child updates only.",
+    "sharedLocks": "Canonical-dataRoot private file-edit-locks.sqlite serializes short synchronous acquire and dead-PID reclaim metadata transactions, with busy_timeout=0. Own release does not acquire the coordinator: it synchronously verifies regular/non-symlink status, captured dev/ino, native fd identity when present, exact current PID and random token before unlink. No await or background cleanup queue. Foreign updated peers only reclaim proven dead PIDs, so the live releasing owner cannot be replaced; process death prevents late release. Acquisition rollback uses the same ownership-bound helper inside its existing guard."
+  },
+  "compatibilityAndLimitations": [
+    "Valid legacy PID lock records remain supported. Ownerless/malformed legacy records remain busy even when old; age-only reclamation is intentionally removed. A crash before owner record is written remains unknown.",
+    "Cross-process exclusion claim is limited to updated cooperating binaries. Older binaries do not obey the new coordinator; mixed-version stale reclamation is not solved.",
+    "SQLite coordinator acquisition uses busy_timeout=0; it never waits synchronously for another coordinator transaction. Busy preserves unknown and retries via existing scheduling; I/O/corruption remains a conservative failure.",
+    "Per-file owned release remains best effort for arbitrary filesystem/unlink errors; a retained file can remain busy until owner exit. Ordinary coordinator BUSY cannot block own release because release no longer uses that coordinator. No general I/O cleanup guarantee.",
+    "No move replay grants, mixed-operation adapters, multi-move path version chains, directory/cross-filesystem/trash/restore reconciliation or periodic retry of arbitrary failed Runs.",
+    "Existing run.recovery.auto informational event de-duplication is not claimed across processes; process tests assert unique operation proof/fence/Run terminal/continuation/physical continuation call.",
+    "Local Darwin process-fault evidence only; no power-loss, hostile filesystem or Windows acceptance."
+  ],
+  "failedEvidence": [
+    {
+      "path": "/tmp/napier-g04-reinspection-locks-initial-20261030.json",
+      "reason": "36/38: private capsule test temporary transpile list omitted new workspace-lock-coordination dependency; list fixed, final capsule suite16/16."
+    },
+    {
+      "kind": "strict noEmit first attempt",
+      "reason": "JsonValue payload route needed type narrowing; fixed."
+    },
+    {
+      "kind": "strict noEmit FIFO fixture attempt",
+      "reason": "node:fs typed readonly lstatSync assignment; changed to Reflect.set, strict recheck exit0."
+    },
+    {
+      "path": "/tmp/napier-lock-release-busy-repro-20261030.json",
+      "sha256": "e11f7a9a00eff4529844cbbfcdfb10042b7c9d790474da17294e4c0ed7de822d",
+      "reason": "Real ordinary-wrapper release-BUSY orphan counterexample against frozen v2; fixed by coordinator-independent ownership-bound release."
+    }
+  ],
+  "delivery": {
+    "stagedByWorker": false,
+    "committedByWorker": false,
+    "pushedByWorker": false,
+    "docsEdited": false,
+    "goalMdEdited": false,
+    "hostOwnedFilesEdited": false,
+    "protectedUserFilesEdited": false,
+    "distJavaScriptEmitted": false
+  },
+  "revision": "v3 owned release is coordinator-independent within updated cooperative cohort",
+  "priorManifest": {
+    "path": "/tmp/napier-g04-reinspection-handoff-v2-20261030.json",
+    "sha256": "1b1a483f9f33ad07dae9af63ec5d7aa2eac74150438ca70af6e1967a3b2ba905"
+  },
+  "changedFromPrior": [
+    "packages/runtime/src/workspace-write-lock.ts",
+    "packages/runtime/test/workspace-write-lock.test.ts"
+  ],
+  "releaseCounterexample": {
+    "before": {
+      "script": "/tmp/napier-lock-release-busy-repro-20261030.mts",
+      "sha256": "0e73a2af892086d6dbea439d081a5f080b74a9b3ff126c7192b4d5f96b14fcea",
+      "result": "/tmp/napier-lock-release-busy-repro-20261030.json",
+      "resultSha256": "e11f7a9a00eff4529844cbbfcdfb10042b7c9d790474da17294e4c0ed7de822d",
+      "outcome": "ordinary withWorkspacePathLocks cleanup throws BUSY; after coordinator release, same-process acquires at0/100/1000ms remain blocked by current-PID lock"
+    },
+    "after": {
+      "script": "/tmp/napier-lock-release-busy-fixed-v3-20261030.mts",
+      "sha256": "9a1361823d6fee28f856261c2fd1e739e7599908c76a27ddf52c8e00e426b73f",
+      "result": "/tmp/napier-lock-release-busy-fixed-v3-20261030.json",
+      "resultSha256": "230ddcb61595e3bdbe17e197a1dd074573fbe818e381c4b89df4d857fa7fbe5c",
+      "outcome": "ordinary wrapper returns; no target lock remains; all3 subsequent normal acquires succeed without saved lease or manual cleanup"
+    }
+  },
+  "rootPriorStaging": "Root staged v2 exact14 tree b4c432c5825ccafabd7dab299f5074e73646e4ea; worker made only unstaged authorized v3 changes and did not refresh the index."
+}

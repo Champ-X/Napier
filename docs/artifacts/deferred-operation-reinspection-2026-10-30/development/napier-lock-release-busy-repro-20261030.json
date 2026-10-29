@@ -1,0 +1,33 @@
+{
+  "pid": 15961,
+  "retries": [
+    {
+      "waitMs": 0,
+      "acquired": false,
+      "name": "Error",
+      "message": "Subsequent ordinary mutation target is already being edited"
+    },
+    {
+      "waitMs": 100,
+      "acquired": false,
+      "name": "Error",
+      "message": "Subsequent ordinary mutation target is already being edited"
+    },
+    {
+      "waitMs": 1000,
+      "acquired": false,
+      "name": "Error",
+      "message": "Subsequent ordinary mutation target is already being edited"
+    }
+  ],
+  "first": {
+    "returned": false,
+    "name": "WorkspaceLockCoordinationBusyError",
+    "message": "Workspace lock coordinator is busy"
+  },
+  "lock": {
+    "pid": 15961,
+    "acquiredAt": "2026-10-29T21:10:00.146Z",
+    "token": "6a2af9a5-f0eb-451b-bd13-cb0d0d0a9a8e"
+  }
+}
