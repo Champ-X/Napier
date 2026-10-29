@@ -31,6 +31,8 @@ Browser v1 and v2 failed during fixture setup and executed zero browser cases. B
 
 Seven preexisting isolated architecture findings remain, plus Runtime root exports 1897/1896, internal exports 18/16 and both semantic-digest mismatches. The 48 old `agent-runtime.test.ts` strict diagnostics still match baseline `d2e33ac3` after normalization. The UI detector retains one unrelated preexisting diff-pane accent-border warning. No budgets, compatibility digests or old release records were rewritten.
 
+The [documentation check](artifacts/task-artifact-facts-documentation-check-2026-10-30.json) retains five whitespace findings in three raw historical evidence files. Their original bytes and hashes are preserved; the final evidence commit was not whitespace-clean. The authored source/CSS diff check passed before its separate implementation commit.
+
 ## Remaining boundaries
 
 A current observation establishes bytes seen while producing that response. It does not establish future immutability or whole-objective acceptance. Directories and URLs are unchecked in this slice. Whole-objective status remains unverified/partial as appropriate, with no new mandatory operator acceptance gate. Tool-only discovery, a complete historical byte archive, independent whole-goal acceptance sources, migration of every artifact-card consumer, and full G01 acceptance remain unfinished. Physical mobile, dark mode, screen-reader acceptance, model quality and general performance improvement are not claimed.
