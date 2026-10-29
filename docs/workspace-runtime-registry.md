@@ -5,7 +5,7 @@ HTTP/Runtime and browser evidence covers independent A/B execution, navigation,
 background automation, preview resources, and reopening completed histories in a
 new production process. Shared model admission/budgets and process/browser lifetime
 draining are now implemented. **G05-B remains incomplete: global physical
-process/browser capacity and broader operation/review isolation still need acceptance.**
+process/browser capacity and complete overlay/review UX still need acceptance.**
 
 ## Identity and ownership
 
@@ -131,7 +131,8 @@ recovery. The source-bound receipt is
 - Extend active execution recovery evidence beyond pre-dispatch interruptions,
   including blocked/unsafe operations and the unmodified production entry.
 - Replace conservative rotation retention with a complete pending-work index.
-- Extend actual browser acceptance for approval/review isolation. G01–G07 remain active.
+- Extend the verified Workflow approval and extension trust-review isolation to
+  broader review flows and resolve the observed narrow overlay layering. G01–G07 remain active.
 
 ## Production and browser evidence
 
@@ -179,3 +180,39 @@ workers with a locally injected faux provider and readiness-only sandbox. The
 interruption precedes model dispatch and tool effects. It does not prove arbitrary
 side-effect recovery, actual `index.ts` active recovery, Workflow or approval UI
 isolation, or live-model quality. External model requests: zero.
+
+## Approval and extension trust-review isolation
+
+The [approval/review receipt](artifacts/workspace-approval-review-2026-10-29.json)
+covers actual production `index.ts` across three clean process launches. Closed
+SQLite copies deliberately retain the same thread, decision, Workflow plan and
+extension IDs. The real sidebar moves A to B; B's source approval, saved answer
+and Workflow continuation affect only B. A remains waiting through a process
+restart, then completes through its own scoped UI. Custom data roots survive.
+
+Each ledger has one answer event, one decision continuation, one tool completion
+and one Workflow completion. An identical answer retry returns 202 without a new
+event; the stale checkpoint returns 409 without changing the file's inode/mtime.
+A-only IDs return 404 through B's decision/extension routes; Workflow lookup is
+unavailable in B while still waiting for an answer in A. Extension approval is
+not claimed retry-idempotent, and the source stays disabled and unconnected.
+The model admission ledger records zero invocations and zero charged tokens.
+
+One HTTP integration test covers three host lifetimes; the fixture passed strict
+TypeScript checking. The browser verifier checks 12 states at 1440px/320px, with
+reachable actions, no horizontal overflow, page errors, response identity mismatch
+or external browser requests. Run it with a new output path:
+
+```sh
+node scripts/check-workspace-approval-review-ui.mjs <new-output-path>
+```
+
+**Visual acceptance is incomplete:** `b-trust-320.png` shows text from the
+Workspace evidence drawer overlapping Settings after a wide-to-narrow resize.
+The trust button remained reachable, so this does not invalidate the verified
+ledger isolation; it is an existing overlay issue for G06-B. Production frontend
+files were not changed in this slice. The first harness passes also needed to
+close the foreground evidence drawer before accessing covered controls; those
+pointer-interception failures were not cross-workspace production defects.
+This covers Workflow approval and extension trust review, not all model-review
+flows, crash recovery, all overlay interactions or complete G05-B acceptance.

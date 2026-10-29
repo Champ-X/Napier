@@ -230,6 +230,14 @@
 - Runtime/Server compile、严格测试类型检查及 diff check 通过。架构仍为原 10 项，公开 API 仍为 root 1897/1896 与原 compatibility digest 两项失败；未提高预算、未重写历史收据。实现／变量／边界见 [workspace-resource-admission.md](docs/workspace-resource-admission.md)。
 - **G05-B 仍未完成**：尚需全局物理进程／浏览器容量、审批／review 浏览器验收、细化 rotation 回收。PID 复用保守阻断，不宣称通用崩溃资源回收；额度查询尚无统一暂停 UX。G01–G07 全范围保持 active，后续继续物理资源协调和其余共享执行／投影／恢复／交互／性能目标。
 
+### 后续推进：G05-B 审批与扩展信任审查隔离
+
+- 已本地提交 `b9b4f1b2` 保存模型额度与生命周期切片，未 push。新增真实 HTTP/生产浏览器验收，生产代码与用户前端不变。两份关闭后的 SQLite 副本保留相同 thread／decision／plan／extension ID，另设 A-only ID 反例；B 的 source approval、答案和 continuation 仅改变 B。
+- 1 个 HTTP 集成场景覆盖三次 host 生命周期，严格 fixture 类型检查通过。浏览器实际侧栏 A→B 导航、三次原样生产 index 进程启动、自定义 dataRoot 重开；B 完成后 A 仍等待，重启后 A 正确继续。两边各保留一条答案、一条 decision continuation、一次 tool completion 和一次 workflow completion；同答案 202 不新增记录，旧 checkpoint 409 不重写文件（inode／mtime 保持）。extension review 不宣称幂等，source 未连接／启用。
+- 1440/320px 共 12 个布局状态操作可达，0 横向溢出／page error／身份错配／外部浏览器请求；最终全局模型账本 invocation／active／token 均为 0。源码及 8 个 source/build 树已复核匹配；收据原字节保存于 [workspace-approval-review-2026-10-29.json](docs/artifacts/workspace-approval-review-2026-10-29.json)。
+- **视觉验收未完整通过**：`b-trust-320.png` 确认 Settings 与 Workspace evidence 双弹窗叠层透字，按钮仍可操作。列入 G06-B overlay 整合，不把功能隔离当作视觉无缺陷。早期脚本对生成时间的比较、对遮挡控件的直接操作已按真实 UI 状态修正，未作为生产隔离故障。
+- 本片只验证 Workflow approval 与 extension trust review，不扩称所有模型 review、崩溃恢复或 G05-B 全部通过。全局 Sandbox／浏览器资源协调、rotation 回收，以及 G01–G07 其余目标继续保持 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -413,7 +421,7 @@
 **实施任务**
 
 - [x] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。（生产 host 已接入；持久身份、自定义账本与恢复失败重试已实现。）
-- [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 threadId、预览资源与后台自动化已覆盖；审批／review 场景另列待验收。）
+- [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 ID、预览资源与后台自动化已覆盖；Workflow 审批／扩展信任 review 已验证功能隔离，其他 review 流程及窄屏双弹窗仍有边界。）
 - [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度和模型／进程／BrowserTask 生命周期保护已验证；全局物理进程／浏览器容量仍待完成。）
 - [ ] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。
 
