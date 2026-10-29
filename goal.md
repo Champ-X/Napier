@@ -297,6 +297,14 @@
 - Runtime compile／最终 TypeScript emit、严格测试 TS、diff check 通过。新增测试行数与 runner 复杂度超限通过共享 fixture、独立权限测试文件和直接 optional 参数传递消除，未提高预算；仍为原 9 项架构及 2 项公开 API 失败。28 个用户文件保持不变。
 - 本片仅勾选 G03 的能力审计与最小接口设计；没有宣称共享 model session、child compaction、持久 child Run 或重启恢复完成。主子仍共享父 ledger，故意选择另一个 child 内部 ID 的父调用会 fail closed；旧 claim 快照也不构成混合版本并发恢复承诺。继续推进共享调用机制、资源完整清理凭证对账及全部其他未完成目标。
 
+### 后续推进：G05-B 完整清理凭证跨重启对账
+
+- G03 工具边界已本地提交 `1b6db1a1`，未 push。本片只恢复“完整 owner 清理已完成、SQLite 释放未提交”的窗口：reserve 同事务保存不可变 nonce ticket，affirmative settle 先持久发布完整 receipt，再释放容量。unknown／仅 Guardian 或 bridge ACK／UI terminal 不升级成完整清理证明。
+- 私有凭证采用 no-follow、单链接普通文件、8 KiB 上限、严格 schema、fatal UTF-8、nonce／资源 identity／内容摘要匹配及文件／目录 fsync。原 owner 只有明确 ESRCH 才视为死亡；缺 host 行、存活／复用 PID 或观察失败继续保留。恢复事务重查并 CAS，两个独立恢复 host 只释放一次；不探测／终止后端、不重发 provider create，历史无 ticket 行仍保留。
+- 启动固定至多 768 项初始集合（3 类容量各最多 256），每 128 项 yield，并在同一次 open 内处理后页合法凭证；revision CAS 的持久 cursor 支持显式续扫，pending 部分索引排除已完成历史。代码审查发现的“一页启动遗漏后页”先保留真实 red，再修正并验证；污染超出合法上限时保留余项，不无限扫描。
+- [当前证据](docs/artifacts/resource-complete-receipt-recovery-2026-10-29.json)：4 文件／57 测试通过，其中恢复 27 项；真实 Node owner／target 子进程与 SQLite 故障注入覆盖清理后结算失败、存活 owner、损坏／缺失／越界文件、两进程 CAS、重试和分页。最初旧代码 2 fail／2 pass、首次新实现的 startup red／green 均留存。该进程夹具不充当新的 Guardian／PTY／OCI／Chromium／BrowserUse provider 验收。
+- Server build、Server noEmit、严格新增测试 TS、diff check 通过；最终 source／build／测试及 28 用户文件摘要已核验，仍原 9 项架构／2 项公开 API 失败。发布 receipt 会在 SQLite writer 事务内 fsync，慢 I/O 等待开销未测量；凭证历史不自动 GC。运行中遗留资源的安全清理、丢失 create 响应及完整 G05-B 验收仍未完成，其他 G01–G07 目标保持 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -481,7 +489,7 @@
 
 - [x] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。（生产 host 已接入；持久身份、自定义账本与恢复失败重试已实现。）
 - [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 ID、预览资源与后台自动化已覆盖；Workflow 审批／扩展信任 review 已验证功能隔离，窄屏双弹窗已另修复并验证；其他 review 流程仍有边界。）
-- [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度、执行／浏览器资源容量、活跃生命周期保护与 rotation 回收义务已有真实证据；跨重启资源对账仍待完成。）
+- [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度、执行／浏览器资源容量、活跃保护、rotation 义务及完整清理凭证跨重启对账已有证据；运行中遗留资源的安全对账仍待完成。）
 - [x] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。（资源释放→真实回收→scoped HTTP 冷开、自定义账本和 rotation 义务已有验证；重启后 unknown 资源自动对账仍属上一项待办。）
 
 **验收**：A 项目长任务运行时可切到 B 提交新任务；A 后台任务和自动化继续；SSE、权限和成果无串线；重启后各工作区恢复；空闲资源能够释放。

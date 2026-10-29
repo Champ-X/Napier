@@ -4,6 +4,7 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { setTimeout as delay } from "node:timers/promises";
 import { validWorkspaceRuntimeId } from "./workspace-runtime-identity.js";
+import { processMayBeAlive, WorkspaceResourceRecovery } from "./workspace-resource-recovery.js";
 import {
   RESOURCE_KINDS, encodeResourceCleanup, encodeResourceIdentity,
   validateResourceRequest, workspaceResourceLimits,
@@ -36,7 +37,8 @@ export class WorkspaceResourceAdmission {
   private readonly pending = new Map<string, Pending>();
   private closed = false;
 
-  private constructor(private readonly db: DatabaseSync, private readonly limits: WorkspaceResourceLimits) {}
+  private constructor(private readonly db: DatabaseSync, private readonly limits: WorkspaceResourceLimits,
+    private readonly recovery: WorkspaceResourceRecovery) {}
 
   static async open(stateHome: string, options: Partial<WorkspaceResourceLimits> = {}): Promise<WorkspaceResourceAdmission> {
     const limits = workspaceResourceLimits(options);
@@ -49,16 +51,27 @@ export class WorkspaceResourceAdmission {
     await file?.close();
     if (!(await lstat(filename)).isFile()) throw new Error("Invalid execution resource ledger file");
     const db = new DatabaseSync(filename);
+    let recovery: WorkspaceResourceRecovery | undefined;
+    let admission: WorkspaceResourceAdmission | undefined;
     try {
       await initializeDatabase(db);
-      const admission = new WorkspaceResourceAdmission(db, limits);
+      recovery = new WorkspaceResourceRecovery(db, stateHome);
+      admission = new WorkspaceResourceAdmission(db, limits, recovery);
+      const opened = admission;
       admission.transaction(() => {
-        admission.reconcileDeadOwners();
+        opened.reconcileDeadOwners();
         db.prepare("INSERT INTO resource_hosts VALUES(?,?,?,?,?)").run(
-          admission.ownerId, process.pid, limits.sandbox_execution, limits.browser_session, limits.browser_task);
+          opened.ownerId, process.pid, limits.sandbox_execution, limits.browser_session, limits.browser_task);
       });
+      await recovery.reconcileStartup();
       return admission;
-    } catch (error) { db.close(); throw error; }
+    } catch (error) {
+      // Open has admitted no resources yet. Do not leave a live registration if
+      // receipt ingestion fails after registration committed.
+      try { if (admission) db.prepare("DELETE FROM resource_hosts WHERE owner_id=?").run(admission.ownerId); }
+      finally { recovery?.close(); db.close(); }
+      throw error;
+    }
   }
 
   forWorkspace(workspaceId: string): ResourceAdmission {
@@ -68,6 +81,12 @@ export class WorkspaceResourceAdmission {
 
   hasPending(workspaceId: string): boolean {
     return [...this.pending.values()].some((entry) => entry.workspaceId === workspaceId);
+  }
+
+  /** Bounded, retryable receipt ingestion; live/unknown owners keep their slots. */
+  reconcileCompletedReceipts() {
+    this.assertOpen();
+    return this.recovery.reconcile();
   }
 
   async drainWorkspace(workspaceId: string): Promise<void> {
@@ -95,6 +114,7 @@ export class WorkspaceResourceAdmission {
     if (this.pending.size) throw new WorkspaceResourceAdmissionError("cleanup");
     this.db.prepare("DELETE FROM resource_hosts WHERE owner_id=?").run(this.ownerId);
     this.db.close();
+    this.recovery.close();
     this.closed = true;
   }
 
@@ -109,6 +129,7 @@ export class WorkspaceResourceAdmission {
       const now = new Date().toISOString();
       this.db.prepare("INSERT INTO execution_resources VALUES(?,?,?,?,?,'reserved',NULL,NULL,?,?)")
         .run(id, this.ownerId, workspaceId, kind, backend, now, now);
+      this.recovery.reserve({ leaseId: id, ownerId: this.ownerId, ownerPid: process.pid, workspaceId, kind, backend });
     });
     let done!: () => void;
     let fail!: (error: Error) => void;
@@ -156,8 +177,12 @@ export class WorkspaceResourceAdmission {
       if (row.state === "released" || (row.state === "reserved" && evidence.status === "released")) {
         throw new WorkspaceResourceAdmissionError("transition");
       }
+      // All current owners call settle only after their complete cleanup scope.
+      // Persist that fact before the SQLite update, so a crash cannot erase it.
+      const receiptSha256 = evidence.status !== "unknown" ? this.recovery.publish(id, row.identity_json, encoded) : null;
       this.db.prepare("UPDATE execution_resources SET state=?,cleanup_json=?,updated_at=? WHERE id=?")
         .run(evidence.status === "unknown" ? "quarantined" : "released", encoded, new Date().toISOString(), id);
+      if (evidence.status !== "unknown") this.recovery.accept(id, receiptSha256);
     });
     if (evidence.status === "unknown") {
       this.pending.get(id)?.fail(new WorkspaceResourceAdmissionError("cleanup"));
@@ -208,6 +233,7 @@ export class WorkspaceResourceAdmission {
         }, row["kind"] as ResourceKind);
         this.db.prepare("UPDATE execution_resources SET state=?,cleanup_json=?,updated_at=? WHERE id=?")
           .run(beforeDispatch ? "released" : "quarantined", cleanup, new Date().toISOString(), String(row["id"]));
+        if (beforeDispatch) this.recovery.accept(String(row["id"]));
       }
       this.db.prepare("DELETE FROM resource_hosts WHERE owner_id=?").run(ownerId);
     }
@@ -238,7 +264,13 @@ async function initializeDatabase(db: DatabaseSync): Promise<void> {
           kind TEXT NOT NULL, backend TEXT NOT NULL, state TEXT NOT NULL, identity_json TEXT, cleanup_json TEXT,
           created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
         CREATE INDEX IF NOT EXISTS execution_resources_capacity ON execution_resources(kind,state);
-        CREATE INDEX IF NOT EXISTS execution_resources_owner ON execution_resources(owner_id,state);`);
+        CREATE INDEX IF NOT EXISTS execution_resources_owner ON execution_resources(owner_id,state);
+        CREATE TABLE IF NOT EXISTS resource_recovery_tickets(resource_id TEXT PRIMARY KEY, ticket_json TEXT NOT NULL,
+          pending INTEGER NOT NULL DEFAULT 1, receipt_sha256 TEXT, recovered_at TEXT);
+        CREATE INDEX IF NOT EXISTS resource_recovery_pending ON resource_recovery_tickets(resource_id) WHERE pending=1;
+        CREATE TABLE IF NOT EXISTS resource_recovery_scan(singleton INTEGER PRIMARY KEY CHECK(singleton=1), after_resource_id TEXT NOT NULL,
+          revision INTEGER NOT NULL DEFAULT 0);
+        INSERT OR IGNORE INTO resource_recovery_scan(singleton,after_resource_id) VALUES(1,'');`);
       return;
     } catch (error) {
       const code = (error as { errcode?: number }).errcode;
@@ -246,10 +278,4 @@ async function initializeDatabase(db: DatabaseSync): Promise<void> {
       await delay(25);
     }
   }
-}
-
-function processMayBeAlive(pid: number): boolean {
-  if (!Number.isSafeInteger(pid) || pid <= 0) return true;
-  try { process.kill(pid, 0); return true; }
-  catch (error) { return (error as NodeJS.ErrnoException).code !== "ESRCH"; }
 }

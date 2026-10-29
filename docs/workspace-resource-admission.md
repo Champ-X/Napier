@@ -5,8 +5,9 @@ workspace graphs and other hosts using the same state home. Model invocations
 have durable quotas and physical-call concurrency limits. Runtime reclamation
 also retains unsettled model calls, workspace process sessions, and browser-task
 preparation/settlement. Owned execution and browser resources now have a separate durable capacity
-ledger. This remains a G05-B slice: cross-restart cleanup reconciliation and
-broader review acceptance remain pending. Workflow approval and extension trust
+ledger. Restart can now consume a durable complete-cleanup receipt whose owner
+died before committing release. Active-orphan cleanup and broader review
+acceptance remain pending. Workflow approval and extension trust
 review isolation have separate browser evidence in goal.md; the associated
 overlapping overlays were fixed in
 [workbench overlay coordination](workspace-overlay-coordination.md).
@@ -124,11 +125,11 @@ Every state except `released` consumes capacity. A validated `not_started` or
 `released` proof releases it; absent, malformed or unknown proof never does.
 Binding a resource identity is immutable. Repeating the same settlement is
 idempotent, and a live lease may replace unknown cleanup with affirmative
-cleanup evidence. Dead owners release only reservations that never reached
+cleanup evidence. Owner death alone releases only reservations that never reached
 dispatch. Dispatched ownership is quarantined even if the PID has disappeared.
 PID-only liveness cannot prove identity across reboot and errs toward retaining
-capacity. Cross-restart reconciliation is not implemented; do not manually reset
-this ledger to turn unknown ownership into success.
+capacity. The complete-receipt protocol below can reconcile already completed
+cleanup across restart; it cannot turn unknown ownership into success.
 
 Switchable Sandbox captures the adapter at launch, keeps admission on adapter
 replacement, and waits for both child exit and owned cleanup before settling.
@@ -314,3 +315,66 @@ and cleanup receipts. The new handle identity and cleanup protocol is not an
 automatic recovery implementation. Browser,
 container and OS containment were not exercised by this baseline; network/model
 requests were zero.
+
+## Complete cleanup receipts across restart
+
+`owner-complete-v1` closes one specific crash window: an existing owner has
+finished its entire admitted cleanup scope, but its SQLite release has not
+committed. A nonce-bound immutable ticket is inserted in the reservation
+transaction, before dispatch. An affirmative `settle` writes a complete receipt
+under the private `execution-resource-receipts` directory before releasing the
+row. Unknown evidence does not publish a complete receipt.
+
+The scope is the existing outer owner's cleanup contract: Sandbox target and
+backend cleanup plus scratch/projection finalizers; native browser context,
+browser, proxy and runtime directory; or the declared BrowserUse task ownership
+unit. A Guardian/PTY/bridge ACK, task status or process exit by itself is not a
+complete receipt. The recovery reader never launches a backend, kills a PID,
+repeats a provider create or infers missing cleanup from elapsed time.
+
+Publication fsyncs a private temporary file, installs it without overwriting
+existing proof, removes the temporary link, verifies the final inode/content and
+fsyncs the directory. The reader accepts only a private ordinary single-link
+file of at most 8 KiB, with no-follow opening, stable file attributes, fatal
+UTF-8 decoding, exact schema and matching ticket/nonce/identity/content. Repeated
+identical publication is allowed; conflicting evidence remains an error. The
+original receipt and its consumed hash are retained; no history GC is added.
+
+Only ESRCH for the original ticket's PID establishes owner death. A missing host
+registration, inaccessible PID or a currently live/reused PID does not. After
+verification outside the writer transaction, recovery rechecks the immutable
+bindings and current row and uses a transactional CAS to release once. Two
+recovering hosts cannot both consume the same capacity unit. Existing rows with
+no ticket and any missing, malformed, component-only or unknown evidence retain
+capacity.
+
+Startup freezes an initial cohort of at most 768 candidates, the valid global
+upper bound of three resource kinds with capacity 256 each. It processes 128 at
+a time and yields between pages. It therefore reaches a valid receipt behind
+one page of missing proofs during the same `open()`. A persistent revision-CAS
+cursor supports further explicit bounded scans; oversized polluted cohorts are
+retained beyond the startup limit. Normal releases and never-dispatched dead
+owners clear the pending ticket in the same transaction. A partial pending index
+keeps completed history out of the candidate scan.
+
+Receipt publication intentionally holds the SQLite writer transaction across
+file and directory fsync, maintaining a simple validation/publish/release order.
+This can increase writer waiting during slow I/O; latency has not been measured.
+The new protocol does not claim a performance improvement.
+
+The [current regression receipt](artifacts/resource-complete-receipt-recovery-2026-10-29.json)
+contains 4 files / 57 passing tests, including 27 recovery cases. It covers real
+owner/target subprocesses, SQLite failure injection, live-owner retention,
+malformed and non-private files, symlink/hardlink rejection, invalid UTF-8,
+legacy rows, independent recovering hosts, transaction retries and startup
+continuation. Two original-source cases failed before implementation. Review
+then exposed a one-page startup starvation case in the initial new code; that
+red/green evidence is also retained. Server build, strict test TypeScript and
+source/build bindings pass; the nine existing architecture and two public-API
+failures remain.
+
+The process fixture closes a real Node target before publishing fixture cleanup
+proof. Browser-kind cases verify the capacity scope using that fixture. These
+are protocol/process tests, not new Guardian, PTY, OCI, Chromium or BrowserUse
+provider acceptance runs. Active orphan discovery/cleanup, provider lost-create
+reconciliation and child execution recovery remain separate unfinished work.
