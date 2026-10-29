@@ -333,6 +333,16 @@
 - [最终收据](docs/artifacts/subagent-working-set-regression-final-v2-2026-10-29.json)：**68 文件／473 测试通过，0 failed／skipped**；Contracts／Runtime／Server 编译、Benchmark／Web 类型检查、新增测试严格类型检查通过。4,119 个源码／测试／配置及 39 个 emitted module 前后哈希一致，用户已有 28 文件完整保留。首轮 464 passed／2 failed 与下一轮 473 passed 但新增测试 JSON 类型检查失败均原样保留；[独立证据索引](docs/artifacts/subagent-working-set-evidence-index-2026-10-29.json) 区分 fixture 错误、行为红例与演化后的测试，重叠用例不叠加。架构仍为 8 项既有失败，公开 API 仍为 1897／1896 与 digest 两项，历史 release manifest 仍失败；没有改写预算或发布证据。
 - 下一步采用新的 continuation Task／execution／child Run 和明确 recovered-parent grant，旧账本保持不可变；严格拒绝 checkpoint 后未覆盖的 model／tool／review tail，保留 inherited prefix、逻辑预算／原 deadline、稀疏 mailbox 来源，并实现终态 assistant 的无额外普通调用结算与结果／候选幂等。安全父恢复、workspace／schema 重验证、coder 工作集恢复、迟到物理用量、并发共享父额度及完整增量投影仍未完成。全部模型响应为本地 fixture，零外部付费请求；G03 与 G01–G07 整体继续 **active**。实现与边界见 [subagent-working-set.md](docs/subagent-working-set.md)。
 
+### 后续推进：G03 安全 child 续跑与持久完成（2026-10-30）
+
+- 实现已本地提交 `f06ec79d`，随后 `f95eb544` 仅去除两个文件末尾空行，未 push。新的 continuation Task／execution／child Run 绑定明确 recovered parent，旧执行不复活；事务内重查 source frontier、当前角色／工具／skill 授权与父 lease，唯一 predecessor 只发一份新执行租约。显式 inspection 不恢复 child；自动只读恢复仍不开放普通委派工具。
+- 原始私有 source 与稀疏 mailbox provenance 完整继承，只重排未消费输入；原始绝对期限与逻辑预算不重置，canonical Run／Task 用量继续按物理 attempt 分开。最终合法 assistant 可零普通模型调用交付；截断 tail 在 claim 前拒绝。每次修复／压缩／route 派发前同步父级已知用量，耗尽额度后不产生新物理调用；这仍不是并发 token／cost 原子预留。
+- 当前仅支持有原生私有证据的只读恢复：无已执行依赖或可用私有 SDK 路径／hash／size 验证的 `read_file`。成功的 list／search／LSP／skill 依赖、coder／worktree、未知用量／副作用及未覆盖 model／tool／review tail 仍明确 unavailable。claim 后首个 checkpoint 前崩溃可沿持久 source alias 恢复，保存 native checkpoint 后改用继任来源；缺失／损坏源不会静默退回公共步骤。导出可校验，含 continuation 的 replay 导入在持久化前拒绝，尚无迁移私有权限的承诺。
+- 完成 reservation／receipt 与 Task／Run 终态绑定稳定结果／候选身份，commit 后 publication 中断可从持久状态 collect；未完成、revoked、applying 和导入候选不因此获得 apply 权限。旧 native 无 completion binding 的候选目前仅可检查，尚需依据原始完成事件＋私有候选进行受限迁移；不能仅凭 Task completed 或文件存在升级。
+- 真实独立进程 SIGKILL 覆盖 claim 前、首个 checkpoint 前后、invocation reservation 后及 response 已结算但 source 未保存；两进程竞争只产生一个 successor／token。完成阶段覆盖 stage 后、terminal commit 后与两进程重复完成。独立复查修复截断 tail 遗留 running、父预算被 final repair 绕过、导入后无法 reopen、重算 hash 后的谱系矛盾及 inherited mailbox 计数遗漏。
+- [最终联合收据](docs/artifacts/subagent-safe-continuation-regression-final-2026-10-30.json)：**80 文件／566 测试通过，0 failed／skipped**；Contracts／Runtime／Server 编译、Benchmark／Web 类型检查与新增测试 strict 全通过；4,158 源码／测试／配置及 65 emitted module 哈希稳定，用户 28 文件保留。首轮同样 566 行为测试通过但 strict 揭示进程 fixture 的 usage 参数被忽略；最终显式设置并先断言 10 tokens／USD 0.03，再验继承仅一次。旧报告不支持该非零用量结论，原样留存。[证据索引](docs/artifacts/subagent-safe-continuation-evidence-index-2026-10-30.json) 记录独立重叠测试、失败演化和最终纯空行修正，不累加测试数。
+- 架构仍为 8 项既有失败，公开 API 仍为 1897／1896 与 digest 两项，历史 release manifest 仍失败；只降低已过时架构 allowance，没有改写发布证据。全部模型为本地 fixture、零外部付费调用，无平台／断电／质量／性能泛化。下一步继续迟到物理用量持久归因、native 历史候选迁移与 G02 跨 suite／campaign 的任务族暴露分区；coder 恢复、完整编译管线、并发共享额度及 G01–G07 其余要求均保持 **active**。详见 [subagent-safe-continuation.md](docs/subagent-safe-continuation.md)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -455,7 +465,7 @@
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
 - [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 source checkpoint、原子调用用量／事件结算与工具归属已实现；完整 child context compiler／overflow／thinking parity 和迟到物理用量归属仍待完成。）
 - [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查与 mailbox 稀疏消费持久化已实现；并发共享父 token／cost 原子额度仍待完成。）
-- [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明已接通；安全恢复授权、尾部验证与 continuation 尚待实现。）
+- [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明、安全恢复授权、严格 tail 校验与原生只读 continuation 已实现；coder／工作区重建、未覆盖尾部和历史候选迁移仍待完成。）
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。
 
 **验收**

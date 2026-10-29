@@ -3,8 +3,9 @@
 This document records the G03 foundation at `139fc062`: an actual execution Run
 for the existing supervised child runner. The subsequent
 [private working-set extension](subagent-working-set.md) adds transcript and
-mailbox checkpoints plus shared compaction. Automatic child continuation remains
-unimplemented. All regression providers are local fixtures.
+mailbox checkpoints plus shared compaction. The
+[safe continuation extension](subagent-safe-continuation.md) adds bounded native
+read-only recovery and durable completion. All regression providers are local fixtures.
 
 ## Ownership and authority
 
@@ -130,7 +131,7 @@ intermediate attempts remain distinct from behavior failures on frozen
 
 At this foundation stage, private working-set/checkpoint persistence, mailbox
 consumption and compaction remained subsequent work; their current implementation
-is documented in the extension above. G03 still requires safe restart
-continuation. Parent/child accounting and cancellation retain the
+is documented in the extensions above. G03 still requires broader restart
+coverage and full shared execution parity. Parent/child accounting and cancellation retain the
 unknown-effect and late-usage limits above. G01–G07 remain active; this foundation
 does not establish live-model quality, end-to-end performance or release acceptance.

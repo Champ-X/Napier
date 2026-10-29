@@ -3,8 +3,9 @@
 This extends the [child Run foundation](subagent-child-runs.md). A supervised
 child now records its full private source transcript, consumed mailbox entries
 and settled execution frontier. Long child contexts use the same compaction
-policy and model-session boundary as main execution. Safe restart continuation
-is still unavailable; a stored checkpoint does not grant execution authority.
+policy and model-session boundary as main execution. The subsequent
+[safe continuation extension](subagent-safe-continuation.md) adds bounded native
+read-only recovery; a stored checkpoint alone does not grant execution authority.
 
 ## Source and checkpoint binding
 
@@ -126,11 +127,12 @@ retained; the final test uses the existing envelope validator to narrow the
 payload. Historical release-manifest, architecture and API failures remain
 separate from this slice's required checks.
 
-Restart admission, revalidation of workspace/tool schema, unconsumed mailbox
-replay, safe parent recovery/rebinding, supervisor review/repair continuation,
-and once-only result/candidate delivery remain to implement. A checkpoint can
-precede a later known invocation or supervisor action; that tail cannot be
-silently discarded. Late physical usage after ignored abort and shared-parent
-concurrent token/cost reservations also remain unfinished. All model results
-in this slice are local fixtures; no live-model quality or performance gain is
-claimed.
+At this stage, restart admission and durable completion were subsequent work.
+The continuation extension now implements a bounded read-only path, exact-schema
+and local-read revalidation, pending mailbox replay, explicit recovered-parent
+authorization and durable result/candidate identity. A checkpoint can precede a
+later known invocation or supervisor action; that tail remains unavailable and
+cannot be silently discarded. Coder restoration, late physical usage after
+ignored abort and shared-parent concurrent token/cost reservations remain
+unfinished. All model results are local fixtures; no live-model quality or
+performance gain is claimed.

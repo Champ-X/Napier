@@ -181,6 +181,12 @@ has not received its ID. If cleanup cannot confirm revocation, the original
 interruption and unresolved cleanup are reported together and evidence is kept.
 This does not establish that every associated execution resource was reclaimed.
 
+The later [safe continuation and durable completion slice](subagent-safe-continuation.md)
+adds native read-only restoration and a completion reservation/receipt that binds
+candidate identity across crashes. The historical shared-session boundaries in
+this section describe that earlier stage; full compiler parity and late physical
+usage attribution remain open.
+
 The [shared-session regression receipt](artifacts/shared-model-session-regression-2026-10-29.json)
 binds 27 test files / 250 passing tests, no skips, and 1,971 unchanged source,
 test and configuration files across the final run. An independent 13-case
