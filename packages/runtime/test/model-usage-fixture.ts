@@ -12,6 +12,7 @@ import type {
 } from "@napier/contracts/model-accounting";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { modelAdapterReceipt } from "../src/model-adapter-receipt.js";
+import { modelInputAllowance } from "../src/model-call-budget-allowance.js";
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import {
   freezeModelAccountingBasis,
@@ -66,6 +67,7 @@ export function modelUsageFixture(
     logicalCallId: "logical-fixture-1",
     model: { provider: model.provider, id: model.id, api: model.api },
     capture: {
+      inputAllowance: modelInputAllowance(model, context),
       envelope: createModelContextEnvelopeReceipt({
         turnIndex: 0,
         systemPrompt: context.systemPrompt ?? "",

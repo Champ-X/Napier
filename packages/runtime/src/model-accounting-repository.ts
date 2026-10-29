@@ -6,7 +6,9 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
 import { assertModelPreparationOwner, assertNativeAccountingRun } from "./model-accounting-authority.js";
 import { foldModelAccounting } from "./model-accounting-fold.js";
-import { inheritedModelAccountingBudget } from "./model-accounting-inherited-budget.js";
+import { freezeModelCallBudgetAllowance } from "./model-call-budget-allowance.js";
+import { modelRunBudgetExposure } from "./model-run-budget-exposure.js";
+import { ConcurrentStoreUpdateError } from "./sqlite-ledger-errors.js";
 import type { ModelAccountingHost } from "./model-accounting-host.js";
 import { assertUnsealedAccountingChild, refreshRunAccounting } from "./model-accounting-projection.js";
 import { enterPreparedModelCall, issueModelUsagePreparationAuthority, issuePreparedModelCall,
@@ -86,13 +88,15 @@ export class ModelAccountingRepository {
     const configuration = this.#config();
     const { token: _token, expectedExecutionRevision: _revision, ...owner } = binding.owner as ModelUsagePreparationOwner &
       { token?: string; expectedExecutionRevision?: number };
+    const accountingBasis = freezeModelAccountingBasis(input.model,
+      { declaredZeroCost: configuration.isDeclaredZeroCost?.(input.model) === true });
     const content = { kind: "napier.model-call-attribution" as const, schemaVersion: 1 as const,
       physicalId: createId("physical"), workspaceLedgerId: this.workspaceLedgerId(), receiptSourceId: configuration.source.sourceId,
       ...(configuration.hostWorkspaceId ? { hostWorkspaceId: configuration.hostWorkspaceId } : {}),
       owner, method: input.method, phase: input.phase, logicalCallId: input.logicalCallId,
       model: { provider: input.model.provider, id: input.model.id, api: input.model.api },
-      capture: structuredClone(input.capture), accountingBasis: freezeModelAccountingBasis(input.model,
-        { declaredZeroCost: configuration.isDeclaredZeroCost?.(input.model) === true }),
+      capture: structuredClone(input.capture), accountingBasis,
+      budgetAllowance: freezeModelCallBudgetAllowance(input.model, input.capture, accountingBasis),
       ...(input.route ? { route: structuredClone(input.route) } : {}),
       ...(input.recovery ? { recovery: structuredClone(input.recovery) } : {}), createdAt: nowIso() };
     const attribution = validateModelCallAttribution({ ...content, contentSha256: sha256(canonicalJson(content)) });
@@ -125,7 +129,7 @@ export class ModelAccountingRepository {
     await this.#host.stateQueue.run(async () => {
       assertModelPreparationOwner(this.#host, authority.owner);
       this.#assertAttribution(binding.attribution);
-      if (authority.owner.kind !== "operation") this.#assertBudget(authority.owner.runId);
+      if (authority.owner.kind !== "operation") this.#assertBudget(authority.owner.runId, binding.attribution);
       const events = this.#events(binding.attribution, "model.accounting.dispatch_intent", reference(binding.attribution));
       if (binding.attribution.owner.kind !== "operation") refreshRunAccounting(this.#host, binding.attribution.owner.runId, events);
       await this.#persist(events, { kind: "enter", physicalId: binding.attribution.physicalId,
@@ -185,23 +189,36 @@ export class ModelAccountingRepository {
       const { sourceId, attribution, observation } = readVerifiedModelUsageDelivery(delivery);
       if (sourceId !== this.#config().source.sourceId) throw new Error("Model usage delivery source differs");
       this.#assertAttribution(attribution);
-      const previous = this.#host.requireLedger().modelUsageClaim(attribution.physicalId);
+      const attempt = this.#host.requireLedger().readModelAttemptView(attribution.physicalId);
+      const previous = attempt.claim;
       if (previous) {
         if (previous.attributionSha256 !== attribution.contentSha256 || previous.receiptJson !== canonicalJson(observation))
           throw new Error("Final model accounting claim conflicts; reconciliation is required");
         return this.#result("duplicate", attribution, observation.contentSha256);
       }
-      if (attribution.owner.kind !== "operation") {
-        const run = this.#host.mutableRun(attribution.owner.runId);
-        assertNativeAccountingRun(this.#host, run);
-        assertUnsealedAccountingChild(this.#host, run);
+      try {
+        if (attribution.owner.kind !== "operation") {
+          const run = this.#host.mutableRun(attribution.owner.runId);
+          assertNativeAccountingRun(this.#host, run);
+          assertUnsealedAccountingChild(this.#host, run);
+        }
+        const events = this.#events(attribution, "model.usage.reconciled", { ...reference(attribution), observation: json(observation) });
+        if (attribution.owner.kind !== "operation") refreshRunAccounting(this.#host, attribution.owner.runId, events);
+        await this.#persist(events, { kind: "claim", claim: {
+          physicalId: attribution.physicalId, attributionSha256: attribution.contentSha256,
+          receiptSha256: observation.contentSha256, receiptJson: canonicalJson(observation), eventId: events[0]?.id ?? null } });
+        return this.#result("applied", attribution, observation.contentSha256);
+      } catch (error) {
+        // A different process can commit between the coherent claim read and
+        // projection reads. Retry only a proven revision change, never an
+        // invalid receipt on a stable ledger, and discard any appended heap event.
+        const current = this.#host.requireLedger().readModelAttemptView(attribution.physicalId);
+        this.#host.refreshStateFromLedger(true);
+        if (attempt.snapshot && current.snapshot && attempt.snapshot.revision !== current.snapshot.revision) {
+          throw new ConcurrentStoreUpdateError(attempt.snapshot.revision, current.snapshot.revision);
+        }
+        throw error;
       }
-      const events = this.#events(attribution, "model.usage.reconciled", { ...reference(attribution), observation: json(observation) });
-      if (attribution.owner.kind !== "operation") refreshRunAccounting(this.#host, attribution.owner.runId, events);
-      await this.#persist(events, { kind: "claim", claim: {
-        physicalId: attribution.physicalId, attributionSha256: attribution.contentSha256,
-        receiptSha256: observation.contentSha256, receiptJson: canonicalJson(observation), eventId: events[0]?.id ?? null } });
-      return this.#result("applied", attribution, observation.contentSha256);
     });
   }
 
@@ -253,14 +270,24 @@ export class ModelAccountingRepository {
     return { outcome, physicalId: attribution.physicalId, receiptSha256, accountingRevision: run?.accounting?.revision ?? 0,
       ...(run?.parentRunId && run.subagent ? { parentAccountingRevision: this.#host.mutableRun(run.parentRunId).accounting?.revision ?? 0 } : {}) };
   }
-  #assertBudget(runId: string): void {
+  #assertBudget(runId: string, attribution: ModelCallAttributionV1, seen = new Set<string>()): void {
+    if (seen.has(runId)) throw new Error("Model budget ancestor lineage contains a cycle");
+    seen.add(runId);
     const run = this.#host.mutableRun(runId);
-    const fold = foldModelAccounting(this.#host.requireLedger().listRunEvents(runId), this.#host.state.subagents.filter((task) => task.runId === runId), run.accounting);
-    const inherited = inheritedModelAccountingBudget(run, this.#host.state.runs);
-    if (run.limits && ((run.limits.maxTotalTokens > 0 && fold.summary.budgetTokens + inherited.budgetTokens >= run.limits.maxTotalTokens) ||
-      fold.summary.knownBudgetCostUsd + inherited.knownBudgetCostUsd >= run.limits.maxCostUsd))
-      throw new Error("Model invocation exceeds its current accounted Run budget");
-    if (run.subagent && run.parentRunId) this.#assertBudget(run.parentRunId);
+    const allowance = attribution.budgetAllowance;
+    if (!allowance) throw new Error("Model invocation requires a fresh native budget allowance");
+    const exposure = modelRunBudgetExposure(this.#host, runId);
+    if (run.limits) {
+      if (exposure.unboundedInvocations || exposure.reservedCostUsd === null)
+        throw new Error("Model invocation budget requires reconciliation: unresolved historical usage has no bounded allowance");
+      if (allowance.budgetCostUsd === null)
+        throw new Error("Model invocation budget is unavailable: unknown price requires a known tariff or explicit zero-cost declaration");
+      const tokensExceeded = run.limits.maxTotalTokens > 0 &&
+        exposure.accountedTokens + exposure.reservedTokens + allowance.budgetTokens > run.limits.maxTotalTokens;
+      if (tokensExceeded || exposure.accountedCostUsd + exposure.reservedCostUsd + allowance.budgetCostUsd > run.limits.maxCostUsd)
+        throw new Error(`Model invocation exceeds its current accounted Run budget plus in-flight allowance for ${tokensExceeded ? "tokens" : "cost"} (${allowance.input.policy})`);
+    }
+    if (run.subagent && run.parentRunId) this.#assertBudget(run.parentRunId, attribution, seen);
   }
 }
 

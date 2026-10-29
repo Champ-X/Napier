@@ -53,7 +53,8 @@ describe("production host model resource ownership", () => {
     const graphs = new Map<string, Awaited<ReturnType<typeof createServices>>>();
     const calls = new Map<string, number>();
     const host = await createWorkspaceRuntimeHost({
-      workspaceRoot: f.a.root, stateHome: f.stateHome, maxIdle: 0, modelBudget: { maxConcurrent: 1 },
+      workspaceRoot: f.a.root, stateHome: f.stateHome, maxIdle: 0,
+      modelBudget: { maxConcurrent: 1, zeroCostModels: ["faux-model-host/faux-1"] },
       services: { env: {}, sandbox: processReadySandbox("model-host") },
     }, async (options) => {
       const services = await createServices(options);

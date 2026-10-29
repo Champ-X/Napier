@@ -32,6 +32,7 @@ async function fixture(text = JSON.stringify(summary)) {
   const faux = fauxProvider({ provider: "auxiliary-accounting", models: [{ id: "tiny", maxTokens: 2000 }], tokensPerSecond: 1_000_000 });
   registry.registerProvider(faux.provider);
   const model = registry.resolve({ provider: faux.provider.id, id: "tiny" })!;
+  f.store.modelAccountingRepository.configureSource({ source: f.source, isDeclaredZeroCost: (value) => value.provider === faux.provider.id });
   registry.bindRunAccounting(f.parent.run.id, f.parent.token);
   const message: AssistantMessage = { ...f.fixture.message, api: model.api, provider: model.provider, model: model.id,
     content: [{ type: "text", text }] };

@@ -68,10 +68,28 @@ export interface ModelCallCaptureBinding {
   admittedModelSha256: string;
   requestSha256: string;
   requestScope: "admitted_input_v1";
+  /** Nominal admission planning only; actual provider receipts remain authoritative. */
+  inputAllowance?: ModelInputAllowanceV1;
   privateCapsule:
     | { status: "available"; receiptSha256: string; capsuleSha256: string }
     | { status: "unavailable"; reason: "limit" | "storage" | "invalid" }
     | { status: "not_requested" };
+}
+
+export interface ModelInputAllowanceV1 {
+  schemaVersion: 1;
+  policy: "request_utf8_nominal_v1" | "model_context_fallback_v1";
+  inputTokens: number;
+  reason?: "legacy_capture" | "unsupported_api" | "non_text_input";
+}
+
+export interface ModelCallBudgetAllowanceV1 {
+  schemaVersion: 1;
+  input: ModelInputAllowanceV1;
+  outputTokens: number;
+  budgetTokens: number;
+  /** Unknown prices are never silently treated as zero. */
+  budgetCostUsd: number | null;
 }
 
 export interface ModelProviderPriceTableV1 {
@@ -124,6 +142,8 @@ export interface ModelCallAttributionV1 {
   recovery?: { thinkingAttempt: number; contextOverflowAttempt: 0 | 1 };
   capture: ModelCallCaptureBinding;
   accountingBasis: FrozenModelAccountingBasisV1;
+  /** Absent only on historical records predating shared Run admission. */
+  budgetAllowance?: ModelCallBudgetAllowanceV1;
   createdAt: string;
   contentSha256: string;
 }

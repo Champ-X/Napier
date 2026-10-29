@@ -10,6 +10,8 @@ import { createThreadReplayBundle, validateThreadReplayBundle } from "../src/thr
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { modelUsageFixture } from "./model-usage-fixture.js";
 import { continuationRunnerFixture, cleanupContinuationRunnerFixtures } from "./subagent-continuation-runner-fixture.js";
+import { modelRunBudgetExposure } from "../src/model-run-budget-exposure.js";
+import type { ModelAccountingHost } from "../src/model-accounting-host.js";
 
 const sources: ModelUsageReceiptSpool[] = [], stores: LocalStore[] = [], children: SubagentChildExecution[] = [];
 afterEach(async () => {
@@ -22,13 +24,13 @@ afterEach(async () => {
 it("attributes a cancelled successor's late usage to its recovery parent and preserves the exact predecessor", async () => {
   const f = await continuationRunnerFixture();
   const source = await ModelUsageReceiptSpool.open(path.join(f.dataRoot, "model-usage.sqlite")); sources.push(source);
-  f.sourceStore.modelAccountingRepository.configureSource({ source });
+  f.sourceStore.modelAccountingRepository.configureSource({ source, isDeclaredZeroCost: (model) => model.provider === f.model.provider });
   const priorInvocation = await f.child.reserve("subagent_turn");
   const priorAuthority = f.child.accountingForInvocation(priorInvocation)!;
   await f.sourceStore.modelAccountingRepository.closeUndispatchedChildInvocation(
     issueModelUndispatchedDriverProof(priorAuthority.owner), "capture_failed");
   const ready = await f.interruptAndClaim();
-  ready.store.modelAccountingRepository.configureSource({ source });
+  ready.store.modelAccountingRepository.configureSource({ source, isDeclaredZeroCost: (model) => model.provider === f.model.provider });
   const child = new SubagentChildExecution(ready.store, ready.continuation.execution); children.push(child);
   const predecessor = canonicalJson({ run: ready.sourceRun, task: ready.sourceTask, parent: ready.sourceParent });
   const invocation = await child.reserve("subagent_turn"), accounting = child.accountingForInvocation(invocation)!;
@@ -85,4 +87,37 @@ it("does not advertise continuation when frozen estimated cost exhausted the sou
   expect(recovered.sourceRun.accounting!.knownBudgetCostUsd).toBeGreaterThan(0.01);
   expect(await recovered.store.prepareSubagentChildContinuation({ sourceTaskId: f.task.id, targetParentRunId: target.run.id }))
     .toEqual({ kind: "unavailable", reason: "budget_exhausted" });
+});
+
+it("charges immutable child predecessor usage to its new parent's admission without copying canonical usage", async () => {
+  const f = await continuationRunnerFixture({ runLimits: { maxTotalTokens: 1200 } });
+  const source = await ModelUsageReceiptSpool.open(path.join(f.dataRoot, "model-usage.sqlite")); sources.push(source);
+  f.sourceStore.modelAccountingRepository.configureSource({ source, isDeclaredZeroCost: () => true });
+  const invocation = await f.child.reserve("subagent_turn"), accounting = f.child.accountingForInvocation(invocation)!;
+  const fixture = modelUsageFixture({ model: f.model });
+  const prepared = await f.sourceStore.modelAccountingRepository.prepare({ owner: accounting.owner, logicalCallId: accounting.logicalCallId,
+    method: "streamSimple", phase: "subagent_turn", model: f.model, capture: fixture.attribution.capture });
+  const attribution = readPreparedModelCall(prepared).attribution;
+  await f.sourceStore.modelAccountingRepository.enter(prepared); source.reserve(attribution);
+  const message = { ...fixture.message, usage: { input: 800, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 800,
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
+  source.record(normalizeModelPhysicalObservation({ attribution, terminal: "response", message }));
+  const delivery = source.pending()[0]!; await f.sourceStore.modelAccountingRepository.reconcile(delivery); source.acknowledge(delivery);
+  await f.child.settle(invocation.invocationId, { physicalId: attribution.physicalId, attributionSha256: attribution.contentSha256,
+    accountingMode: "physical_receipt_v1", responseSha256: sha256(canonicalJson(message)), stopReason: message.stopReason }, undefined,
+    { envelope: fixture.attribution.capture.envelope, adapter: JSON.parse(canonicalJson(fixture.attribution.capture.adapter)) as JsonObject });
+  await f.child.progress({ turnDelta: 1, stepDelta: 1 }); f.messages.push(message);
+  await f.accept("Continue after the preserved native invocation.");
+  const ready = await f.interruptAndClaim();
+  ready.store.modelAccountingRepository.configureSource({ source, isDeclaredZeroCost: () => true });
+  const prior = canonicalJson({ run: ready.sourceRun, task: ready.sourceTask, parent: ready.sourceParent });
+  const next = await ready.store.modelAccountingRepository.prepare({ owner: ready.store.modelAccountingRepository.runAuthority({
+    runId: ready.target.run.id, token: ready.target.token }), logicalCallId: "recovered-parent", method: "completeSimple",
+    phase: "agent_turn", model: f.model, capture: fixture.attribution.capture });
+  expect((await ready.store.aggregateRunUsage(ready.target.run.id)).inputTokens).toBe(0);
+  expect(modelRunBudgetExposure(ready.store as unknown as ModelAccountingHost, ready.target.run.id).accountedTokens).toBe(800);
+  await expect(ready.store.modelAccountingRepository.enter(next)).rejects.toThrow("in-flight allowance for tokens");
+  const runs = ready.store.listRuns(f.thread.id), tasks = ready.store.listSubagentTasks(f.thread.id);
+  expect(canonicalJson({ run: runs.find((run) => run.id === ready.sourceRun.id), task: tasks.find((task) => task.id === ready.sourceTask.id),
+    parent: runs.find((run) => run.id === ready.sourceParent.id) })).toBe(prior);
 });

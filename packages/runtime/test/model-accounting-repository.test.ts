@@ -9,9 +9,13 @@ import { issueModelUndispatchedDriverProof } from "../src/model-call-attribution
 import { createRunReplaySnapshot } from "../src/run-replay.js";
 import { createThreadReplayBundle, validateThreadReplayBundle } from "../src/thread-bundles.js";
 import { accountingFixture } from "./model-accounting-fixture.js";
+import { modelUsageDeliveryIssuer } from "../src/model-usage-delivery.js";
+import { normalizeModelPhysicalObservation } from "../src/model-usage-observation.js";
+import type { SqliteLedger } from "../src/sqlite-ledger.js";
 
 const fixtures: Awaited<ReturnType<typeof accountingFixture>>[] = [], stores: LocalStore[] = [];
 afterEach(async () => {
+  vi.restoreAllMocks();
   for (const store of stores.splice(0)) store.close();
   for (const fixture of fixtures.splice(0)) { fixture.store.close(); fixture.source.close(); await rm(fixture.root, { recursive: true, force: true }); }
 });
@@ -25,8 +29,55 @@ function counts(f: Awaited<ReturnType<typeof fixture>>) {
   try { return { revision: Number(db.prepare("SELECT revision FROM workspace_state").get()!.revision),
     claims: Number(db.prepare("SELECT count(*) AS n FROM model_usage_claims").get()!.n) }; } finally { db.close(); }
 }
+function durableDetail(detail: Awaited<ReturnType<LocalStore["getDetail"]>>) {
+  return canonicalJson({ thread: detail.thread, runs: detail.runs, subagents: detail.subagents, events: detail.events });
+}
 
 describe("native model usage accounting", () => {
+  it("retries a stale native claim view without duplicating the receipt or retaining a phantom heap event", async () => {
+    const f = await fixture(), call = await f.main(), physical = await f.physical(call), other = await reopen(f);
+    const ledger = (other as unknown as { requireLedger(): SqliteLedger }).requireLedger();
+    const stale = ledger.readModelAttemptView(call.attribution.physicalId);
+    await f.store.modelAccountingRepository.reconcile(physical.delivery);
+    const before = counts(f), saved = durableDetail(await f.store.getDetail(f.thread.id));
+    vi.spyOn(ledger, "modelUsageClaim").mockReturnValueOnce(undefined);
+    vi.spyOn(ledger, "readModelAttemptView").mockReturnValueOnce(stale);
+    expect((await other.modelAccountingRepository.reconcile(physical.delivery)).outcome).toBe("duplicate");
+    expect(counts(f)).toEqual(before);
+    expect(durableDetail(await other.getDetail(f.thread.id))).toBe(saved);
+  });
+
+  it("rejects a conflicting final receipt after a stale view retry and on a stable revision", async () => {
+    const f = await fixture(), call = await f.main(), physical = await f.physical(call), other = await reopen(f);
+    const ledger = (other as unknown as { requireLedger(): SqliteLedger }).requireLedger();
+    const stale = ledger.readModelAttemptView(call.attribution.physicalId);
+    await f.store.modelAccountingRepository.reconcile(physical.delivery);
+    await f.store.appendEvent({ threadId: f.thread.id, runId: f.parent.run.id, type: "model.advisor.independent.reviewed",
+      category: "system", payload: { unrelated: true } });
+    const observation = normalizeModelPhysicalObservation({ attribution: call.attribution, terminal: "response",
+      message: { ...f.fixture.message, usage: { ...f.fixture.message.usage, input: 101, totalTokens: 136 } } });
+    expect(() => f.source.record(observation)).toThrow("immutable");
+    // Test-only private issuer simulates a contradictory native source; public JSON cannot issue this authority.
+    const conflicting = modelUsageDeliveryIssuer(f.source.sourceId, () => ({ sourceId: f.source.sourceId, attribution: call.attribution, observation }))(call.attribution, observation);
+    const before = counts(f), saved = durableDetail(await f.store.getDetail(f.thread.id));
+    vi.spyOn(ledger, "modelUsageClaim").mockReturnValueOnce(undefined);
+    vi.spyOn(ledger, "readModelAttemptView").mockReturnValueOnce(stale);
+    await expect(other.modelAccountingRepository.reconcile(conflicting)).rejects.toThrow("Final model accounting claim conflicts");
+    await expect(other.modelAccountingRepository.reconcile(conflicting)).rejects.toThrow("Final model accounting claim conflicts");
+    expect(counts(f)).toEqual(before); expect(durableDetail(await other.getDetail(f.thread.id))).toBe(saved);
+  });
+
+  it("rejects tampered final evidence on a stable revision without retaining an uncommitted projection", async () => {
+    const f = await fixture(), call = await f.main(), physical = await f.physical(call);
+    const observation = { ...physical.observation, contentSha256: "0".repeat(64) };
+    const tampered = modelUsageDeliveryIssuer(f.source.sourceId, () => ({ sourceId: f.source.sourceId, attribution: call.attribution, observation }))(call.attribution, observation);
+    const before = counts(f), saved = durableDetail(await f.store.getDetail(f.thread.id));
+    await expect(f.store.modelAccountingRepository.reconcile(tampered)).rejects.toThrow();
+    expect(counts(f)).toEqual(before); expect(durableDetail(await f.store.getDetail(f.thread.id))).toBe(saved);
+    expect(f.source.pending()).toHaveLength(1);
+    expect((await f.store.modelAccountingRepository.reconcile(physical.delivery)).outcome).toBe("applied");
+    expect(counts(f).claims).toBe(1);
+  });
   it.each(["receipt_first", "logical_first"])("counts normal identity once with %s and no-write duplicate", async (order) => {
     const f = await fixture(), call = await f.main(), physical = await f.physical(call);
     expect(f.fixture.message.usage.input).toBe(100);

@@ -52,7 +52,7 @@ export async function createModelSessionFixture(options: {
   });
   const source = options.nativeAccounting ? await ModelUsageReceiptSpool.open(path.join(root, "usage.sqlite")) : undefined;
   if (source) {
-    store.modelAccountingRepository.configureSource({ source });
+    store.modelAccountingRepository.configureSource({ source, isDeclaredZeroCost: (model) => model.provider === faux.provider.id });
     accountingClosers.push(async () => { await store.shutdown(); source.close(); });
   }
   const registry = new ModelRegistry(undefined, source ? createLocalModelCallAdmission(source, options.admission) : options.admission,

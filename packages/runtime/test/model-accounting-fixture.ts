@@ -2,6 +2,8 @@ import { mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { JsonObject } from "@napier/contracts";
+import type { RunLimits } from "@napier/contracts";
+import type { Api, Model } from "@earendil-works/pi-ai";
 import { LocalStore } from "../src/store.js";
 import { ModelUsageReceiptSpool } from "../src/model-usage-source.js";
 import { readPreparedModelCall } from "../src/model-call-attribution.js";
@@ -10,19 +12,20 @@ import { authorizeSubagentChildRun } from "../src/subagent-child-authorization.j
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import { modelUsageFixture } from "./model-usage-fixture.js";
 
-export async function accountingFixture() {
+export async function accountingFixture(input: { runLimits?: Partial<RunLimits>; model?: Model<Api>; declaredZeroCost?: boolean } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "napier-accounting-"));
   const options = { dataRoot: path.join(root, "data"), workspaceRoot: path.join(root, "workspace") };
   await mkdir(options.workspaceRoot);
   const store = new LocalStore(options); await store.initialize();
   const sourcePath = path.join(root, "usage.sqlite"), source = await ModelUsageReceiptSpool.open(sourcePath);
-  store.modelAccountingRepository.configureSource({ source });
+  store.modelAccountingRepository.configureSource({ source, isDeclaredZeroCost: () => input.declaredZeroCost === true });
   const profile = await store.updateAgent(store.listAgents()[0]!.id, { enabledSubagents: ["researcher"],
-    subagentLimits: { maxConcurrent: 2, maxTotal: 4, maxTurns: 4, timeoutMs: 30_000 }, enabledTools: ["read_file"] });
+    subagentLimits: { maxConcurrent: 2, maxTotal: 4, maxTurns: 4, timeoutMs: 30_000 }, enabledTools: ["read_file"],
+    ...(input.runLimits ? { runLimits: { ...store.listAgents()[0]!.runLimits!, ...input.runLimits } } : {}) });
   const thread = await store.createThread({ agentId: profile.id, title: "Accounting fixture" });
   const lease = { ownerId: `process:${process.pid}:accounting`, ttlMs: 60_000 };
   const parent = await store.createLeasedRun({ threadId: thread.id, agentId: profile.id, source: "user" }, lease);
-  const fixture = modelUsageFixture();
+  const fixture = modelUsageFixture(input.model ? { model: input.model } : {});
   async function main() {
     const prepared = await store.modelAccountingRepository.prepare({
       owner: store.modelAccountingRepository.runAuthority({ runId: parent.run.id, token: parent.token }),
@@ -33,7 +36,8 @@ export async function accountingFixture() {
   }
   async function child() {
     const task = await store.createSubagentTask({ threadId: thread.id, runId: parent.run.id, role: "researcher",
-      description: "Account child", prompt: "Read only", model: profile.model, providerId: "in_process", executionId: "subexec_accounting" });
+      description: "Account child", prompt: "Read only", model: profile.model, providerId: "in_process",
+      executionId: `subexec_accounting_${store.listSubagentTasks(thread.id).length}` });
     const authorization = authorizeSubagentChildRun({ parentRun: parent.run, parentProfile: profile, taskId: task.id,
       executionId: task.executionId!, limits: profile.subagentLimits! });
     const child = await store.startSubagentChildRun({ taskId: task.id, executionId: task.executionId!, authorization, lease });

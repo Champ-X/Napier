@@ -4,6 +4,7 @@ import type { ModelContextEnvelopeReceipt } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { applyModelAdapterOptions, modelAdapterReceipt } from "./model-adapter-receipt.js";
 import { applyProviderWireCompatibility } from "./model-provider-wire-compatibility.js";
+import { modelInputAllowance } from "./model-call-budget-allowance.js";
 
 /** Credential values and callback objects never enter the persisted request binding. */
 export function modelGenerationOptionsProjection(options?: SimpleStreamOptions) {
@@ -46,6 +47,7 @@ export function createModelCallCaptureBinding(input: {
   privateCapsule?: ModelCallCaptureBinding["privateCapsule"];
 }): ModelCallCaptureBinding {
   return { envelope: structuredClone(input.envelope), adapter: modelAdapterReceipt(input.model, input.options),
+    inputAllowance: modelInputAllowance(input.model, input.context),
     ...modelAdmittedRequestDigests(input), requestScope: "admitted_input_v1",
     privateCapsule: input.privateCapsule ?? { status: "not_requested" } };
 }

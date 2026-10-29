@@ -12,6 +12,8 @@ import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting"
 import { bindModelCallRegistry, bindModelResultAttribution, consumeModelCallAttribution,
   enterRawModelCall, modelCallRegistryIdentity, readEnteredModelCall, type EnteredModelCall } from "./model-call-attribution.js";
 import { modelAdmittedRequestDigests } from "./model-call-capture.js";
+import { modelInputAllowance } from "./model-call-budget-allowance.js";
+import { canonicalJson } from "./ed25519.js";
 import { projectPendingModelUsage, type ModelUsageProjectionPort } from "./model-usage-projection.js";
 import { modelAccountingBinding } from "./model-accounting-binding.js";
 import { observeModelCallRecovery } from "./model-call-recovery.js";
@@ -92,7 +94,9 @@ function reserve(
       throw new ModelCallAdmissionError("accounting", { cause: new Error("Model invocation has no matching durable source") });
     const digests = modelAdmittedRequestDigests({ model, context, ...(options ? { options } : {}) });
     if (active.attribution.method !== method || Object.entries(digests).some(([key, value]) =>
-      active.attribution.capture[key as keyof typeof digests] !== value))
+      active.attribution.capture[key as keyof typeof digests] !== value) ||
+      (active.attribution.capture.inputAllowance && canonicalJson(active.attribution.capture.inputAllowance) !==
+        canonicalJson(modelInputAllowance(model, context))))
       throw new ModelCallAdmissionError("accounting", { cause: new Error("Model invocation differs from prepared capture") });
   }
   if (!admission) return { settle: async () => undefined };

@@ -8,6 +8,7 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { validateModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import { validateModelAdapterReceipt } from "./model-adapter-receipt.js";
+import { validateCapturedBudgetAllowance, validateModelInputAllowance } from "./model-call-budget-allowance.js";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const PHASES = new Set([
@@ -169,7 +170,7 @@ export function validateModelCallAttribution(
       "createdAt",
       "contentSha256",
     ],
-    ["hostWorkspaceId", "route", "recovery"],
+    ["hostWorkspaceId", "route", "recovery", "budgetAllowance"],
   );
   assert.equal(value.kind, "napier.model-call-attribution");
   assert.equal(value.schemaVersion, 1);
@@ -220,8 +221,9 @@ export function validateModelCallAttribution(
     "requestSha256",
     "requestScope",
     "privateCapsule",
-  ]);
+  ], ["inputAllowance"]);
   validateModelContextEnvelopeReceipt(capture.envelope);
+  if (capture.inputAllowance) validateModelInputAllowance(capture.inputAllowance);
   assert.equal(validateModelAdapterReceipt(capture.adapter).schemaVersion, 2);
   assert.equal(
     capture.adapter.modelApi,
@@ -274,6 +276,7 @@ export function validateModelCallAttribution(
     );
   }
   validateFrozenModelAccountingBasis(value.accountingBasis);
+  if (value.budgetAllowance) validateCapturedBudgetAllowance(capture, value.budgetAllowance);
   date(value.createdAt);
   hash(value);
   assert.ok(
