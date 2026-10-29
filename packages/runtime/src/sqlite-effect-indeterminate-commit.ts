@@ -1,5 +1,6 @@
 import { notCommittedPatchForBoundary } from "./workspace-patch-not-committed.js";
 import { moveProofForBoundary } from "./workspace-file-move-evidence.js";
+import { operationReconciliationCommitEvents } from "./workspace-operation-recovery-scope.js";
 import type { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent, RunLeaseSummary } from "@napier/contracts";
@@ -235,19 +236,16 @@ function assertMarkerCommit(
     );
   }
   if (reconciled) {
+    const scoped = operationReconciliationCommitEvents(priorEvents, events, marker, record(terminal.payload)?.["reason"]);
+    if (!scoped)
+      throw markerError(marker, "interrupted recovery requires bound patch reconciliation or bound move reconciliation within the complete independent operation scope");
     const proof =
       boundary.boundaryEvent &&
-      reconciledPatchForBoundary(
-        [...priorEvents, ...events],
-        boundary.boundaryEvent,
-      );
+      reconciledPatchForBoundary(scoped, boundary.boundaryEvent);
     const negative =
       boundary.boundaryEvent &&
-      notCommittedPatchForBoundary(
-        [...priorEvents, ...events],
-        boundary.boundaryEvent,
-      );
-    const move = boundary.boundaryEvent && moveProofForBoundary([...priorEvents, ...events], boundary.boundaryEvent);
+      notCommittedPatchForBoundary(scoped, boundary.boundaryEvent);
+    const move = boundary.boundaryEvent && moveProofForBoundary(scoped, boundary.boundaryEvent);
     const proofSeq = proof?.completedSeq ?? negative?.seq ?? move?.seq;
     if (
       proofSeq === undefined ||

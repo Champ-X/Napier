@@ -244,8 +244,15 @@ it.each([
     const startedAt = performance.now();
     const store = await restart(root);
     const run = store.listRuns(store.listThreads()[0]!.id)[0]!;
-    expect(run.outcome).toBe("blocked_safety");
     const events = await store.listRunEvents(run.id);
+    if (change === "live-lock") {
+      expect(run.status).toBe("running");
+      expect(events.filter((event) => ["run.failed", "run.interrupted", "tool.operation.effect_indeterminate"].includes(event.type))).toEqual([]);
+      expect(reconciledPatchRecoveryEvidence(events)).toEqual([]);
+      expect(assessAutomaticRecovery({ run, events }).eligible).toBe(false);
+      return;
+    }
+    expect(run.outcome).toBe("blocked_safety");
     expect(reconciledPatchRecoveryEvidence(events)).toEqual([]);
     expect(assessAutomaticRecovery({ run, events }).eligible).toBe(false);
     expect(

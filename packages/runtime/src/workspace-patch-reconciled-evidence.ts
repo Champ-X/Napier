@@ -8,6 +8,7 @@ import {
   type PatchPreparationReceipt,
 } from "./workspace-patch-preparation.js";
 import type { SettledPatchRecoveryEvidence } from "./run-patch-recovery-evidence.js";
+import { operationReconciliationReason } from "./workspace-operation-recovery-scope.js";
 
 export function patchReconciliationPayload(
   prepared: RunEvent & { payload: PatchPreparationReceipt },
@@ -138,7 +139,8 @@ function reconciliationTerminal(
   return terminals.length === 1 &&
     terminal?.type === "run.interrupted" &&
     payload["status"] === "interrupted" &&
-    payload["reason"] === "patch_postcondition_reconciled" &&
+    payload["reason"] === operationReconciliationReason(events.filter((event) =>
+      event.runId === marker.runId && event.type === "tool.operation.effect_indeterminate")) &&
     Array.isArray(payload["operationIds"]) &&
     canonicalJson([...payload["operationIds"]].sort()) ===
       canonicalJson(expected)

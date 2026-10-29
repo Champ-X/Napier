@@ -33,10 +33,8 @@ import { buildRunRecoveryPrompt } from "./run-recovery-prompt.js";
 import { isWorkflowRunSource } from "./workflow-node-execution.js";
 import { inheritedHarnessPolicyOptions } from "./harness-run-policy.js";
 import { assessAutomaticRecovery } from "./automatic-recovery.js";
-import { loadSettledPatchRecoveryEvidence } from "./workspace-patch-result-recovery.js";
-import { reconcileSettledWorkspacePatches } from "./workspace-patch-reconciliation.js";
-import { moveRecoveryEvidence } from "./workspace-file-move-evidence.js";
-import { reconcileSettledWorkspaceMoves } from "./workspace-file-move-reconciliation.js";
+import { reconcileSettledWorkspaceOperations } from "./workspace-operation-reconciliation.js";
+import { uncommittedPatchCandidates } from "./workspace-patch-uncommitted-evidence.js";
 import { operatorDecisionRecoveryContext } from "./operator-decision-recovery-context.js";
 import { isSubagentChildRun, latestPrimaryRun } from "./primary-run-selection.js";
 
@@ -144,66 +142,74 @@ export async function resumeInterruptedAgentRunAutomatically(
   });
   if (!fresh.eligible)
     throw new Error("Automatic recovery operation evidence changed");
-  const { patches, retainedResults } = await loadSettledPatchRecoveryEvidence(
-    host.store.dataRoot,
-    events,
-  );
-  await reconcileSettledWorkspacePatches(
-    host.store.workspaceRoot,
-    host.store.dataRoot,
-    patches,
-  );
-  const moves = moveRecoveryEvidence(events).filter((move) => move.status === "completed");
-  await reconcileSettledWorkspaceMoves(host.store.workspaceRoot, host.store.dataRoot, moves);
-  const patchPlan =
-    modernRunConfiguration(interrupted.configuration) &&
-    interrupted.configuration.automaticRecovery.mode === "verified_patches"
-      ? planWorkspacePatchRecovery(interrupted, events)
-      : undefined;
-  if (patchPlan)
-    await inspectWorkspacePatchRecoveryPlan(host.store, thread.id, patchPlan);
-  const recoveryOptions: RunPromptOptions = {
-    ...(patchPlan ? { [VERIFIED_PATCH_RECOVERY]: patchPlan } : {}),
-    ...inheritedHarnessPolicyOptions(events, interrupted.id),
-    threadId: thread.id,
-    text:
-      buildRunRecoveryPrompt(
+  const retained = await reconcileSettledWorkspaceOperations(host.store.workspaceRoot, host.store.dataRoot, events);
+  try {
+    const { patches, retainedResults, moves } = retained;
+    if (moves.length && uncommittedPatchCandidates(events).length)
+      throw new Error("Mixed operation recovery cannot replay pending patches");
+    const patchPlan =
+      moves.length === 0 && modernRunConfiguration(interrupted.configuration) &&
+      interrupted.configuration.automaticRecovery.mode === "verified_patches"
+        ? planWorkspacePatchRecovery(interrupted, events)
+        : undefined;
+    if (patchPlan) {
+      // Preserve the already opted-in patch executor, which acquires its own locks.
+      await retained.release();
+      await inspectWorkspacePatchRecoveryPlan(host.store, thread.id, patchPlan);
+    }
+    const recoveryOptions: RunPromptOptions = {
+      ...(patchPlan ? { [VERIFIED_PATCH_RECOVERY]: patchPlan } : {}),
+      ...inheritedHarnessPolicyOptions(events, interrupted.id),
+      threadId: thread.id,
+      text:
+        buildRunRecoveryPrompt(
+          interrupted,
+          thread.goal?.status === "active" ? thread.goal.objective : undefined,
+          events,
+          "automatic",
+        ) +
+        "\n" +
+        (await operatorDecisionRecoveryContext(host.store, interrupted)) +
+        (patches.length
+          ? `\n${patches.filter((patch) => !patch.preparedCapsuleSha256).length} settled patch operation(s) were retained; ${patches.filter((patch) => patch.preparedCapsuleSha256).length} prepared patch operation(s) were independently reconciled. Reconciled operations have no fabricated tool result; diagnostics after the write may be unavailable. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify({ patches, retainedResults })}</retained-patch-evidence>`
+          : "") +
+        (moves.length ? `\n${moves.length} file move operation was retained after checking both paths, parent identities and the destination file identity and bytes. No tool result was fabricated. Do not repeat the move; continue remaining read-only work.\n<retained-move-evidence>${JSON.stringify(moves.map(({ callId, operationId, evidenceSeq, reason }) => ({ callId, operationId, evidenceSeq, reason })))}</retained-move-evidence>` : ""),
+      model: interrupted.configuration.model,
+      agentRevision: interrupted.configuration.agentRevision,
+      executionMode: patchPlan
+        ? "verified_patch_recovery"
+        : "safe_read_only_recovery",
+      parentRunId: interrupted.id,
+      source: "recovery",
+      triggerId: attempt.triggerId,
+      recovery: {
+        mode: "automatic",
+        attemptId: attempt.id,
+        assessmentSha256: assessment.contentSha256,
+      },
+      ...(options.signal ? { signal: options.signal } : {}),
+      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      onRunCreated: async (run) => {
+        await options.onRunCreated?.(run);
+        if (!patchPlan) {
+          const current = await host.store.listRunEvents(interrupted.id);
+          const checked = assessAutomaticRecovery({ run: interrupted, events: current,
+            rootRunId: assessment.rootRunId, priorAttempts: assessment.priorAttempts, assessedAt: new Date(fresh.assessedAt) });
+          if (!checked.eligible || checked.contentSha256 !== fresh.contentSha256)
+            throw new Error("Automatic recovery operation evidence changed");
+          await retained.recheck();
+        }
+      },
+    };
+    return await host.runPrompt(
+      await prepareAutomaticSkillRecoveryOptions(
+        host.store.workspaceRoot,
         interrupted,
-        thread.goal?.status === "active" ? thread.goal.objective : undefined,
         events,
-        "automatic",
-      ) +
-      "\n" +
-      (await operatorDecisionRecoveryContext(host.store, interrupted)) +
-      (patches.length
-        ? `\n${patches.filter((patch) => !patch.preparedCapsuleSha256).length} settled patch operation(s) were retained; ${patches.filter((patch) => patch.preparedCapsuleSha256).length} prepared patch operation(s) were independently reconciled. Reconciled operations have no fabricated tool result; diagnostics after the write may be unavailable. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify({ patches, retainedResults })}</retained-patch-evidence>`
-        : "") +
-      (moves.length ? `\n${moves.length} file move operation was retained after checking both paths, parent identities and the destination file identity and bytes. No tool result was fabricated. Do not repeat the move; continue remaining read-only work.\n<retained-move-evidence>${JSON.stringify(moves.map(({ callId, operationId, evidenceSeq, reason }) => ({ callId, operationId, evidenceSeq, reason })))}</retained-move-evidence>` : ""),
-    model: interrupted.configuration.model,
-    agentRevision: interrupted.configuration.agentRevision,
-    executionMode: patchPlan
-      ? "verified_patch_recovery"
-      : "safe_read_only_recovery",
-    parentRunId: interrupted.id,
-    source: "recovery",
-    triggerId: attempt.triggerId,
-    recovery: {
-      mode: "automatic",
-      attemptId: attempt.id,
-      assessmentSha256: assessment.contentSha256,
-    },
-    ...(options.signal ? { signal: options.signal } : {}),
-    ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-    ...(options.onRunCreated ? { onRunCreated: options.onRunCreated } : {}),
-  };
-  return host.runPrompt(
-    await prepareAutomaticSkillRecoveryOptions(
-      host.store.workspaceRoot,
-      interrupted,
-      events,
-      recoveryOptions,
-    ),
-  );
+        recoveryOptions,
+      ),
+    );
+  } finally { await retained.release(); }
 }
 
 function assertManualRecoveryAllowed(run: RunRecord): void {

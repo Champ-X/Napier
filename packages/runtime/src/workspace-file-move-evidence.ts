@@ -76,8 +76,10 @@ export function moveRecoveryEvidence(events: RunEvent[]): MoveRecoveryEvidence[]
     results.push({ ...base, status: committed ? "completed" : "not_executed",
       reason: committed ? "move_reconciled" : "move_not_committed", evidenceSeq: proof.seq });
   }
-  // This slice does not establish a multi-move ordering or path version chain.
-  return results.length === 1 ? results : [];
+  // Independent histories can coexist. A shared endpoint requires an explicit
+  // version chain, outside this scope; private paths/inodes are rechecked later.
+  const paths = results.flatMap((value) => [value.prepared.payload.sourcePathSha256, value.prepared.payload.destinationPathSha256]);
+  return results.length <= 128 && new Set(paths).size === paths.length ? results : [];
 }
 
 function settledMoveProof(events: RunEvent[], boundary: RunEvent,

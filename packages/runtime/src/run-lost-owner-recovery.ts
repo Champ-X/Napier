@@ -97,7 +97,7 @@ export async function recoverLostRuns(
       // Contention can belong to a recoverer still holding both paths through
       // its atomic commit. Leave the original Run unknown; do not race that
       // owner with a terminal safety failure. A later recovery can inspect it.
-      if (reconciliation.reason === "move_target_busy") {
+      if (["move_target_busy", "patch_target_busy", "operation_target_busy"].includes(reconciliation.reason ?? "")) {
         const hint = deferredOperationHint(run, events);
         if (hint) deferredOperations.push(hint);
         continue;

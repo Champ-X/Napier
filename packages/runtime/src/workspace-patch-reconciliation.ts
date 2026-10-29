@@ -6,14 +6,15 @@ import { workspacePatchIntents } from "./workspace-patch-preparation.js";
 import { sha256 } from "./ed25519.js";
 import type { SettledPatchRecoveryEvidence } from "./run-patch-recovery-evidence.js";
 import { WorkspacePatchRecoveryCapsules } from "./workspace-patch-recovery-capsule.js";
+import { lockWorkspaceOperationChecks, type WorkspaceOperationRecoveryCheck } from "./workspace-operation-recovery-check.js";
 
 /** Observes only known targets. Neither replay nor filesystem mutation occurs. */
-export async function reconcileSettledWorkspacePatches(
+export async function settledWorkspacePatchChecks(
   workspaceRoot: string,
   dataRoot: string,
   patches: SettledPatchRecoveryEvidence[],
-): Promise<void> {
-  if (!patches.length) return;
+): Promise<WorkspaceOperationRecoveryCheck[]> {
+  if (!patches.length) return [];
   if (patches.length > 128)
     throw new Error("Patch recovery inspection limit exceeded");
   const root = await realpath(workspaceRoot);
@@ -65,20 +66,21 @@ export async function reconcileSettledWorkspacePatches(
       ...(identity ? { identity } : {}),
     });
   }
-  for (const target of latest.values()) {
-    if (
-      !(await matchesWorkspacePatchPostcondition(
-        root,
-        target.path,
-        target.afterSha256,
-        target.identity,
-      ))
-    ) {
-      throw new Error(
-        "Patch recovery postcondition changed or is inaccessible; inspect the current workspace before continuing",
-      );
-    }
-  }
+  return [...latest.values()].map((target) => ({ paths: [path.join(root, target.path)],
+    filePath: path.join(root, target.path), maxBytes: 256 * 1024,
+    mismatchReason: "patch_postcondition_or_file_identity_changed",
+    inspect: () => matchesWorkspacePatchPostcondition(root, target.path, target.afterSha256, target.identity) }));
+}
+
+export async function reconcileSettledWorkspacePatches(workspaceRoot: string, dataRoot: string,
+  patches: SettledPatchRecoveryEvidence[]): Promise<void> {
+  const checks = await settledWorkspacePatchChecks(workspaceRoot, dataRoot, patches);
+  const lease = await lockWorkspaceOperationChecks(dataRoot, checks, "patch continuation check").catch((error: unknown) => {
+    if (error instanceof Error && error.message === "patch_postcondition_or_file_identity_changed")
+      throw new Error("Patch recovery postcondition changed", { cause: error });
+    throw error;
+  });
+  await lease.release();
 }
 
 export async function matchesWorkspacePatchPostcondition(
@@ -96,7 +98,7 @@ export async function matchesWorkspacePatchPostcondition(
       if ((await lstat(target)).isSymbolicLink()) return false;
     }
     if ((await realpath(target)) !== target) return false;
-    handle = await open(target, constants.O_RDONLY | constants.O_NOFOLLOW);
+    handle = await open(target, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     const before = await handle.stat();
     if (!before.isFile() || before.size > 256 * 1024) return false;
     const buffer = Buffer.alloc(before.size + 1);

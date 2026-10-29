@@ -2,6 +2,7 @@ import type { RunEvent, RunRecord } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { liveToolEffectAuthoritiesFromEvents } from "./sqlite-tool-effect-authority.js";
 import { recoveryRunLeaseBindingSha256 } from "./tool-effect-indeterminate-event.js";
+import { independentRecoveryBoundaryScope } from "./workspace-operation-recovery-scope.js";
 
 export interface DeferredOperationHint {
   runId: string;
@@ -12,14 +13,13 @@ export interface DeferredOperationHint {
 export function deferredOperationHint(run: RunRecord & { leaseTokenSha256?: string }, events: RunEvent[]): DeferredOperationHint | undefined {
   if ((run.status !== "queued" && run.status !== "running") || !nativeOwnerExited(run.lease?.ownerId)) return undefined;
   const authorities = liveToolEffectAuthoritiesFromEvents(events);
-  const authority = authorities[0];
-  const payload = authority?.boundaryEvent?.payload;
-  const route = payload && typeof payload === "object" && !Array.isArray(payload) ? payload["route"] : undefined;
-  if (authorities.length !== 1 || !authority?.current || !authority.boundaryEvent ||
-      route !== "workspace_file_apply") return undefined;
+  if (!authorities.length || authorities.some((authority) => !authority.current || !authority.boundaryEvent)) return undefined;
+  const boundaries = authorities.map((authority) => authority.boundaryEvent!).sort((a, b) => a.seq - b.seq);
+  if (!independentRecoveryBoundaryScope(events, boundaries)) return undefined;
   return { runId: run.id, bindingSha256: sha256(canonicalJson({
     runId: run.id, threadId: run.threadId, lease: recoveryRunLeaseBindingSha256(run),
-    boundary: authority.boundaryEvent,
+    boundaries,
+    preparations: events.filter((event) => ["workspace.patch.prepared", "workspace.file.move.prepared"].includes(event.type)),
   })) };
 }
 
