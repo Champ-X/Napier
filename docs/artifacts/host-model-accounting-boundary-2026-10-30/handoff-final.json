@@ -1,0 +1,337 @@
+{
+  "kind": "napier.host-accounting-ownership-handoff",
+  "version": 2,
+  "status": "frozen; independent targeted source review closed; standard built snapshot verification pending",
+  "created_at": "2026-10-29T20:40:17.251908+00:00",
+  "repo": "/Users/champ/orca/Napier",
+  "initial_base_head": "7d022a0b70e23a9dc5464688036a5921aaaf8644",
+  "base_head": "df517f5690c8fe6e56dc212d7f31cdb78b3a1a90",
+  "branch": "main",
+  "scope": "G03 Host accounting ownership and native source-to-Store boundary only",
+  "supersedes": {
+    "path": "/tmp/napier-host-accounting-handoff-20261030.json",
+    "sha256": "5ea4aa2185e647ece19730d2ef6b9de4201884f88d21bc64ebef52bb930b99bf",
+    "disposition": "Revoked after independent review found transitive repository source/commit escapes; retained unchanged"
+  },
+  "owned_files": [
+    {
+      "path": "packages/runtime/src/host-model-accounting.ts",
+      "status": "added",
+      "sha256": "3340c57b1f14d57f82e054da540df8117f9ccacd9fe149c5a9c9659965f7984a",
+      "bytes": 12711,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/host-model-accounting-policy.ts",
+      "status": "added",
+      "sha256": "d50f5e7f1f70159cc5b92ea352d89ba9026b31665f8939c038266fe9bfac79b7",
+      "bytes": 1282,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-binding.ts",
+      "status": "added",
+      "sha256": "50f47f8c4269ef75eb800ef6d8884ad4479e687f8ce82ad4efb6ea167b682c65",
+      "bytes": 1393,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-destination.ts",
+      "status": "added",
+      "sha256": "e53b081d73975cb4efe85d68124352e96c742a97de2a9000064e1804b7244398",
+      "bytes": 1440,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/model-call-admission-types.ts",
+      "status": "added",
+      "sha256": "f5348e5bded96094d784dda284236f5e21730bd5d701abb80fcfc01c0a3b5700",
+      "bytes": 953,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/internal.ts",
+      "status": "modified",
+      "sha256": "02031a0ed70712d21a124e55f19227a6b6fdd4c8c1a7b7732e84157f8fee7b5d",
+      "bytes": 980,
+      "head_sha256": "9a54962a542f4b6745d7a900707c55ae2a92726b7b37b2f81d21a751d39a0eb9"
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-query.ts",
+      "status": "modified",
+      "sha256": "6fa3614d7e65627b47d23cca2e1360da8c79e11857d5db9c5fd5025d04566d30",
+      "bytes": 2425,
+      "head_sha256": "2ac570a37cc875540aff02241a800a3592f45d7abf62913596bd53f4d074458f"
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-runtime.ts",
+      "status": "modified",
+      "sha256": "5ada5f17e67b9355470fae27cfe391f9017ed5eb33c7558c2578ab175a61e96f",
+      "bytes": 1805,
+      "head_sha256": "8eda2b99778bf50351e2e60b597197e947612c9d77c37ed33c96972069aa3bc0"
+    },
+    {
+      "path": "packages/runtime/src/model-call-admission.ts",
+      "status": "modified",
+      "sha256": "4ffc1b564c8050c344b69f8e8927e9a73053a327202c0fbb9d41eea13d854ca5",
+      "bytes": 12547,
+      "head_sha256": "2c891192997c42e957833d5d529b97b8888b01be94e01b4eb4bfba42f2f31872"
+    },
+    {
+      "path": "packages/runtime/src/model-call-local-admission.ts",
+      "status": "modified",
+      "sha256": "05e8e4959e8591b4a7c0984ff90a7c4a8e7ea17dfb556fd7a16ce28b22869e5d",
+      "bytes": 1841,
+      "head_sha256": "07fff210152f425e8367fc4ba8f710796cf812dc5777152bfd7775afe840553c"
+    },
+    {
+      "path": "apps/server/src/workspace-model-admission.ts",
+      "status": "modified",
+      "sha256": "d7e7b976d9a81e0ad3779850b5179e0e83ba2b7dd43f2f5ed2ce260776e86140",
+      "bytes": 13575,
+      "head_sha256": "b4f14b9486d10405eadb2b84527857923738b91ed4a3727987996d989af267df"
+    },
+    {
+      "path": "apps/server/src/workspace-model-usage-recovery.ts",
+      "status": "modified",
+      "sha256": "6cb242609d07e977dd5f8f63326dfdc32cbe6051bea67a2da81a1fc7a0bd7a76",
+      "bytes": 906,
+      "head_sha256": "0c8fda26d8265c9225739b60b2f1486d701a50323535cf554a520f010fe8ada9"
+    },
+    {
+      "path": "apps/server/src/workspace-model-usage-source.ts",
+      "status": "deleted",
+      "sha256": null,
+      "bytes": 0,
+      "head_sha256": "9bed9ef678a7b60a1eba2169b1f16418e61a10f8feb1f35e98895e004cbfe7b1"
+    },
+    {
+      "path": "packages/runtime/test/host-model-accounting-boundary.test.ts",
+      "status": "added",
+      "sha256": "810e1f85e750ea29f2fc711116d8a9cb313192de6f0bf304cb6bc65f95665ff9",
+      "bytes": 4812,
+      "head_sha256": null
+    },
+    {
+      "path": "apps/server/test/workspace-model-accounting-fixture.ts",
+      "status": "added",
+      "sha256": "105778df6323aa3c7aeaa952431f4e5de09fdf224d73268bd160c30840685655",
+      "bytes": 1530,
+      "head_sha256": null
+    },
+    {
+      "path": "apps/server/test/workspace-model-usage.test.ts",
+      "status": "modified",
+      "sha256": "a4b5177fb14003d44de0e06751f4e09c9761dad0414042c5a3f0ab5e4c7283b4",
+      "bytes": 11050,
+      "head_sha256": "c161dab26f088dfb8669fe60d06d61185c5d82418d32c2bdb337b1c3b8e99df5"
+    },
+    {
+      "path": "apps/server/test/workspace-model-usage-recovery.test.ts",
+      "status": "modified",
+      "sha256": "d2a9dc4a5116cc6f7a087890f38c41a520dcd4db5f6cd02e078baaf9c4f5ffd6",
+      "bytes": 12367,
+      "head_sha256": "1b79df7dcdbe3aa52ec8c2ecda43aa670665c685d79693cb3a9dd943ef11746f"
+    },
+    {
+      "path": "apps/server/test/workspace-model-usage-authority-audit.test.ts",
+      "status": "modified",
+      "sha256": "a90597055b2cee366bf6ba2828b02f335b6d19d6e959a1cfcc52106c1ecf4e40",
+      "bytes": 2545,
+      "head_sha256": "57e933931f6f6046c978ce3818264807d70674c77dca53c40d6d2c97986c56a7"
+    },
+    {
+      "path": "apps/server/test/workspace-model-usage-process-fixture.ts",
+      "status": "modified",
+      "sha256": "6ee23b1f9ffdb12e6cef8d291b490eb941bda36b165eef38674075badfda5d52",
+      "bytes": 7154,
+      "head_sha256": "58d8b7baf8133dac904da39e59d1dceb8cd002c46d4605e65d0dc21d8b53b2ad"
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-repository.ts",
+      "status": "modified",
+      "sha256": "a2ee97fa0b281790342e93c3eed24a9c1e468ad55f7c59503975a4a91ec150f3",
+      "bytes": 17982,
+      "head_sha256": "84c4fe6f4e7da8fe264695cded30d4745f69f3c1304c95e9f487c589eb1ceb09"
+    },
+    {
+      "path": "packages/runtime/src/model-usage-projection.ts",
+      "status": "modified",
+      "sha256": "d0488f224e038acb982ca67add0f65eafab27199207e13f6c0da255b4cb21605",
+      "bytes": 907,
+      "head_sha256": "f5b0e7400585695b8d226c0dcd93bc5b076e23321cece550eea0f790a4570561"
+    },
+    {
+      "path": "packages/runtime/test/model-accounting-runtime.test.ts",
+      "status": "modified",
+      "sha256": "94959ce97213daf6fc55ffc52b9cb9b574f418b59757d7b496a803030e0432b4",
+      "bytes": 5040,
+      "head_sha256": "47c5df58a1a52a67db89bc5429bbaa7e09deb10b3df93ba13917b83a18c9a5a1"
+    },
+    {
+      "path": "packages/runtime/test/model-accounting-dispatch.test.ts",
+      "status": "modified",
+      "sha256": "a9b12e247ff0b219bc71eb4d9d1cc59d8e08c580f65c46a101961e6583f3f362",
+      "bytes": 20510,
+      "head_sha256": "93f6fc8518d733935351626c9c26955e6d9be2538e31ecf6268f220cacb5aa3c"
+    },
+    {
+      "path": "packages/runtime/test/model-accounting-repository.test.ts",
+      "status": "modified",
+      "sha256": "ba980d352304a4dbd7a5d0ef685d4428bb854b8ec5bf6bdcc528d0e175ace4fd",
+      "bytes": 11515,
+      "head_sha256": "2f43092659006a15c5f1b961e1ac7360a07990fe285da334d9c085a425c7b185"
+    },
+    {
+      "path": "packages/runtime/test/agent-native-thinking-recovery.test.ts",
+      "status": "modified",
+      "sha256": "452ef930580f8da51576051440e1073511cc4327ca473be60173775f328fa86f",
+      "bytes": 15032,
+      "head_sha256": "3159ccc67506a6acb895a9eed6e93fb44e6e0fb553a3e2e81c5e27f9567aabcc"
+    }
+  ],
+  "owned_file_count": 25,
+  "owned_staged_paths": [],
+  "validation": {
+    "final_source_regression": {
+      "files": 22,
+      "tests": 194,
+      "passed": 194,
+      "failed": 0,
+      "config": "source aliases including private Server dist imports",
+      "excluded": "workspace-model-usage-process.test.ts: 3 fork process cases require final standard-built snapshot"
+    },
+    "final_focused": {
+      "files": 4,
+      "tests": 32,
+      "passed": 32,
+      "overlaps_regression": true
+    },
+    "prior_v5_regression": {
+      "files": 23,
+      "tests": 194,
+      "passed": 194,
+      "scope": "Before final captured startup/drain/live/undispatched target changes and before Server test imports restored to dist; not final source evidence"
+    },
+    "strict_no_emit": "Passed whole Runtime and Server source plus changed Runtime tests; final Server test built imports deferred to root isolated snapshot. v5 server test strict check passed before import-only restoration.",
+    "expected_standard_built_regression": {
+      "files": 23,
+      "tests": 197,
+      "status": "Not yet run; root owns isolated build and standard workspace verification"
+    },
+    "diff_check": "Passed",
+    "architecture": "Unaccepted; 8 retained failures",
+    "api": "Unaccepted; root 1897/1896, internal 18/16, root/internal digests mismatch",
+    "paid_model_calls": 0,
+    "emits": false,
+    "staged_by_owner": false,
+    "commits_by_owner": false
+  },
+  "review_findings": [
+    {
+      "finding": "Native repository configuration/config() exposed scoped source, TS-private persist could be replaced",
+      "disposition": "All repository private fields and methods now ECMAScript #private; native source and policy authority inaccessible through these public properties; real SQL-failure/property shadow test passed",
+      "evidence": "Independent read-only source finding, followed by implemented regression; pre-fix exploit was not executed"
+    },
+    {
+      "finding": "Startup/drain/live projection and undispatched reject still delegated to replaceable public configureSource/reconcile",
+      "disposition": "Native destination now captures both Store and repository identity; all projection resolves private destination; startup captures configure; undispatched uses #reconcile. Actual SQL-failure tests cover all paths.",
+      "evidence": "Independent source finding; final 22-file regression covers implemented fix"
+    },
+    {
+      "finding": "Server private fixture source imports used a separate capability realm from standard built Runtime exports",
+      "disposition": "All 5 changed Server test/fixture files now import private Runtime dist modules; custom source aliases remain solely in /tmp development config",
+      "evidence": "Final standard built snapshot intentionally deferred to root"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/napier-host-accounting-regression-v6.json",
+      "sha256": "499cc7d3d26edd0b1aee50157e771a4ec5fe58c6c20512c321adac7f026c837a",
+      "bytes": 73104
+    },
+    {
+      "path": "/tmp/napier-host-accounting-regression-v6.log",
+      "sha256": "40dd753fa4acdfad8db5c687182be0eeaba84d44c52271c3c22e08c8026e6748",
+      "bytes": 70
+    },
+    {
+      "path": "/tmp/napier-host-accounting-regression-v6-files.json",
+      "sha256": "10fc234b58bac00f62d37d0c0366bb4f15452506a68fe8aded7e767fdf28e207",
+      "bytes": 1886
+    },
+    {
+      "path": "/tmp/napier-host-accounting-vitest-v6.config.mts",
+      "sha256": "d1b50211f72420cd9d09f56d6e16ff2967bc6ee1991db1e25f66d4d82c4e4f90",
+      "bytes": 15571
+    },
+    {
+      "path": "/tmp/napier-host-accounting-captured-target-focused-v6.json",
+      "sha256": "9656c53f34c6018b1501f266b0c4f7c7dfb1c47bce51088ac675e708daf1b30a",
+      "bytes": 12170
+    },
+    {
+      "path": "/tmp/napier-host-accounting-captured-target-focused-v6.log",
+      "sha256": "835ef43c8b87c880c5439887d828e80d107d61c38c1c1173bc050693f413b1be",
+      "bytes": 83
+    },
+    {
+      "path": "/tmp/napier-host-accounting-test-tsconfig-v6.json",
+      "sha256": "b375582aad9408840fa25a8a1c2ee943b922f11d81ed57042a4a0a6034ba4e7a",
+      "bytes": 11443
+    },
+    {
+      "path": "/tmp/napier-host-accounting-test-typecheck-v6.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/napier-host-accounting-architecture-v6.log",
+      "sha256": "8a0933141e076e7b7437ebd39422ad410215655f8918324810b60d88cb20667b",
+      "bytes": 777
+    },
+    {
+      "path": "/tmp/napier-host-accounting-api-v6.log",
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277
+    },
+    {
+      "path": "/tmp/napier-host-accounting-regression-v5.json",
+      "sha256": "3691f3a439f72946de7e4346f55eea37a4ef87cd9025f790c11a58ee528c9d03",
+      "bytes": 73421
+    },
+    {
+      "path": "/tmp/napier-host-accounting-test-typecheck-v5.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/napier-host-accounting-v5-source-run-hashes.json",
+      "sha256": "ae3f863f02c745e9f348503ddaafecd6cfb2903a1131c9d88939487c1afab892",
+      "bytes": 3053
+    },
+    {
+      "path": "/tmp/napier-host-accounting-regression-files.json",
+      "sha256": "303039cc905d304be6f9a3b7deb582253515d8a82473791aba4427020c8667d6",
+      "bytes": 1970
+    },
+    {
+      "path": "/tmp/napier-host-accounting-boundary-design-20261030.md",
+      "sha256": "ec4dec1ae977142ddcbee0d5d570162c05863411938cc65265317605bcb1e14f",
+      "bytes": 20975
+    }
+  ],
+  "limits": [
+    "No claim of resistance to arbitrary trusted in-process mutation of entire LocalStore object graph",
+    "No API budget/digest updates or G03 acceptance",
+    "No compiler/overflow/extension parity, quality or performance claim"
+  ],
+  "next_read_only_recommendation": "Share per-candidate invocation preparation/compiler/finalization and bounded overflow mechanism between main and child, injecting role prompt and budgets; no additional implementation in this slice.",
+  "independent_review": {
+    "reviewer": "/root/sandbox_admission_design",
+    "status": "No remaining blocker in the reviewed native source/repository boundary",
+    "scope": "Read-only code review of source+policy same Host transaction, ACK+refund transaction, close lifetime and all source-to-Store paths",
+    "closure": "Confirmed private repository field/method escapes closed; captured native destination covers startup configuration, live projection, drain, replay and undispatched reconciliation; no extension to arbitrary LocalStore graph mutation",
+    "tests_executed_by_reviewer": false
+  }
+}

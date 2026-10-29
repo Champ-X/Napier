@@ -382,6 +382,13 @@
 - v1 的 Web reason 类型遗漏和两项新架构失败、无效中断的 v2、修正后但尚无兼容 fallback 的 v3 402/402，以及最终 v4 全部留存。当前隔离快照仍有 7 项既有架构失败，API root1897/1896、internal21/16 与两份 digest 失败；不包含并行 Host 收敛候选，历史 release 失败保留。只降低 manager 旧行数 allowance746→701。EN/ZH 文案、既有组件测试和静态渲染不代替新浏览器验收。
 - 范围仍限同文件系统、已有安全父目录、目标缺失、至多32MiB的单普通文件；外部非协作写入的无覆盖原子保证、混合／多移动链、目录／copy／trash／restore／外部副作用、周期失主重核和完整分类矩阵未完成。见[实现说明](docs/workspace-file-move-recovery.md)、[最终收据](docs/artifacts/workspace-file-move-recovery-regression-2026-10-30.json)与[证据索引](docs/artifacts/workspace-file-move-recovery-evidence-index-2026-10-30.json)。G04 与全部剩余目标继续 **active**。
 
+### 后续推进：G03 Host 记账边界收敛（2026-10-30）
+
+- 本地实现提交 `7ce8097f`，未 push。Runtime 的 `HostModelAccounting` 统一拥有 Host 生命周期的 spool、物理用量规范化、workspace scope、delivery／replay／ACK；Host 仍持有可信同步预算策略及 SQL 更新。reservation／receipt／物理槽的原子关系保持：先 Store commit，再 source ACK，ACK 与退额度处于同一 Host 事务；迟到计量不改变执行终态或恢复正文／工具。
+- 移除 Server 低层 source adapter，将5个低层 internal exports收敛为显式类与policy type，internal21→18，仍未通过16的门禁。native admission与Store／repository用私有身份绑定；真实SQLite receiver、源配置和持久化回调使用运行时私有边界。审查中发现的公开repository替换与source泄漏已在startup／live／drain／undispatched全部路径修正，故障注入改用真实SQL和提交后的测试barrier，保留旧回归与审查发现，不以隐藏失效mock当作通过。
+- 最终构建快照 **99 文件／788 测试**通过（Runtime742、Server46，含真实loopback／SIGKILL／并发重放）；编译、相关类型检查通过。首轮strict因`/tmp`与`/private/tmp`混用产生5个nominal类型诊断，统一验证器路径后通过；源码和产物未变，未重复行为测试，失败及修正收据分别留存。旧agent-runtime的48项strict诊断与原始基线一致。4,026源文件／5,081产物哈希稳定，28个已有用户文件不变。
+- 仍有隔离快照7项既有架构失败、root1897/1896、internal18/16和两份digest不匹配，未修改预算或digest；历史release失败保留。该边界不宣称抵抗任意可信进程内Store对象图修改。完整child compiler／overflow／extension、共享父token／cost原子预留、coder恢复及G01–G07剩余目标继续 **active**。见[边界说明](docs/host-model-accounting-boundary.md)、[最终收据](docs/artifacts/host-model-accounting-boundary-regression-2026-10-30.json)和[证据索引](docs/artifacts/host-model-accounting-boundary-evidence-index-2026-10-30.json)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -502,7 +509,7 @@
 **实施任务**
 
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
-- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 checkpoint、持久物理用量与迟到对账已完成本地功能回归；完整 child compiler／overflow／thinking parity 和新增内部接口门禁仍待完成。）
+- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 checkpoint、持久物理用量与迟到对账已完成本地功能回归；普通回合 thinking 共享恢复及 Host 记账边界收敛已完成；完整 child compiler／overflow／extension parity 和内部接口18/16门禁仍待完成。）
 - [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查与 mailbox 稀疏消费持久化已实现；并发共享父 token／cost 原子额度仍待完成。）
 - [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明、安全恢复授权、严格 tail 校验、原生只读 continuation 和具备完整原生证明的历史 v1 候选受限对账已实现；coder／工作区重建、未覆盖尾部及缺失证明的历史记录仍待完成。）
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。

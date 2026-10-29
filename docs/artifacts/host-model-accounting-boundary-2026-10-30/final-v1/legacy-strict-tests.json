@@ -1,0 +1,17 @@
+{
+  "extends": "/tmp/napier-host-accounting-verify-20261030/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "/tmp/napier-host-accounting-verify-20261030",
+    "typeRoots": [
+      "/tmp/napier-host-accounting-verify-20261030/node_modules/@types"
+    ]
+  },
+  "files": [
+    "/tmp/napier-host-accounting-verify-20261030/packages/runtime/test/agent-runtime.test.ts"
+  ],
+  "include": []
+}

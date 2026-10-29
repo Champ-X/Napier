@@ -1,0 +1,220 @@
+{
+  "kind": "napier.host-accounting-ownership-handoff",
+  "created_at": "2026-10-29T20:30:41.576650+00:00",
+  "repo": "/Users/champ/orca/Napier",
+  "base_head": "7d022a0b70e23a9dc5464688036a5921aaaf8644",
+  "branch": "main",
+  "scope": "G03 Host accounting ownership boundary; no additional G03/G04 implementation",
+  "owned_files": [
+    {
+      "path": "packages/runtime/src/host-model-accounting.ts",
+      "status": "added",
+      "sha256": "3340c57b1f14d57f82e054da540df8117f9ccacd9fe149c5a9c9659965f7984a",
+      "bytes": 12711,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/host-model-accounting-policy.ts",
+      "status": "added",
+      "sha256": "d50f5e7f1f70159cc5b92ea352d89ba9026b31665f8939c038266fe9bfac79b7",
+      "bytes": 1282,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-binding.ts",
+      "status": "added",
+      "sha256": "50f47f8c4269ef75eb800ef6d8884ad4479e687f8ce82ad4efb6ea167b682c65",
+      "bytes": 1393,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-destination.ts",
+      "status": "added",
+      "sha256": "11b03e0e29e154af80ec9c67fac6f64bdf0b19f121e2cdd9d40ebfc0b9f932b1",
+      "bytes": 1328,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/model-call-admission-types.ts",
+      "status": "added",
+      "sha256": "f5348e5bded96094d784dda284236f5e21730bd5d701abb80fcfc01c0a3b5700",
+      "bytes": 953,
+      "head_sha256": null
+    },
+    {
+      "path": "packages/runtime/src/internal.ts",
+      "status": "modified",
+      "sha256": "02031a0ed70712d21a124e55f19227a6b6fdd4c8c1a7b7732e84157f8fee7b5d",
+      "bytes": 980,
+      "head_sha256": "9a54962a542f4b6745d7a900707c55ae2a92726b7b37b2f81d21a751d39a0eb9"
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-query.ts",
+      "status": "modified",
+      "sha256": "6fa3614d7e65627b47d23cca2e1360da8c79e11857d5db9c5fd5025d04566d30",
+      "bytes": 2425,
+      "head_sha256": "2ac570a37cc875540aff02241a800a3592f45d7abf62913596bd53f4d074458f"
+    },
+    {
+      "path": "packages/runtime/src/model-accounting-runtime.ts",
+      "status": "modified",
+      "sha256": "30abb8a291d5b54c408a026aba0048e3937aa91b6185c287ee08c114e87d43e1",
+      "bytes": 1706,
+      "head_sha256": "8eda2b99778bf50351e2e60b597197e947612c9d77c37ed33c96972069aa3bc0"
+    },
+    {
+      "path": "packages/runtime/src/model-call-admission.ts",
+      "status": "modified",
+      "sha256": "4ffc1b564c8050c344b69f8e8927e9a73053a327202c0fbb9d41eea13d854ca5",
+      "bytes": 12547,
+      "head_sha256": "2c891192997c42e957833d5d529b97b8888b01be94e01b4eb4bfba42f2f31872"
+    },
+    {
+      "path": "packages/runtime/src/model-call-local-admission.ts",
+      "status": "modified",
+      "sha256": "05e8e4959e8591b4a7c0984ff90a7c4a8e7ea17dfb556fd7a16ce28b22869e5d",
+      "bytes": 1841,
+      "head_sha256": "07fff210152f425e8367fc4ba8f710796cf812dc5777152bfd7775afe840553c"
+    },
+    {
+      "path": "apps/server/src/workspace-model-admission.ts",
+      "status": "modified",
+      "sha256": "d7e7b976d9a81e0ad3779850b5179e0e83ba2b7dd43f2f5ed2ce260776e86140",
+      "bytes": 13575,
+      "head_sha256": "b4f14b9486d10405eadb2b84527857923738b91ed4a3727987996d989af267df"
+    },
+    {
+      "path": "apps/server/src/workspace-model-usage-recovery.ts",
+      "status": "modified",
+      "sha256": "6cb242609d07e977dd5f8f63326dfdc32cbe6051bea67a2da81a1fc7a0bd7a76",
+      "bytes": 906,
+      "head_sha256": "0c8fda26d8265c9225739b60b2f1486d701a50323535cf554a520f010fe8ada9"
+    },
+    {
+      "path": "apps/server/src/workspace-model-usage-source.ts",
+      "status": "deleted",
+      "sha256": null,
+      "bytes": 0,
+      "head_sha256": "9bed9ef678a7b60a1eba2169b1f16418e61a10f8feb1f35e98895e004cbfe7b1"
+    },
+    {
+      "path": "packages/runtime/test/host-model-accounting-boundary.test.ts",
+      "status": "added",
+      "sha256": "810e1f85e750ea29f2fc711116d8a9cb313192de6f0bf304cb6bc65f95665ff9",
+      "bytes": 4812,
+      "head_sha256": null
+    },
+    {
+      "path": "apps/server/test/workspace-model-accounting-fixture.ts",
+      "status": "added",
+      "sha256": "bdb932c847908195595bf6cd70671fdf80504cba8297c894477e3cc6ce89b440",
+      "bytes": 1528,
+      "head_sha256": null
+    },
+    {
+      "path": "apps/server/test/workspace-model-usage.test.ts",
+      "status": "modified",
+      "sha256": "38e0362139479c75ac8c6ac9607b9a7e4e0d7d2c56f3d89282133d833171db47",
+      "bytes": 11047,
+      "head_sha256": "c161dab26f088dfb8669fe60d06d61185c5d82418d32c2bdb337b1c3b8e99df5"
+    },
+    {
+      "path": "apps/server/test/workspace-model-usage-recovery.test.ts",
+      "status": "modified",
+      "sha256": "fed1e26abe2dacff04266a6bb6c051866fc6250bdfbc2b6e1880ec74d9b2e151",
+      "bytes": 10657,
+      "head_sha256": "1b79df7dcdbe3aa52ec8c2ecda43aa670665c685d79693cb3a9dd943ef11746f"
+    },
+    {
+      "path": "apps/server/test/workspace-model-usage-authority-audit.test.ts",
+      "status": "modified",
+      "sha256": "df2a3fc2fcb0f1697af269547e5ca5be7935174a14be0f874caa7b9a97be2360",
+      "bytes": 2543,
+      "head_sha256": "57e933931f6f6046c978ce3818264807d70674c77dca53c40d6d2c97986c56a7"
+    },
+    {
+      "path": "apps/server/test/workspace-model-usage-process-fixture.ts",
+      "status": "modified",
+      "sha256": "b96adc0956e83350cbe727095ccdb640fbb929882b3295ccce08e1ccde443af2",
+      "bytes": 7151,
+      "head_sha256": "58d8b7baf8133dac904da39e59d1dceb8cd002c46d4605e65d0dc21d8b53b2ad"
+    }
+  ],
+  "owned_file_count": 19,
+  "owned_staged_paths": [],
+  "validation": {
+    "regression": {
+      "file_count": 23,
+      "tests": 193,
+      "passed": 193,
+      "failed": 0,
+      "success": true
+    },
+    "strict_no_emit": "Passed whole Runtime and Server source plus changed tests; exit 0",
+    "diff_check": "Passed git diff --check",
+    "architecture": "Unaccepted; retained 8 failures; no new cycle or Store coupling",
+    "api": "Unaccepted; runtime root 1897/1896, internal 18/16, root/internal digest mismatches",
+    "paid_model_calls": 0,
+    "source_emits": false,
+    "staged_by_owner": false,
+    "commits_by_owner": false,
+    "independent_challenge": "Pending final narrow read-only ACK/close review; partial boundary review has not found blocker, not acceptance"
+  },
+  "artifacts": [
+    {
+      "path": "/tmp/napier-host-accounting-regression-v4.json",
+      "sha256": "509d2abbd06492b7137e0c42b10e0d94b5626017f6fc90ea70ed91e1b8277459",
+      "bytes": 73122
+    },
+    {
+      "path": "/tmp/napier-host-accounting-regression-v4.log",
+      "sha256": "04aeb7ec06247d07f602634ce50c81df824567cd3b6512e091eb38e16d19e79b",
+      "bytes": 70
+    },
+    {
+      "path": "/tmp/napier-host-accounting-test-typecheck-v4.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/napier-host-accounting-architecture-v4.log",
+      "sha256": "8a0933141e076e7b7437ebd39422ad410215655f8918324810b60d88cb20667b",
+      "bytes": 777
+    },
+    {
+      "path": "/tmp/napier-host-accounting-api-v4.log",
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277
+    },
+    {
+      "path": "/tmp/napier-host-accounting-vitest.config.mts",
+      "sha256": "a1be385f07098ce402015ee8be74b424a2deb064698cfa2497ddbbb06faaa8a6",
+      "bytes": 13207
+    },
+    {
+      "path": "/tmp/napier-host-accounting-tsx.json",
+      "sha256": "007e860b6d968d32773414d00a39265388be75177d3f6fee67b1de05c7b441d9",
+      "bytes": 10838
+    },
+    {
+      "path": "/tmp/napier-host-accounting-test-tsconfig.json",
+      "sha256": "0ddcdba3f63679ee2385c98093faa9593117d05d1ee6b83b157a1e3e408a8bb8",
+      "bytes": 11523
+    },
+    {
+      "path": "/tmp/napier-host-accounting-regression-files.json",
+      "sha256": "303039cc905d304be6f9a3b7deb582253515d8a82473791aba4427020c8667d6",
+      "bytes": 1970
+    },
+    {
+      "path": "/tmp/napier-host-accounting-boundary-design-20261030.md",
+      "sha256": "ec4dec1ae977142ddcbee0d5d570162c05863411938cc65265317605bcb1e14f",
+      "bytes": 20975
+    }
+  ],
+  "limits": [
+    "Host API still requires reviewed surface/baseline decision; no budgets or digests changed",
+    "No complete G03 compiler/overflow/extension parity or quality/performance claim",
+    "No arbitrary trusted in-process code execution threat-model expansion"
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "kind": "napier.host-model-accounting-boundary-evidence-index",
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T20:47:47.290713+00:00",
+  "implementationCommit": "7ce8097fca66f7950e42e018764c7849a3544d27",
+  "paidModelCalls": 0,
+  "fullG03Complete": false,
+  "artifacts": {
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/design-review.md": {
+      "sha256": "ec4dec1ae977142ddcbee0d5d570162c05863411938cc65265317605bcb1e14f",
+      "bytes": 20975
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-api-v6.log": {
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-architecture-v6.log": {
+      "sha256": "8a0933141e076e7b7437ebd39422ad410215655f8918324810b60d88cb20667b",
+      "bytes": 777
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-boundary-design-20261030.md": {
+      "sha256": "ec4dec1ae977142ddcbee0d5d570162c05863411938cc65265317605bcb1e14f",
+      "bytes": 20975
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-captured-target-focused-v6.json": {
+      "sha256": "9656c53f34c6018b1501f266b0c4f7c7dfb1c47bce51088ac675e708daf1b30a",
+      "bytes": 12170
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-captured-target-focused-v6.log": {
+      "sha256": "835ef43c8b87c880c5439887d828e80d107d61c38c1c1173bc050693f413b1be",
+      "bytes": 83
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-regression-files.json": {
+      "sha256": "303039cc905d304be6f9a3b7deb582253515d8a82473791aba4427020c8667d6",
+      "bytes": 1970
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-regression-v5.json": {
+      "sha256": "3691f3a439f72946de7e4346f55eea37a4ef87cd9025f790c11a58ee528c9d03",
+      "bytes": 73421
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-regression-v6-files.json": {
+      "sha256": "10fc234b58bac00f62d37d0c0366bb4f15452506a68fe8aded7e767fdf28e207",
+      "bytes": 1886
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-regression-v6.json": {
+      "sha256": "499cc7d3d26edd0b1aee50157e771a4ec5fe58c6c20512c321adac7f026c837a",
+      "bytes": 73104
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-regression-v6.log": {
+      "sha256": "40dd753fa4acdfad8db5c687182be0eeaba84d44c52271c3c22e08c8026e6748",
+      "bytes": 70
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-test-tsconfig-v6.json": {
+      "sha256": "b375582aad9408840fa25a8a1c2ee943b922f11d81ed57042a4a0a6034ba4e7a",
+      "bytes": 11443
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-test-typecheck-v5.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-test-typecheck-v6.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-v5-source-run-hashes.json": {
+      "sha256": "ae3f863f02c745e9f348503ddaafecd6cfb2903a1131c9d88939487c1afab892",
+      "bytes": 3053
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/development/napier-host-accounting-vitest-v6.config.mts": {
+      "sha256": "d1b50211f72420cd9d09f56d6e16ff2967bc6ee1991db1e25f66d4d82c4e4f90",
+      "bytes": 15571
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/accepted-regression.json": {
+      "sha256": "b0c9c2e4066d25d0c8b7b319bcc7f91bbe82ffad967e2175ed6f4afb9ceb9ab9",
+      "bytes": 21286
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/architecture.log": {
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "bytes": 685
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/benchmark-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/bundled-skills.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/contracts-runtime-emit.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/emitted-after.json": {
+      "sha256": "5b375e243f61a3082d694bf5398fb221d323e0c067600da9ed1143a502c7e538",
+      "bytes": 634555
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/emitted-before.json": {
+      "sha256": "5b375e243f61a3082d694bf5398fb221d323e0c067600da9ed1143a502c7e538",
+      "bytes": 634555
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/harness-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/legacy-strict-baseline-comparison.json": {
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "bytes": 462
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/legacy-strict-tests.json": {
+      "sha256": "ec90ecc55633a4a0be757e7c4af87746a7aa6c3a838e736fc9a54d0d340febf2",
+      "bytes": 497
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/legacy-strict-tests.log": {
+      "sha256": "fc42a9ed75275148fb985278965f8b4d2e42504c03b12151145a790ad941124a",
+      "bytes": 16991
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/public-api.log": {
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "bytes": 277
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/regression.json": {
+      "sha256": "2eb93831b01cccf7dc81a974268b993c62b4922c530836dc7c79ab287be15fdb",
+      "bytes": 19741
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/runtime-tests.log": {
+      "sha256": "fcb2879c71f7f148065fa647cca6254252a2e1831cac89d4a8b366b2a2ad9c20",
+      "bytes": 82
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/runtime.json": {
+      "sha256": "f2978ed9bc3489e3668a939610f13fffd78d1e9805733dd0aa7434fbe2467310",
+      "bytes": 269892
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/sandbox-assets.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/selected-tests.json": {
+      "sha256": "245d229e109b9c8c9baeeecf9ace5be1a60704c931f58207ede1c3e648776f3a",
+      "bytes": 7317
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/server-tests.log": {
+      "sha256": "2f62f08023d43dc6764a3becf1df9ae7a11ba9766064ba99d820ec5517baf3a4",
+      "bytes": 81
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/server.json": {
+      "sha256": "7232b5d1a023cecc217c76dd1ef0ab70540a98d342964e58409adb0767b6e5dd",
+      "bytes": 18702
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/source-after.json": {
+      "sha256": "4b54891dad1ea3c9362e94ed1e2cc1254a46c7c8d413a2c31ddcab6289541728",
+      "bytes": 485713
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/source-before.json": {
+      "sha256": "4b54891dad1ea3c9362e94ed1e2cc1254a46c7c8d413a2c31ddcab6289541728",
+      "bytes": 485713
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/strict-canonical-followup.json": {
+      "sha256": "c6ac789e7b8d4af73903540aa1794ca10318c6121a0e8011d0f0557822a82b0d",
+      "bytes": 866
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/strict-tests-canonical.json": {
+      "sha256": "ed677487a292eb14f33413851dd305f0778efac952c364feee2ce73deb2a6a4f",
+      "bytes": 1586
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/strict-tests-canonical.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/strict-tests.json": {
+      "sha256": "ac92dd8d17ef3c3cb8662eebf1e489df21497c737de4c3b277f15656151b3d72",
+      "bytes": 1482
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/strict-tests.log": {
+      "sha256": "076885e6d56728610ec9fce9abf6c183d61790b929468c34280f85b0c58e08dd",
+      "bytes": 5487
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/final-v1/web-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/handoff-final.json": {
+      "sha256": "627b179934281856441897c755891a43228d93312d8994a4e798038ad7c756a7",
+      "bytes": 14578
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/handoff-v1.json": {
+      "sha256": "5ea4aa2185e647ece19730d2ef6b9de4201884f88d21bc64ebef52bb930b99bf",
+      "bytes": 8442
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/legacy-agent-runtime-baseline-strict.log": {
+      "sha256": "1fa5fe6dd8c083ff1f2db9f9697d29a32e4c2ef8e7f97e2a9df9fb19e9d9587e",
+      "bytes": 19151
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/preserved-user-files.json": {
+      "sha256": "98005eb6811f8ebbf87e5324d47d6431c9ca1394026ea8a06fe3e4ca74a99157",
+      "bytes": 3046
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/staged-source.json": {
+      "sha256": "a9f225a56c1454b6af1385cba33df13f6a2d284dcd94a663e8b8584d7222603f",
+      "bytes": 3419
+    },
+    "docs/artifacts/host-model-accounting-boundary-2026-10-30/verifier.py": {
+      "sha256": "a218a0ce03fc36ed804e119eb15773919f9dba9fae38cc8abfe0ba35c212bdff",
+      "bytes": 9160
+    },
+    "docs/artifacts/host-model-accounting-boundary-regression-2026-10-30.json": {
+      "sha256": "249facef19d6676cde7a48121e997248e7ba6f101857e4f8cd7f2a572a01d6cf",
+      "bytes": 22310
+    }
+  }
+}

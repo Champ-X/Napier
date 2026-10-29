@@ -1,0 +1,18 @@
+{
+  "name": "strict-tests-canonical",
+  "argv": [
+    "/Users/champ/.local/node/bin/node",
+    "/private/tmp/napier-host-accounting-verify-20261030/node_modules/typescript/bin/tsc",
+    "-p",
+    "/private/tmp/napier-host-accounting-final-v1-20261030/strict-tests-canonical.json"
+  ],
+  "cwd": "/private/tmp/napier-host-accounting-verify-20261030",
+  "required": true,
+  "exitCode": 0,
+  "startedAt": "2026-10-29T20:43:48.336525+00:00",
+  "finishedAt": "2026-10-29T20:43:53.734799+00:00",
+  "log": "/tmp/napier-host-accounting-final-v1-20261030/strict-tests-canonical.log",
+  "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "supersedes": "strict-tests",
+  "reason": "Use canonical /private/tmp source paths consistently with package symlink resolution; original /tmp mixed nominal brand identities. No source or emitted change."
+}

@@ -1,0 +1,26 @@
+{
+  "extends": "/tmp/napier-host-accounting-verify-20261030/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "/tmp/napier-host-accounting-verify-20261030",
+    "typeRoots": [
+      "/tmp/napier-host-accounting-verify-20261030/node_modules/@types"
+    ]
+  },
+  "files": [
+    "/tmp/napier-host-accounting-verify-20261030/apps/server/test/workspace-model-accounting-fixture.ts",
+    "/tmp/napier-host-accounting-verify-20261030/apps/server/test/workspace-model-usage-authority-audit.test.ts",
+    "/tmp/napier-host-accounting-verify-20261030/apps/server/test/workspace-model-usage-process-fixture.ts",
+    "/tmp/napier-host-accounting-verify-20261030/apps/server/test/workspace-model-usage-recovery.test.ts",
+    "/tmp/napier-host-accounting-verify-20261030/apps/server/test/workspace-model-usage.test.ts",
+    "/tmp/napier-host-accounting-verify-20261030/packages/runtime/test/agent-native-thinking-recovery.test.ts",
+    "/tmp/napier-host-accounting-verify-20261030/packages/runtime/test/host-model-accounting-boundary.test.ts",
+    "/tmp/napier-host-accounting-verify-20261030/packages/runtime/test/model-accounting-dispatch.test.ts",
+    "/tmp/napier-host-accounting-verify-20261030/packages/runtime/test/model-accounting-repository.test.ts",
+    "/tmp/napier-host-accounting-verify-20261030/packages/runtime/test/model-accounting-runtime.test.ts"
+  ],
+  "include": []
+}
