@@ -13,32 +13,10 @@ import { bindModelCallRegistry, bindModelResultAttribution, consumeModelCallAttr
   enterRawModelCall, modelCallRegistryIdentity, readEnteredModelCall, type EnteredModelCall } from "./model-call-attribution.js";
 import { modelAdmittedRequestDigests } from "./model-call-capture.js";
 import { projectPendingModelUsage, type ModelUsageProjectionPort } from "./model-usage-projection.js";
-import type { ModelUsageSource } from "./model-usage-source.js";
+import { modelAccountingBinding } from "./model-accounting-binding.js";
 import { observeModelCallRecovery } from "./model-call-recovery.js";
-
-export type ModelCallMethod = "stream" | "streamSimple" | "complete" | "completeSimple";
-export type ModelCallAdmissionCode = "capacity" | "budget" | "accounting" | "closed";
-
-export interface ModelCallLease {
-  /** Undefined means dispatch threw or its physical result rejected. It does
-   * not establish zero usage or authorize refunding an uncertain reservation. */
-  settle(message?: AssistantMessage): void;
-}
-
-export interface ModelCallAdmission {
-  readonly usageSource?: ModelUsageSource;
-  readonly hostWorkspaceId?: string;
-  isDeclaredZeroCost?(model: { provider: string; id: string }): boolean;
-  /** Classify host-owned reserve errors without sharing an error implementation. */
-  errorCode?(error: unknown): ModelCallAdmissionCode | undefined;
-  /** Synchronous backpressure: never hold a Run or wait for a child here. */
-  reserve(input: {
-    method: ModelCallMethod;
-    model: Model<Api>;
-    options?: StreamOptions;
-    attribution?: ModelCallAttributionV1;
-  }): ModelCallLease;
-}
+import type { ModelCallAdmission, ModelCallLease, ModelCallMethod, ModelCallAdmissionCode } from "./model-call-admission-types.js";
+export type { ModelCallAdmission, ModelCallLease, ModelCallMethod, ModelCallAdmissionCode } from "./model-call-admission-types.js";
 
 const ADMISSION_MESSAGES: Record<ModelCallAdmissionCode, string> = {
   capacity: "Host model invocation capacity reached; active calls are retained.",
@@ -106,10 +84,11 @@ function reserve(
   options: StreamOptions | undefined,
 ): { call?: EnteredModelCall; attribution?: ModelCallAttributionV1; settle(message?: AssistantMessage): Promise<void> } {
   const active = consumeModelCallAttribution(registry);
+  const accounting = modelAccountingBinding(admission);
   if (accountingState(registry).closing) throw new ModelCallAdmissionError("closed");
   options?.signal?.throwIfAborted();
   if (active) {
-    if (!admission?.usageSource || admission.usageSource.sourceId !== active.attribution.receiptSourceId)
+    if (!accounting || accounting.source.sourceId !== active.attribution.receiptSourceId)
       throw new ModelCallAdmissionError("accounting", { cause: new Error("Model invocation has no matching durable source") });
     const digests = modelAdmittedRequestDigests({ model, context, ...(options ? { options } : {}) });
     if (active.attribution.method !== method || Object.entries(digests).some(([key, value]) =>
@@ -119,12 +98,13 @@ function reserve(
   if (!admission) return { settle: async () => undefined };
   let lease: ModelCallLease;
   try {
-    lease = admission.reserve(Object.freeze({
+    const request = Object.freeze({
       method,
       model: freezeModel(structuredClone(model)),
       ...(options ? { options: Object.freeze({ ...options }) } : {}),
       ...(active ? { attribution: active.attribution } : {}),
-    }));
+    });
+    lease = active ? accounting!.reserve(request, active.call) : admission.reserve(request);
   }
   catch (cause) {
     if (cause instanceof ModelCallAdmissionError) throw cause;
@@ -149,7 +129,7 @@ function reserve(
         // The lease immediately normalizes bounded usage fields. Cloning an
         // arbitrary provider response here could fail before usage is recorded.
         if (!settled) { lease.settle(message); settled = true; }
-        if (active) await projectPendingModelUsage(admission.usageSource!,
+        if (active) await projectPendingModelUsage(accounting!.source,
           readEnteredModelCall(active.call).repository as ModelUsageProjectionPort,
           { physicalId: active.attribution.physicalId });
         accountingState(registry).failed.delete(attempt);

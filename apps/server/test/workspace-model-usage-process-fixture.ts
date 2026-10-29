@@ -1,3 +1,4 @@
+import { hostFixtureSource } from "./workspace-model-accounting-fixture.js";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -42,7 +43,7 @@ if (mode === "replay") {
   const admission = await WorkspaceModelAdmission.open(stateHome);
   const store = new LocalStore({ workspaceRoot: identity.root, dataRoot: identity.dataRoot });
   await store.initialize();
-  const source = admission.usageSource(identity.workspaceId);
+  const source = hostFixtureSource(admission.forWorkspace(identity.workspaceId));
   store.modelAccountingRepository.configureSource({ source, hostWorkspaceId: identity.workspaceId });
   const agentId = store.listAgents()[0]!.id, thread = await store.createThread({ agentId, title: "Loopback late usage" });
   const leased = await store.createLeasedRun({ threadId: thread.id, agentId, source: "user" },

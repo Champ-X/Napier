@@ -1,10 +1,12 @@
+import { hostFixtureSource, reserveHostFixture } from "./workspace-model-accounting-fixture.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
-import { normalizeModelPhysicalObservation, readVerifiedModelUsageDelivery } from "@napier/runtime/internal";
+import { normalizeModelPhysicalObservation } from "../../../packages/runtime/dist/model-usage-observation.js";
+import { readVerifiedModelUsageDelivery } from "../../../packages/runtime/dist/model-usage-delivery.js";
 import { createUndispatchedModelObservation } from "../../../packages/runtime/dist/model-usage-observation.js";
 import { modelUsageFixture } from "../../../packages/runtime/test/model-usage-fixture.js";
 import { issueModelUndispatchedDriverProof, issueModelUsagePreparationAuthority, issuePreparedModelCall } from "../../../packages/runtime/dist/model-call-attribution.js";
@@ -19,7 +21,7 @@ async function setup(options: Parameters<typeof WorkspaceModelAdmission.open>[1]
   return { home, ledger };
 }
 function invocation(ledger: WorkspaceModelAdmission, workspaceId = workspaceA) {
-  const admission = ledger.forWorkspace(workspaceId), source = admission.usageSource!;
+  const admission = ledger.forWorkspace(workspaceId), source = hostFixtureSource(admission);
   const fixture = modelUsageFixture({ sourceId: source.sourceId, physicalId: randomUUID(), hostWorkspaceId: workspaceId, model: structuredClone(admissionModel) });
   fixture.message.usage = structuredClone(measuredMessage().usage);
   expect(fixture.message.usage.totalTokens).toBe(14);
@@ -27,8 +29,8 @@ function invocation(ledger: WorkspaceModelAdmission, workspaceId = workspaceA) {
     request: { method: fixture.attribution.method, model: fixture.model, attribution: fixture.attribution } };
 }
 function modelUsageUndispatchedProof(attribution: ReturnType<typeof invocation>["attribution"]) {
-  // Use the same emitted private authority module as the production host. A
-  // source-module WeakMap is deliberately not interchangeable with this one.
+  // This test-only issuer shares the built Runtime capability realm
+  // with the Server package exports used by the standard workspace tests.
   const repository = {};
   const authority = issueModelUsagePreparationAuthority({ repository,
     owner: { kind: "operation", operationId: "host-fixture", operation: "standalone_model_call" } });
@@ -42,11 +44,11 @@ afterEach(async () => {
 describe("host durable model usage source", () => {
   it("atomically persists physical settlement and receipt, retaining debt until projection acknowledgement", async () => {
     const { ledger } = await setup({ maxConcurrent: 1, maxTokens: 120 });
-    const call = invocation(ledger), lease = call.admission.reserve(call.request);
+    const call = invocation(ledger), lease = reserveHostFixture(call.admission, call.request);
     expect(ledger.snapshot()).toMatchObject({ activeInvocations: 1, chargedTokens: 120, usageProjectionPending: false });
     lease.settle(call.message);
     expect(ledger.snapshot()).toMatchObject({ activeInvocations: 0, chargedTokens: 120, observedTokens: 14, usageProjectionPending: true });
-    expect(() => call.admission.reserve(invocation(ledger).request)).toThrow(expect.objectContaining({ code: "budget" }));
+    expect(() => reserveHostFixture(call.admission, invocation(ledger).request)).toThrow(expect.objectContaining({ code: "budget" }));
     const [delivery] = call.source.pending();
     const receipt = readVerifiedModelUsageDelivery(delivery!);
     expect(receipt.attribution).toEqual(call.attribution);
@@ -60,23 +62,23 @@ describe("host durable model usage source", () => {
 
   it("keeps outbox and conservative debt across a host reopen without dispatch", async () => {
     const { home, ledger } = await setup();
-    const call = invocation(ledger); call.admission.reserve(call.request).settle(call.message);
+    const call = invocation(ledger); reserveHostFixture(call.admission, call.request).settle(call.message);
     const before = readVerifiedModelUsageDelivery(call.source.pending()[0]!);
     ledger.close();
     const reopened = await WorkspaceModelAdmission.open(home); ledgers.push(reopened);
-    const source = reopened.usageSource(workspaceA);
+    const source = hostFixtureSource(reopened.forWorkspace(workspaceA));
     expect(readVerifiedModelUsageDelivery(source.pending()[0]!)).toEqual(before);
     expect(reopened.snapshot()).toMatchObject({ budgetInvocations: 1, activeInvocations: 0, chargedTokens: 120, usageProjectionPending: true });
     source.acknowledge(source.pending()[0]!);
     expect(reopened.snapshot()).toMatchObject({ budgetInvocations: 1, chargedTokens: 14, usageProjectionPending: false });
   });
 
-  it("rolls back both settlement and outbox on storage failure and retries the immutable original observation", async () => {
+  it.each(["receipt", "invocation"])("rolls back settlement and outbox when %s storage fails and retries the immutable observation", async (failure) => {
     const { home, ledger } = await setup({ maxConcurrent: 1 });
-    const call = invocation(ledger), lease = call.admission.reserve(call.request);
+    const call = invocation(ledger), lease = reserveHostFixture(call.admission, call.request);
     const db = new DatabaseSync(path.join(home, "model-admission.sqlite"));
     try {
-      db.exec("CREATE TRIGGER fail_usage_receipt BEFORE INSERT ON model_usage_receipts BEGIN SELECT RAISE(ABORT, 'receipt storage failure'); END");
+      db.exec(`CREATE TRIGGER fail_usage_receipt BEFORE ${failure === "receipt" ? "INSERT ON model_usage_receipts" : "UPDATE OF state ON model_invocations"} BEGIN SELECT RAISE(ABORT, 'receipt storage failure'); END`);
       expect(() => lease.settle(call.message)).toThrow("receipt storage failure");
       expect(ledger.snapshot()).toMatchObject({ activeInvocations: 1, observedTokens: 0, usageProjectionPending: false });
       expect(() => ledger.close()).toThrow(expect.objectContaining({ code: "accounting" }));
@@ -91,12 +93,12 @@ describe("host durable model usage source", () => {
     }
   });
 
-  it("preserves source and budget state when acknowledgement transaction fails", async () => {
+  it.each(["ack", "refund"])("preserves source and budget state when %s transaction fails", async (failure) => {
     const { home, ledger } = await setup();
-    const call = invocation(ledger); call.admission.reserve(call.request).settle(call.message);
+    const call = invocation(ledger); reserveHostFixture(call.admission, call.request).settle(call.message);
     const delivery = call.source.pending()[0]!, db = new DatabaseSync(path.join(home, "model-admission.sqlite"));
     try {
-      db.exec("CREATE TRIGGER fail_usage_ack BEFORE UPDATE OF acknowledged_at ON model_usage_receipts BEGIN SELECT RAISE(ABORT, 'ack failure'); END");
+      db.exec(`CREATE TRIGGER fail_usage_ack BEFORE UPDATE OF ${failure === "ack" ? "acknowledged_at ON model_usage_receipts" : "charged_tokens ON model_invocations"} BEGIN SELECT RAISE(ABORT, 'ack failure'); END`);
       expect(() => call.source.acknowledge(delivery)).toThrow("ack failure");
       expect(ledger.snapshot()).toMatchObject({ chargedTokens: 120, usageProjectionPending: true });
       db.exec("DROP TRIGGER fail_usage_ack"); call.source.acknowledge(delivery);
@@ -106,9 +108,9 @@ describe("host durable model usage source", () => {
 
   it("persists pre-entry known zero before and after capacity reservation without inventing a physical result", async () => {
     const { ledger } = await setup({ maxConcurrent: 1 });
-    const occupied = invocation(ledger), reserved = occupied.admission.reserve(occupied.request);
+    const occupied = invocation(ledger), reserved = reserveHostFixture(occupied.admission, occupied.request);
     const denied = invocation(ledger);
-    expect(() => denied.admission.reserve(denied.request)).toThrow(expect.objectContaining({ code: "capacity" }));
+    expect(() => reserveHostFixture(denied.admission, denied.request)).toThrow(expect.objectContaining({ code: "capacity" }));
     denied.source.reserve(denied.attribution);
     denied.source.record(createUndispatchedModelObservation(denied.attribution, modelUsageUndispatchedProof(denied.attribution)));
     expect(ledger.snapshot()).toMatchObject({ budgetInvocations: 1, activeInvocations: 1, chargedTokens: 120 });
@@ -125,7 +127,7 @@ describe("host durable model usage source", () => {
 
   it("isolates workspace sources and rejects forged delivery or direct physical-record bypass", async () => {
     const { ledger } = await setup();
-    const call = invocation(ledger), other = ledger.usageSource(workspaceB);
+    const call = invocation(ledger), other = hostFixtureSource(ledger.forWorkspace(workspaceB));
     call.source.reserve(call.attribution);
     expect(other.attribution(call.attribution.physicalId)).toBeUndefined();
     expect(() => other.reserve(call.attribution)).toThrow("workspace mismatch");
@@ -138,12 +140,12 @@ describe("host durable model usage source", () => {
 
   it("raises positive overruns immediately and retains unknown debt even after receipt acknowledgement", async () => {
     const { ledger } = await setup({ maxTokens: 1_000 });
-    const call = invocation(ledger), lease = call.admission.reserve(call.request);
+    const call = invocation(ledger), lease = reserveHostFixture(call.admission, call.request);
     call.message.usage.totalTokens = 2_000;
     lease.settle(call.message);
     expect(ledger.snapshot()).toMatchObject({ chargedTokens: 2_000, observedTokens: 2_000, uncertainInvocations: 1 });
     call.source.acknowledge(call.source.pending()[0]!);
     expect(ledger.snapshot()).toMatchObject({ chargedTokens: 2_000, uncertainInvocations: 1, usageProjectionPending: false });
-    expect(() => call.admission.reserve(invocation(ledger).request)).toThrow(expect.objectContaining({ code: "budget" }));
+    expect(() => reserveHostFixture(call.admission, invocation(ledger).request)).toThrow(expect.objectContaining({ code: "budget" }));
   });
 });

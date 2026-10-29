@@ -1,4 +1,6 @@
 import { rm } from "node:fs/promises";
+import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { createAssistantMessageEventStream, fauxProvider, type AssistantMessage } from "@earendil-works/pi-ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ModelRegistry } from "../src/models.js";
@@ -228,11 +230,21 @@ describe("native model dispatch accounting", () => {
   it.each(["source", "projection"] as const)("retries %s persistence from the original observation without redispatch", async (failure) => {
     const f = await fixture();
     const dispatch = scripted(f.registry, f.faux.provider, [f.message]);
-    if (failure === "source") vi.spyOn(f.source, "record").mockImplementationOnce(() => { throw new Error("source unavailable"); });
-    else vi.spyOn(f.store.modelAccountingRepository, "reconcile").mockRejectedValueOnce(new Error("Store temporarily unavailable"));
-    await expect(completeModelInvocation({ models: f.registry.models, model: f.model, context: f.fixture.context,
-      phase: "goal_evaluation", accounting: f.registry.accountingForRun(f.parent.run.id) })).rejects.toThrow("accounting");
-    await drainModelCallAccounting(f.registry.models);
+    const replacement = vi.spyOn(f.store.modelAccountingRepository, "reconcile").mockImplementation(async () => {
+      throw new Error("Public repository replacement must not execute");
+    });
+    const db = new DatabaseSync(path.join(f.options.dataRoot, "ledger.sqlite"));
+    try {
+      if (failure === "source") vi.spyOn(f.source, "record").mockImplementationOnce(() => { throw new Error("source unavailable"); });
+      else db.exec("CREATE TRIGGER fail_live_projection BEFORE INSERT ON model_usage_claims BEGIN SELECT RAISE(ABORT,'live projection unavailable'); END");
+      await expect(completeModelInvocation({ models: f.registry.models, model: f.model, context: f.fixture.context,
+        phase: "goal_evaluation", accounting: f.registry.accountingForRun(f.parent.run.id) })).rejects.toThrow("accounting");
+      expect(db.prepare("SELECT count(*) AS n FROM model_usage_claims").get()?.["n"]).toBe(0);
+      if (failure === "projection") expect(f.source.pending()).toHaveLength(1);
+      db.exec("DROP TRIGGER IF EXISTS fail_live_projection");
+      await drainModelCallAccounting(f.registry.models);
+      expect(replacement).not.toHaveBeenCalled();
+    } finally { db.exec("DROP TRIGGER IF EXISTS fail_live_projection"); db.close(); replacement.mockRestore(); }
     expect(dispatch).toHaveBeenCalledOnce();
     expect((await f.store.modelAccountingRepository.readRunAccounting(f.parent.run.id)).usage.costUsd).toBe(0.033);
     expect((await f.store.listRunEvents(f.parent.run.id)).filter((event) => event.type === "model.usage.reconciled")).toHaveLength(1);

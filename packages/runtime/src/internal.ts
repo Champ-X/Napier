@@ -20,8 +20,5 @@ export type {
 } from "./run-event-query-port.js";
 export type { WorkspaceProcessSessionEventType } from "./workspace-process-event-model.js";
 export { validateModelInvocationExperimentNames } from "@napier/contracts";
-export { ModelUsageReceiptSpool } from "./model-usage-source.js";
-export type { ModelUsageSource } from "./model-usage-source.js";
-export { readVerifiedModelUsageDelivery } from "./model-usage-delivery.js";
-export type { VerifiedModelUsageDelivery } from "./model-usage-delivery.js";
-export { normalizeModelPhysicalObservation } from "./model-usage-observation.js";
+export { HostModelAccounting } from "./host-model-accounting.js";
+export type { HostModelAccountingPolicy } from "./host-model-accounting-policy.js";

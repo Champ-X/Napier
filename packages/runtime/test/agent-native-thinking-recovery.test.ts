@@ -4,6 +4,7 @@ import {
   type AssistantMessage, type Context, type Model, type Api, type StreamOptions,
 } from "@earendil-works/pi-ai";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import type { StoreEventService } from "../src/store-event-service.js";
 import { ModelRegistry } from "../src/models.js";
 import { createLocalModelCallAdmission } from "../src/model-call-local-admission.js";
 import { drainModelCallAccounting } from "../src/model-call-admission.js";
@@ -148,9 +149,14 @@ it("shares one thinking retry across native routed candidates after a retryable 
 
 it("waits for this attempt's Store projection and ACK while quarantining late raw text and tools", async () => {
   const f = await fixture(), first = createAssistantMessageEventStream(), cancelled = deferred(), committed = deferred(), release = deferred();
-  const reconcile = f.store.modelAccountingRepository.reconcile.bind(f.store.modelAccountingRepository);
-  vi.spyOn(f.store.modelAccountingRepository, "reconcile").mockImplementationOnce(async (delivery) => {
-    const result = await reconcile(delivery); committed.resolve(); await release.promise; return result;
+  // Test-only native persistence barrier: wait after the actual SQLite claim
+  // commit, before its owning repository can ACK. Public reconcile is not used.
+  const persistence = Reflect.get(f.store, "eventService") as StoreEventService;
+  const persist = persistence.persist.bind(persistence);
+  let held = false;
+  vi.spyOn(persistence, "persist").mockImplementation(async (events, mode, mutation) => {
+    await persist(events, mode, mutation);
+    if (mutation?.kind === "claim" && !held) { held = true; committed.resolve(); await release.promise; }
   });
   const dispatch = providerScript(f, first, (index, _context, options) => {
     if (index === 1) options?.signal?.addEventListener("abort", cancelled.resolve, { once: true });

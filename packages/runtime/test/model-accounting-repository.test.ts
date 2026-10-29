@@ -2,7 +2,7 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { emptyUsage } from "@napier/contracts";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { LocalStore } from "../src/store.js";
 import { canonicalJson } from "../src/ed25519.js";
 import { issueModelUndispatchedDriverProof } from "../src/model-call-attribution.js";
@@ -105,6 +105,23 @@ describe("native model usage accounting", () => {
     expect((await f.store.modelAccountingRepository.rejectUndispatched(proof, "aborted_before_entry")).outcome).toBe("duplicate");
     expect(counts(f)).toEqual(before); expect(first.outcome).toBe("applied");
     expect(f.store.listRuns(f.thread.id)[0]).toMatchObject({ usage: emptyUsage(), usageStatus: "complete" });
+  });
+
+  it("commits undispatched claims through the private native path before acknowledging", async () => {
+    const f = await fixture(), call = await f.main(), proof = issueModelUndispatchedDriverProof(call.prepared);
+    const replacement = vi.spyOn(f.store.modelAccountingRepository, "reconcile").mockImplementation(async () => {
+      throw new Error("Public projection replacement must not execute");
+    });
+    const db = new DatabaseSync(path.join(f.options.dataRoot, "ledger.sqlite"));
+    try {
+      db.exec("CREATE TRIGGER fail_undispatched_projection BEFORE INSERT ON model_usage_claims BEGIN SELECT RAISE(ABORT,'undispatched projection unavailable'); END");
+      await expect(f.store.modelAccountingRepository.rejectUndispatched(proof, "aborted_before_entry")).rejects.toThrow("undispatched projection unavailable");
+      expect(f.source.pending()).toHaveLength(1); expect(counts(f).claims).toBe(0);
+      db.exec("DROP TRIGGER fail_undispatched_projection");
+      await f.store.modelAccountingRepository.rejectUndispatched(proof, "aborted_before_entry");
+      expect(f.source.pending()).toHaveLength(0); expect(counts(f).claims).toBe(1);
+      expect(replacement).not.toHaveBeenCalled();
+    } finally { db.exec("DROP TRIGGER IF EXISTS fail_undispatched_projection"); db.close(); replacement.mockRestore(); }
   });
 
   it("rejects copied delivery/owner authority and foreign Store projection", async () => {

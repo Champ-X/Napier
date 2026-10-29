@@ -1,3 +1,4 @@
+import { hostFixtureSource, reserveHostFixture } from "./workspace-model-accounting-fixture.js";
 import { mkdir, mkdtemp, rename, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -6,7 +7,7 @@ import { emptyUsage } from "@napier/contracts";
 import { LocalStore } from "@napier/runtime/store";
 import { readEnteredModelCall } from "../../../packages/runtime/dist/model-call-attribution.js";
 import { modelUsageFixture } from "../../../packages/runtime/test/model-usage-fixture.js";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceModelAdmission } from "../src/workspace-model-admission.js";
 import { resolveWorkspaceRuntimeIdentity } from "../src/workspace-runtime-identity.js";
 import { reconcileWorkspaceModelUsage } from "../src/workspace-model-usage-recovery.js";
@@ -26,7 +27,7 @@ async function setup() {
   const admission = await WorkspaceModelAdmission.open(stateHome); admissions.push(admission);
   const options = { workspaceRoot: identity.root, dataRoot: identity.dataRoot };
   const store = new LocalStore(options); stores.push(store); await store.initialize();
-  const source = admission.usageSource(identity.workspaceId);
+  const source = hostFixtureSource(admission.forWorkspace(identity.workspaceId));
   store.modelAccountingRepository.configureSource({ source, hostWorkspaceId: identity.workspaceId });
   const agentId = store.listAgents()[0]!.id;
   const thread = await store.createThread({ agentId, title: "Usage recovery stays accounting-only" });
@@ -42,7 +43,7 @@ async function setup() {
   });
   const entered = await store.modelAccountingRepository.enter(prepared);
   const attribution = readEnteredModelCall(entered).attribution;
-  const physical = admission.forWorkspace(identity.workspaceId).reserve({ method: "completeSimple", model: fixture.model, attribution });
+  const physical = reserveHostFixture(admission.forWorkspace(identity.workspaceId), { method: "completeSimple", model: fixture.model, attribution }, entered);
   return { root, identity, options, stateHome, admission, store, source, thread, leased, physical, message: fixture.message };
 }
 async function openStore(options: ConstructorParameters<typeof LocalStore>[0]) {
@@ -54,6 +55,61 @@ async function cancel(f: Awaited<ReturnType<typeof setup>>) {
 }
 
 describe("nonexecuting host usage recovery", () => {
+  it("rejects fake and copied Store destinations before releasing any source debt", async () => {
+    const f = await setup(); f.physical.settle(f.message);
+    const fakeReconcile = vi.fn(async () => undefined);
+    for (const fake of [{ modelAccountingRepository: { reconcile: fakeReconcile } }, { ...f.store }, Object.create(f.store)]) {
+      await expect(f.admission.reconcileUsage(f.identity.workspaceId, fake as LocalStore)).rejects.toThrow("Native Store accounting destination");
+      expect(f.admission.snapshot()).toMatchObject({ chargedTokens: 120, usageProjectionPending: true });
+    }
+    expect(fakeReconcile).not.toHaveBeenCalled();
+    await f.admission.reconcileUsage(f.identity.workspaceId, f.store);
+    expect(f.admission.snapshot()).toMatchObject({ chargedTokens: 14, usageProjectionPending: false });
+  });
+
+  it("keeps source and commit authority private on the native repository", async () => {
+    const f = await setup(); f.physical.settle(f.message);
+    const repository = f.store.modelAccountingRepository;
+    for (const key of ["configuration", "config", "host", "persist", "assertAttribution", "authority"])
+      expect(Reflect.get(repository, key)).toBeUndefined();
+    const fakePersist = vi.fn(async () => undefined);
+    Reflect.set(repository, "persist", fakePersist);
+    Reflect.set(repository, "configuration", { source: { sourceId: "forged" } });
+    Reflect.set(repository, "config", () => { throw new Error("Public shadow must not execute"); });
+    const db = new DatabaseSync(path.join(f.identity.dataRoot, "ledger.sqlite"));
+    try {
+      db.exec("CREATE TRIGGER fail_private_projection BEFORE INSERT ON model_usage_claims BEGIN SELECT RAISE(ABORT,'private projection SQL failure'); END");
+      await expect(f.admission.reconcileUsage(f.identity.workspaceId, f.store)).rejects.toThrow("requires reconciliation");
+      expect(f.admission.snapshot()).toMatchObject({ chargedTokens: 120, usageProjectionPending: true });
+      expect(db.prepare("SELECT count(*) AS n FROM model_usage_claims").get()?.["n"]).toBe(0);
+      db.exec("DROP TRIGGER fail_private_projection");
+      await f.admission.reconcileUsage(f.identity.workspaceId, f.store);
+      expect(f.admission.snapshot()).toMatchObject({ chargedTokens: 14, usageProjectionPending: false });
+      expect(db.prepare("SELECT count(*) AS n FROM model_usage_claims").get()?.["n"]).toBe(1);
+      expect(fakePersist).not.toHaveBeenCalled();
+    } finally { db.exec("DROP TRIGGER IF EXISTS fail_private_projection"); db.close(); }
+  });
+
+  it("uses native Store commit despite replaced public methods and retains debt on actual SQL failure", async () => {
+    const f = await setup(); f.physical.settle(f.message);
+    const configure = vi.spyOn(f.store.modelAccountingRepository, "configureSource").mockImplementation(() => undefined);
+    const reconcile = vi.spyOn(f.store.modelAccountingRepository, "reconcile").mockImplementation(async () => {
+      throw new Error("Public replacement must not execute");
+    });
+    const db = new DatabaseSync(path.join(f.identity.dataRoot, "ledger.sqlite"));
+    try {
+      db.exec("CREATE TRIGGER fail_native_projection BEFORE INSERT ON model_usage_claims BEGIN SELECT RAISE(ABORT,'projection SQL failure'); END");
+      await expect(f.admission.reconcileUsage(f.identity.workspaceId, f.store)).rejects.toThrow("requires reconciliation");
+      expect(f.admission.snapshot()).toMatchObject({ chargedTokens: 120, usageProjectionPending: true });
+      expect(db.prepare("SELECT count(*) AS n FROM model_usage_claims").get()?.["n"]).toBe(0);
+      db.exec("DROP TRIGGER fail_native_projection");
+      await f.admission.reconcileUsage(f.identity.workspaceId, f.store);
+      expect(f.admission.snapshot()).toMatchObject({ chargedTokens: 14, usageProjectionPending: false });
+      expect(db.prepare("SELECT count(*) AS n FROM model_usage_claims").get()?.["n"]).toBe(1);
+      expect(configure).not.toHaveBeenCalled(); expect(reconcile).not.toHaveBeenCalled();
+    } finally { db.exec("DROP TRIGGER IF EXISTS fail_native_projection"); db.close(); configure.mockRestore(); reconcile.mockRestore(); }
+  });
+
   it("projects a late source receipt into a closed terminal workspace without changing execution history", async () => {
     const f = await setup(), terminal = await cancel(f);
     const terminalEvents = (await f.store.listRunEvents(terminal.id)).filter((event) => event.type === "run.cancelled");

@@ -1,3 +1,4 @@
+import { hostFixtureSource, reserveHostFixture } from "./workspace-model-accounting-fixture.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -22,7 +23,7 @@ it("does not let copied undispatched data release an active host reservation", a
   );
   const host = await WorkspaceModelAdmission.open(root, { maxConcurrent: 1 });
   const admission = host.forWorkspace(workspaceA),
-    source = admission.usageSource!;
+    source = hostFixtureSource(admission);
   const fixture = modelUsageFixture({
     sourceId: source.sourceId,
     physicalId: randomUUID(),
@@ -49,7 +50,7 @@ it("does not let copied undispatched data release an active host reservation", a
     fixture.attribution,
     proof,
   );
-  admission.reserve({
+  reserveHostFixture(admission, {
     method: "completeSimple",
     model: fixture.model,
     attribution: fixture.attribution,

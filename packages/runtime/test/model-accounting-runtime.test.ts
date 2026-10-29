@@ -1,12 +1,16 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { createAssistantMessageEventStream, fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { expect, it, vi } from "vitest";
 import { createLocalAgentRuntime } from "../src/local-agent-runtime.js";
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
 import { completeModelInvocation } from "../src/model-complete-invocation.js";
 import { ModelUsageReceiptSpool } from "../src/model-usage-source.js";
+import { initializeModelAccountingRuntime } from "../src/model-accounting-runtime.js";
+import { createLocalModelCallAdmission } from "../src/model-call-local-admission.js";
+import { accountingFixture } from "./model-accounting-fixture.js";
 import { modelResultAttribution } from "../src/model-call-attribution.js";
 
 it("standalone shutdown waits for physical observation and closes its durable source after Store projection", async () => {
@@ -41,4 +45,33 @@ it("standalone shutdown waits for physical observation and closes its durable so
     } finally { spool.close(); }
     expect(dispatch).toHaveBeenCalledOnce();
   } finally { await shutdown; await rm(root, { recursive: true, force: true }); }
+});
+
+it.each(["startup", "drain"] as const)("keeps %s source configuration and ACK on the captured native repository", async (phase) => {
+  const f = await accountingFixture(), admission = createLocalModelCallAdmission(f.source);
+  const configure = vi.spyOn(f.store.modelAccountingRepository, "configureSource").mockImplementation(() => {
+    throw new Error("Public source interceptor must not execute");
+  });
+  const reconcile = vi.spyOn(f.store.modelAccountingRepository, "reconcile").mockImplementation(async () => {
+    throw new Error("Public projection replacement must not execute");
+  });
+  const db = new DatabaseSync(path.join(f.options.dataRoot, "ledger.sqlite"));
+  try {
+    const runtime = phase === "drain" ? await initializeModelAccountingRuntime(f.store, admission) : undefined;
+    await f.physical(await f.main());
+    db.exec("CREATE TRIGGER fail_runtime_projection BEFORE INSERT ON model_usage_claims BEGIN SELECT RAISE(ABORT,'runtime projection unavailable'); END");
+    const project = () => runtime ? runtime.drain({}) : initializeModelAccountingRuntime(f.store, admission);
+    await expect(project()).rejects.toThrow("runtime projection unavailable");
+    expect(f.source.pending()).toHaveLength(1);
+    expect(db.prepare("SELECT count(*) AS n FROM model_usage_claims").get()?.["n"]).toBe(0);
+    db.exec("DROP TRIGGER fail_runtime_projection");
+    await project();
+    expect(f.source.pending()).toHaveLength(0);
+    expect(db.prepare("SELECT count(*) AS n FROM model_usage_claims").get()?.["n"]).toBe(1);
+    expect(configure).not.toHaveBeenCalled(); expect(reconcile).not.toHaveBeenCalled();
+  } finally {
+    db.exec("DROP TRIGGER IF EXISTS fail_runtime_projection"); db.close();
+    configure.mockRestore(); reconcile.mockRestore(); f.store.close(); f.source.close();
+    await rm(f.root, { recursive: true, force: true });
+  }
 });

@@ -1,3 +1,4 @@
+import { nativeAccountingDestination } from "./model-accounting-destination.js";
 import type { VerifiedModelUsageDelivery } from "./model-usage-delivery.js";
 import type { ModelUsagePendingFilter, ModelUsageSource } from "./model-usage-source.js";
 
@@ -11,11 +12,12 @@ export async function projectPendingModelUsage(
   repository: ModelUsageProjectionPort,
   filter: ModelUsagePendingFilter = {},
 ): Promise<void> {
+  const destination = nativeAccountingDestination(repository);
   for (;;) {
     const pending = source.pending(filter);
     if (!pending.length) return;
     for (const delivery of pending) {
-      await repository.reconcile(delivery);
+      await destination.reconcile(delivery);
       source.acknowledge(delivery);
     }
   }

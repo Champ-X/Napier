@@ -3,11 +3,14 @@ import { ModelAccountingRepository } from "./model-accounting-repository.js";
 import type { ModelAccountingHost } from "./model-accounting-host.js";
 import { aggregateRunUsage } from "./run-replay.js";
 import type { LedgerModelAccountingMutation, LedgerModelAccountingPort } from "./sqlite-model-accounting.js";
+import { bindNativeAccountingDestination } from "./model-accounting-destination.js";
 
 export type { ModelAccountingRepository } from "./model-accounting-repository.js";
 export function modelAccountingRepositoryForStore(host: unknown,
   persist: (events: RunEvent[], mutation: LedgerModelAccountingMutation) => Promise<void>) {
-  return new ModelAccountingRepository(host as ModelAccountingHost, persist);
+  const repository = new ModelAccountingRepository(host as ModelAccountingHost, persist);
+  bindNativeAccountingDestination(host as object, repository);
+  return repository;
 }
 
 export function readLedgerRunReplayView(ledger: LedgerModelAccountingPort, runId: string, threadId?: string) {
