@@ -4,7 +4,7 @@ Status: the production `index.ts` and Web client now use the registry. Current
 HTTP/Runtime and browser evidence covers independent A/B execution, navigation,
 background automation, preview resources, and reopening completed histories in a
 new production process. **G05-B remains incomplete: global resource/budget
-coordination and active execution recovery after process death need acceptance.**
+coordination and broader operation/review isolation still need acceptance.**
 
 ## Identity and ownership
 
@@ -126,8 +126,8 @@ recovery. The source-bound receipt is
 
 - Add shared admission and budget/resource coordination across all execution
   entry points, including automation/recovery and experiments.
-- Prove active execution recovery across process death in multiple workspaces,
-  including blocked/unsafe operations; completed history reopening is distinct.
+- Extend active execution recovery evidence beyond pre-dispatch interruptions,
+  including blocked/unsafe operations and the unmodified production entry.
 - Replace conservative rotation retention with a complete pending-work index.
 - Extend actual browser acceptance for approval/review isolation. G01–G07 remain active.
 
@@ -157,3 +157,23 @@ It includes retained user Web changes, so it is worktree evidence rather than a
 clean-commit release receipt. Fixture models make zero external model requests.
 The earlier foundational receipt remains unchanged and accurately describes its
 then-unwired boundary.
+
+## Multi-workspace process recovery
+
+`node scripts/check-workspace-runtime-recovery.mjs <new-output-path>` runs a
+source/build-bound SIGKILL scenario. Three custom ledgers deliberately share the
+same thread ID. All three actual Runs reach persisted `run.started` in one host
+process before it is killed. On restart A and B each retain the interrupted parent
+and complete exactly one automatic recovery; C keeps its manual recovery policy
+and creates no attempt. A second restart preserves those counts. The test verifies
+each response identity, restored custom data root, workspace-specific answer, and
+persisted assessment/attempt records.
+
+The receipt is
+[workspace-runtime-recovery-2026-10-29.json](artifacts/workspace-runtime-recovery-2026-10-29.json).
+It records three independent child PIDs and an observed 3209 ms from SIGKILL to A/B
+completion (one observation). This uses the production host and real recovery
+workers with a locally injected faux provider and readiness-only sandbox. The
+interruption precedes model dispatch and tool effects. It does not prove arbitrary
+side-effect recovery, actual `index.ts` active recovery, Workflow or approval UI
+isolation, or live-model quality. External model requests: zero.

@@ -213,6 +213,13 @@
 - 当前构建在 1440/320px 真实浏览器中：A 运行时从侧栏切到复制了相同 threadId 的 B 并提交新任务；B 完成时 A 继续，B 的 stop 不影响 A，A 自动化实际完成。B HTML 相对脚本和同名 Markdown 图片均来自 B；0 page error、0 成功响应身份错配、0 横向溢出。A 完成后独立生产 index 进程重开两边历史与自定义账本。外部模型请求 0；HTML 交互采用既有 DOM click 边界。收据：[workspace-runtime-integration-2026-10-29.json](docs/artifacts/workspace-runtime-integration-2026-10-29.json)，包含保留的用户前端改动，不是干净提交发布证明。
 - G05-B 尚需全局并发／预算协调、运行中任务跨进程崩溃恢复、多工作区审批／review 浏览器验收及细化 rotation 回收。仅勾选注册表与显式寻址实现项，未宣称 G05-B 或 G01–G07 总目标完成。下一步继续资源协调与进程恢复验收。
 
+### 后续推进：G05-B 多工作区进程崩溃恢复
+
+- 暂停后恢复工作，现场核对 `8c14cf34`、21 个本地领先提交与保留用户改动；上一轮属于 **progress**。继续 G01–G07 全范围，未 push。
+- 三个使用自定义 dataRoot、复制相同 threadId 的真实账本在一个 host 进程同时进入已持久化 `run.started`，随后 SIGKILL。新进程中 A/B 各保留 interrupted 原 Run，并各完成唯一一次自动恢复；C 的 manual 策略保留，0 自动恢复尝试。再启第三个独立进程不重复创建续跑；响应身份、答案归属、自定义根目录及持久 assessment/attempt 均核查。
+- 复现脚本 `node scripts/check-workspace-runtime-recovery.mjs <new-output-path>`：1 个真实进程场景通过，严格测试类型检查及 diff check 通过。单次 SIGKILL 至 A/B 完成观测 3209 ms，不作为统计性能或成功率结论。源码／实际使用的 Contracts/Runtime 构建树绑定收据：[workspace-runtime-recovery-2026-10-29.json](docs/artifacts/workspace-runtime-recovery-2026-10-29.json)。
+- 生产 host／recovery worker 真实执行，但 provider 和 readiness sandbox 是本地 fixture；断点在模型分派和工具副作用前，外部模型请求 0。尚不覆盖任意写操作、原样 index 活动恢复或审批 UI 隔离。全局资源／预算协调继续推进，G05-B 和总目标保持未完成。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：

@@ -1,0 +1,1105 @@
+{
+  "kind": "napier.workspace-runtime-recovery-evidence",
+  "schemaVersion": 1,
+  "evidenceClass": "deterministic_process_fault_injection",
+  "capturedAt": "2026-10-29T01:12:44.116Z",
+  "sourceHead": "8c14cf3407810600c69f3e8b8a8fce9b96348c82",
+  "sourceState": "dirty worktree including retained user changes; source and consumed build trees bound independently below",
+  "modelProvider": "faux-workspace-recovery",
+  "externalModelRequests": 0,
+  "command": "node scripts/check-workspace-runtime-recovery.mjs <new-output-path>",
+  "faultMechanism": "SIGKILL after all three workspace Runs persist run.started; no graceful shutdown",
+  "copiedThreadId": "thread_96bdeecb9caa4c44b34b",
+  "fault": {
+    "signal": "SIGKILL",
+    "checkpoint": "persisted run.started before model dispatch"
+  },
+  "processes": [
+    {
+      "pid": 78439,
+      "exitCode": null,
+      "signal": "SIGKILL"
+    },
+    {
+      "pid": 78517,
+      "exitCode": 0,
+      "signal": null
+    },
+    {
+      "pid": 78724,
+      "exitCode": 0,
+      "signal": null
+    }
+  ],
+  "timing": {
+    "killToRecoveryMs": 3209,
+    "totalMs": 5530
+  },
+  "observations": [
+    {
+      "workspaceId": "workspace_ec6a080c4f00ad57290aaa1005ad337c55a876ba66d9658dec69f4117feeaf2d",
+      "restoredWorkspace": {
+        "root": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-workspace-recovery-CnzQfc/a",
+        "dataRoot": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-workspace-recovery-CnzQfc/custom-data-a",
+        "localFirst": true,
+        "isolation": "workspace"
+      },
+      "priorRun": {
+        "id": "run_5995e717044d42bc8f2a",
+        "threadId": "thread_96bdeecb9caa4c44b34b",
+        "agentId": "agent_napier",
+        "status": "running",
+        "source": "user",
+        "releaseIdentitySha256": "f2a753760a3a69ede3cf79d0c692ad7aaded52c69d043002c790b26bab033fde",
+        "startedAt": "2026-10-29T01:12:39.559Z",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "costUsd": 0
+        },
+        "agentRevision": 2,
+        "limits": {
+          "maxTurns": 64,
+          "maxTotalTokens": 0,
+          "maxCostUsd": 25,
+          "timeoutMs": 1800000
+        },
+        "configuration": {
+          "schemaVersion": 9,
+          "agentRevision": 2,
+          "model": {
+            "provider": "faux-workspace-recovery",
+            "id": "faux-1"
+          },
+          "thinkingLevel": "medium",
+          "toolPolicy": "workspace",
+          "enabledTools": [],
+          "enabledSkills": [
+            "artifact-studio",
+            "browser-automation",
+            "data-analysis",
+            "frontend-design",
+            "research-brief",
+            "software-delivery"
+          ],
+          "enabledSubagents": [],
+          "subagentLimits": {
+            "maxConcurrent": 4,
+            "maxTotal": 8,
+            "maxTurns": 16,
+            "timeoutMs": 300000
+          },
+          "runLimits": {
+            "maxTurns": 64,
+            "maxTotalTokens": 0,
+            "maxCostUsd": 25,
+            "timeoutMs": 1800000
+          },
+          "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+          "automaticRecovery": {
+            "mode": "safe_read_only",
+            "maxAttempts": 3,
+            "backoffMs": 1000
+          },
+          "executionMode": "standard",
+          "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+          "modelAdvisor": {
+            "mode": "observe",
+            "enabledRules": [
+              "destructive_command_reference",
+              "unverified_verification_claim"
+            ],
+            "maxCorrectionAttempts": 0
+          },
+          "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+          "promptVariableSnapshotSha256": "9980ad228d8fc4becebc85a0ecaaa9430e283010d5e7872edc58b6c65af62273",
+          "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+          "toolLoopGuard": {
+            "enabled": true,
+            "threshold": 3,
+            "exemptTools": []
+          },
+          "modelRoute": {
+            "schemaVersion": 2,
+            "roles": {
+              "default": {
+                "model": {
+                  "provider": "faux-workspace-recovery",
+                  "id": "faux-1"
+                }
+              }
+            },
+            "retryPolicy": {
+              "jitterRatio": 0.2,
+              "maxBackoffMs": 120000
+            }
+          },
+          "contentSha256": "dd4109b895656b97132a80f7b6a9d40a83c657c7c188588d95a2a7f3a8721eb3"
+        },
+        "lease": {
+          "ownerId": "process:78439:worker_264b88dc94e4420a9349",
+          "acquiredAt": "2026-10-29T01:12:39.558Z",
+          "heartbeatAt": "2026-10-29T01:12:39.558Z",
+          "expiresAt": "2026-10-29T01:13:39.558Z",
+          "revision": 1
+        }
+      },
+      "runs": [
+        {
+          "id": "run_5995e717044d42bc8f2a",
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "agentId": "agent_napier",
+          "status": "interrupted",
+          "source": "user",
+          "releaseIdentitySha256": "f2a753760a3a69ede3cf79d0c692ad7aaded52c69d043002c790b26bab033fde",
+          "startedAt": "2026-10-29T01:12:39.559Z",
+          "usage": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0,
+            "costUsd": 0
+          },
+          "agentRevision": 2,
+          "limits": {
+            "maxTurns": 64,
+            "maxTotalTokens": 0,
+            "maxCostUsd": 25,
+            "timeoutMs": 1800000
+          },
+          "configuration": {
+            "schemaVersion": 9,
+            "agentRevision": 2,
+            "model": {
+              "provider": "faux-workspace-recovery",
+              "id": "faux-1"
+            },
+            "thinkingLevel": "medium",
+            "toolPolicy": "workspace",
+            "enabledTools": [],
+            "enabledSkills": [
+              "artifact-studio",
+              "browser-automation",
+              "data-analysis",
+              "frontend-design",
+              "research-brief",
+              "software-delivery"
+            ],
+            "enabledSubagents": [],
+            "subagentLimits": {
+              "maxConcurrent": 4,
+              "maxTotal": 8,
+              "maxTurns": 16,
+              "timeoutMs": 300000
+            },
+            "runLimits": {
+              "maxTurns": 64,
+              "maxTotalTokens": 0,
+              "maxCostUsd": 25,
+              "timeoutMs": 1800000
+            },
+            "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "automaticRecovery": {
+              "mode": "safe_read_only",
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "executionMode": "standard",
+            "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+            "modelAdvisor": {
+              "mode": "observe",
+              "enabledRules": [
+                "destructive_command_reference",
+                "unverified_verification_claim"
+              ],
+              "maxCorrectionAttempts": 0
+            },
+            "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+            "promptVariableSnapshotSha256": "9980ad228d8fc4becebc85a0ecaaa9430e283010d5e7872edc58b6c65af62273",
+            "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "toolLoopGuard": {
+              "enabled": true,
+              "threshold": 3,
+              "exemptTools": []
+            },
+            "modelRoute": {
+              "schemaVersion": 2,
+              "roles": {
+                "default": {
+                  "model": {
+                    "provider": "faux-workspace-recovery",
+                    "id": "faux-1"
+                  }
+                }
+              },
+              "retryPolicy": {
+                "jitterRatio": 0.2,
+                "maxBackoffMs": 120000
+              }
+            },
+            "contentSha256": "dd4109b895656b97132a80f7b6a9d40a83c657c7c188588d95a2a7f3a8721eb3"
+          },
+          "interruptedAt": "2026-10-29T01:12:40.539Z",
+          "interruptionReason": "The runtime process exited or its renewable owner lease expired before this run reached a terminal state.",
+          "finishedAt": "2026-10-29T01:12:40.539Z",
+          "error": "The runtime process exited or its renewable owner lease expired before this run reached a terminal state."
+        },
+        {
+          "id": "run_f430eb34ed00425398b5",
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "agentId": "agent_napier",
+          "status": "completed",
+          "source": "recovery",
+          "triggerId": "automatic-recovery:run_5995e717044d42bc8f2a:1",
+          "releaseIdentitySha256": "f2a753760a3a69ede3cf79d0c692ad7aaded52c69d043002c790b26bab033fde",
+          "startedAt": "2026-10-29T01:12:42.584Z",
+          "usage": {
+            "inputTokens": 1400,
+            "outputTokens": 8,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 1400,
+            "costUsd": 0
+          },
+          "agentRevision": 2,
+          "limits": {
+            "maxTurns": 64,
+            "maxTotalTokens": 0,
+            "maxCostUsd": 25,
+            "timeoutMs": 1800000
+          },
+          "configuration": {
+            "schemaVersion": 9,
+            "agentRevision": 2,
+            "model": {
+              "provider": "faux-workspace-recovery",
+              "id": "faux-1"
+            },
+            "thinkingLevel": "medium",
+            "toolPolicy": "observe",
+            "enabledTools": [],
+            "enabledSkills": [
+              "artifact-studio",
+              "browser-automation",
+              "data-analysis",
+              "frontend-design",
+              "research-brief",
+              "software-delivery"
+            ],
+            "enabledSubagents": [],
+            "subagentLimits": {
+              "maxConcurrent": 4,
+              "maxTotal": 8,
+              "maxTurns": 16,
+              "timeoutMs": 300000
+            },
+            "runLimits": {
+              "maxTurns": 64,
+              "maxTotalTokens": 0,
+              "maxCostUsd": 25,
+              "timeoutMs": 1800000
+            },
+            "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "automaticRecovery": {
+              "mode": "safe_read_only",
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "executionMode": "safe_read_only_recovery",
+            "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+            "modelAdvisor": {
+              "mode": "observe",
+              "enabledRules": [
+                "destructive_command_reference",
+                "unverified_verification_claim"
+              ],
+              "maxCorrectionAttempts": 0
+            },
+            "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+            "promptVariableSnapshotSha256": "62af9caff66b156d8860ac121c8aca844c192ef7e4a5b11e37cef7f2e8cdde33",
+            "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "toolLoopGuard": {
+              "enabled": true,
+              "threshold": 3,
+              "exemptTools": []
+            },
+            "modelRoute": {
+              "schemaVersion": 2,
+              "roles": {
+                "default": {
+                  "model": {
+                    "provider": "faux-workspace-recovery",
+                    "id": "faux-1"
+                  }
+                }
+              },
+              "retryPolicy": {
+                "jitterRatio": 0.2,
+                "maxBackoffMs": 120000
+              }
+            },
+            "contentSha256": "ff00649a4df49f74133c3e3f38706b2569ab4febab062c2d287adeb646c445e5"
+          },
+          "parentRunId": "run_5995e717044d42bc8f2a",
+          "finishedAt": "2026-10-29T01:12:42.742Z"
+        }
+      ],
+      "assessments": [
+        {
+          "schemaVersion": 1,
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "runId": "run_5995e717044d42bc8f2a",
+          "rootRunId": "run_5995e717044d42bc8f2a",
+          "agentId": "agent_napier",
+          "runConfigurationSha256": "dd4109b895656b97132a80f7b6a9d40a83c657c7c188588d95a2a7f3a8721eb3",
+          "policy": {
+            "mode": "safe_read_only",
+            "maxAttempts": 3,
+            "backoffMs": 1000
+          },
+          "eligible": true,
+          "blockReasons": [],
+          "toolCalls": {
+            "total": 0,
+            "readOnly": 0,
+            "unsafe": 0,
+            "unknownEffect": 0,
+            "unresolved": 0
+          },
+          "unsafeToolNames": [],
+          "unknownEffectToolNames": [],
+          "unresolvedToolNames": [],
+          "eventRange": {
+            "fromSeq": 1,
+            "toSeq": 2,
+            "eventCount": 2,
+            "eventStreamSha256": "c48ff7ad180a85e8ede4a05622420885bac17ec9eb58f8fd40e3af45a1ab4f6b"
+          },
+          "priorAttempts": 0,
+          "eligibleAt": "2026-10-29T01:12:41.539Z",
+          "assessedAt": "2026-10-29T01:12:42.564Z",
+          "contentSha256": "3b77a5157bdb8262dba462fd94a7877dfbde91ea31c68faaca7e7fe18140d12e"
+        }
+      ],
+      "attempts": [
+        {
+          "id": "recovery_a7d94a43cf01484c8a35",
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "agentId": "agent_napier",
+          "rootRunId": "run_5995e717044d42bc8f2a",
+          "interruptedRunId": "run_5995e717044d42bc8f2a",
+          "attempt": 1,
+          "maxAttempts": 3,
+          "triggerId": "automatic-recovery:run_5995e717044d42bc8f2a:1",
+          "assessmentSha256": "3b77a5157bdb8262dba462fd94a7877dfbde91ea31c68faaca7e7fe18140d12e",
+          "status": "completed",
+          "recoveryRunId": "run_f430eb34ed00425398b5",
+          "createdAt": "2026-10-29T01:12:42.564Z",
+          "updatedAt": "2026-10-29T01:12:42.772Z",
+          "startedAt": "2026-10-29T01:12:42.584Z",
+          "finishedAt": "2026-10-29T01:12:42.742Z",
+          "revision": 3,
+          "contentSha256": "4a07e7805d0f9f9531d5af3a06209e7ee26291c327261d7d817e3f6b78fecb91"
+        }
+      ]
+    },
+    {
+      "workspaceId": "workspace_f489afd889a8f2d3287b5e619d30fdefc64a84adf882f4ad2800152687a3e1d0",
+      "restoredWorkspace": {
+        "root": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-workspace-recovery-CnzQfc/b",
+        "dataRoot": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-workspace-recovery-CnzQfc/custom-data-b",
+        "localFirst": true,
+        "isolation": "workspace"
+      },
+      "priorRun": {
+        "id": "run_574b3e81418240a59104",
+        "threadId": "thread_96bdeecb9caa4c44b34b",
+        "agentId": "agent_napier",
+        "status": "running",
+        "source": "user",
+        "releaseIdentitySha256": "f2a753760a3a69ede3cf79d0c692ad7aaded52c69d043002c790b26bab033fde",
+        "startedAt": "2026-10-29T01:12:39.561Z",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "costUsd": 0
+        },
+        "agentRevision": 2,
+        "limits": {
+          "maxTurns": 64,
+          "maxTotalTokens": 0,
+          "maxCostUsd": 25,
+          "timeoutMs": 1800000
+        },
+        "configuration": {
+          "schemaVersion": 9,
+          "agentRevision": 2,
+          "model": {
+            "provider": "faux-workspace-recovery",
+            "id": "faux-1"
+          },
+          "thinkingLevel": "medium",
+          "toolPolicy": "workspace",
+          "enabledTools": [],
+          "enabledSkills": [
+            "artifact-studio",
+            "browser-automation",
+            "data-analysis",
+            "frontend-design",
+            "research-brief",
+            "software-delivery"
+          ],
+          "enabledSubagents": [],
+          "subagentLimits": {
+            "maxConcurrent": 4,
+            "maxTotal": 8,
+            "maxTurns": 16,
+            "timeoutMs": 300000
+          },
+          "runLimits": {
+            "maxTurns": 64,
+            "maxTotalTokens": 0,
+            "maxCostUsd": 25,
+            "timeoutMs": 1800000
+          },
+          "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+          "automaticRecovery": {
+            "mode": "safe_read_only",
+            "maxAttempts": 3,
+            "backoffMs": 1000
+          },
+          "executionMode": "standard",
+          "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+          "modelAdvisor": {
+            "mode": "observe",
+            "enabledRules": [
+              "destructive_command_reference",
+              "unverified_verification_claim"
+            ],
+            "maxCorrectionAttempts": 0
+          },
+          "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+          "promptVariableSnapshotSha256": "6a8b88a6247d2512339565a3a7762cb57581d2b0e055d0e232b9d3449a4c0157",
+          "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+          "toolLoopGuard": {
+            "enabled": true,
+            "threshold": 3,
+            "exemptTools": []
+          },
+          "modelRoute": {
+            "schemaVersion": 2,
+            "roles": {
+              "default": {
+                "model": {
+                  "provider": "faux-workspace-recovery",
+                  "id": "faux-1"
+                }
+              }
+            },
+            "retryPolicy": {
+              "jitterRatio": 0.2,
+              "maxBackoffMs": 120000
+            }
+          },
+          "contentSha256": "21b02cded2bf3f89f84da479ed432c85b35e99f24a9566e357c34db357061567"
+        },
+        "lease": {
+          "ownerId": "process:78439:worker_509dfe8ad7cc49609dd6",
+          "acquiredAt": "2026-10-29T01:12:39.561Z",
+          "heartbeatAt": "2026-10-29T01:12:39.561Z",
+          "expiresAt": "2026-10-29T01:13:39.561Z",
+          "revision": 1
+        }
+      },
+      "runs": [
+        {
+          "id": "run_574b3e81418240a59104",
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "agentId": "agent_napier",
+          "status": "interrupted",
+          "source": "user",
+          "releaseIdentitySha256": "f2a753760a3a69ede3cf79d0c692ad7aaded52c69d043002c790b26bab033fde",
+          "startedAt": "2026-10-29T01:12:39.561Z",
+          "usage": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0,
+            "costUsd": 0
+          },
+          "agentRevision": 2,
+          "limits": {
+            "maxTurns": 64,
+            "maxTotalTokens": 0,
+            "maxCostUsd": 25,
+            "timeoutMs": 1800000
+          },
+          "configuration": {
+            "schemaVersion": 9,
+            "agentRevision": 2,
+            "model": {
+              "provider": "faux-workspace-recovery",
+              "id": "faux-1"
+            },
+            "thinkingLevel": "medium",
+            "toolPolicy": "workspace",
+            "enabledTools": [],
+            "enabledSkills": [
+              "artifact-studio",
+              "browser-automation",
+              "data-analysis",
+              "frontend-design",
+              "research-brief",
+              "software-delivery"
+            ],
+            "enabledSubagents": [],
+            "subagentLimits": {
+              "maxConcurrent": 4,
+              "maxTotal": 8,
+              "maxTurns": 16,
+              "timeoutMs": 300000
+            },
+            "runLimits": {
+              "maxTurns": 64,
+              "maxTotalTokens": 0,
+              "maxCostUsd": 25,
+              "timeoutMs": 1800000
+            },
+            "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "automaticRecovery": {
+              "mode": "safe_read_only",
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "executionMode": "standard",
+            "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+            "modelAdvisor": {
+              "mode": "observe",
+              "enabledRules": [
+                "destructive_command_reference",
+                "unverified_verification_claim"
+              ],
+              "maxCorrectionAttempts": 0
+            },
+            "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+            "promptVariableSnapshotSha256": "6a8b88a6247d2512339565a3a7762cb57581d2b0e055d0e232b9d3449a4c0157",
+            "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "toolLoopGuard": {
+              "enabled": true,
+              "threshold": 3,
+              "exemptTools": []
+            },
+            "modelRoute": {
+              "schemaVersion": 2,
+              "roles": {
+                "default": {
+                  "model": {
+                    "provider": "faux-workspace-recovery",
+                    "id": "faux-1"
+                  }
+                }
+              },
+              "retryPolicy": {
+                "jitterRatio": 0.2,
+                "maxBackoffMs": 120000
+              }
+            },
+            "contentSha256": "21b02cded2bf3f89f84da479ed432c85b35e99f24a9566e357c34db357061567"
+          },
+          "interruptedAt": "2026-10-29T01:12:40.570Z",
+          "interruptionReason": "The runtime process exited or its renewable owner lease expired before this run reached a terminal state.",
+          "finishedAt": "2026-10-29T01:12:40.570Z",
+          "error": "The runtime process exited or its renewable owner lease expired before this run reached a terminal state."
+        },
+        {
+          "id": "run_37148810bf864adabd6f",
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "agentId": "agent_napier",
+          "status": "completed",
+          "source": "recovery",
+          "triggerId": "automatic-recovery:run_574b3e81418240a59104:1",
+          "releaseIdentitySha256": "f2a753760a3a69ede3cf79d0c692ad7aaded52c69d043002c790b26bab033fde",
+          "startedAt": "2026-10-29T01:12:42.608Z",
+          "usage": {
+            "inputTokens": 1400,
+            "outputTokens": 8,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 1400,
+            "costUsd": 0
+          },
+          "agentRevision": 2,
+          "limits": {
+            "maxTurns": 64,
+            "maxTotalTokens": 0,
+            "maxCostUsd": 25,
+            "timeoutMs": 1800000
+          },
+          "configuration": {
+            "schemaVersion": 9,
+            "agentRevision": 2,
+            "model": {
+              "provider": "faux-workspace-recovery",
+              "id": "faux-1"
+            },
+            "thinkingLevel": "medium",
+            "toolPolicy": "observe",
+            "enabledTools": [],
+            "enabledSkills": [
+              "artifact-studio",
+              "browser-automation",
+              "data-analysis",
+              "frontend-design",
+              "research-brief",
+              "software-delivery"
+            ],
+            "enabledSubagents": [],
+            "subagentLimits": {
+              "maxConcurrent": 4,
+              "maxTotal": 8,
+              "maxTurns": 16,
+              "timeoutMs": 300000
+            },
+            "runLimits": {
+              "maxTurns": 64,
+              "maxTotalTokens": 0,
+              "maxCostUsd": 25,
+              "timeoutMs": 1800000
+            },
+            "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "automaticRecovery": {
+              "mode": "safe_read_only",
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "executionMode": "safe_read_only_recovery",
+            "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+            "modelAdvisor": {
+              "mode": "observe",
+              "enabledRules": [
+                "destructive_command_reference",
+                "unverified_verification_claim"
+              ],
+              "maxCorrectionAttempts": 0
+            },
+            "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+            "promptVariableSnapshotSha256": "43eb4f62a15ec889e15eb84b4aa5756cf50b53958aa5f3053f824accb5adc6a5",
+            "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "toolLoopGuard": {
+              "enabled": true,
+              "threshold": 3,
+              "exemptTools": []
+            },
+            "modelRoute": {
+              "schemaVersion": 2,
+              "roles": {
+                "default": {
+                  "model": {
+                    "provider": "faux-workspace-recovery",
+                    "id": "faux-1"
+                  }
+                }
+              },
+              "retryPolicy": {
+                "jitterRatio": 0.2,
+                "maxBackoffMs": 120000
+              }
+            },
+            "contentSha256": "a1705d4e0d1337f634bef6b8e2f99a6e2fa45a0f67d04b7ef6facad5a67415c2"
+          },
+          "parentRunId": "run_574b3e81418240a59104",
+          "finishedAt": "2026-10-29T01:12:42.771Z"
+        }
+      ],
+      "assessments": [
+        {
+          "schemaVersion": 1,
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "runId": "run_574b3e81418240a59104",
+          "rootRunId": "run_574b3e81418240a59104",
+          "agentId": "agent_napier",
+          "runConfigurationSha256": "21b02cded2bf3f89f84da479ed432c85b35e99f24a9566e357c34db357061567",
+          "policy": {
+            "mode": "safe_read_only",
+            "maxAttempts": 3,
+            "backoffMs": 1000
+          },
+          "eligible": true,
+          "blockReasons": [],
+          "toolCalls": {
+            "total": 0,
+            "readOnly": 0,
+            "unsafe": 0,
+            "unknownEffect": 0,
+            "unresolved": 0
+          },
+          "unsafeToolNames": [],
+          "unknownEffectToolNames": [],
+          "unresolvedToolNames": [],
+          "eventRange": {
+            "fromSeq": 1,
+            "toSeq": 2,
+            "eventCount": 2,
+            "eventStreamSha256": "b28311d57b1cbdae517bc1d0a43f1009fd7e420a9d2e36551911447f60970509"
+          },
+          "priorAttempts": 0,
+          "eligibleAt": "2026-10-29T01:12:41.570Z",
+          "assessedAt": "2026-10-29T01:12:42.590Z",
+          "contentSha256": "73d169e64d91a280554ac5d165b118fe9c87ca2386aa95512fb91d8f555c8091"
+        }
+      ],
+      "attempts": [
+        {
+          "id": "recovery_4eafea176e33420c952e",
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "agentId": "agent_napier",
+          "rootRunId": "run_574b3e81418240a59104",
+          "interruptedRunId": "run_574b3e81418240a59104",
+          "attempt": 1,
+          "maxAttempts": 3,
+          "triggerId": "automatic-recovery:run_574b3e81418240a59104:1",
+          "assessmentSha256": "73d169e64d91a280554ac5d165b118fe9c87ca2386aa95512fb91d8f555c8091",
+          "status": "completed",
+          "recoveryRunId": "run_37148810bf864adabd6f",
+          "createdAt": "2026-10-29T01:12:42.590Z",
+          "updatedAt": "2026-10-29T01:12:42.793Z",
+          "startedAt": "2026-10-29T01:12:42.608Z",
+          "finishedAt": "2026-10-29T01:12:42.771Z",
+          "revision": 3,
+          "contentSha256": "2fae47cfeae2384180df3070183c73262ffe317113bff77ec5e1be78498eeacf"
+        }
+      ]
+    },
+    {
+      "workspaceId": "workspace_b84249db5311aedad2833c3713b01af577a98ad9f157e347df3eda1d67bb184f",
+      "restoredWorkspace": {
+        "root": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-workspace-recovery-CnzQfc/c",
+        "dataRoot": "/private/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-workspace-recovery-CnzQfc/custom-data-c",
+        "localFirst": true,
+        "isolation": "workspace"
+      },
+      "priorRun": {
+        "id": "run_1b2b73f342b74610a8fc",
+        "threadId": "thread_96bdeecb9caa4c44b34b",
+        "agentId": "agent_napier",
+        "status": "running",
+        "source": "user",
+        "releaseIdentitySha256": "f2a753760a3a69ede3cf79d0c692ad7aaded52c69d043002c790b26bab033fde",
+        "startedAt": "2026-10-29T01:12:39.562Z",
+        "usage": {
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "costUsd": 0
+        },
+        "agentRevision": 3,
+        "limits": {
+          "maxTurns": 64,
+          "maxTotalTokens": 0,
+          "maxCostUsd": 25,
+          "timeoutMs": 1800000
+        },
+        "configuration": {
+          "schemaVersion": 9,
+          "agentRevision": 3,
+          "model": {
+            "provider": "faux-workspace-recovery",
+            "id": "faux-1"
+          },
+          "thinkingLevel": "medium",
+          "toolPolicy": "workspace",
+          "enabledTools": [],
+          "enabledSkills": [
+            "artifact-studio",
+            "browser-automation",
+            "data-analysis",
+            "frontend-design",
+            "research-brief",
+            "software-delivery"
+          ],
+          "enabledSubagents": [],
+          "subagentLimits": {
+            "maxConcurrent": 4,
+            "maxTotal": 8,
+            "maxTurns": 16,
+            "timeoutMs": 300000
+          },
+          "runLimits": {
+            "maxTurns": 64,
+            "maxTotalTokens": 0,
+            "maxCostUsd": 25,
+            "timeoutMs": 1800000
+          },
+          "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+          "automaticRecovery": {
+            "mode": "manual",
+            "maxAttempts": 3,
+            "backoffMs": 1000
+          },
+          "executionMode": "standard",
+          "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+          "modelAdvisor": {
+            "mode": "observe",
+            "enabledRules": [
+              "destructive_command_reference",
+              "unverified_verification_claim"
+            ],
+            "maxCorrectionAttempts": 0
+          },
+          "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+          "promptVariableSnapshotSha256": "9248ee638e2456cd7816c910eee3d032fa8131e3541aeb2782d3f3c59d623e7e",
+          "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+          "toolLoopGuard": {
+            "enabled": true,
+            "threshold": 3,
+            "exemptTools": []
+          },
+          "modelRoute": {
+            "schemaVersion": 2,
+            "roles": {
+              "default": {
+                "model": {
+                  "provider": "faux-workspace-recovery",
+                  "id": "faux-1"
+                }
+              }
+            },
+            "retryPolicy": {
+              "jitterRatio": 0.2,
+              "maxBackoffMs": 120000
+            }
+          },
+          "contentSha256": "55df33946139fd359bc8bfecd48b2345d2df1f8aeadd2deb94ad2d7c6569764d"
+        },
+        "lease": {
+          "ownerId": "process:78439:worker_3aeed79610ab42079725",
+          "acquiredAt": "2026-10-29T01:12:39.562Z",
+          "heartbeatAt": "2026-10-29T01:12:39.562Z",
+          "expiresAt": "2026-10-29T01:13:39.562Z",
+          "revision": 1
+        }
+      },
+      "runs": [
+        {
+          "id": "run_1b2b73f342b74610a8fc",
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "agentId": "agent_napier",
+          "status": "interrupted",
+          "source": "user",
+          "releaseIdentitySha256": "f2a753760a3a69ede3cf79d0c692ad7aaded52c69d043002c790b26bab033fde",
+          "startedAt": "2026-10-29T01:12:39.562Z",
+          "usage": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0,
+            "costUsd": 0
+          },
+          "agentRevision": 3,
+          "limits": {
+            "maxTurns": 64,
+            "maxTotalTokens": 0,
+            "maxCostUsd": 25,
+            "timeoutMs": 1800000
+          },
+          "configuration": {
+            "schemaVersion": 9,
+            "agentRevision": 3,
+            "model": {
+              "provider": "faux-workspace-recovery",
+              "id": "faux-1"
+            },
+            "thinkingLevel": "medium",
+            "toolPolicy": "workspace",
+            "enabledTools": [],
+            "enabledSkills": [
+              "artifact-studio",
+              "browser-automation",
+              "data-analysis",
+              "frontend-design",
+              "research-brief",
+              "software-delivery"
+            ],
+            "enabledSubagents": [],
+            "subagentLimits": {
+              "maxConcurrent": 4,
+              "maxTotal": 8,
+              "maxTurns": 16,
+              "timeoutMs": 300000
+            },
+            "runLimits": {
+              "maxTurns": 64,
+              "maxTotalTokens": 0,
+              "maxCostUsd": 25,
+              "timeoutMs": 1800000
+            },
+            "systemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "automaticRecovery": {
+              "mode": "manual",
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "executionMode": "standard",
+            "skillCatalogSha256": "9ae8acf31f82118bdd0b63738829f1c5a03755f6991bc3d5268f59120aa264ba",
+            "modelAdvisor": {
+              "mode": "observe",
+              "enabledRules": [
+                "destructive_command_reference",
+                "unverified_verification_claim"
+              ],
+              "maxCorrectionAttempts": 0
+            },
+            "promptVariableCatalogSha256": "9a6c946d22a9f2467a999bd036a4fec600197048296fbc8e308322656da81cd2",
+            "promptVariableSnapshotSha256": "9248ee638e2456cd7816c910eee3d032fa8131e3541aeb2782d3f3c59d623e7e",
+            "resolvedSystemPromptSha256": "99b2b51a8a823832d071baf0a05ddc76c4985f223f7adaaddd3dfab1481d5d7d",
+            "toolLoopGuard": {
+              "enabled": true,
+              "threshold": 3,
+              "exemptTools": []
+            },
+            "modelRoute": {
+              "schemaVersion": 2,
+              "roles": {
+                "default": {
+                  "model": {
+                    "provider": "faux-workspace-recovery",
+                    "id": "faux-1"
+                  }
+                }
+              },
+              "retryPolicy": {
+                "jitterRatio": 0.2,
+                "maxBackoffMs": 120000
+              }
+            },
+            "contentSha256": "55df33946139fd359bc8bfecd48b2345d2df1f8aeadd2deb94ad2d7c6569764d"
+          },
+          "interruptedAt": "2026-10-29T01:12:40.592Z",
+          "interruptionReason": "The runtime process exited or its renewable owner lease expired before this run reached a terminal state.",
+          "finishedAt": "2026-10-29T01:12:40.592Z",
+          "error": "The runtime process exited or its renewable owner lease expired before this run reached a terminal state."
+        }
+      ],
+      "assessments": [
+        {
+          "schemaVersion": 1,
+          "threadId": "thread_96bdeecb9caa4c44b34b",
+          "runId": "run_1b2b73f342b74610a8fc",
+          "rootRunId": "run_1b2b73f342b74610a8fc",
+          "agentId": "agent_napier",
+          "runConfigurationSha256": "55df33946139fd359bc8bfecd48b2345d2df1f8aeadd2deb94ad2d7c6569764d",
+          "policy": {
+            "mode": "manual",
+            "maxAttempts": 3,
+            "backoffMs": 1000
+          },
+          "eligible": false,
+          "blockReasons": [
+            "policy_manual"
+          ],
+          "toolCalls": {
+            "total": 0,
+            "readOnly": 0,
+            "unsafe": 0,
+            "unknownEffect": 0,
+            "unresolved": 0
+          },
+          "unsafeToolNames": [],
+          "unknownEffectToolNames": [],
+          "unresolvedToolNames": [],
+          "eventRange": {
+            "fromSeq": 1,
+            "toSeq": 2,
+            "eventCount": 2,
+            "eventStreamSha256": "d56a78d75ba51730743ac5d1e7ca5531d26fe2649fed7b54f7a900d23fc5437e"
+          },
+          "priorAttempts": 0,
+          "eligibleAt": "2026-10-29T01:12:41.592Z",
+          "assessedAt": "2026-10-29T01:12:40.609Z",
+          "contentSha256": "43f34101f10dbf6389c0bd6568ac23d185e7f934096583929162e703082030be"
+        }
+      ],
+      "attempts": []
+    }
+  ],
+  "tests": {
+    "passed": 1,
+    "failed": 0
+  },
+  "sourceBindings": {
+    "files": [
+      {
+        "path": "apps/server/test/workspace-runtime-recovery-process.test.ts",
+        "sha256": "e4767b282710b611d4c03b8e1364732e1280b753a376fe1712cc7040a00ec024"
+      },
+      {
+        "path": "apps/server/test/workspace-runtime-recovery-process-fixture.ts",
+        "sha256": "d96b41cc57ea552f59b3c6ab17b665728038a77b0dc1e87186ea9c023946b5ae"
+      },
+      {
+        "path": "apps/server/test/process-run-readiness-test-fixture.ts",
+        "sha256": "0de02cdd7b40ac405803cee358e29311ddbc3232d147b94757043c83e81220b1"
+      },
+      {
+        "path": "scripts/check-workspace-runtime-recovery.mjs",
+        "sha256": "2eb29ff4a42619af661956530a3eae162ce0ffac31bf64d1b5081feda66a9bee"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041"
+      },
+      {
+        "path": "node_modules/@earendil-works/pi-ai/package.json",
+        "sha256": "5ff1327178682b9a7a3224f8358eec187e97b5c3f3bd1e77bb45c310aab84865"
+      },
+      {
+        "path": "node_modules/@earendil-works/pi-ai/dist/providers/faux.js",
+        "sha256": "b02c2292c3b9b82cb52605764f1b2eac56d32a8ffff8a2092f2f0f89648d3927"
+      }
+    ],
+    "trees": [
+      {
+        "directory": "apps/server/src",
+        "suffix": ".ts",
+        "fileCount": 157,
+        "sha256": "2f2a6a08829837ad076935c6d7ac1b2ee3f78d4ae0a0dc1e9f34072e2d5505eb"
+      },
+      {
+        "directory": "packages/contracts/src",
+        "suffix": ".ts",
+        "fileCount": 87,
+        "sha256": "ff203ef23ecb972a6b2ad9bf02189bfa0542ffc44a3c552c6e90a727ba0a5a88"
+      },
+      {
+        "directory": "packages/runtime/src",
+        "suffix": ".ts",
+        "fileCount": 1227,
+        "sha256": "69023719e2e6e4f07d19b640edd7c48ccef1f6b4ecfaa4422cd8f10efb5d1d06"
+      },
+      {
+        "directory": "packages/contracts/dist",
+        "suffix": ".js",
+        "fileCount": 87,
+        "sha256": "b6961d6fe2261de68449a795214ca44c44988b42747e16c45dab62fb3afdfb27"
+      },
+      {
+        "directory": "packages/runtime/dist",
+        "suffix": ".js",
+        "fileCount": 1227,
+        "sha256": "c69684a3fb20dfc1af7ecaee678522d2a9f74a9c46d5817b083ce406e453a3c0"
+      }
+    ]
+  },
+  "bindingFormat": "Each tree sha256 hashes UTF-8 JSON.stringify of sorted {path,sha256} entries for its suffix; paths are repository-relative with forward slashes.",
+  "limitations": [
+    "Actual production workspace host and actual recovery workers run in independent child processes; the fixture installs a local faux provider before starting workers.",
+    "This does not launch production index.ts for active recovery. Completed-ledger production-index reopening is covered by the separate workspace-runtime-integration receipt.",
+    "The sandbox fixture executes readiness probes only; this is not OS-sandbox enforcement evidence.",
+    "The fault is before model dispatch or tool execution. No arbitrary external side effects, uncertain writes, Workflow recovery, approval UI, or global budget coordination are accepted here.",
+    "A/B use safe_read_only policy and recover exactly once; C's explicit manual policy remains stopped. These are fixture scenarios, not live-model quality or recovery-rate evidence.",
+    "Timing is one observed local run, not a statistical latency result. Source and consumed build snapshots do not by themselves establish a clean release build."
+  ]
+}
