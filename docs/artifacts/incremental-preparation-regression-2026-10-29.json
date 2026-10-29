@@ -1,0 +1,613 @@
+{
+  "kind": "napier.incremental-preparation-regression",
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-29T11:55:24.472258+00:00",
+  "sourceHead": "2aaf959fa5f1fb1fd9c4250289837dd7c0993cc4",
+  "sourceState": "Uncommitted G07 candidate; source hashes below bind this report, comparison capture is separate.",
+  "externalModelRequests": 0,
+  "uniqueTestFiles": 8,
+  "uniquePassedTests": 127,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "rawReport": {
+    "path": "/tmp/napier-incremental-preparation-regression-20261029.json",
+    "sha256": "642b0565c5526dd7a01e9ec70a5b27645bd772526db1db8a8fa60a0423382d42",
+    "startTime": 1793274448236
+  },
+  "sourceBindings": [
+    {
+      "path": "packages/runtime/src/agent-memory-context.ts",
+      "sha256": "4e472754022031a01afe8effdad22ba022c669b581a5178bd0ceb6de46c498e8"
+    },
+    {
+      "path": "packages/runtime/src/agent-runtime.ts",
+      "sha256": "1aec0e28107e703559625774102d193c13ea7656206ef67e712768a7edc76e52"
+    },
+    {
+      "path": "packages/runtime/src/agent-tool-preflight.ts",
+      "sha256": "ece1a0b2928cef63279dc5581915a09528dedea2d9d61c2f96b8f895a24b8b18"
+    },
+    {
+      "path": "packages/runtime/src/task-memory-context.ts",
+      "sha256": "72cd7f89d528e704a49cd6d98fdd77d028c885fada52f1b79a89fe5a859fd8b8"
+    },
+    {
+      "path": "packages/runtime/src/task-memory-dependencies.ts",
+      "sha256": "c0b63089017ba246cf00ab7b5c28013b585ea90fd7f9312cdab2a844fd3fefa0"
+    },
+    {
+      "path": "packages/runtime/src/run-tool-loop-guard-cursor.ts",
+      "sha256": "3ca417e5d475e07bc1763961899829a8ce817077ed69954a19e855edca0b474f"
+    }
+  ],
+  "files": [
+    {
+      "path": "packages/runtime/test/agent-runtime-loop-cursor.test.ts",
+      "sha256": "e9009a84964f3f483f37c06869debb6d093cd1f61f8469caa4067d43e1c7d375",
+      "assertions": [
+        {
+          "name": "shares one typed cursor between the active Run loop and tool preflight while blocking the fourth repeated read",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/agent-runtime.test.ts",
+      "sha256": "d78d370e152e19d7f05d6eea84f1fc4b0e5d20ee392c4fa720f64b93629906e8",
+      "assertions": [
+        {
+          "name": "AgentRuntime demo path streams and persists a complete run without provider credentials",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path binds enabled Skill file hashes into Run configuration evidence",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path freezes Prompt Variables once and avoids duplicate Skill injection",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path redirects and blocks a repeated tool loop before another side effect",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path fails goal evaluation closed when only the demo model is available",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path continues a live goal until independent evaluation verifies completion",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path records model-aware usage accounting beside raw provider usage",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path records deterministic advisor notices before risky assistant claims are shown",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path respects Agent Model Advisor policy when recording notices",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path fails closed before assistant messages when enforced advisor blockers match",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path corrects enforced blockers with bounded tool-free retries",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path uses an independent zero-tool Advisor before accepting a visible turn",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path fails independent enforcement immediately when the reviewer is unavailable",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path fails closed after exhausting bounded advisor corrections",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path blocks an active goal when its run fails",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path fails a direct runtime run before calling an unconfigured provider",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path fails closed on a provider error message without exposing diagnostics",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path injects only approved memory into the live model context",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path extracts explicit contradictions as scoped correction proposals",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path extracts compatible facts as a reviewed consolidation proposal",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path omits facts with pending corrections from extraction inventory",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path expires due memory before prompt injection and audits the boundary",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path marks imported fixture history as untrusted data in live model context",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path injects a durable steering message into the next available model turn",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path delivers durable follow-up work only after the initial answer settles",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path cancels follow-up work before it can exceed the frozen Run turn budget",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path records and reinjects a durable Agent milestone before the next turn",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path pauses for a durable operator decision and resumes in a linked Run",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path delegates into an isolated subagent and returns evidence to the parent",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path maintains a durable execution plan through internal ledger tools",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path plans, produces, and verifies a nested artifact through parent Agent tools",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path edits a workspace file through hash-bound policy-checked tools",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path creates nested artifact files through parent Agent tools",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path replaces a symbol range through hash-bound parent Agent tools",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path accepts verification claims after a parent Agent edit is re-verified",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path inspects structured data through the parent Agent ledger",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path inspects code symbols through the parent Agent ledger",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path lists workspace symbols through the parent Agent ledger",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path reads symbol source through the parent Agent ledger",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path runs read-only sandboxed verification through the parent Agent",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path runs a bounded command without persisting argv or output text",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path stops at the snapshotted parent turn budget before executing a tool",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path calls only approved MCP tools through the parent policy boundary",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path compacts long history into a reusable hash-bound checkpoint",
+          "status": "passed"
+        },
+        {
+          "name": "AgentRuntime demo path resumes an interrupted run as a linked child without replay assumptions",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/agent-tool-preflight.test.ts",
+      "sha256": "25730cf5e7e9628dfa655bf14780efd6cfdc73a2fbf1ae675bf819a83f8918da",
+      "assertions": [
+        {
+          "name": "Agent tool capability-block preflight maps the reported Chinese false blocker to recoverable tools",
+          "status": "passed"
+        },
+        {
+          "name": "Agent tool capability-block preflight does not reinterpret a genuine product-scope decision as a capability blocker",
+          "status": "passed"
+        },
+        {
+          "name": "Agent tool capability-block preflight binds an unavailable assertion to the nearby capability instead of the whole message",
+          "status": "passed"
+        },
+        {
+          "name": "Agent tool capability-block preflight distinguishes policy blocks and permanent unavailability from correctable failures",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/run-tool-loop-guard-cursor.test.ts",
+      "sha256": "154171bdf0b43c805c62746bc809a1ef97b02fd423b3c09d77ce6d3e4754463d",
+      "assertions": [
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'completed repeated calls'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'late terminal in open tail'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'late terminal after next response'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'duplicate terminal after trigger'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'blocked by loop guard'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'blocked by other policy'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'multicall retires active guard'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'empty tool list retires active guard'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'malformed response still bounds prior…'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'malformed call and terminal payloads'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'changed strategy'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'changed output'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'changed terminal status'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'all failed attempts'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'redacted calls and results'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'reused call IDs'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'malformed trigger ignored'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor equals unchanged full replay at every prefix: 'interleaved noise and foreign Run'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor reprojects policy changes and isolates cached rows and returned receipts",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor serializes concurrent refreshes and resumes after a failed query without advancing",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'non-array'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'wrong Run'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'wrong Thread'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'unrequested type'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'unsafe sequence'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'fractional sequence'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'stale sequence'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'duplicate sequence'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'unordered sequence'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor does not commit any part of a malformed delta: 'partially valid then wrong Run'",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor rejects invalid policy without advancing and allows a valid retry",
+          "status": "passed"
+        },
+        {
+          "name": "Run tool-loop guard cursor reads only new typed rows through real SQLite and keeps independent Runs isolated",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/task-memory-context.test.ts",
+      "sha256": "470411ab693a7417a2b0d28df769e15622f4fc8b9e1cf9ceafe26841ed4df1b4",
+      "assertions": [
+        {
+          "name": "retrieves an older relevant fact ahead of recent unrelated context",
+          "status": "passed"
+        },
+        {
+          "name": "retrieves an older relevant fact ahead of recent unrelated context",
+          "status": "passed"
+        },
+        {
+          "name": "retrieves an older relevant fact ahead of recent unrelated context",
+          "status": "passed"
+        },
+        {
+          "name": "ranks Chinese module terms and preserves general constraints when space permits",
+          "status": "passed"
+        },
+        {
+          "name": "ranks Chinese module terms and preserves general constraints when space permits",
+          "status": "passed"
+        },
+        {
+          "name": "ranks Chinese module terms and preserves general constraints when space permits",
+          "status": "passed"
+        },
+        {
+          "name": "excludes unreviewed, expired and foreign-agent facts before retrieval",
+          "status": "passed"
+        },
+        {
+          "name": "excludes unreviewed, expired and foreign-agent facts before retrieval",
+          "status": "passed"
+        },
+        {
+          "name": "excludes unreviewed, expired and foreign-agent facts before retrieval",
+          "status": "passed"
+        },
+        {
+          "name": "invalidates facts when a referenced source changes, while retaining unrelated facts",
+          "status": "passed"
+        },
+        {
+          "name": "invalidates facts when a referenced source changes, while retaining unrelated facts",
+          "status": "passed"
+        },
+        {
+          "name": "invalidates facts when a referenced source changes, while retaining unrelated facts",
+          "status": "passed"
+        },
+        {
+          "name": "treats search syntax and embedded commands as data",
+          "status": "passed"
+        },
+        {
+          "name": "treats search syntax and embedded commands as data",
+          "status": "passed"
+        },
+        {
+          "name": "treats search syntax and embedded commands as data",
+          "status": "passed"
+        },
+        {
+          "name": "reopens a persistent index without reindexing, preserving exact in-memory ranking and context",
+          "status": "passed"
+        },
+        {
+          "name": "reopens a persistent index without reindexing, preserving exact in-memory ranking and context",
+          "status": "passed"
+        },
+        {
+          "name": "reopens a persistent index without reindexing, preserving exact in-memory ranking and context",
+          "status": "passed"
+        },
+        {
+          "name": "removes revoked and source-stale rows before searching and isolates agent indexes",
+          "status": "passed"
+        },
+        {
+          "name": "removes revoked and source-stale rows before searching and isolates agent indexes",
+          "status": "passed"
+        },
+        {
+          "name": "removes revoked and source-stale rows before searching and isolates agent indexes",
+          "status": "passed"
+        },
+        {
+          "name": "falls back to identical in-memory retrieval when the derived index is corrupt",
+          "status": "passed"
+        },
+        {
+          "name": "falls back to identical in-memory retrieval when the derived index is corrupt",
+          "status": "passed"
+        },
+        {
+          "name": "falls back to identical in-memory retrieval when the derived index is corrupt",
+          "status": "passed"
+        },
+        {
+          "name": "does not persist a search index for restricted read-only execution",
+          "status": "passed"
+        },
+        {
+          "name": "does not persist a search index for restricted read-only execution",
+          "status": "passed"
+        },
+        {
+          "name": "does not persist a search index for restricted read-only execution",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/task-memory-dependencies.test.ts",
+      "sha256": "07faefe2303a24753c5c1ea852fe136dc54f67dcbfb76e21a14725f8f07db057",
+      "assertions": [
+        {
+          "name": "invocation-scoped memory dependency observations shares exact-path digests but compares each fact's declared version and rechecks after indexing",
+          "status": "passed"
+        },
+        {
+          "name": "invocation-scoped memory dependency observations reads fresh content again in each invocation and never retains a removed source",
+          "status": "passed"
+        },
+        {
+          "name": "invocation-scoped memory dependency observations removes all dependent facts if a source change occurs during index preparation",
+          "status": "passed"
+        },
+        {
+          "name": "invocation-scoped memory dependency observations removes all dependent facts if a source remove occurs during index preparation",
+          "status": "passed"
+        },
+        {
+          "name": "invocation-scoped memory dependency observations removes all dependent facts if a source escape occurs during index preparation",
+          "status": "passed"
+        },
+        {
+          "name": "invocation-scoped memory dependency observations checks eligibility before opening dependencies and preserves path boundaries and UTF-8 validation",
+          "status": "passed"
+        },
+        {
+          "name": "invocation-scoped memory dependency observations does not equate differently addressed dependencies or promote a failed initial observation",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/task-memory-query-provenance.test.ts",
+      "sha256": "1a31094bdeecd024e52f32967f46d3a1d1fda28bfa292a65b6717ed18a274fb7",
+      "assertions": [
+        {
+          "name": "retains task memory when repeated runtime user-role hints displace the original request",
+          "status": "passed"
+        },
+        {
+          "name": "recovers task queries from the validated parent lineage with legacy working state",
+          "status": "passed"
+        },
+        {
+          "name": "recovers task queries from the validated parent lineage with evidence-v1 working state",
+          "status": "passed"
+        },
+        {
+          "name": "rejects undelivered control text instead of treating it as a user amendment",
+          "status": "passed"
+        },
+        {
+          "name": "uses workflow input but never promotes queued messages or runtime hints into the query",
+          "status": "passed"
+        },
+        {
+          "name": "does not infer an original user request from a compacted transcript when no durable task source exists",
+          "status": "passed"
+        },
+        {
+          "name": "retains prior user turns for an ordinary follow-up without importing their tool state",
+          "status": "passed"
+        },
+        {
+          "name": "uses branch-local copied history during recovery without following the foreign source parent",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/tool-loop-guard.test.ts",
+      "sha256": "4b83cc7438f6f508bd71064d6826d21b280a76ed2c09e78fc7040d25e13a738d",
+      "assertions": [
+        {
+          "name": "Tool loop guard normalizes a strict revisioned policy and hash-only context receipt",
+          "status": "passed"
+        },
+        {
+          "name": "Tool loop guard detects only consecutive identical single-tool calls and results",
+          "status": "passed"
+        },
+        {
+          "name": "Tool loop guard projects, grounds, activates, and retires trigger receipts",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "preservedUserFiles": {
+    "count": 28,
+    "manifestPath": "/tmp/napier-overlay-preserved-user-files-20261029.json",
+    "manifestSha256": "98005eb6811f8ebbf87e5324d47d6431c9ca1394026ea8a06fe3e4ca74a99157",
+    "allUnchangedAtCapture": true
+  },
+  "limits": [
+    "Deterministic unit/integration tests use fixture/demo model behavior; no current live-model quality or model cost claim.",
+    "The test runner counts nested suites separately; unique test file count is computed from exact testResults paths.",
+    "Source bindings were captured after the successful run; production source was frozen through binding capture.",
+    "Performance and exact pinned-reference semantic comparisons are recorded separately."
+  ]
+}

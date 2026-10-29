@@ -5,6 +5,7 @@ import { readWorkspaceTextEvidence } from "./tools.js";
 import { searchTaskMemoryIndex } from "./task-memory-index.js";
 import { selectTaskMemoryCandidates } from "./task-memory-selection.js";
 import { formatGroupedTaskMemory } from "./task-memory-grouping.js";
+import { TaskMemoryDependencySnapshot } from "./task-memory-dependencies.js";
 
 const COMMON = new Set([
   "the",
@@ -45,15 +46,16 @@ export async function formatTaskMemoryContext(input: {
       !isMemoryReviewDue(fact, now) &&
       (fact.scope === "workspace" || fact.agentId === input.agentId),
   );
-  const staleFactIds: string[] = [];
-  const facts: MemoryFact[] = [];
+  const dependencies = new TaskMemoryDependencySnapshot(async (filename) =>
+    (await readWorkspaceTextEvidence(input.workspaceRoot, { path: filename })).fileSha256,
+  );
+  let facts: MemoryFact[] = [];
   for (const fact of eligible) {
-    if (await dependenciesCurrent(fact, input.workspaceRoot)) facts.push(fact);
-    else staleFactIds.push(fact.id);
+    if (await dependencies.accepts(fact)) facts.push(fact);
   }
   const terms = tokenize(input.query).slice(0, 64);
-  const index = await searchTaskMemoryIndex({
-    documents: facts.map((fact) => ({
+  const search = (current: readonly MemoryFact[]) => searchTaskMemoryIndex({
+    documents: current.map((fact) => ({
       id: fact.id,
       content: `${fact.content} ${
         fact.source.fileDependencies
@@ -67,6 +69,17 @@ export async function formatTaskMemoryContext(input: {
     agentId: input.agentId,
     ...(input.dataRoot ? { dataRoot: input.dataRoot } : {}),
   });
+  let index = await search(facts);
+  await dependencies.revalidate();
+  const stable = facts.filter((fact) => dependencies.retains(fact));
+  if (stable.length !== facts.length) {
+    facts = stable;
+    // Remove invalidated rows before ranking again; an earlier index result
+    // cannot carry a fact whose source changed while the index was prepared.
+    index = await search(facts);
+  }
+  const retained = new Set(facts);
+  const staleFactIds = eligible.filter((fact) => !retained.has(fact)).map((fact) => fact.id);
   const selected = selectTaskMemoryCandidates({
     facts,
     scores: index.scores,
@@ -94,6 +107,7 @@ export async function formatTaskMemoryContext(input: {
       )),
     grouping: grouped?.grouping,
     staleFactIds,
+    dependencyValidation: dependencies.receipt(),
     retrievalVersion:
       input.policy === "task-aware-grouped-v3"
         ? "sqlite-fts5-grouped-v3"
@@ -123,23 +137,6 @@ function tokenize(text: string): string[] {
         .filter((word) => word.length > 1 && !COMMON.has(word)),
     ),
   ];
-}
-
-async function dependenciesCurrent(
-  fact: MemoryFact,
-  root: string,
-): Promise<boolean> {
-  for (const expected of fact.source.fileDependencies ?? []) {
-    try {
-      const actual = await readWorkspaceTextEvidence(root, {
-        path: expected.path,
-      });
-      if (actual.fileSha256 !== expected.sha256) return false;
-    } catch {
-      return false;
-    }
-  }
-  return true;
 }
 
 /** Bind only concrete, backtick-delimited file references that can be read

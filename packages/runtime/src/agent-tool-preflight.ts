@@ -10,11 +10,11 @@ import type { EventSink } from "./event-sink.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import { preflightProgressTool } from "./run-progress-tracker-host.js";
 import type { RunProgressTracker } from "./run-progress-vector.js";
+import { RunToolLoopGuardCursor } from "./run-tool-loop-guard-cursor.js";
 import type { LocalStore } from "./store.js";
 import { unresolvedCapabilityClaim } from "./capability-availability-guard.js";
 import {
   createToolCallSha256,
-  latestActiveToolLoopGuard,
   TOOL_LOOP_GUARD_POLICY_REASON,
   toolLoopGuardBlockReason,
 } from "./tool-loop-guard.js";
@@ -46,6 +46,7 @@ export function createAgentToolPreflight(input: {
   activeToolNames(): ReadonlySet<string>;
   runtimeAvailableToolNames(): ReadonlySet<string>;
   toolLoopGuardPolicy: ToolLoopGuardPolicy;
+  toolLoopGuardCursor?: RunToolLoopGuardCursor;
   verificationOrder?: "before-first-patch-v1" | undefined;
   onEvent?: EventSink;
 }): {
@@ -59,6 +60,8 @@ export function createAgentToolPreflight(input: {
     signal?: AbortSignal,
   ): Promise<BeforeToolCallResult | undefined>;
 } {
+  const toolLoopGuardCursor = input.toolLoopGuardCursor ??
+    new RunToolLoopGuardCursor(input.store, input.policy.run);
   const recordBlock = async (
     toolCall: ToolCallContext["toolCall"],
     args: unknown,
@@ -200,11 +203,7 @@ export function createAgentToolPreflight(input: {
           harnessInterventionReason: "budget_pause",
         });
       }
-      const guard = latestActiveToolLoopGuard(
-        await input.store.listRunEvents(input.policy.run.id),
-        input.policy.run.id,
-        input.toolLoopGuardPolicy,
-      );
+      const guard = (await toolLoopGuardCursor.refresh(input.toolLoopGuardPolicy)).active;
       if (
         guard &&
         toolCalls.length === 1 &&

@@ -87,3 +87,117 @@ fresh, invocation-scoped deduplication of repeated file dependencies. Both must
 be compared with the unchanged full replay/context path, including late terminal
 events, changed file contents, revoked facts and access-boundary failures. No
 performance improvement has been claimed from this baseline alone.
+
+## Incremental preparation candidate
+
+Each active Run now owns one loop-guard cursor shared by the model loop and tool
+preflight. It reads only new `model.response`, tool terminal/block and loop-guard
+trigger events. Query, scope/order validation, detached copying and projection
+must all succeed before its watermark advances. The existing full-replay
+functions still project the retained relevant history, including late terminal
+events and changed policy. This reduces repeated event retrieval; it does not
+make replay CPU constant or bound the retained typed history independently of
+Run length.
+
+Memory dependency observations last for one invocation. Exact repeated paths
+share a digest, but every fact compares its own expected version. Reused paths
+receive a second content read after indexing; a changed, missing or inaccessible
+source removes every dependent fact and resynchronizes the index before
+selection. A path referenced only once retains one read. Eligibility checks
+still precede file access, and the existing workspace boundary and UTF-8 checks
+remain authoritative. There is no cross-invocation freshness cache. Stable
+inputs preserve context and semantic receipts; a source changed during indexing
+is intentionally excluded even where the old implementation could retain it.
+
+The [candidate regression receipt](artifacts/incremental-preparation-regression-2026-10-29.json)
+records 8 files and 127 passing tests. These cover full-replay equality at each
+prefix, late/duplicate terminals, policy changes, failed or malformed deltas,
+serialized refreshes, real SQLite query isolation, the production Run/preflight
+integration and memory freshness/provenance boundaries. Fixture/demo model
+execution in those tests is not a live-model quality evaluation.
+
+## Pinned-reference comparison on 2026-10-29
+
+Run `node scripts/compare-harness-preparation.mjs <new-receipt.json>` after
+compiling Runtime and Contracts. `--smoke` uses 300 events, enough to exercise
+the actual loop trigger. Every invocation refuses to overwrite its receipt and
+retains its private raw directory under ignored `benchmark-results/`.
+
+The [successful comparison](artifacts/harness-preparation-comparison-2026-10-29-v2.json)
+uses unchanged Runtime source from `0560f00944804b151086269b190377c6f8a0a7ce`,
+materialized with its complete 84-module relative import closure. Original Git
+blob IDs, source/emitted hashes and import edges are retained. Both arms share
+bound package dependencies and the same fixture bytes, with private ledgers and
+indexes. Production bulk bootstrap, reopen/hash verification and delta writes
+are outside timing. The earlier baseline receipt is unchanged.
+
+Eight fresh subprocesses execute AB then BA with the probe enabled, followed by
+AB then BA without it. All 168 observations completed; 84 paired outputs match
+exactly, including the complete invocation receipt except the declared index
+metrics and new dependency-validation metrics. Nine separate filesystem/SQLite
+cases cover stable and conflicting versions, inter-invocation edits/restoration,
+revoked/expired/foreign/unreviewed facts, missing/invalid/escaped sources and the
+intentional during-index freshness difference. The latter retains both unsafe
+old facts in the reference and excludes both from the candidate and its index.
+An [independent verification](artifacts/incremental-preparation-verification-2026-10-29.json)
+checks the current source/build/script bindings, Git blobs, worker report hashes,
+all paired semantics, all 16 trigger stages and the 28 preserved user files.
+
+The following ranges are the two probe-off processes per arm; warm memory ranges
+include two warm observations in each process. Times describe these synthetic
+components, not end-to-end Run or model latency.
+
+| Component | Scale/state | Reference wall ms | Candidate wall ms |
+| --- | --- | --- | --- |
+| Loop guard | 10k events, cold | 17.92–19.94 | 2.75–2.89 |
+| Loop guard | 10k events, unchanged warm | 16.16–16.38 | 0.39–0.40 |
+| Loop guard | 100k events, cold | 190.78–191.27 | 22.60–23.13 |
+| Loop guard | 100k events, unchanged warm | 192.63–194.92 | 1.51–1.57 |
+| Invocation state + memory | 100k events / 1k shared facts, cold | 382.51–385.28 | 297.70–303.45 |
+| Invocation state + memory | 100k events / 1k shared facts, warm | 330.71–339.59 | 247.91–251.81 |
+| Invocation state + memory | 100k events / 10k shared facts, cold | 4,271.10–4,296.42 | 3,365.77–3,371.40 |
+| Invocation state + memory | 100k events / 10k shared facts, warm | 1,231.71–1,252.33 | 296.74–309.94 |
+| Invocation state + memory | 100k events / 1k unique files, cold | 380.55–383.76 | 386.60–386.99 |
+| Invocation state + memory | 100k events / 1k unique files, warm | 330.65–348.68 | 336.90–340.09 |
+
+The unique-file control has no read-count saving and was slightly slower cold;
+its warm ranges overlap. It does not support a general speedup for all memory
+workloads. Shared facts use 32 paths: measured content reads fall from
+1,000/10,000 to 64, including the second freshness read. The unique-file control
+remains at 1,000 reads. Invocation working-state/memory still retrieves the full
+100,001–100,003 event rows. That path has not gained an incremental event cursor.
+
+For the declared noisy Run corpus, the loop cursor returns 200/2,000 rows cold
+instead of 10,001/100,001, zero for unchanged/noise-only refreshes and one for
+each trigger/pending/late-terminal delta. Full replay remains the semantic
+oracle. These counts are returned rows, not internal SQLite scans; the corpus
+contains only two relevant events per hundred and does not measure a dense
+all-tool-event workload.
+
+Observed probe-on/off wall ratios range 0.947–1.101 for the reference and
+0.885–1.095 for the candidate. Separate process order and warm OS caches prevent
+interpreting those ratios as pure instrumentation overhead. Sampled RSS across
+all phases ranges about 195–1,516 MiB for reference workers and 198–1,148 MiB for
+candidate workers; setup, previous phases and unforced GC remain included. No
+per-component retained-memory or statistically significant improvement is
+claimed. CPU/JSON samples and unfavorable observations remain in the receipts.
+For example, probe-on cold 10k-fact preparation had a larger sampled RSS increase
+in the candidate (57.19–57.39 MiB) than in the reference (37.69–38.66 MiB).
+
+The [first full attempt](artifacts/harness-preparation-comparison-2026-10-29.json)
+is retained as failed evidence: the fixture assigned a model category to the
+system-category loop-trigger event, which the production registry rejected.
+After correcting the script and extending smoke coverage to that branch, the
+new full receipt passed. This was a harness correction, not selection of a
+faster successful trial. Mailbox cursors, broader memory-index maintenance,
+complete pre-call profiling and G02-bound model/task-family ablations remain
+unfinished; there were zero model requests in this comparison.
+
+Smoke history is also retained: [v1](artifacts/harness-preparation-comparison-smoke-2026-10-29-v1.json)
+used a nonexistent store accessor; [v2](artifacts/harness-preparation-comparison-smoke-2026-10-29-v2.json)
+had a cleanup exception that obscured its earlier failure. Its 50-fact read-count
+expectation was also corrected to account for only 18 reused paths.
+[v3](artifacts/harness-preparation-comparison-smoke-2026-10-29-v3.json) passed but
+did not exercise a trigger; [v4](artifacts/harness-preparation-comparison-smoke-2026-10-29-v4.json)
+uses 300 events and covers it. These development receipts are not additional
+independent performance trials.

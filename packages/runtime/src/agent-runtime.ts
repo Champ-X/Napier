@@ -237,12 +237,10 @@ import { TokenMeterRegistry } from "./token-meter-provider.js";
 import { calibrateResponse } from "./model-context-token-calibration.js";
 import {
   createToolLoopGuardContextReceipt,
-  detectToolCallLoop,
-  latestActiveToolLoopGuard,
-  projectToolLoopGuardTriggers,
+  RunToolLoopGuardCursor,
   TOOL_LOOP_GUARD_CONTEXT_EVENT,
   TOOL_LOOP_GUARD_TRIGGERED_EVENT,
-} from "./tool-loop-guard.js";
+} from "./run-tool-loop-guard-cursor.js";
 import { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 import { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 import type {
@@ -1165,11 +1163,8 @@ export class AgentRuntime {
       : formatSkillCatalog(catalogSkills);
     const threadRecord = this.store.getThread(run.threadId);
     const toolLoopGuardPolicy = effectiveToolLoopGuardPolicy(profile);
-    let activeToolLoopGuard = latestActiveToolLoopGuard(
-      await this.store.listRunEvents(run.id),
-      run.id,
-      toolLoopGuardPolicy,
-    );
+    const toolLoopGuardCursor = new RunToolLoopGuardCursor(this.store, run);
+    let activeToolLoopGuard = (await toolLoopGuardCursor.refresh(toolLoopGuardPolicy)).active;
     const importedLedgerBoundary = formatImportedLedgerBoundary(
       threadRecord.importProvenance,
     );
@@ -1383,7 +1378,7 @@ export class AgentRuntime {
       turnPipeline, budget, progress, lifecycle: toolResultLifecycle,
       activeToolNames: () => activeModelToolNames,
       runtimeAvailableToolNames: () => runtimeAvailableModelToolNames,
-      toolLoopGuardPolicy,
+      toolLoopGuardPolicy, toolLoopGuardCursor,
       verificationOrder: harnessExperimentProfile?.policies?.context.verificationOrder,
     });
     const afterToolCall = createAgentToolResultFinalizer(toolResultLifecycle);
@@ -1612,19 +1607,11 @@ export class AgentRuntime {
             }
           }
           try {
-            let runEvents = await this.store.listRunEvents(run.id);
-            const detection = detectToolCallLoop(
-              runEvents,
-              run.id,
-              toolLoopGuardPolicy,
-            );
-            const knownTriggers = projectToolLoopGuardTriggers(
-              runEvents,
-              run.id,
-            );
+            let guard = await toolLoopGuardCursor.refresh(toolLoopGuardPolicy);
+            const detection = guard.detection;
             if (
               detection &&
-              !knownTriggers.some(
+              !guard.triggers.some(
                 (trigger) =>
                   trigger.receipt.attemptSetSha256 ===
                   detection.attemptSetSha256,
@@ -1641,13 +1628,9 @@ export class AgentRuntime {
                 },
                 onEvent,
               );
-              runEvents = await this.store.listRunEvents(run.id);
+              guard = await toolLoopGuardCursor.refresh(toolLoopGuardPolicy);
             }
-            nextActiveToolLoopGuard = latestActiveToolLoopGuard(
-              runEvents,
-              run.id,
-              toolLoopGuardPolicy,
-            );
+            nextActiveToolLoopGuard = guard.active;
           } catch {
             // Retain the last verified loop-guard projection.
           }

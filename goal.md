@@ -280,6 +280,14 @@
 - [真实回收收据](docs/artifacts/workspace-resource-reclaim-2026-10-29.json) 通过 10 项：真实 Guardian 与 Chromium 资源先保留 A，确认清理后 maxIdle 0 只回收 A，旧 A SQLite 明确关闭；实际 loopback TCP scoped HTTP 冷开第二代 A，复用原自定义 dataRoot 与完全一致的 seeded events。B 保持第一代图、活动的未来 automation 及可查询 store；此处两次 tick 均无到期任务，不冒充 due automation 执行。7 次 Chromium 代理尝试全部拒绝，最终外连计数／字节和模型 invocation 为 0；6 source/build 树、脚本和截图复核一致，28 个用户文件原摘要不变。
 - 受控空闲回收与 UI 切换保留后台义务这一实施项已有当前及先前 workspace 证据；跨重启资源自动对账仍未实现，owner 丢失后的 unknown 容量不能清空。G05-B 总体验收和 G01–G04／G06–G07 剩余要求继续保持，不以本片代替整个目标完成。
 
+### 后续推进：G07 增量调用准备与固定版本对照
+
+- rotation 回收已本地提交 `2aaf959f`，未 push。本片让每个活跃 Run 的主循环与工具 preflight 共用 typed-event cursor，只查询 watermark 之后的相关事件；仍用原完整 replay 函数投影相关历史，失败不推进游标。记忆依赖按单次 invocation 的精确路径复用，逐 fact 比对预期摘要，并在索引后重读被复用路径；漂移时排除全部依赖事实并清理索引。无跨调用 freshness cache。
+- [回归收据](docs/artifacts/incremental-preparation-regression-2026-10-29.json)：8 文件／127 测试通过，含生产主循环／preflight、真实 SQLite、迟到终态、策略变化、并发／失败游标以及记忆权限／来源边界。Runtime compile、Server build、严格新增测试 TS 和 diff check 已通过；架构仍原 9 项，public API 仍原 2 项，主 runtime 行数预算只从 3135 下调至 3118。
+- [固定旧版本对照](docs/artifacts/harness-preparation-comparison-2026-10-29-v2.json) 从 `0560f009` 原 Git blob 转译完整 84 模块引用闭包；8 个独立进程执行 probe on/off 各 AB/BA，168 次采样、84 对完整语义一致。9 个独立文件系统／SQLite 案例中，8 个等价；索引期间共享源变更的预声明差异保留旧错误输出，新实现排除两个陈旧事实并清空相应索引。0 模型请求。[独立核验](docs/artifacts/incremental-preparation-verification-2026-10-29.json) 确认 source/build/script/lock、Git blobs、原始 worker、16 个 trigger 阶段和全部 28 个用户文件摘要。
+- Probe-off 100k 事件循环检查冷态从 190.78–191.27 ms 到 22.60–23.13 ms，未变化暖态从 192.63–194.92 ms 到 1.51–1.57 ms；此合成语料每百条仅两条相关事件，不扩称密集事件工作负载。100k 事件＋10k 共享事实暖准备从 1,231.71–1,252.33 ms 到 296.74–309.94 ms；1k／10k 事实共享 32 路径时读取从 1,000／10,000 到 64。1k 独立文件对照仍读取 1,000 次，冷态 380.55–383.76→386.60–386.99 ms 略慢，暖态范围重叠，保留不利结果。
+- [首次完整采样失败](docs/artifacts/harness-preparation-comparison-2026-10-29.json) 原样保留：脚本错误的 loop-trigger category 被生产 registry 拒绝。修正脚本并将 smoke 扩至实际触发该分支后另存 v2，不覆盖旧基线或筛选最快试验。详细曲线、observer／RSS／冷缓存边界见 [harness-preparation-profiling.md](docs/harness-preparation-profiling.md)。调用上下文仍全量读取事件；mailbox、完整 pre-call、增量索引与模型／任务族消融未完成，G07 及全部剩余目标保持 active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -464,7 +472,7 @@
 
 - [x] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。（生产 host 已接入；持久身份、自定义账本与恢复失败重试已实现。）
 - [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 ID、预览资源与后台自动化已覆盖；Workflow 审批／扩展信任 review 已验证功能隔离，窄屏双弹窗已另修复并验证；其他 review 流程仍有边界。）
-- [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度、执行／浏览器资源容量和活跃生命周期保护已有真实证据；跨重启资源对账及 rotation 回收义务仍待完成。）
+- [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度、执行／浏览器资源容量、活跃生命周期保护与 rotation 回收义务已有真实证据；跨重启资源对账仍待完成。）
 - [x] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。（资源释放→真实回收→scoped HTTP 冷开、自定义账本和 rotation 义务已有验证；重启后 unknown 资源自动对账仍属上一项待办。）
 
 **验收**：A 项目长任务运行时可切到 B 提交新任务；A 后台任务和自动化继续；SSE、权限和成果无串线；重启后各工作区恢复；空闲资源能够释放。

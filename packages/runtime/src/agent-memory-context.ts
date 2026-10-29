@@ -67,6 +67,7 @@ export async function prepareInvocationMemoryContext(input: {
       ...(input.taskQuery ? { query: input.taskQuery.receipt } : {}),
       ...(memory.grouping ? { grouping: memory.grouping } : {}),
       index: memory.index,
+      dependencyValidation: memory.dependencyValidation,
       phase: "model_invocation",
       contentSha256: memory.text ? sha256(memory.text) : "",
     },
@@ -153,6 +154,7 @@ export async function prepareAgentMemoryContext(input: {
             selection: taskContext.selection,
             ...(taskContext.grouping ? { grouping: taskContext.grouping } : {}),
             index: taskContext.index,
+            dependencyValidation: taskContext.dependencyValidation,
           }
         : {}),
       contentSha256: context.text ? sha256(context.text) : "",

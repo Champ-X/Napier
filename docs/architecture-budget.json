@@ -29,7 +29,7 @@
     "apps/web/test/receipt-trust-api.test.ts": 1607,
     "apps/web/test/stream-api.test.ts": 2372,
     "apps/web/test/tool-event-view.test.ts": 1690,
-    "packages/runtime/src/agent-runtime.ts": 3135,
+    "packages/runtime/src/agent-runtime.ts": 3118,
     "packages/runtime/src/agents.ts": 735,
     "packages/runtime/src/automatic-recovery.ts": 710,
     "packages/runtime/src/evaluation-casebooks.ts": 727,
