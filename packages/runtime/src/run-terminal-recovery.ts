@@ -52,9 +52,11 @@ export const RUN_INTERRUPTION_REASON =
 
 export function repairRunsFromTerminalEvidence(
   host: RunTerminalRecoveryHost,
+  runIds?: ReadonlySet<string>,
 ): Map<string, DurableTerminalRepair> {
   const repaired = new Map<string, DurableTerminalRepair>();
   for (const run of host.state.runs) {
+    if (runIds && !runIds.has(run.id)) continue;
     if (run.status !== "queued" && run.status !== "running") continue;
     const event = host
       .requireLedger()

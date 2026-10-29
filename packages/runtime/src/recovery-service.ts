@@ -89,6 +89,7 @@ export class RecoveryService {
   }
 
   private async runSweep(now: Date): Promise<RecoverySweepResult> {
+    await this.store.runLifecycleRepository.reinspectDeferredOperations(now);
     await this.reconcileEvidence();
     const claimed = await this.store.claimAutomaticRecoveries(this.workerId, {
       now,

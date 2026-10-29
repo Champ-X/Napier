@@ -219,7 +219,7 @@ async function processFixture(root: string): Promise<string> {
   await mkdir(compiled);
   await writeFile(path.join(compiled, "package.json"), '{"type":"module"}');
   // Run the actual checked-in implementation in isolated processes, without a dist build or mocked filesystem.
-  for (const name of ["local-private-capsule-store", "workspace-write-lock"]) {
+  for (const name of ["local-private-capsule-store", "workspace-write-lock", "workspace-lock-coordination"]) {
     const source = await readFile(fileURLToPath(new URL(`../src/${name}.ts`, import.meta.url)), "utf8");
     await writeFile(path.join(compiled, `${name}.js`), ts.transpileModule(source, {
       compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.ESNext },

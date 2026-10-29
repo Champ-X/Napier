@@ -15,6 +15,7 @@ import { projectOperatorDecisions } from "./operator-decisions.js";
 import { isSubagentChildRun } from "./primary-run-selection.js";
 import { refreshRunAccounting } from "./model-accounting-projection.js";
 import { reconcileInterruptedRuns } from "./run-interruption-recovery.js";
+import { DeferredOperationReinspection } from "./run-deferred-operation-recovery.js";
 import {
   cancelPendingOperatorDecisions,
   cancelPendingRunControlMessages,
@@ -60,6 +61,7 @@ interface FinishRunResult {
 }
 
 export class RunLifecycleRepository {
+  readonly #deferredOperations = new DeferredOperationReinspection();
   constructor(private readonly host: StoreRepositoryHost) {}
 
   async finishRun(
@@ -171,7 +173,24 @@ export class RunLifecycleRepository {
   }
 
   async reconcileInterruptedRuns(interruptActiveLeases = false): Promise<void> {
-    await reconcileInterruptedRuns(this.host, interruptActiveLeases);
+    const deferred = await reconcileInterruptedRuns(this.host, interruptActiveLeases);
+    this.#deferredOperations.remember(deferred, Date.now());
+  }
+
+  async reinspectDeferredOperations(now = new Date()): Promise<void> {
+    this.host.assertInitialized();
+    const nowMs = now.getTime();
+    if (!Number.isFinite(nowMs)) throw new Error("Deferred operation reinspection time is invalid");
+    const due = this.#deferredOperations.due(nowMs);
+    if (!due.length) return;
+    try {
+      // The selected native owners are rechecked as dead independently of lease expiry.
+      const deferred = await reconcileInterruptedRuns(this.host, true, due);
+      this.#deferredOperations.settle(due, deferred, nowMs);
+    } catch (error) {
+      this.#deferredOperations.settle(due, due, nowMs);
+      throw error;
+    }
   }
 
   private cancelPendingInteractions(

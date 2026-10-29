@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 import type { PatchInterruptionReconciliation } from "./workspace-patch-interruption-reconciliation.js";
 export { RUN_EFFECT_INDETERMINATE_REASON } from "./run-lost-owner-recovery.js";
 import { recoverLostRuns } from "./run-lost-owner-recovery.js";
+import { deferredOperationHint, type DeferredOperationHint } from "./run-deferred-operation-recovery.js";
 import { nowIso } from "./ids.js";
 import { refreshRunAccounting } from "./model-accounting-projection.js";
 import { interruptPlanRun } from "./plans.js";
@@ -33,24 +34,36 @@ interface InterruptedStateResult {
   terminalEvents: RunEvent[];
   cancellationEvents: RunEvent[];
   planSteps: InterruptedPlanStep[];
+  restartedRunIds: Set<string>;
+  deferredOperations: DeferredOperationHint[];
 }
 
 export async function reconcileInterruptedRuns(
   host: StoreRepositoryHost,
   interruptActiveLeases = false,
-): Promise<void> {
+  deferred?: readonly DeferredOperationHint[],
+): Promise<DeferredOperationHint[]> {
   const timestamp = nowIso();
   let planSteps: InterruptedPlanStep[] = [];
+  let deferredOperations: DeferredOperationHint[] = [];
+  let restartedRunIds: Set<string> | undefined;
   await host.stateQueue.run(async () => {
+    planSteps = []; deferredOperations = []; restartedRunIds = undefined;
     const reconciliations: PatchInterruptionReconciliation[] = [];
     try {
+      const runIds = deferred && selectDeferredOperations(host, deferred);
+      // A stale/terminal/live-owner hint never turns into a general startup scan.
+      if (runIds?.size === 0) return;
       const result = await reconcileInterruptedState(
         host,
         timestamp,
         interruptActiveLeases,
         reconciliations,
+        runIds,
       );
       planSteps = result.planSteps;
+      deferredOperations = result.deferredOperations;
+      restartedRunIds = result.restartedRunIds;
       if (result.changed) {
         await host.persistState([
           ...result.terminalEvents,
@@ -62,8 +75,20 @@ export async function reconcileInterruptedRuns(
         await reconciliation.release();
     }
   });
-  await appendOrphanedSubagentRecoveryEvidence(host);
+  if (!deferred || restartedRunIds?.size) await appendOrphanedSubagentRecoveryEvidence(host, deferred ? restartedRunIds : undefined);
   await appendInterruptedPlanEvidence(host, planSteps);
+  return deferredOperations;
+}
+
+function selectDeferredOperations(host: StoreRepositoryHost, hints: readonly DeferredOperationHint[]): Set<string> {
+  const selected = new Set<string>();
+  for (const hint of hints) {
+    const run = host.state.runs.find((value) => value.id === hint.runId);
+    if (!run) continue;
+    const current = deferredOperationHint(run, host.requireLedger().listRunEvents(run.id));
+    if (current?.bindingSha256 === hint.bindingSha256) selected.add(run.id);
+  }
+  return selected;
 }
 
 async function reconcileInterruptedState(
@@ -71,13 +96,15 @@ async function reconcileInterruptedState(
   timestamp: string,
   interruptActiveLeases: boolean,
   reconciliations: PatchInterruptionReconciliation[],
+  runIds?: ReadonlySet<string>,
 ): Promise<InterruptedStateResult> {
-  const durableTerminalRepairs = repairRunsFromTerminalEvidence(host);
+  const durableTerminalRepairs = repairRunsFromTerminalEvidence(host, runIds);
   const recovery = await recoverLostRuns(
     host,
     timestamp,
     interruptActiveLeases,
     reconciliations,
+    runIds,
   );
   const interruptedRunIds = new Set(recovery.interruptedRunIds);
   const restartedRunIds = new Set([
@@ -105,7 +132,7 @@ async function reconcileInterruptedState(
   }
   let changed = terminalStatuses.size > 0;
   changed =
-    failInterruptedDeliveries(host.state, restartedRunIds, timestamp) ||
+    failInterruptedDeliveries(host.state, restartedRunIds, timestamp, Boolean(runIds)) ||
     changed;
   const cancellationEvents = cancelTerminalRunInteractions(
     host,
@@ -121,8 +148,11 @@ async function reconcileInterruptedState(
   changed =
     orphanInterruptedSubagents(host.state, restartedRunIds, timestamp) ||
     changed;
-  changed = markTerminalParentsWithIncompleteChildUsage(host.state) || changed;
+  const accountingRunIds = runIds && new Set([...restartedRunIds, ...host.state.runs
+    .filter((run) => restartedRunIds.has(run.id) && run.parentRunId).map((run) => run.parentRunId!)]);
+  changed = markTerminalParentsWithIncompleteChildUsage(host.state, accountingRunIds) || changed;
   for (const run of [...host.state.runs].sort((left, right) => Number(!!right.subagent) - Number(!!left.subagent))) {
+    if (accountingRunIds && !accountingRunIds.has(run.id)) continue;
     if (run.accounting) changed = refreshRunAccounting(host, run.id, [...recovery.terminalEvents, ...cancellationEvents]) || changed;
   }
   const interruptedPlans = interruptActivePlanSteps(
@@ -130,12 +160,14 @@ async function reconcileInterruptedState(
     restartedRunIds,
   );
   changed = interruptedPlans.changed || changed;
-  changed = disconnectOpeningExtensions(host.state, timestamp) || changed;
+  if (!runIds) changed = disconnectOpeningExtensions(host.state, timestamp) || changed;
   return {
     changed,
     terminalEvents: recovery.terminalEvents,
     cancellationEvents,
     planSteps: interruptedPlans.steps,
+    restartedRunIds,
+    deferredOperations: recovery.deferredOperations,
   };
 }
 
@@ -143,6 +175,7 @@ function failInterruptedDeliveries(
   state: StoreRepositoryState,
   interruptedRunIds: Set<string>,
   timestamp: string,
+  scoped = false,
 ): boolean {
   let changed = false;
   for (const delivery of state.inboundDeliveries) {
@@ -151,6 +184,8 @@ function failInterruptedDeliveries(
       delivery.attemptCount <= 1
         ? delivery.triggerId
         : `${delivery.triggerId}:attempt:${delivery.attemptCount}`;
+    if (scoped && !state.runs.some((run) => interruptedRunIds.has(run.id) &&
+      (run.id === delivery.runId || run.triggerId === attemptTriggerId))) continue;
     const activeRun = state.runs.find(
       (run) =>
         (run.id === delivery.runId || run.triggerId === attemptTriggerId) &&
@@ -193,9 +228,10 @@ function orphanInterruptedSubagents(
   return changed;
 }
 
-function markTerminalParentsWithIncompleteChildUsage(state: StoreRepositoryState): boolean {
+function markTerminalParentsWithIncompleteChildUsage(state: StoreRepositoryState, runIds?: ReadonlySet<string>): boolean {
   let changed = false;
   for (const task of state.subagents) {
+    if (runIds && !runIds.has(task.runId)) continue;
     if (!task.childRunId || task.usageStatus !== "incomplete") continue;
     const parent = state.runs.find((run) => run.id === task.runId);
     if (!parent || parent.status === "queued" || parent.status === "running" ||
@@ -260,10 +296,12 @@ function disconnectOpeningExtensions(
 
 async function appendOrphanedSubagentRecoveryEvidence(
   host: StoreRepositoryHost,
+  runIds?: ReadonlySet<string>,
 ): Promise<void> {
   const orphanedRunIds = new Set(
     host.state.subagents
-      .filter((task) => task.supervisorStatus === "orphaned")
+      .filter((task) => task.supervisorStatus === "orphaned" &&
+        (!runIds || runIds.has(task.runId) || (task.childRunId && runIds.has(task.childRunId))))
       .map((task) => task.runId),
   );
   for (const run of host.state.runs.filter((candidate) =>

@@ -7,6 +7,7 @@ import { liveToolEffectAuthoritiesFromEvents } from "./sqlite-tool-effect-author
 import { effectIndeterminateEventPayload } from "./tool-effect-indeterminate-event.js";
 import { RUN_INTERRUPTION_REASON } from "./run-terminal-recovery.js";
 import { reconcileInterruptedWorkspaceOperations } from "./workspace-operation-reconciliation.js";
+import { deferredOperationHint, type DeferredOperationHint } from "./run-deferred-operation-recovery.js";
 import {
   type PatchInterruptionReconciliation,
 } from "./workspace-patch-interruption-reconciliation.js";
@@ -27,6 +28,7 @@ interface LostRunRecovery {
   interruptedRunIds: Set<string>;
   blockedSafetyRunIds: Set<string>;
   terminalEvents: RunEvent[];
+  deferredOperations: DeferredOperationHint[];
 }
 
 export const RUN_EFFECT_INDETERMINATE_REASON =
@@ -37,12 +39,15 @@ export async function recoverLostRuns(
   timestamp: string,
   interruptActiveLeases: boolean,
   reconciliations: PatchInterruptionReconciliation[],
+  runIds?: ReadonlySet<string>,
 ): Promise<LostRunRecovery> {
   const timestampMs = Date.parse(timestamp);
   const interrupted = new Set<string>();
   const blockedSafety = new Set<string>();
   const terminalEvents: RunEvent[] = [];
+  const deferredOperations: DeferredOperationHint[] = [];
   for (const run of host.state.runs) {
+    if (runIds && !runIds.has(run.id)) continue;
     if (run.status !== "queued" && run.status !== "running") continue;
     const parent = run.source === "subagent"
       ? host.state.runs.find((candidate) => candidate.id === run.parentRunId)
@@ -92,7 +97,11 @@ export async function recoverLostRuns(
       // Contention can belong to a recoverer still holding both paths through
       // its atomic commit. Leave the original Run unknown; do not race that
       // owner with a terminal safety failure. A later recovery can inspect it.
-      if (reconciliation.reason === "move_target_busy") continue;
+      if (reconciliation.reason === "move_target_busy") {
+        const hint = deferredOperationHint(run, events);
+        if (hint) deferredOperations.push(hint);
+        continue;
+      }
       if (reconciliation.inputs.length === recoverable.length) {
         terminalEvents.push(
           ...host.appendEventsToThread(
@@ -194,5 +203,6 @@ export async function recoverLostRuns(
     interruptedRunIds: interrupted,
     blockedSafetyRunIds: blockedSafety,
     terminalEvents,
+    deferredOperations,
   };
 }
