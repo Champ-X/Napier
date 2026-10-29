@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   isUndispatchedSubagentModelTurn,
+  subagentModelDenial,
   subagentModelTurnDeniedStream,
   SubagentModelTurnDeniedError,
 } from "../src/subagent-model-turn-denial.js";
@@ -27,6 +28,30 @@ async function fixture(maxTurns: number) {
 }
 
 describe("undispatched child model turn", () => {
+  it("requires an aborted host signal and preserves the original pre-dispatch cancellation", async () => {
+    const f = await fixture(2);
+    const controller = new AbortController();
+    const reason = new DOMException("Cancelled before physical dispatch", "AbortError");
+    expect(subagentModelTurnDeniedStream(f.model, reason)).toBeUndefined();
+    expect(subagentModelTurnDeniedStream(f.model, reason, controller.signal)).toBeUndefined();
+    controller.abort(reason);
+    const source = subagentModelTurnDeniedStream(f.model, reason, controller.signal);
+    if (!source) throw new Error("missing host abort terminal");
+    const message = await source.result();
+    expect(message.stopReason).toBe("aborted");
+    expect(subagentModelDenial(message)).toBe(reason);
+    await f.observer.observe({ type: "message_end", message });
+    expect(f.observer.task.turnCount).toBe(0);
+    expect(f.observer.usage).toEqual(emptyUsage());
+    const dispatched = structuredClone(message);
+    dispatched.usage.input = 23;
+    dispatched.usage.totalTokens = 23;
+    expect(subagentModelDenial(dispatched)).toBeUndefined();
+    await f.observer.observe({ type: "message_end", message: dispatched });
+    expect(f.observer.task.turnCount).toBe(1);
+    expect(f.observer.usage.inputTokens).toBe(23);
+  });
+
   it("preserves a real response's usage while excluding the host-denied terminal through the actual Agent loop", async () => {
     const f = await fixture(1);
     const actual = fauxAssistantMessage(fauxToolCall("missing_tool", {}), { stopReason: "toolUse" });

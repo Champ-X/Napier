@@ -114,7 +114,8 @@ describe("SubagentCoordinator", () => {
     const started = await tools["subagent_start"]!.execute("start-1", {
       ...delegatedTask,
     });
-    const handle = started.details as { taskId: string; executionId: string };
+    const { taskId, executionId } = started.details as { taskId: string; executionId: string };
+    const handle = { taskId, executionId };
     await tools["subagent_send"]!.execute("send-1", {
       ...handle,
       text: "Prioritize the runtime boundary.",

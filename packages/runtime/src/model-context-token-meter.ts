@@ -84,7 +84,7 @@ interface PreparedModelContext {
 
 export function measureModelContext(input: {
   model: Model<Api>;
-  compiledPrompt: CompiledPromptArtifact;
+  compiledPrompt: Pick<CompiledPromptArtifact, "systemPrompt">;
   context: Context;
   options: SimpleStreamOptions;
   recoveryAttempt: 0 | 1;
@@ -102,7 +102,7 @@ export function measureModelContext(input: {
 export async function measureModelContextWithProvider(
   input: {
     model: Model<Api>;
-    compiledPrompt: CompiledPromptArtifact;
+    compiledPrompt: Pick<CompiledPromptArtifact, "systemPrompt">;
     context: Context;
     options: SimpleStreamOptions;
     recoveryAttempt: 0 | 1;
@@ -173,7 +173,7 @@ export function modelContextTokenCalibration(
 function prepareModelContext(
   input: {
     model: Model<Api>;
-    compiledPrompt: CompiledPromptArtifact;
+    compiledPrompt: Pick<CompiledPromptArtifact, "systemPrompt">;
     context: Context;
   },
   calibration: ModelContextTokenCalibration,

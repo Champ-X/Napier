@@ -1,5 +1,6 @@
 import type { RunRecord, SubagentTask } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { validateChildCheckpointReference } from "./subagent-checkpoint-validation.js";
 import { projectSubagentToolNames } from "./subagent-child-profile.js";
 import { subagentRoleInstructions, subagentRoleInstructionsForSchema } from "./subagent-role-instructions.js";
 
@@ -14,6 +15,7 @@ export function validateSubagentRunBinding(
     throw new Error(`Subagent child Run binding is invalid: ${run.id}`);
   validateChildIdentity(run, parent, task, binding);
   validateChildUsage(run, task);
+  validateChildCheckpointReference(run, task);
   validateChildConfiguration(run, parent, task, run.configuration, parent.configuration);
 }
 

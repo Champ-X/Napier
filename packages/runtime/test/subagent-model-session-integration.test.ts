@@ -43,9 +43,9 @@ describe("Subagent ModelSession actual task settlement", () => {
     const task = fixture.store.listSubagentTasks(fixture.thread.id)[0]!;
     const childEvents = streamed.filter((event) => event.runId === task.childRunId);
     expect(childEvents.map((event) => event.type)).toEqual([
-      "run.started", "route_plan_created", "route_attempt_started",
+      "run.started", "route_plan_created", "subagent.child.checkpoint_committed", "route_attempt_started",
       "subagent.child.invocation_reserved", "context.model_envelope", "context.model_adapter", "model.response",
-      "route_attempt_ended", "run.completed",
+      "route_attempt_ended", "subagent.child.checkpoint_committed", "run.completed",
     ]);
     const committed = await fixture.store.listRunEvents(task.childRunId!);
     for (const event of childEvents) expect(committed).toContainEqual(event);

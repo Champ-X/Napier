@@ -1,8 +1,10 @@
 # Durable child Run foundation
 
-This G03 slice gives the existing supervised child runner an actual execution
-Run. It does not yet implement private transcript checkpoints, compaction or
-automatic child continuation. All regression providers are local fixtures.
+This document records the G03 foundation at `139fc062`: an actual execution Run
+for the existing supervised child runner. The subsequent
+[private working-set extension](subagent-working-set.md) adds transcript and
+mailbox checkpoints plus shared compaction. Automatic child continuation remains
+unimplemented. All regression providers are local fixtures.
 
 ## Ownership and authority
 
@@ -126,8 +128,9 @@ ephemeral; embedded handoffs preserve its paths, hashes and interpretation. Fail
 intermediate attempts remain distinct from behavior failures on frozen
 `f65fc47b`; they are not merged into one claimed baseline test matrix.
 
-G03 still requires private working-set/checkpoint persistence, mailbox consumption
-checkpoints, child compaction through the same session/budget path, and safe
-restart continuation. Parent/child accounting and cancellation retain the
+At this foundation stage, private working-set/checkpoint persistence, mailbox
+consumption and compaction remained subsequent work; their current implementation
+is documented in the extension above. G03 still requires safe restart
+continuation. Parent/child accounting and cancellation retain the
 unknown-effect and late-usage limits above. G01–G07 remain active; this foundation
 does not establish live-model quality, end-to-end performance or release acceptance.

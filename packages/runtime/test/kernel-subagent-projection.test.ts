@@ -145,6 +145,27 @@ describe("Kernel Subagent projection", () => {
       }),
     );
   });
+
+  it("joins sparse durable consumption independently of transport delivery and cached events", async () => {
+    const registry = new KernelProjectionRegistry(), thread = projectionThread();
+    const events = [event(1, "subagent.message.accepted"), event(2, "subagent.message.accepted"),
+      event(3, "subagent.message.delivered"), event(4, "subagent.message.delivered")];
+    const tasks = [task("running", { mailboxConsumedCount: 1, mailboxConsumedThroughSeq: 0 })];
+    thread.eventCount = events.length;
+    const service = new ConversationSubagentsProjectionService(registry, {
+      getThread: () => structuredClone(thread),
+      listEvents: async (_threadId, afterSeq = 0) => events.filter((entry) => entry.seq > afterSeq),
+      listSubagentTasks: () => structuredClone(tasks),
+    });
+    const first = await service.projectHub(thread.id);
+    expect(first.view.tasks[0]!.mailbox).toMatchObject({ acceptedCount: 2, deliveredCount: 2, pendingCount: 0,
+      consumedCount: 1, pendingConsumptionCount: 1, consumedThroughSeq: 0 });
+    tasks[0] = { ...tasks[0]!, mailboxConsumedCount: 2, mailboxConsumedThroughSeq: 2, revision: 3 };
+    const next = await service.projectHub(thread.id);
+    expect(next).toMatchObject({ cacheHit: true, appliedEventCount: 0 });
+    expect(next.view.tasks[0]!.mailbox).toMatchObject({ deliveredCount: 2, pendingCount: 0,
+      consumedCount: 2, pendingConsumptionCount: 0, consumedThroughSeq: 2 });
+  });
 });
 
 function projectionThread(): ThreadRecord {

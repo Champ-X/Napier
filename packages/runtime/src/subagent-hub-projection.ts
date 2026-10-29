@@ -151,6 +151,9 @@ function projectTask(
     mailbox: {
       acceptedCount: state?.mailbox.acceptedCount ?? 0,
       deliveredCount: state?.mailbox.deliveredCount ?? 0,
+      consumedCount: task.mailboxConsumedCount ?? 0,
+      consumedThroughSeq: task.mailboxConsumedThroughSeq ?? 0,
+      pendingConsumptionCount: Math.max(0, (state?.mailbox.acceptedCount ?? 0) - (task.mailboxConsumedCount ?? 0)),
       pendingCount: Math.max(
         0,
         (state?.mailbox.acceptedCount ?? 0) -

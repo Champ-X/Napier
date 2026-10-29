@@ -40,6 +40,9 @@ export interface SubagentHubTranscriptEntryV1 {
 export interface SubagentHubMailboxV1 {
   acceptedCount: number;
   deliveredCount: number;
+  consumedCount?: number;
+  pendingConsumptionCount?: number;
+  consumedThroughSeq?: number;
   pendingCount: number;
   lastAcceptedAt?: string;
   lastDeliveredAt?: string;

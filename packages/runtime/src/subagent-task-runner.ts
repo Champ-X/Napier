@@ -19,10 +19,6 @@ import { createSubagentModelSession } from "./subagent-model-session.js";
 import { SubagentExecutionLifetime } from "./subagent-execution-lifetime.js";
 import { settleSubagentOutcome } from "./subagent-outcome-settlement.js";
 import {
-  subagentRoleInstructions,
-  subagentRoleInstructionsForSchema,
-} from "./subagent-role-instructions.js";
-import {
   subagentTaskPayload,
   subagentJsonValue,
   type DelegationDetails,
@@ -40,6 +36,7 @@ import { INHERITED_SUBAGENT_TOOL_NAMES } from "./subagent-child-profile.js";
 import type { SubagentExecutionCleanup, SubagentInheritedToolsFactory } from "./subagent-execution-context.js";
 import { createProcessLeaseOwnerId } from "./ids.js";
 import { subagentTaskFailure } from "./subagent-task-failure.js";
+import { SubagentWorkingSet } from "./subagent-working-set.js";
 
 type EventSink = (event: RunEvent) => Promise<void> | void;
 
@@ -183,11 +180,13 @@ export class SubagentTaskRunner {
         onEvent: this.options.onEvent,
         assertActive,
       });
+      const systemPrompt = started.profile.systemPrompt;
+      const workingSet = new SubagentWorkingSet({ store: this.options.store, child, systemPrompt, tools,
+        ...(this.options.control ? { control: this.options.control } : {}),
+        onEvent: this.options.onEvent });
       agent = new Agent({
         initialState: {
-          systemPrompt: task.outputSchema
-            ? subagentRoleInstructionsForSchema(task.role, task.outputSchema)
-            : subagentRoleInstructions(task.role),
+          systemPrompt,
           model: this.options.model,
           thinkingLevel: this.options.model.reasoning ? started.profile.thinkingLevel : "off",
           tools,
@@ -196,6 +195,7 @@ export class SubagentTaskRunner {
         streamFn: createSubagentStream(modelSession),
         sessionId: `${child.run.id}:${task.id}`,
         toolExecution: "parallel",
+        transformContext: async (messages) => { await workingSet.persist(messages, "before_model"); return messages; },
         afterToolCall: async () =>
           observer?.turnCapped ? { terminate: true } : undefined,
       });
@@ -208,12 +208,16 @@ export class SubagentTaskRunner {
         (type, currentTask, payload) => this.emit(type, currentTask, payload),
         (delta) => child!.progress(delta),
       );
-      agent.subscribe((event) => observer!.observe(event));
+      agent.subscribe(async (event) => {
+        if (workingSet.healthy) await observer!.observe(event);
+        await workingSet.observe(event, agent!.state.messages);
+      });
 
       assertActive();
       await this.options.control?.activate(agent);
       assertActive();
       await agent.prompt(prompt);
+      workingSet.assertHealthy();
       this.options.control?.deactivate(agent);
       task = observer.task;
       usage = observer.usage;

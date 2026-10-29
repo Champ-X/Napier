@@ -27,6 +27,7 @@ import {
   prepareRunCompactionRequest,
   runCompactionRequestFits,
   type RunCompactionHost,
+  type RunCompactionInvocationPort,
 } from "./run-context-compaction-model.js";
 import type {
   RunContextCompactionInput,
@@ -50,6 +51,7 @@ export class RunContextCompactor implements RunContextCompactionPort {
     private readonly budget: RunBudgetTracker,
     private readonly nextTurnIndex: () => number,
     private readonly onEvent?: EventSink,
+    private readonly invocation?: RunCompactionInvocationPort,
   ) {}
 
   async project(
@@ -113,6 +115,7 @@ export class RunContextCompactor implements RunContextCompactionPort {
             request: batch.request,
             nextTurnIndex: this.nextTurnIndex,
             ...(this.onEvent ? { onEvent: this.onEvent } : {}),
+            ...(this.invocation ? { invocation: this.invocation } : {}),
           });
           const candidate = createRunContextCheckpoint({
             runId: this.run.id,

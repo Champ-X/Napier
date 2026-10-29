@@ -123,6 +123,9 @@ describe("SubagentSupervisor", () => {
         mailbox: expect.objectContaining({
           acceptedCount: 1,
           deliveredCount: 1,
+          consumedCount: 1,
+          pendingConsumptionCount: 0,
+          consumedThroughSeq: expect.any(Number),
           pendingCount: 0,
         }),
       }),

@@ -17,7 +17,7 @@ export interface RunContextCompactionInput {
   runtimeContextMessages?: readonly Message[];
   model: Model<Api>;
   options: SimpleStreamOptions;
-  compiledPrompt: CompiledPromptArtifact;
+  compiledPrompt: Pick<CompiledPromptArtifact, "systemPrompt">;
   tokenMeters: TokenMeterRegistry;
   modelAttempt: number;
   recoveryAttempt: 0 | 1;

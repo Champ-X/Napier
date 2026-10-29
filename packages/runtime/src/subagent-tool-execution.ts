@@ -14,6 +14,7 @@ import type { AppendEventInput } from "./run-event-registry.js";
 import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import { executeAdmittedToolCall } from "./tool-execution-admission-service.js";
 import type { ToolOperationJournalStore } from "./tool-operation-model.js";
+import { subagentToolResultEvidence } from "./subagent-tool-result-evidence.js";
 import { createSubagentToolCallScope, type SubagentToolCallIdentity } from "./subagent-tool-call-identity.js";
 
 export function governSubagentTools(input: {
@@ -109,6 +110,9 @@ async function appendTerminal(
   const payload: Record<string, JsonValue> = {
     ...identity,
     toolName: tool.name,
+    ...subagentToolResultEvidence(completed ? outcome.result : {
+      content: [{ type: "text", text: outcome.error instanceof Error ? outcome.error.message : String(outcome.error) }], details: {},
+    }),
     status: completed ? "completed" : "failed",
     toolProtocol: protocol.uiProjection(
       completed ? "completed" : "failed",

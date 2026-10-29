@@ -6,8 +6,8 @@ import {
   type Model,
   type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
-import type { RunRecord } from "@napier/contracts";
-import { mapModelUsage, modelRefFromModel } from "./agent-model-projection.js";
+import type { JsonObject, RunRecord } from "@napier/contracts";
+import { mapModelUsage } from "./agent-model-projection.js";
 import { compileAuxiliaryPrompt } from "./agent-prompt-layers.js";
 import {
   buildContextCompactionMessages,
@@ -29,8 +29,30 @@ import { createUsageAccounting } from "./token-accounting.js";
 export interface RunCompactionHost {
   store: Parameters<typeof captureCompiledModelInvocation>[0]["store"] &
     Pick<RunEventQueryPort, "listRunEvents">;
-  modelRegistry: ModelRegistry;
+  modelRegistry: Pick<ModelRegistry, "models">;
   modelInvocationCapsules: ModelInvocationCapsuleStore;
+}
+
+export type RunCompactionRequest = ReturnType<typeof prepareRunCompactionRequest>;
+
+export interface RunCompactionInvocationInput {
+  run: RunRecord;
+  model: Model<Api>;
+  request: RunCompactionRequest;
+  /** Pure metadata for the owner's canonical response settlement, even for invalid summaries. */
+  responseEvidence(response: AssistantMessage): JsonObject;
+}
+
+export interface RunCompactionInvocationResult {
+  response: AssistantMessage;
+  envelopeSha256: string;
+}
+
+/** Owns capture, dispatch and durable response settlement. The returned response
+ * must already be settled with responseEvidence; transport failures remain this
+ * port's responsibility. The compactor never adds a response event on this path. */
+export interface RunCompactionInvocationPort {
+  invoke(input: RunCompactionInvocationInput): Promise<RunCompactionInvocationResult>;
 }
 
 export function prepareRunCompactionRequest(input: {
@@ -117,6 +139,7 @@ export async function invokeRunContextCompactor(input: {
   request: ReturnType<typeof prepareRunCompactionRequest>;
   nextTurnIndex(): number;
   onEvent?: EventSink;
+  invocation?: RunCompactionInvocationPort;
 }): Promise<{
   summary: ContextCompactionResult;
   envelopeSha256: string;
@@ -124,6 +147,13 @@ export async function invokeRunContextCompactor(input: {
 }> {
   input.request.options.signal?.throwIfAborted();
   input.budget.assertCanStartAuxiliaryCall();
+  if (input.invocation) {
+    const result = await input.invocation.invoke({
+      run: input.run, model: input.model, request: input.request,
+      responseEvidence: (response) => inspectCompactionResponse(response).evidence,
+    });
+    return finish(result.response, result.envelopeSha256);
+  }
   const captured = await captureCompiledModelInvocation({
     store: input.host.store,
     capsules: input.host.modelInvocationCapsules,
@@ -164,45 +194,23 @@ export async function invokeRunContextCompactor(input: {
     });
     throw error;
   }
-  const usage = mapModelUsage(response.usage);
-  const accounting = createUsageAccounting(
-    modelRefFromModel(input.model),
-    usage,
-  );
-  input.budget.observeAuxiliaryUsage(usage, Date.now(), accounting);
-  const text = contentText(response.content);
-  let summary: ContextCompactionResult | undefined;
-  let summaryError: unknown;
-  if (response.stopReason === "stop") {
-    try {
-      summary = parseContextCompactionResponse(text);
-    } catch (error) {
-      summaryError = error;
-    }
+  return finish(response, captured.envelope.contentSha256, binding);
+
+  async function finish(response: AssistantMessage, envelopeSha256: string, binding?: object) {
+    const usage = mapModelUsage(response.usage);
+    const accounting = createUsageAccounting({ provider: response.provider, id: response.model }, usage);
+    // This tracker is the compactor's local budget projection. A custom port's
+    // canonical Run usage was already settled and must not be persisted twice.
+    input.budget.observeAuxiliaryUsage(usage, Date.now(), accounting);
+    const { text, summary, summaryError, evidence } = inspectCompactionResponse(response);
+    if (binding) await record({ ...binding, ...evidence, usage, usageAccounting: accounting });
+    input.request.options.signal?.throwIfAborted();
+    input.budget.throwIfExhausted();
+    if (response.stopReason !== "stop")
+      throw new Error("Run context compactor did not produce a complete response");
+    if (!summary) throw summaryError;
+    return { summary, envelopeSha256, responseTextSha256: sha256(text) };
   }
-  await record({
-    ...binding,
-    stopReason: response.stopReason,
-    textSha256: sha256(text),
-    textBytes: Buffer.byteLength(text),
-    ...(summary
-      ? { compactionSummarySha256: sha256(canonicalJson(summary)) }
-      : {}),
-    usage,
-    usageAccounting: accounting,
-  });
-  input.request.options.signal?.throwIfAborted();
-  input.budget.throwIfExhausted();
-  if (response.stopReason !== "stop")
-    throw new Error(
-      "Run context compactor did not produce a complete response",
-    );
-  if (!summary) throw summaryError;
-  return {
-    summary,
-    envelopeSha256: captured.envelope.contentSha256,
-    responseTextSha256: sha256(text),
-  };
 
   async function record(payload: object): Promise<void> {
     const event = await input.host.store.appendEvent({
@@ -215,6 +223,21 @@ export async function invokeRunContextCompactor(input: {
     });
     await emitBestEffort(input.onEvent, event);
   }
+}
+
+function inspectCompactionResponse(response: AssistantMessage) {
+  const text = contentText(response.content);
+  let summary: ContextCompactionResult | undefined;
+  let summaryError: unknown;
+  if (response.stopReason === "stop") {
+    try { summary = parseContextCompactionResponse(text); } catch (error) { summaryError = error; }
+  }
+  const evidence: JsonObject = {
+    modelCallPurpose: "context_compaction", contentRedacted: true,
+    stopReason: response.stopReason, textSha256: sha256(text), textBytes: Buffer.byteLength(text),
+    ...(summary ? { compactionSummarySha256: sha256(canonicalJson(summary)) } : {}),
+  };
+  return { text, summary, summaryError, evidence };
 }
 
 async function awaitResponse<T>(

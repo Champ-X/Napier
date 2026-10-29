@@ -48,6 +48,9 @@ const emittedBefore = await emittedSnapshot();
 const runtimeTests = files.filter((file) => /^packages\/runtime\/test\/subagent.*\.test\.ts$/u.test(file)).concat([
   "packages/runtime/test/agent-coder-subagent.test.ts",
   "packages/runtime/test/model-session.test.ts",
+  "packages/runtime/test/model-capture-cancellation.test.ts",
+  "packages/runtime/test/agent-context-overflow-recovery.test.ts",
+  "packages/runtime/test/model-adapter-capture.test.ts",
   "packages/runtime/test/research-source-continuity.test.ts",
   "packages/runtime/test/source-continuity-lineage.test.ts",
   "packages/runtime/test/web-fetch-continuity.test.ts",
@@ -55,6 +58,10 @@ const runtimeTests = files.filter((file) => /^packages\/runtime\/test\/subagent.
   "packages/runtime/test/agent-manual-run-recovery.test.ts",
   "packages/runtime/test/automatic-recovery.test.ts",
   "packages/runtime/test/tool-effect-indeterminate-recovery.test.ts",
+  "packages/runtime/test/run-context-compaction.test.ts",
+  "packages/runtime/test/run-context-compaction-runtime.test.ts",
+  "packages/runtime/test/run-context-compaction-invocation-port.test.ts",
+  "packages/runtime/test/local-private-capsule-store.test.ts",
 ]);
 const webTests = ["subagent-primary-view", "manual-run-recovery", "environment-degradation-view",
   "task-narrative-view-model", "task-narrative-protocol", "thread-run-stream-state", "active-run-view-state",
@@ -81,7 +88,7 @@ async function suite(name, tests, cwd = root) {
     passed: parsed.numPassedTests, failed: parsed.numFailedTests, skipped: parsed.numPendingTests };
 }
 
-const strictTests = files.filter((file) => /^packages\/runtime\/test\/subagent-(?:child|execution-tools).*\.test\.ts$/u.test(file));
+const strictTests = files.filter((file) => /^packages\/runtime\/test\/(?:subagent-(?:child|execution-tools|working-set|checkpoint|context-compaction)|model-capture-cancellation|local-private-capsule-store|run-context-compaction-invocation-port).*\.test\.ts$/u.test(file));
 await check("new-runtime-tests-strict", [process.execPath, tsc, "--noEmit", "--strict", "--skipLibCheck",
   "--target", "ES2023", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--esModuleInterop",
   "--exactOptionalPropertyTypes", "--noUncheckedIndexedAccess", "--noUnusedLocals", "--noUnusedParameters",
@@ -104,7 +111,7 @@ const preserved = JSON.parse(await readFile(preservedPath, "utf8"));
 const preservedDrift = [];
 for (const [file, digest] of Object.entries(preserved)) if (hash(await readFile(file)) !== digest) preservedDrift.push(file);
 const content = {
-  schemaVersion: 1, kind: "napier.subagent-child-run-foundation-regression",
+  schemaVersion: 1, kind: "napier.subagent-child-run-regression",
   generatedAt: new Date().toISOString(), head: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
   root, raw, providerMode: "local fixtures; live-provider tests excluded", checks, suites,
   sourceManifest: sourceBefore, sourceCount: files.length, sourceDrift,
@@ -113,8 +120,9 @@ const content = {
   passedRequiredChecks: checks.filter((item) => item.required).every((item) => item.exitCode === 0) &&
     suites.every((item) => item.failed === 0 && item.skipped === 0) && sourceDrift.length === 0 && emittedDrift.length === 0 && preservedDrift.length === 0,
   releaseAccepted: false,
-  limitations: ["Fixture behavior is not live-model quality evidence", "No private transcript checkpoint or mailbox-consumption checkpoint",
-    "No child context compaction or automatic resume", "No hard shared-parent token/cost reservation across concurrent children",
+  limitations: ["Fixture behavior is not live-model quality evidence", "Private checkpoints do not yet enable safe child restart continuation",
+    "Child compaction shares invocation, measurement and summary policy; full child prompt compiler parity remains incomplete",
+    "No hard shared-parent token/cost reservation across concurrent children",
     "Late physical usage after an ignored abort remains unknown", "Historical release/API/architecture failures retained"],
 };
 await writeFile(output, `${JSON.stringify({ ...content, contentSha256: hash(JSON.stringify(content)) }, null, 2)}\n`, { flag: "wx" });

@@ -1,0 +1,581 @@
+{
+  "schemaVersion": 1,
+  "kind": "napier.subagent-working-set-evidence-index",
+  "createdAt": "2026-10-29T16:01:23.378863+00:00",
+  "baselineCommit": "139fc06216a6653569dfb7b2a957cc87e3827172",
+  "artifacts": [
+    {
+      "label": "checkpoint-mailbox",
+      "path": "/tmp/napier-child-checkpoint-handoff-20261029.json",
+      "sha256": "1fea2e470e60694d5a1a818fb476658f90ccfe18943a189f9ad693faacd9f49c",
+      "interpretation": "101 focused tests; overlaps combined suite; source hashes verified unchanged at root final handoff.",
+      "receipt": {
+        "task": "sandbox_admission_design checkpoint/mailbox implementation",
+        "cwd": "/Users/champ/orca/Napier",
+        "branch": "main",
+        "baseHead": "139fc06216a6653569dfb7b2a957cc87e3827172",
+        "sourceFrozen": true,
+        "files": [
+          {
+            "path": "packages/contracts/src/execution-runs.ts",
+            "sha256": "fdc88a5c979e46862a7eb2cf1fe738fd1908afb0ebc970b96898a35b13a35a18",
+            "bytes": 7981
+          },
+          {
+            "path": "packages/contracts/src/run-event-domain-definitions-v1.ts",
+            "sha256": "5712b879ceb9c07c12b7899149e82d623e58550887a35c9d5e9e258064fb5f01",
+            "bytes": 15985
+          },
+          {
+            "path": "packages/contracts/src/subagent-supervisor.ts",
+            "sha256": "485257c3ebd715450d3221d8f5e3a5f9d73a8986c23ce2ca1c20d36d42d19d83",
+            "bytes": 8633
+          },
+          {
+            "path": "packages/contracts/src/subagent-hub-v1.ts",
+            "sha256": "766535d618899a06c63dbe06cd714ea036aead56faddec012fed94dfa5dcde02",
+            "bytes": 4698
+          },
+          {
+            "path": "packages/runtime/src/subagent-checkpoint-frontier.ts",
+            "sha256": "793d9c40c6de521c84d0d48ef6880db0c273601945fc1a0194120ea4a085cfed",
+            "bytes": 2885
+          },
+          {
+            "path": "packages/runtime/src/subagent-checkpoint-repository.ts",
+            "sha256": "b603a8294a313ce6f221303bfa80e125b3d3530585b4b336b5ea8568b61b4d51",
+            "bytes": 6006
+          },
+          {
+            "path": "packages/runtime/src/subagent-checkpoint-transcript.ts",
+            "sha256": "aec5ff502c8a10ae0dc1b621fd587c92a628280e6ebd5a54a677af98c74f2aaf",
+            "bytes": 5683
+          },
+          {
+            "path": "packages/runtime/src/subagent-checkpoint-validation.ts",
+            "sha256": "6a6208dad5ea760082867eb08def12b7d49d5f79a34cea94e78b428071bb9c0a",
+            "bytes": 4360
+          },
+          {
+            "path": "packages/runtime/src/subagent-execution-fence-types.ts",
+            "sha256": "00e16ede2429b0e059c4e4c70b5b4327c6f9b1b3235b2b39c44dedeb48e7a5fe",
+            "bytes": 570
+          },
+          {
+            "path": "packages/runtime/src/subagent-mailbox-state.ts",
+            "sha256": "4d9ebeba54c5d3bcd07d105ab93a9ea939e3eb84e5976b30e5c722794d32c8df",
+            "bytes": 5548
+          },
+          {
+            "path": "packages/runtime/src/subagent-tool-result-evidence.ts",
+            "sha256": "802bbc1f49cc7c4724432177dce8883c2dbe9901b8f392cdc9a1ea00e93a5ad0",
+            "bytes": 888
+          },
+          {
+            "path": "packages/runtime/src/subagent-working-set-types.ts",
+            "sha256": "d0fff7e586c8117338045473fd41b17f16d5ad14c44f02f929bfb66f71a0ccce",
+            "bytes": 3485
+          },
+          {
+            "path": "packages/runtime/src/subagent-child-run-host.ts",
+            "sha256": "061ca1e79f9afd424ce52abeb7efb821b222a9b6fef1580d6bdf80dd51775368",
+            "bytes": 848
+          },
+          {
+            "path": "packages/runtime/src/subagent-child-run-repository.ts",
+            "sha256": "a28d4f28919933943fb5771f5260e96def0ce0a6347b18008cd292fd296fe0e7",
+            "bytes": 10224
+          },
+          {
+            "path": "packages/runtime/src/subagent-child-run-types.ts",
+            "sha256": "5270e8b951379ce7218d94d06f61313adc77f2a688d3c8d572ac239ad41ba6f5",
+            "bytes": 3030
+          },
+          {
+            "path": "packages/runtime/src/subagent-child-run-validation.ts",
+            "sha256": "6c241e42e487bd4121fa499a0fc6e58eca1223db3ed4fac38ee26c2114ab6e1f",
+            "bytes": 5362
+          },
+          {
+            "path": "packages/runtime/src/subagent-replay-validation.ts",
+            "sha256": "95854bdeddefd891899eaacb9ec4487296776b1746055e9ad2b13411d853e4de",
+            "bytes": 4788
+          },
+          {
+            "path": "packages/runtime/src/subagent-repository.ts",
+            "sha256": "1e92b0b5bbce4bb8082d84e194e8da11c22e6f45e2d61e878563a12d92f376cc",
+            "bytes": 5097
+          },
+          {
+            "path": "packages/runtime/src/thread-replay-import-context.ts",
+            "sha256": "94fa87cb6f81f1585a13e732d11ed4aa46ad3c3058b597c119cb353d1e01d527",
+            "bytes": 10653
+          },
+          {
+            "path": "packages/runtime/src/subagent-tool-execution.ts",
+            "sha256": "219855ee57ff2e843f107250dfcbdef7c50aefbdd000ecb95afe35a6ce8d0388",
+            "bytes": 6339
+          },
+          {
+            "path": "packages/runtime/src/subagent-hub-projection.ts",
+            "sha256": "99ea1b611fa0d799f003b1771736602dbde10563b99a6984e76fdae36c54c1a7",
+            "bytes": 14749
+          },
+          {
+            "path": "packages/runtime/src/store.ts",
+            "sha256": "6436817be29e7a2e72ff8ec8a7e6e35c132c23262ee8a2673061b46e290bb706",
+            "bytes": 134870
+          },
+          {
+            "path": "packages/runtime/src/in-process-subagent-provider.ts",
+            "sha256": "606a36777d4b9da84985216d6a4cd2b37c0d231ae66ad43aa5c9a08fc7fc67db",
+            "bytes": 16490
+          },
+          {
+            "path": "packages/runtime/test/subagent-checkpoint-repository.test.ts",
+            "sha256": "40916ffdedb0b2ae513223f1e0f0b0afd755d555006f5af05318aa16f9415262",
+            "bytes": 32131
+          },
+          {
+            "path": "packages/runtime/test/kernel-subagent-projection.test.ts",
+            "sha256": "29c1464a9bd7146a7c2392ba7e64fbb6f1232b3977223231f485345869c1d7b6",
+            "bytes": 7443
+          },
+          {
+            "path": "packages/runtime/test/subagent-supervisor.test.ts",
+            "sha256": "845be0a1d81b8afe2c6da26b0b33e38407aee46db836317f6cafded4ef9b2553",
+            "bytes": 7775
+          }
+        ],
+        "sharedFiles": [
+          "packages/runtime/src/store.ts",
+          "packages/runtime/src/in-process-subagent-provider.ts"
+        ],
+        "validation": {
+          "vitest": {
+            "report": "/tmp/napier-child-checkpoint-final-20261029.json",
+            "sha256": "a89153077a5e97a4dfb9c3125ba195b8e2514b7cb642ae9f3a0d6e27f1886b11",
+            "success": true,
+            "tests": 101,
+            "passed": 101,
+            "failed": 0
+          },
+          "contractsBuild": "passed",
+          "runtimeNoEmit": "passed",
+          "strictTestNoEmit": "passed (checkpoint repository, kernel projection, supervisor)",
+          "diffCheck": "passed",
+          "architecture": {
+            "report": "/tmp/napier-child-checkpoint-architecture-frozen.log",
+            "status": "only 8 pre-existing unrelated issues; no owned violation"
+          }
+        },
+        "knownBoundaries": [
+          "No automatic child restart or checkpoint restoration implemented.",
+          "Private source remains local-only; replay import retains metadata with storage not_imported.",
+          "Initial allowed tool schemas come from trusted runtime and are frozen; every captured successful normal request binds exact tool digest. Future restoration must revalidate actual live tool schemas.",
+          "Unsupported durable-directory capability has an explicit checkpoint_unavailable event; no fabricated pointer.",
+          "No commit, push, paid model calls, or web UI edits by this agent."
+        ]
+      }
+    },
+    {
+      "label": "child-compaction",
+      "path": "/tmp/napier-child-compaction-handoff-20261029/receipt.json",
+      "sha256": "974a46e3bcb79b2b76131251159420e3f9e0cd4e1e16d41f9ad1a771d4a31726",
+      "interpretation": "61 focused tests; evolving initial red tests are not claimed identical to final test bytes; intermediate failures retained.",
+      "receipt": {
+        "createdAt": "2026-10-29T15:45:14.908439+00:00",
+        "head": "139fc06216a6653569dfb7b2a957cc87e3827172",
+        "ownedFileSha256": {
+          "packages/runtime/src/subagent-model-session.ts": "cb98f4992f7db1040112af21755eb401cf8d6968237079e8f3f253ee9fbf7bfe",
+          "packages/runtime/src/subagent-context-compaction.ts": "a1543c159a0ca15f698894964f885cd4820e417e88caff007932b372e2c788d0",
+          "packages/runtime/src/subagent-model-turn-denial.ts": "376509db861dcaa9559d366511684d95b000a9a3a28378419ec5b1fe88ac3bbd",
+          "packages/runtime/src/run-context-compaction-model.ts": "60056295aa6de19360e3703e16dcf630053698da4ed9ab01ef3ef16b314eedd6",
+          "packages/runtime/src/run-context-compaction.ts": "fb1bb774bb8494d76ae9579ec1b4afa6ac70c3bb78d9b87a7cc311bf5bdaebd3",
+          "packages/runtime/src/run-context-compaction-types.ts": "fd78886d81788add71bedc69f50c9ed248f170ee7643961282993b109fb2b062",
+          "packages/runtime/src/model-context-token-meter.ts": "3ae146c191161fee7e2485cfa0ef14e0a6d635586640dbbb3aa56fcc2155780f",
+          "packages/runtime/test/subagent-context-compaction.test.ts": "f8e51b569f4e821c4e9af59dec78cdc4d88a47822a43f549b34f49463ea81e9a",
+          "packages/runtime/test/subagent-model-turn-denial.test.ts": "06570974fa6f1a8a144ea8b311db0e7d739aac958fc2924ca3d3b98f0e08b1ee",
+          "packages/runtime/test/run-context-compaction-invocation-port.test.ts": "a8813fb87075f79442f4e231f373b8773c96208ab8e3bbbdde33cc645960be8b"
+        },
+        "artifactsSha256": {
+          "/tmp/napier-child-compaction-red-20261029.json": "a0e9a3ffa297440689465348d3b2bf7e148fce4ad9cd078d6fd47fb192408eda",
+          "/tmp/napier-child-compaction-red-20261029.log": "0235fbaf868cbd9fb6655bf64b6eed2ed3751dff2d4d483ba88952c16a98c18a",
+          "/tmp/napier-child-compaction-green-v8.json": "8b6ae4190dcb663eaf7102e48427b2f6e106c56b004f45832c95ce29dcd545f3",
+          "/tmp/napier-child-compaction-green-v9.json": "376d8963ee35a59bb98e2cf8b379696ea38de82bff886ebc402ed9de9b83dede",
+          "/tmp/napier-child-compaction-green-final.json": "6f380187b0e2cf569046dd1434a396321876d03f43852b7bf21875639dfe7ec1",
+          "/tmp/napier-child-compaction-green-final.log": "57a29f1efcf00ba9101103f3497f49c26d094b86e546db881be1ea728878ded8",
+          "/tmp/napier-child-compaction-types.json": "eba8863a3bc05e0fa9fe193c25280342d15ab7e0ff070367654d3e4ca754214d",
+          "/tmp/napier-child-compaction-types-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "/tmp/napier-child-compaction-architecture-final.log": "8a0933141e076e7b7437ebd39422ad410215655f8918324810b60d88cb20667b"
+        },
+        "validation": {
+          "passed": 61,
+          "failed": 0,
+          "skipped": 0,
+          "success": true,
+          "suites": [
+            {
+              "name": "packages/runtime/test/run-context-compaction-invocation-port.test.ts",
+              "passed": 7
+            },
+            {
+              "name": "packages/runtime/test/run-context-compaction-runtime.test.ts",
+              "passed": 5
+            },
+            {
+              "name": "packages/runtime/test/run-context-compaction.test.ts",
+              "passed": 13
+            },
+            {
+              "name": "packages/runtime/test/subagent-child-budget.test.ts",
+              "passed": 4
+            },
+            {
+              "name": "packages/runtime/test/subagent-context-compaction.test.ts",
+              "passed": 7
+            },
+            {
+              "name": "packages/runtime/test/subagent-model-session-integration.test.ts",
+              "passed": 14
+            },
+            {
+              "name": "packages/runtime/test/subagent-model-turn-denial.test.ts",
+              "passed": 4
+            },
+            {
+              "name": "packages/runtime/test/subagent-working-set-integration.test.ts",
+              "passed": 7
+            }
+          ],
+          "strictTypecheckExitCode": 0,
+          "diffCheckExitCode": 0,
+          "architectureExitCode": 1,
+          "ownedArchitectureViolations": [],
+          "architectureBudgetsChanged": false
+        },
+        "coverage": [
+          "actual long tool transcript compaction and checkpoint hydration across continuation",
+          "raw append-only source and exact normal role prompt retained",
+          "aux canonical usage in Task/Run and parent rollup without duplicate counting",
+          "large primary failure into small selected fallback with candidate credential and one auxiliary physical attempt",
+          "known token denial before auxiliary and after settled auxiliary without synthetic primary turn",
+          "malformed and provider error auxiliary settled once then source preserved",
+          "abort after auxiliary settlement preserves source, known cost and two ordinary physical turns",
+          "host pre-dispatch abort requires aborted signal; provider copies do not hide real usage"
+        ],
+        "baseline": {
+          "initial": "/tmp/napier-child-compaction-red-20261029.json",
+          "result": "one expected missing auxiliary invocation failure before integration",
+          "abortRegression": "/tmp/napier-child-compaction-green-v8.json",
+          "abortResult": "6 passed, 1 failed: Task.turnCount 3 vs expected 2 before trusted pre-dispatch abort provenance fix",
+          "note": "Final child test evolved from initial red fixture (bounded window tuning and additional assertions); do not claim identical frozen final bytes ran initial red."
+        },
+        "sourceBinding": "Post-run owned source hashes. Root owns final complete-checkout pre/post binding. A pre-run hash attempt used the wrong cwd and failed before writing its map; no pre-run source binding is claimed.",
+        "scope": "Child compactor adapter/session/abort provenance plus shared invocation port and exact-system measurement type seam. No commits, external models, broad builds, budget loosening or preserved user-file edits. Full child compiler adoption and automatic replay/resurrection are not claimed."
+      }
+    },
+    {
+      "label": "private-filesystem",
+      "path": "/tmp/napier-private-capsule-summary-v3-20261029.json",
+      "sha256": "edf018438d6ddae18b670d032ea8c3cb9a5c757a5119f7d7c39835f68d458d75",
+      "interpretation": "16 dedicated tests: 9 real filesystem/process and 7 capability injections; broader 137 passed with 1 opt-in skip is not the root suite. Same dedicated tests on foundation: 2 passed, 14 failed.",
+      "receipt": {
+        "kind": "napier.private-capsule-durability-evidence",
+        "schemaVersion": 1,
+        "generatedAt": "2026-10-29T15:39:31.060361+00:00",
+        "baselineCommit": "139fc06216a6653569dfb7b2a957cc87e3827172",
+        "sourceBinding": [
+          {
+            "path": "packages/runtime/src/local-private-capsule-store.ts",
+            "sha256": "a98ee0ba2abf48501fb2dfcc5c88091e10b720014fc092935df62df50171efc0",
+            "modified": true
+          },
+          {
+            "path": "packages/runtime/test/local-private-capsule-store.test.ts",
+            "sha256": "bbfef74db2d55bca7e7b2425fb30f8478609c99bf494e3c2d495f63b627e30d7",
+            "modified": true
+          },
+          {
+            "path": "packages/runtime/src/workspace-write-lock.ts",
+            "sha256": "57044cea798487c963f0287b14ee249327be28faa10c104b970c6f8183aacf7b",
+            "modified": false
+          }
+        ],
+        "reports": [
+          {
+            "path": "/tmp/napier-private-capsule-baseline-manifest-v3-20261029.json",
+            "sha256": "83eacf5b0d192cfc2cd2e33071d7ba09fce467a21d27542f808261eeb9a2266c"
+          },
+          {
+            "path": "/tmp/napier-private-capsule-baseline-red-v3-20261029.json",
+            "sha256": "b8c60128bbd0d90a06bab91f7adad9e28082306b9a73aca92f07569a524d2eeb"
+          },
+          {
+            "path": "/tmp/napier-private-capsule-final-v3-20261029.json",
+            "sha256": "45e2ad5b441d16e423173f0bb231fe321ce12f8b4b2375d13eb7185ebd2b3638"
+          },
+          {
+            "path": "/tmp/napier-private-capsule-architecture-v3-20261029.log",
+            "sha256": "d44d6843eb706456f44f1b4f1cb8aed25eecd3c61cab1a74a0e0548dba1f454c"
+          },
+          {
+            "path": "/tmp/napier-private-capsule-public-api-v3-20261029.log",
+            "sha256": "4d63af9c13ef66446db265cea4b09fb3486e8efe0ce5abf09927644f593d6a5a"
+          }
+        ],
+        "results": {
+          "baseline": {
+            "passed": 2,
+            "failed": 14,
+            "skipped": 0,
+            "sameCurrentTestSha256": true
+          },
+          "final": {
+            "passed": 137,
+            "failed": 0,
+            "skipped": 1,
+            "dedicatedPassed": 16,
+            "dedicatedRealFilesystemTests": 9,
+            "dedicatedInjectedCapabilityTests": 7
+          },
+          "strictTestTypecheck": "passed with exact project flags",
+          "runtimeNoEmit": "passed",
+          "diffCheck": "passed",
+          "ownedArchitectureViolations": [],
+          "publicApi": "Failed at pre-existing foundation root-symbol budget 1897 vs 1896 and digest; no root symbol additions/removals versus 139fc062 tracked runtime/contracts baseline overlay",
+          "architecture": "Failed on unrelated existing/shared-worktree budgets; no owned-file violations"
+        },
+        "skippedTest": {
+          "name": "exports through the actual read-only SQLite CLI and leaves the source ledger unchanged",
+          "reason": "Explicit opt-in NAPIER_LIVE_REPRODUCTION_CLI=1 absent"
+        },
+        "durabilityEvidence": "Real Node fs async trace confirms fsync completion after final link and before caller pointer file is opened; files, symlinks, FIFO and concurrent independent Node workers are real. No power-loss experiment performed.",
+        "limitations": [
+          "Strict checkpoint operations require nonzero O_NOFOLLOW/O_DIRECTORY/O_NONBLOCK and successful file/directory fsync; default compatibility stores explicitly do not promise directory durability",
+          "Tested on Darwin in this run; not a Windows or network filesystem certification",
+          "Configured dataRoot and ancestors remain trusted; held-FD identity checks do not claim protection against an arbitrary same-user adversary replacing and restoring ancestors",
+          "Uses existing workspace-write-lock abandoned-owner/release policy, including its known stale-lock ABA window; normal live-owner quota coordination tested, arbitrary simultaneous stale-lock takeover quotas are not claimed",
+          "Installed final capsules are never deleted after visibility; a failed final fsync may retain an unacknowledged orphan for verified retry",
+          "Adapter parse callback is responsible for validating semantic content hash; store validates the requested hash binding and exact UTF-8 representation",
+          "Absent POSIX flags and unsupported directory operations are injected capability tests on real Darwin files, not native Windows acceptance; POSIX private-mode checks remain and no Windows ACL equivalence is claimed"
+        ],
+        "noCommit": true,
+        "noDistBuild": true,
+        "platformScope": {
+          "strictOption": "requireDurableDirectory: true",
+          "typedCapabilityFailure": "LocalPrivateCapsuleDurabilityUnavailableError",
+          "unavailableConditions": [
+            "missing nonzero O_NOFOLLOW/O_DIRECTORY/O_NONBLOCK",
+            "directory open/fsync EINVAL/ENOTSUP/EOPNOTSUPP/ENOSYS/EISDIR"
+          ],
+          "notCapabilityFailures": [
+            "EIO",
+            "ENOSPC",
+            "EACCES",
+            "file fsync errors",
+            "integrity/hash/UTF-8/permissions failures"
+          ],
+          "constructor": "No filesystem capability failure at construction",
+          "compatibilityMode": "Default tolerates only known unsupported directory operations; it does not promise directory durability; existing private-file validation and file fsync remain required",
+          "actualPlatform": "darwin",
+          "windowsEndToEndVerified": false
+        },
+        "readWithBytes": "Returns actual installed file bytes; read delegates to value; no public root re-export added"
+      }
+    },
+    {
+      "label": "working-set-baseline",
+      "path": "/tmp/napier-child-working-set-baseline-20261029.json",
+      "sha256": "db984aa43f410d2f32fb346413c26625122c4aa1f371c8c681a22374e89d3464",
+      "interpretation": "Archived 139fc062 production source; workspace dependencies and current backward-compatible Contracts dist. 5447 archived originals unchanged.",
+      "receipt": {
+        "root": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-working-set-baseline-wywqemc_",
+        "head": "139fc06216a6653569dfb7b2a957cc87e3827172",
+        "test": "packages/runtime/test/subagent-working-set-integration.test.ts",
+        "testSha256": "36fafe86bceb227858ca0c5deefed9f6d877bbdf39a3932572c89a347a907cd2",
+        "boundary": "Archived production Runtime source, workspace node_modules and current backward-compatible Contracts dist. First attempt included getRun fixture setup error; corrected case uses actual listRuns API.",
+        "archivedFilesVerifiedAfterRun": 5447,
+        "archivedFileMismatches": []
+      }
+    },
+    {
+      "label": "working-set-baseline-first",
+      "path": "/tmp/napier-child-working-set-baseline-red-20261029.json",
+      "sha256": "402855de3a7c5376728a78d109aca55d5a88e491aeca1e757b8fd7adadf2f43c",
+      "interpretation": "One fixture setup error and one behavioral failure; not two behavioral regressions.",
+      "counts": {
+        "numPassedTests": 0,
+        "numFailedTests": 2,
+        "numPendingTests": 0
+      }
+    },
+    {
+      "label": "working-set-baseline-corrected",
+      "path": "/tmp/napier-child-working-set-baseline-red-v2-20261029.json",
+      "sha256": "973208c9e7f0c962300e9fa27f5dd2835e2bedf6252a6f5434f990efc73c2237",
+      "interpretation": "Two behavioral failures after correcting invalid fixture store.getRun usage; final working-set suite later evolved.",
+      "counts": {
+        "numPassedTests": 0,
+        "numFailedTests": 2,
+        "numPendingTests": 0
+      }
+    },
+    {
+      "label": "working-set-runtime-v6",
+      "path": "/tmp/napier-child-working-set-runtime-v6-20261029.json",
+      "sha256": "78fd13148536f80ce9aec9ceb54521a17ae31b13935f5ca7b1c3f09f1ca7bbce",
+      "interpretation": "11 focused working-set/capsule tests passed; no before/after source binding claimed for this focused report.",
+      "counts": {
+        "numPassedTests": 11,
+        "numFailedTests": 0,
+        "numPendingTests": 0
+      }
+    },
+    {
+      "label": "supervisor-fixture-red",
+      "path": "/tmp/napier-async-supervisor-fixture-red-20261029.json",
+      "sha256": "a87019da162e5796f079f3df7eda76716b85810d06c80767c9adfe9436c2d119",
+      "interpretation": "Invalid fixture spread a handle discriminator into message kind; production mailbox validator correctly rejected it.",
+      "counts": {
+        "numPassedTests": 0,
+        "numFailedTests": 1,
+        "numPendingTests": 15
+      }
+    },
+    {
+      "label": "supervisor-fixture-green",
+      "path": "/tmp/napier-async-supervisor-fixture-green-20261029.json",
+      "sha256": "fd56fe87dad5394458406afd1fa7c0c6d994d25b3c98ff896fe8d6c7129b081c",
+      "interpretation": "One focused test passed after selecting only taskId/executionId; filtered tests are not coverage.",
+      "counts": {
+        "numPassedTests": 1,
+        "numFailedTests": 0,
+        "numPendingTests": 15
+      }
+    },
+    {
+      "label": "benchmark-repro",
+      "path": "/tmp/napier-child-working-set-benchmark-failure-repro-20261029.json",
+      "sha256": "b07ca39165f6e9fb2095f4fc188b3275dc060874e52f1b5ca9a8aadcfc55bfaa",
+      "interpretation": "Main session cancellation during capture left durable envelope unbound.",
+      "counts": {
+        "numPassedTests": 0,
+        "numFailedTests": 1,
+        "numPendingTests": 10
+      }
+    },
+    {
+      "label": "benchmark-fixed",
+      "path": "/tmp/napier-child-working-set-benchmark-failure-fixed-20261029.json",
+      "sha256": "de58e7b40ff52131f1300862f493d3020c5b70cbbd27ea1a04705b722f06aad3",
+      "interpretation": "Same targeted benchmark passed with binding assigned after capture and before dispatch check.",
+      "counts": {
+        "numPassedTests": 1,
+        "numFailedTests": 0,
+        "numPendingTests": 10
+      }
+    },
+    {
+      "label": "main-capture-fixture-first",
+      "path": "/tmp/napier-main-capture-cancellation-red-20261029.json",
+      "sha256": "83782246f43e8f5f466a9a5a001ee8fe7d5b6515dbb1dcd844a989a47687ccda",
+      "interpretation": "Fixture cleanup called nonexistent services.close; not valid red behavior evidence.",
+      "counts": {
+        "numPassedTests": 0,
+        "numFailedTests": 2,
+        "numPendingTests": 0
+      }
+    },
+    {
+      "label": "main-capture-red-v2",
+      "path": "/tmp/napier-main-capture-cancellation-red-v2-20261029.json",
+      "sha256": "367f78e837b83c45c587d1233612938fb1a04cab2af8e4252967026d7fbde45d",
+      "interpretation": "Corrected fixture: two exact cancellation boundary binding failures. Final test later used validator for strict JSON narrowing; no identical final-byte baseline claim.",
+      "counts": {
+        "numPassedTests": 0,
+        "numFailedTests": 2,
+        "numPendingTests": 0
+      }
+    },
+    {
+      "label": "main-capture-green",
+      "path": "/tmp/napier-main-capture-cancellation-green-20261029.json",
+      "sha256": "d47f3f65d2f7ee0a8a149e95173cf97883e406c9fb850eaaec43a27e5b8bb769",
+      "interpretation": "13 tests including cancellation/overflow/adapter/session passed before final JSON type narrowing; final combined suite covers final bytes.",
+      "counts": {
+        "numPassedTests": 13,
+        "numFailedTests": 0,
+        "numPendingTests": 0
+      }
+    },
+    {
+      "label": "root-subagent-working-set-regression-2026-10-29.json",
+      "path": "docs/artifacts/subagent-working-set-regression-2026-10-29.json",
+      "sha256": "18af25b76a8a6548b74023bbb043ce7d5889744005e135da3c6b99e2adfad597",
+      "interpretation": "First combined: 464 passed, 2 failed; supervisor invalid fixture and real main capture cancellation race retained."
+    },
+    {
+      "label": "root-subagent-working-set-regression-final-2026-10-29.json",
+      "path": "docs/artifacts/subagent-working-set-regression-final-2026-10-29.json",
+      "sha256": "a2d1526da29c1da3a2fc847c763713a01f358e9fb7c9fdea4e46a49379f2a5fb",
+      "interpretation": "Second combined: all 473 behavior tests passed; strict new-test JSON payload typing failed."
+    },
+    {
+      "label": "root-subagent-working-set-regression-final-v2-2026-10-29.json",
+      "path": "docs/artifacts/subagent-working-set-regression-final-v2-2026-10-29.json",
+      "sha256": "8d8ce786c06eadfd9dc22734173f670bd3ab5709f146cb602873372fb7062f4b",
+      "interpretation": "Current final: all required checks passed; historical release/API/architecture failures remain non-release-accepted."
+    }
+  ],
+  "rootVerification": {
+    "path": "docs/artifacts/subagent-working-set-regression-final-v2-2026-10-29.json",
+    "sha256": "8d8ce786c06eadfd9dc22734173f670bd3ab5709f146cb602873372fb7062f4b",
+    "passedRequiredChecks": true,
+    "suites": [
+      {
+        "name": "runtime",
+        "passed": 376,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "name": "web",
+        "passed": 53,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "name": "benchmark",
+        "passed": 32,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "name": "usage-campaign",
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "testFileCount": 68,
+    "sourceCount": 4119,
+    "sourceDrift": [],
+    "emittedCount": 39,
+    "emittedDrift": [],
+    "preserved": {
+      "manifest": "/tmp/napier-overlay-preserved-user-files-20261029.json",
+      "count": 28,
+      "changed": []
+    }
+  },
+  "boundaries": [
+    "No external or paid model calls; real local SQLite/files/processes with fixture providers.",
+    "Independent test counts overlap; do not sum them with the 473 root tests.",
+    "Captured cancellation terminal does not prove provider dispatch. Partial ledger-write failures and cross-route-attempt settlement remain separate.",
+    "Private working sets do not yet authorize safe child restart or coder workspace reconstruction.",
+    "Full child compiler parity, late physical usage attribution, and atomic shared-parent concurrent token/cost reservation remain unfinished.",
+    "Darwin filesystem/process evidence and injected unsupported flags are not Windows or power-loss acceptance.",
+    "Historical architecture/API/release failures retained; no release acceptance or live-model quality/performance claim."
+  ]
+}

@@ -7,6 +7,9 @@ import { createRunLeaseBinding } from "./run-lease-renewal.js";
 import { durableTerminalRunStatus } from "./run-event-admission.js";
 import { applyOutcome } from "./run-outcomes.js";
 import type { SubagentChildRunHost, ChildPersistedRun } from "./subagent-child-run-host.js";
+import { SubagentCheckpointRepository } from "./subagent-checkpoint-repository.js";
+import { acceptSubagentMessage } from "./subagent-mailbox-state.js";
+import type { AcceptSubagentMessageInput, CommitSubagentChildCheckpointInput } from "./subagent-working-set-types.js";
 import { resolveSubagentChildAuthorization } from "./subagent-child-authorization.js";
 import { assertChildRunFence, childRunState } from "./subagent-child-run-fence.js";
 import { reserveChildInvocation, settleChildInvocation } from "./subagent-child-invocations.js";
@@ -71,6 +74,10 @@ export class SubagentChildRunRepository {
       return { ...childRunState(run, task), token: lease.token, profile, events };
     });
   }
+
+  prepareCheckpoint(input: SubagentChildRunFence) { return new SubagentCheckpointRepository(this.host).prepare(input); }
+  commitCheckpoint(input: CommitSubagentChildCheckpointInput) { return new SubagentCheckpointRepository(this.host).commit(input); }
+  acceptMessage(input: AcceptSubagentMessageInput) { return acceptSubagentMessage(this.host, input); }
 
   assertActive(input: SubagentChildRunFence): SubagentChildRunState {
     this.host.assertInitialized();

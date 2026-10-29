@@ -181,16 +181,9 @@ export class InProcessSubagentProvider implements SubagentProvider {
     ) {
       throw new Error("Subagent task is not accepting messages");
     }
-    const duplicate = (await this.options.store.listEvents(task.threadId)).some(
-      (event) =>
-        event.type === "subagent.message.accepted" &&
-        event.payload &&
-        !Array.isArray(event.payload) &&
-        typeof event.payload === "object" &&
-        event.payload["id"] === message.id,
-    );
-    if (duplicate) throw new Error("Subagent message was already accepted");
-    await this.emit("subagent.message.accepted", task, message);
+    const accepted = await this.options.store.acceptSubagentMessage({ taskId: task.id, executionId: handle.executionId, message });
+    if (!accepted.appended) return;
+    try { await this.options.onEvent?.(accepted.event); } catch { /* Durable acceptance remains authoritative. */ }
     await execution.control.send(message);
   }
 
@@ -219,6 +212,9 @@ export class InProcessSubagentProvider implements SubagentProvider {
       mailbox: {
         acceptedCount: accepted.length,
         deliveredCount: delivered.length,
+        consumedCount: task.mailboxConsumedCount ?? 0,
+        consumedThroughSeq: task.mailboxConsumedThroughSeq ?? 0,
+        pendingConsumptionCount: Math.max(0, accepted.length - (task.mailboxConsumedCount ?? 0)),
         pendingCount: Math.max(0, accepted.length - delivered.length),
         ...(accepted.at(-1)
           ? { lastAcceptedAt: accepted.at(-1)!.createdAt }

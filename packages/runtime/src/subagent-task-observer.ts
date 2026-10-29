@@ -8,6 +8,7 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { subagentToolResultEvidence } from "./subagent-tool-result-evidence.js";
 import type { LocalStore } from "./store.js";
 import type { SubagentProgress } from "./subagent-child-execution.js";
 import {
@@ -134,7 +135,11 @@ export class SubagentTaskObserver {
       messageIndex: this.stepIndex,
       kind: "tool",
       toolName: event.toolName,
+      childRunId: this.task.childRunId,
+      executionId: this.task.executionId,
+      providerCallId: event.toolCallId,
       isError: event.isError,
+      ...subagentToolResultEvidence(event.result),
       textSha256: sha256(text),
       textBytes: Buffer.byteLength(text, "utf8"),
       contentRedacted: true,

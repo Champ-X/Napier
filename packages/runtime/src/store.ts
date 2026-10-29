@@ -374,7 +374,7 @@ import { validatePersistedStoreState } from "./store-state-validation.js";
 import { EMPTY_STORE_STATE, type PersistedStoreState } from "./store-state.js";
 import {
   SubagentRepository,
-  SubagentChildRunRepository,
+  SubagentChildRunRepository, type AcceptSubagentMessageInput, type CommitSubagentChildCheckpointInput,
   type CreateSubagentTaskInput,
   type StartSubagentChildRunInput, type SubagentChildRunFence, type ReserveSubagentChildInvocationInput,
   type SettleSubagentChildInvocationInput, type FinishSubagentChildRunInput, type SubagentChildProgressInput, type BindSubagentChildRouteInput,
@@ -2414,6 +2414,9 @@ export class LocalStore {
   startSubagentTask(taskId: string) { return this.subagentRepository.start(taskId); }
 
   // Child authority and aggregate mutations belong to the dedicated repository.
+  prepareSubagentChildCheckpoint(input: SubagentChildRunFence) { return this.subagentChildRunRepository.prepareCheckpoint(input); }
+  commitSubagentChildCheckpoint(input: CommitSubagentChildCheckpointInput) { return this.subagentChildRunRepository.commitCheckpoint(input); }
+  acceptSubagentMessage(input: AcceptSubagentMessageInput) { return this.subagentChildRunRepository.acceptMessage(input); }
   startSubagentChildRun(input: StartSubagentChildRunInput) { return this.subagentChildRunRepository.start(input); }
   assertSubagentChildRunActive(input: SubagentChildRunFence) { return this.subagentChildRunRepository.assertActive(input); }
   reserveSubagentChildInvocation(input: ReserveSubagentChildInvocationInput) { return this.subagentChildRunRepository.reserveInvocation(input); }
@@ -2429,11 +2432,8 @@ export class LocalStore {
     return this.subagentRepository.finish(...args);
   }
 
-  async setSubagentSupervisorStatus(
-    taskId: string,
-    status: NonNullable<SubagentTask["supervisorStatus"]>,
-  ): Promise<SubagentTask> {
-    return this.subagentRepository.setSupervisorStatus(taskId, status);
+  setSubagentSupervisorStatus(...args: Parameters<SubagentRepository["setSupervisorStatus"]>): Promise<SubagentTask> {
+    return this.subagentRepository.setSupervisorStatus(...args);
   }
 
   listExtensions(options: { agentId?: string } = {}): ExtensionRecord[] {

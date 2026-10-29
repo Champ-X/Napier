@@ -4,6 +4,7 @@ import type { ModelSessionLifetime } from "./model-session.js";
 import type { FinishSubagentTaskInput } from "./subagent-store-records.js";
 import { emitBestEffort, type EventSink } from "./event-sink.js";
 import { RunBudgetTracker } from "./run-budget.js";
+import type { PreparedSubagentWorkingSet, PrepareSubagentChildCheckpointResult, SubagentCheckpointStore } from "./subagent-working-set-types.js";
 import type {
   StartedSubagentChildRun, SubagentChildInvocationPhase,
   SubagentChildRunState, SubagentChildExecutionStore,
@@ -24,7 +25,7 @@ export class SubagentChildExecution {
   private publication: Promise<void> = Promise.resolve();
   readonly signal = this.leaseFailure.signal;
 
-  constructor(private readonly store: SubagentChildExecutionStore, private readonly started: StartedSubagentChildRun,
+  constructor(private readonly store: SubagentChildExecutionStore & SubagentCheckpointStore, private readonly started: StartedSubagentChildRun,
     private readonly onEvent?: EventSink) {
     this.state = started;
     this.pendingEvents.push(...started.events ?? []);
@@ -106,6 +107,16 @@ export class SubagentChildExecution {
     return this.serialize(async () => {
       this.state = await this.store.recordSubagentChildProgress({ ...this.fence(), ...delta });
       return this.task;
+    });
+  }
+
+  checkpoint(prepare: (snapshot: PrepareSubagentChildCheckpointResult) => Promise<PreparedSubagentWorkingSet>): Promise<void> {
+    return this.serialize(async () => {
+      const snapshot = await this.store.prepareSubagentChildCheckpoint(this.fence());
+      const prepared = await prepare(snapshot);
+      this.state = await this.store.commitSubagentChildCheckpoint({ ...this.fence(), prepared });
+      this.pendingEvents.push(...this.state.events ?? []);
+      await this.publish();
     });
   }
 

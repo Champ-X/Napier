@@ -19,13 +19,20 @@ import { mergeRouteStreamOptions } from "./model-route-options.js";
 import { hostModelAbortProvenance } from "./model-abort-provenance.js";
 import { ModelSession, type ModelSessionLifetime } from "./model-session.js";
 import type { AppendEventInput } from "./store-event-service.js";
+import type { RunEventQueryPort } from "./run-event-query-port.js";
+import { compactSubagentContext } from "./subagent-context-compaction.js";
 import { SubagentExecutionLifetime } from "./subagent-execution-lifetime.js";
 import { subagentModelTurnDeniedStream } from "./subagent-model-turn-denial.js";
 import { addSubagentUsage, subagentJsonValue } from "./subagent-task-evidence.js";
 import type { SubagentChildExecution, SubagentProgress } from "./subagent-child-execution.js";
 import { createUsageAccounting } from "./token-accounting.js";
 
-export type SubagentModelPhase = "subagent_turn" | "typed_repair" | "outcome_repair";
+export type SubagentModelPhase = "subagent_turn" | "typed_repair" | "outcome_repair" | "context_compaction";
+
+export interface SubagentModelResponseHooks {
+  responseEvidence?(response: AssistantMessage): JsonObject;
+  onCaptured?(envelope: ModelContextEnvelopeReceipt): void;
+}
 
 export interface SubagentModelSession {
   lifetime: ModelSessionLifetime;
@@ -35,12 +42,13 @@ export interface SubagentModelSession {
     model: Model<Api>,
     context: Context,
     options?: SimpleStreamOptions,
+    hooks?: SubagentModelResponseHooks,
   ): Promise<AssistantMessageEventStream>;
 }
 
 /** Canonical responses belong to the child; supervisor receipts retain parent linkage. */
 export function createSubagentModelSession(input: {
-  store: { dataRoot: string; appendEvent(input: AppendEventInput): Promise<RunEvent> };
+  store: { dataRoot: string; appendEvent(input: AppendEventInput): Promise<RunEvent> } & Pick<RunEventQueryPort, "listRunEvents">;
   models: MutableModels;
   task: SubagentTask;
   limits: SubagentLimits;
@@ -82,22 +90,42 @@ export function createSubagentModelSession(input: {
       // A disconnected observer does not revoke the durable receipt.
     }
   };
-  return {
+  const modelSession: SubagentModelSession = {
     lifetime,
     ...(input.child ? { recordProgress: (delta: SubagentProgress) => input.child!.progress(delta) } : {}),
-    async open(phase, model, context, options) {
-      lifetime.assertActive();
+    async open(phase, model, context, options, hooks) {
+      const invocationSignal = AbortSignal.any([lifetime.signal, options?.signal].filter(
+        (signal): signal is AbortSignal => Boolean(signal),
+      ));
       try {
+        lifetime.assertActive();
+        invocationSignal.throwIfAborted();
         if (phase === "subagent_turn") input.assertTurnAvailable?.();
         input.child?.assertCanInvoke();
       } catch (error) {
-        const denied = subagentModelTurnDeniedStream(model, error);
+        const denied = subagentModelTurnDeniedStream(model, error, invocationSignal);
         if (denied) return denied;
         throw error;
       }
+      let modelAttempt = 0;
       const invoke = async (candidate: Model<Api>, routedOptions: SimpleStreamOptions) => {
-        lifetime.assertActive();
-        const reservation = await input.child?.reserve(phase);
+        modelAttempt += 1;
+        let activeContext = context;
+        let reservation;
+        try {
+          lifetime.assertActive();
+          invocationSignal.throwIfAborted();
+          if (phase === "subagent_turn" && input.child) activeContext = await compactSubagentContext({
+            host: { store: input.store, modelRegistry: { models: input.models }, modelInvocationCapsules: capsules },
+            child: input.child, session: modelSession, model: candidate, context, options: routedOptions, modelAttempt,
+            ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+          });
+          reservation = await input.child?.reserve(phase);
+        } catch (error) {
+          const denied = subagentModelTurnDeniedStream(candidate, error, invocationSignal);
+          if (denied) return denied;
+          throw error;
+        }
         const invocationIndex = reservation?.invocationIndex ?? ++nextInvocationIndex;
         let contextEnvelopeSha256: string | undefined;
         let envelope: ModelContextEnvelopeReceipt | undefined;
@@ -105,7 +133,7 @@ export function createSubagentModelSession(input: {
         const opened = await session.open({
           phase,
           model: candidate,
-          context,
+          context: activeContext,
           options: phase === "subagent_turn" ? routedOptions : { ...routedOptions, maxRetries: 0 },
           capture: async (request) => {
             const captures: Array<{ kind: string; payload: unknown }> = [];
@@ -118,7 +146,7 @@ export function createSubagentModelSession(input: {
               turnIndex: input.child ? invocationIndex - 1 : invocationIndex,
               // The capsule is bound to the actual execution Run. The outer
               // supervisor receipt additionally binds the parent, Task and phase.
-              purpose: "agent_turn",
+              purpose: phase === "context_compaction" ? "context_compaction" : "agent_turn",
               cacheScope: request.cacheScope,
               cacheScopeKind: "session_and_phase",
               phase,
@@ -129,6 +157,7 @@ export function createSubagentModelSession(input: {
             });
             contextEnvelopeSha256 = captured.envelope.contentSha256;
             envelope = captured.envelope;
+            hooks?.onCaptured?.(envelope);
             await append("subagent.model.invocation", {
               kind: "napier.subagent-model-invocation", phase, invocationIndex,
               contextEnvelopeSha256, captures,
@@ -145,6 +174,7 @@ export function createSubagentModelSession(input: {
           const usage = hostModelAbortProvenance(message) ? undefined : addSubagentUsage(emptyUsage(), message.usage);
           if (input.child && reservation) {
             const payload = subagentJsonValue({
+              ...hooks?.responseEvidence?.(message),
               model: `${message.provider}/${message.model}`, stopReason: message.stopReason,
               responseSha256: sha256(canonicalJson(message)),
               ...(envelope ? {
@@ -170,11 +200,11 @@ export function createSubagentModelSession(input: {
           });
         });
       };
-      if (!input.modelRoute) return invoke(model, options ?? {});
+      // Auxiliary compaction is already inside the chosen route candidate. Its
+      // one physical attempt retains that candidate's transport and authority.
+      if (!input.modelRoute || phase === "context_compaction") return invoke(model, options ?? {});
       return input.modelRoute.stream({
-        signal: AbortSignal.any([lifetime.signal, options?.signal].filter(
-          (signal): signal is AbortSignal => Boolean(signal),
-        )),
+        signal: invocationSignal,
         ...(phase === "subagent_turn" ? {} : { physicalAttemptLimit: 1 }),
         invoke: (candidate, attempt) => invoke(
           candidate, attempt ? mergeRouteStreamOptions(options ?? {}, attempt.streamOptions) : options ?? {},
@@ -182,6 +212,7 @@ export function createSubagentModelSession(input: {
       });
     },
   };
+  return modelSession;
 }
 
 function observeResponse(

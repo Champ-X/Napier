@@ -17,13 +17,16 @@ export class SubagentModelTurnDeniedError extends Error {
   }
 }
 
-/** Return a trusted terminal only for a host denial before route/capture/dispatch.
+/** Return a trusted terminal only for a host denial before capture/dispatch.
  * Throwing from streamFn would let the SDK manufacture an unidentifiable turn. */
 export function subagentModelTurnDeniedStream(
   model: Model<Api>,
   error: unknown,
+  signal?: AbortSignal,
 ): AssistantMessageEventStream | undefined {
-  if (!(error instanceof SubagentModelTurnDeniedError) && !(error instanceof RunBudgetExceededError)) return undefined;
+  if (!signal?.aborted && !(error instanceof SubagentModelTurnDeniedError) && !(error instanceof RunBudgetExceededError)) return undefined;
+  const failure = error instanceof Error ? error : new Error(String(error));
+  const stopReason = signal?.aborted ? "aborted" : "error";
   const message: AssistantMessage = {
     role: "assistant",
     content: [],
@@ -34,17 +37,17 @@ export function subagentModelTurnDeniedStream(
       input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0,
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
     },
-    stopReason: "error",
-    errorMessage: error.message,
+    stopReason,
+    errorMessage: failure.message,
     timestamp: Date.now(),
   };
   Object.freeze(message.content);
   Object.freeze(message.usage.cost);
   Object.freeze(message.usage);
   Object.freeze(message);
-  undispatchedMessages.set(message, error);
+  undispatchedMessages.set(message, failure);
   const stream = createAssistantMessageEventStream();
-  stream.push({ type: "error", reason: "error", error: message });
+  stream.push({ type: "error", reason: stopReason, error: message });
   return stream;
 }
 

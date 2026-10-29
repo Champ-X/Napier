@@ -251,6 +251,7 @@ export function createImportedRuns(
       ...(mappedParentId ? { parentRunId: mappedParentId } : {}),
       ...(source.subagent ? { subagent: {
         ...structuredClone(source.subagent), taskId: ids.taskIds.get(source.subagent.taskId)!,
+        ...(source.subagent.checkpoint ? { checkpoint: { ...structuredClone(source.subagent.checkpoint), storage: "not_imported" as const } } : {}),
       } } : {}),
       ...(source.branchFromSeq !== undefined
         ? { branchFromSeq: source.branchFromSeq }

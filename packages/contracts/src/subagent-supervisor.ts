@@ -79,6 +79,9 @@ export interface SubagentMessage {
 export interface SubagentMailboxSnapshot {
   acceptedCount: number;
   deliveredCount: number;
+  consumedCount?: number;
+  pendingConsumptionCount?: number;
+  consumedThroughSeq?: number;
   pendingCount: number;
   lastAcceptedAt?: string;
   lastDeliveredAt?: string;
@@ -301,6 +304,8 @@ export interface SubagentTask {
   turnCount: number;
   usage: Usage;
   usageStatus?: "complete" | "incomplete";
+  mailboxConsumedCount?: number;
+  mailboxConsumedThroughSeq?: number;
   createdAt: string;
   startedAt?: string;
   finishedAt?: string;

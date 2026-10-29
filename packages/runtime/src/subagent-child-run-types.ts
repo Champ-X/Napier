@@ -1,4 +1,7 @@
-import type { AgentProfile, JsonObject, ModelContextEnvelopeReceipt, RunEvent, RunRecord, SubagentTask, Usage } from "@napier/contracts";
+import type { AgentProfile, JsonObject, ModelContextEnvelopeReceipt, RunEvent, RunRecord, Usage } from "@napier/contracts";
+import type { SubagentChildRunFence, SubagentChildRunState } from "./subagent-execution-fence-types.js";
+export type { SubagentChildRunFence, SubagentChildRunState, SubagentChildCheckpointFence } from "./subagent-execution-fence-types.js";
+import type { SubagentCheckpointStore } from "./subagent-working-set-types.js";
 import type { RunLeaseOptions } from "./run-lease-renewal.js";
 import type { SubagentChildRunAuthorization } from "./subagent-child-authorization.js";
 import type { FinishSubagentTaskInput } from "./subagent-store-records.js";
@@ -8,20 +11,6 @@ export interface StartSubagentChildRunInput {
   executionId: string;
   authorization: SubagentChildRunAuthorization;
   lease: RunLeaseOptions;
-}
-export interface SubagentChildRunFence {
-  runId: string;
-  taskId: string;
-  executionId: string;
-  token: string;
-  expectedExecutionRevision?: number;
-}
-export interface SubagentChildRunState {
-  run: RunRecord;
-  task: SubagentTask;
-  executionRevision: number;
-  /** Newly committed events for best-effort publication outside the transaction. */
-  events?: RunEvent[];
 }
 export interface StartedSubagentChildRun extends SubagentChildRunState {
   token: string;
@@ -56,13 +45,8 @@ export interface SubagentChildProgressInput extends SubagentChildRunFence {
   turnDelta?: number;
 }
 export interface BindSubagentChildRouteInput extends SubagentChildRunFence { routePlanId: string }
-/** Reserved boundary for the later private-transcript migration, not a replay grant. */
-export interface SubagentChildCheckpointFence extends SubagentChildRunFence {
-  expectedExecutionRevision: number;
-}
-
 /** Runner-facing port; keeps the executor independent of the workspace store facade. */
-export interface SubagentChildExecutionStore {
+export interface SubagentChildExecutionStore extends SubagentCheckpointStore {
   renewRunLease(runId: string, token: string, ttlMs: number): Promise<RunRecord>;
   assertSubagentChildRunActive(input: SubagentChildRunFence): SubagentChildRunState;
   reserveSubagentChildInvocation(input: ReserveSubagentChildInvocationInput): Promise<SubagentChildInvocationReservation>;

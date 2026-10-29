@@ -5,7 +5,7 @@
 ## 1. 文档范围与证据基线
 
 - 调研与审查日期：2026-10-28。
-- 文档整理日期：2026-10-29。
+- 文档整理日期：2026-10-30。
 - 项目目录：`/Users/champ/orca/Napier`。
 - 审查基线：`main @ 171e4752fdaf46c1cbfc53e6e5cad086224df458`，包含审查时已有的未提交前端与文档改动，并非仅审查该提交。
 - 本文来源：当前代码审查、离线纯函数反例、正在运行的工作台观察，以及前沿 Agent 的一手资料。
@@ -323,6 +323,16 @@
 - [最终收据](docs/artifacts/subagent-child-runs-foundation-final-2026-10-29.json)：57 文件／381 测试通过，0 failed／skipped；Contracts／Runtime／Server 编译、Benchmark／Web 类型检查、新增测试严格类型检查通过。4,100 个源码／测试／配置、67 个 emitted module 前后哈希一致，用户已有 28 文件完整保留。[首轮收据](docs/artifacts/subagent-child-runs-foundation-2026-10-29.json) 保留严格检查命令缺失 exactOptionalPropertyTypes 等仓库选项的失败，未用重跑覆盖。公开 API 恢复原 1,897／1,896 与 digest 两项历史失败；架构 8 项既有失败，预算只下调；完整 release build 仍因原 manifest 不匹配失败，未重写清单。[独立证据索引](docs/artifacts/subagent-child-runs-evidence-index-2026-10-29.json) 区分冻结源码行为红例、fixture 前置缺陷和测试环境失败，不叠加重合测试数。
 - 后续仍需私有 transcript／working set、capsule-first checkpoint CAS、mailbox 消费 cursor、tool／invocation frontier、同一 ModelSession 内 compaction 和安全 child 重启续跑；忽略 abort 后迟到物理用量归属与完整增量 Run 元数据投影仍未实现。全部模型响应为本地 fixture，零外部付费模型请求；不宣称模型质量、性能或 G03／全目标验收完成。实现边界见 [subagent-child-runs.md](docs/subagent-child-runs.md)。
 
+### 后续推进：G03 私有工作集、消费证明与共享压缩（2026-10-30）
+
+- 从 `139fc062` 继续。child 在模型调用前和完整 turn 后 awaited 保存完整私有 source；保留原始工具结果、图片、模型签名与 raw prefix，压缩只改变 provider 投影。先 durable capsule、后 opaque prepared capability，Store 在事务中复核父／子 lease、execution revision、原 pointer、账本 head、调用／用量／工具 frontier，再原子提交 checkpoint、Task 消费计数和事件。导出不包含私有正文，导入明确 `not_imported`；尚不授予续跑权限。
+- mailbox 接受按 ID／内容原子幂等，delivered 仍只表示 enqueue；实际入 source 的消息对象才产生消费证明。持久 sparse consumed IDs 与连续 cursor，覆盖 B 先消费而 A 未消费，不能通过同文副本冒领。私有 source 的 assistant／SDK tool-result 哈希绑定真实 child 响应／工具记录，授权工具表与后续 schema 固定；schema 错误与重复 tool ID 拒绝后仍能按 SDK 语义修正。
+- child 在所选 route candidate 内、普通调用预留之前使用共享 `RunContextCompactor`／`ModelSession`。摘要使用同一 capture、deadline、abort 与原子用量结算，aux 不算普通 turn，不重试失败摘要；保留全部 raw 工具 source。覆盖长工具上下文、primary503 后小窗口 fallback、预算与取消边界。角色 prompt 保持原样；完整 child prompt compiler／overflow／thinking／extension parity 尚未实现。
+- 私有存储增加有界 descriptor／UTF-8／身份校验、不可变安装和支持平台的目录同步；子 checkpoint 强制 durability capability，仅明确不支持能力时记录 unavailable 并继续普通执行，保留此前 pointer／cursor。EIO／ENOSPC／权限／损坏仍失败。真实 Darwin 文件／进程与 capability 注入不是 Windows 或断电验收；stale-lock takeover 竞态和 hostile ancestor 不在本轮保证内。
+- 联合验证发现并修复两处问题：异步 supervisor 测试误把完整 handle.kind 传为消息类型；主调用在 capture 完成后的取消窗口遗漏 terminal envelope 绑定。后者补充两个精确持久化边界的零 provider 调用／有效 replay 测试，保留 dispatch 取消门槛；绑定不表示 provider 已收到请求。partial ledger 写失败与跨 route attempt 结算另列边界。
+- [最终收据](docs/artifacts/subagent-working-set-regression-final-v2-2026-10-29.json)：**68 文件／473 测试通过，0 failed／skipped**；Contracts／Runtime／Server 编译、Benchmark／Web 类型检查、新增测试严格类型检查通过。4,119 个源码／测试／配置及 39 个 emitted module 前后哈希一致，用户已有 28 文件完整保留。首轮 464 passed／2 failed 与下一轮 473 passed 但新增测试 JSON 类型检查失败均原样保留；[独立证据索引](docs/artifacts/subagent-working-set-evidence-index-2026-10-29.json) 区分 fixture 错误、行为红例与演化后的测试，重叠用例不叠加。架构仍为 8 项既有失败，公开 API 仍为 1897／1896 与 digest 两项，历史 release manifest 仍失败；没有改写预算或发布证据。
+- 下一步采用新的 continuation Task／execution／child Run 和明确 recovered-parent grant，旧账本保持不可变；严格拒绝 checkpoint 后未覆盖的 model／tool／review tail，保留 inherited prefix、逻辑预算／原 deadline、稀疏 mailbox 来源，并实现终态 assistant 的无额外普通调用结算与结果／候选幂等。安全父恢复、workspace／schema 重验证、coder 工作集恢复、迟到物理用量、并发共享父额度及完整增量投影仍未完成。全部模型响应为本地 fixture，零外部付费请求；G03 与 G01–G07 整体继续 **active**。实现与边界见 [subagent-working-set.md](docs/subagent-working-set.md)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -443,9 +453,9 @@
 **实施任务**
 
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
-- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair、原子调用用量／事件结算与工具归属已实现；完整 child context compiler／compaction、私有执行进度 checkpoint 和迟到物理用量归属仍待完成。）
-- [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查已实现；mailbox 消费持久化与并发共享父 token／cost 原子额度仍待完成。）
-- [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。
+- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 source checkpoint、原子调用用量／事件结算与工具归属已实现；完整 child context compiler／overflow／thinking parity 和迟到物理用量归属仍待完成。）
+- [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查与 mailbox 稀疏消费持久化已实现；并发共享父 token／cost 原子额度仍待完成。）
+- [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明已接通；安全恢复授权、尾部验证与 continuation 尚待实现。）
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。
 
 **验收**

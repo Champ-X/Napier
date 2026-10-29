@@ -199,6 +199,18 @@ export interface RunRecord {
     /** Execution CAS revision, independent of lease heartbeat revisions. */
     executionRevision: number;
     nextInvocationIndex: number;
+    checkpoint?: {
+      schemaVersion: 1;
+      revision: number;
+      capsuleSha256: string;
+      capsuleBytes: number;
+      messageCount: number;
+      messageSetSha256: string;
+      throughSeq: number;
+      mailboxConsumedCount: number;
+      mailboxConsumedThroughSeq: number;
+      storage: "local_only" | "not_imported";
+    };
   };
   branchFromSeq?: number;
   interruptedAt?: string;

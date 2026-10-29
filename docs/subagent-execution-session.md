@@ -1,9 +1,10 @@
 # Main and child execution boundaries
 
 This G03 design follows the current production paths. The tool boundaries and a
-shared model invocation mechanism and durable child Runs are implemented. Child
-compaction and restart continuation remain unfinished work. The current ownership,
-accounting and recovery foundation is described in [subagent-child-runs.md](subagent-child-runs.md). External
+shared model invocation mechanism, durable child Runs, private working sets and
+shared compaction are implemented. Safe restart continuation remains unfinished.
+Ownership/accounting are described in [subagent-child-runs.md](subagent-child-runs.md),
+and checkpoint/compaction boundaries in [subagent-working-set.md](subagent-working-set.md). External
 model requests are excluded from the local regression work.
 
 ## Capabilities already shared
@@ -24,12 +25,12 @@ responsibilities to preserve, not functionality a new engine needs to replace.
 
 | Capability | Current boundary | Required change |
 | --- | --- | --- |
-| Model lifecycle | Main turns, child turns and both repair paths use `ModelSession.open`; child response and usage now commit atomically under its lease. Main retains overflow/thinking-loop policy. | Add child compaction and private working-set checkpoints; a captured request alone is not restartable execution. |
-| Context and compaction | Main preparation, prompt compilation and compaction use a ledger Run. Child starts from role instructions and a task prompt. | Give child-local context, compaction and capture an explicit owner; passing the parent Run unchanged would import the wrong history and checkpoint scope. |
+| Model lifecycle | Main turns, child turns, repairs and child compaction use `ModelSession.open`; child response and usage commit atomically under its lease. Main retains overflow/thinking-loop policy. | Complete child context-compiler parity and safe continuation; a captured request alone is not restartable execution. |
+| Context and compaction | Child keeps an append-only private source and projects provider requests through the shared RunContextCompactor using its selected route candidate. Role prompt remains unchanged. | Revalidate private source, tool schema and workspace before restart; passing the parent Run unchanged would import the wrong history and scope. |
 | Usage | Child canonical responses settle its Run and Task subtotal once. `aggregateRunUsage` combines only parent-scoped responses and Task roll-up. Benchmark totals exclude child Runs. | Reconcile late physical usage and shared concurrent parent budget reservations. Incomplete usage cannot establish a known zero cost. |
-| Controls | Accepted/delivered mailbox events persist; pending `Agent.steer` work is in memory. Delivered is enqueue evidence, not a durable context-consumption checkpoint. | Persist message consumption with the child context/checkpoint identity, and replay only unconsumed messages. |
-| Run lineage | An opaque internal grant creates and leases a child Run after the queue slot is acquired. Task.runId remains the parent; Task.childRunId names execution. Child Runs never own Thread controls or generic recovery. | Persist checkpoint/control consumption on that identity. Merely filling parentRunId cannot grant execution. |
-| Recovery | Lost child execution is explicitly interrupted with continuation unavailable; unresolved effects retain blocked_safety and durable fencing. Revival remains a new task. | Persist a validated private working set and settled-tool boundary before claiming continuation from previous progress. |
+| Controls | Acceptance is atomic; delivery remains enqueue evidence. A sparse consumed-ID set and contiguous accepted cursor commit with the exact private transcript. | Replay only unconsumed messages after validated recovery admission. Consumption does not mean the provider has already received the request. |
+| Run lineage | An opaque internal grant creates and leases a child Run after the queue slot is acquired. Task.runId remains the parent; Task.childRunId names execution. Private checkpoint identity and counters are fenced together. | Establish safe recovered-parent authority; child Runs never own Thread controls or generic recovery. |
+| Recovery | Lost child execution is explicitly interrupted with continuation unavailable; unresolved effects retain blocked_safety and durable fencing. Private checkpoint CAS and consumption exist, but revival remains a new task. | Reconcile post-checkpoint invocation/review/delivery tails and restore authority before claiming continuation from previous progress. |
 | Resources | Inherited factories, journal records, candidate debugger and cleanup now use the child Run. Explicit bounded network-source copies retain read continuity without borrowing live parent resources. | A terminal task/result is not proof that all OS descendants or unknown provider resources were reclaimed. |
 
 Relevant production entry points are `agent-model-stream-lifecycle.ts`,
