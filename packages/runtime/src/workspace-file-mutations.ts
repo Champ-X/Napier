@@ -18,7 +18,6 @@ import type {
   WorkspaceTrashRestoreResult,
 } from "@napier/contracts";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import { compensateWorkspaceFileMutation } from "./workspace-file-mutation-compensation.js";
 import {
@@ -40,13 +39,15 @@ import {
   parseTrashItem,
   scopeFromSnapshot,
   syncDirectory,
-  type MissingPathPlan,
   type WorkspaceEntrySnapshot,
   type WorkspaceFileMutationScope,
   writeJsonExclusive,
 } from "./workspace-file-scope.js";
 import { withWorkspacePathLocks } from "./workspace-write-lock.js";
 import { assertOutputMutationPaths } from "./workspace-thread-outputs.js";
+import { prepareWorkspaceFileMove } from "./workspace-file-move-preparation.js";
+import { planFingerprint, type WorkspaceFileMutationPlan, type WorkspaceFileMutationRequest } from "./workspace-file-mutation-plan.js";
+import type { RunHeadEventClaimStore } from "./event-idempotency.js";
 export { assertWorkspaceOutputReplacement } from "./workspace-thread-outputs.js";
 
 export const MAX_WORKSPACE_FILE_MUTATION_PREVIEWS = 64;
@@ -59,25 +60,7 @@ export {
 const PREVIEW_ID = /^filepreview_[a-z0-9]{8,80}$/u;
 const TRASH_ID = /^trash_[a-z0-9]{8,80}$/u;
 
-export type WorkspaceFileMutationRequest =
-  | {
-      operation: "create_directory";
-      path: string;
-      createParentDirectories?: boolean;
-    }
-  | {
-      operation: "move";
-      sourcePath: string;
-      destinationPath: string;
-    }
-  | {
-      operation: "trash";
-      path: string;
-    }
-  | {
-      operation: "restore";
-      trashId: string;
-    };
+export type { WorkspaceFileMutationRequest } from "./workspace-file-mutation-plan.js";
 
 export type { WorkspaceFileMutationScope } from "./workspace-file-scope.js";
 
@@ -113,19 +96,6 @@ export interface WorkspaceFileMutationManagerOptions {
   dataRoot: string;
   renameEntry?: typeof rename;
   now?: () => Date;
-}
-
-interface WorkspaceFileMutationPlan {
-  request: WorkspaceFileMutationRequest;
-  sourcePath?: string;
-  destinationPath?: string;
-  source?: WorkspaceEntrySnapshot;
-  destination: MissingPathPlan;
-  trashId?: string;
-  trashItem?: WorkspaceTrashItem;
-  lockTargets: string[];
-  reversible: boolean;
-  planSha256: string;
 }
 
 interface StoredPreview {
@@ -237,6 +207,7 @@ export class WorkspaceFileMutationManager {
     previewId: string,
     initiatedBy: WorkspaceFileMutationEvidence["initiatedBy"] = "agent",
     signal?: AbortSignal,
+    callId?: string,
   ): Promise<WorkspaceFileMutationApplyResult> {
     this.assertReady();
     this.assertRunOwner(threadId, runId, initiatedBy === "agent");
@@ -283,6 +254,16 @@ export class WorkspaceFileMutationManager {
           throw new Error(
             "Workspace file mutation preview is stale; preview the operation again",
           );
+        }
+        const journal = this.options.store as WorkspaceFileMutationEventStore & Partial<RunHeadEventClaimStore>;
+        if (callId && initiatedBy === "agent" && currentPlan.request.operation === "move" && currentPlan.source?.entryKind === "file" &&
+            typeof journal.listRunEvents === "function" && typeof journal.appendEventOnceAtRunHead === "function") {
+          const enterCommit = await prepareWorkspaceFileMove({ store: journal as RunHeadEventClaimStore,
+            workspaceRoot: this.workspaceRoot, dataRoot: this.dataRoot, threadId, runId, callId, previewId,
+            sourcePath: currentPlan.sourcePath!, destinationPath: currentPlan.destinationPath!, planSha256: currentPlan.planSha256 });
+          assertNotAborted(signal, "Workspace file mutation apply was aborted");
+          await enterCommit?.();
+          assertNotAborted(signal, "Workspace file mutation apply was aborted");
         }
         const applied = await this.commitPlan(currentPlan, threadId, runId);
         const evidence = createWorkspaceFileMutationEvidence({
@@ -710,32 +691,6 @@ export class WorkspaceFileMutationManager {
     }
     return value;
   }
-}
-
-function planFingerprint(
-  plan: Omit<WorkspaceFileMutationPlan, "planSha256">,
-): string {
-  return sha256(
-    canonicalJson({
-      operation: plan.request.operation,
-      sourcePathSha256: plan.sourcePath ? sha256(plan.sourcePath) : null,
-      destinationPathSha256: plan.destinationPath
-        ? sha256(plan.destinationPath)
-        : null,
-      source: plan.source ? scopeFromSnapshot(plan.source) : null,
-      destinationMissingDirectorySetSha256: sha256(
-        canonicalJson(
-          plan.destination.missingDirectories.map((directory) =>
-            sha256(directory),
-          ),
-        ),
-      ),
-      destinationParentStateSha256: plan.destination.parentStateSha256,
-      trashId: plan.trashId ?? null,
-      trashManifestSha256: plan.trashItem?.contentSha256 ?? null,
-      reversible: plan.reversible,
-    }),
-  );
 }
 
 function assertNotAborted(

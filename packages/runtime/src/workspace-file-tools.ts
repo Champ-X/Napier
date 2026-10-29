@@ -158,13 +158,14 @@ export function createWorkspaceFileApplyTool(
     description:
       "Apply one fresh one-use previewId from this Run; no paths accepted. Refuses stale preview or occupied destination at final check and never performs permanent deletion.",
     parameters: applySchema,
-    async execute(_toolCallId, input, signal) {
+    async execute(toolCallId, input, signal) {
       const result = await manager.apply(
         context.threadId,
         context.runId,
         input.previewId,
         "agent",
         signal,
+        toolCallId,
       );
       return applyToolResult(result);
     },

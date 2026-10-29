@@ -53,7 +53,7 @@
     "packages/runtime/src/workflow-ledger.ts": 1069,
     "packages/runtime/src/workflow-manifests.ts": 1088,
     "packages/runtime/src/workflow-recovery.ts": 623,
-    "packages/runtime/src/workspace-file-mutations.ts": 746,
+    "packages/runtime/src/workspace-file-mutations.ts": 701,
     "packages/runtime/src/workspace-processes.ts": 919,
     "packages/runtime/test/agent-runtime.test.ts": 4302,
     "packages/runtime/test/opentelemetry.test.ts": 1337,

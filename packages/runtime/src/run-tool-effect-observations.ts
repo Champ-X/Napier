@@ -3,6 +3,7 @@ import type { JsonValue, RunEvent } from "@napier/contracts";
 import { CORE_STATELESS_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 import { reconciledPatchRecoveryEvidence } from "./workspace-patch-reconciled-evidence.js";
 import { settledPatchRecoveryCandidates } from "./run-patch-recovery-evidence.js";
+import { moveRecoveryEvidence } from "./workspace-file-move-evidence.js";
 
 const SAFE_READ_ONLY_TOOLS = new Set([
   ...CORE_STATELESS_READ_TOOL_NAMES,
@@ -53,6 +54,7 @@ export function collectRunToolEffectObservations(
       ...(allowVerifiedPatches ? uncommittedPatchCandidates(events) : []),
       ...settledPatchRecoveryCandidates(events),
       ...reconciledPatchRecoveryEvidence(events),
+      ...moveRecoveryEvidence(events).filter((move) => move.status === "completed"),
     ].map((patch) => patch.startedSeq),
   );
   const terminals = new Map<string, RunEvent[]>();

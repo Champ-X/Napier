@@ -42,6 +42,12 @@ const en = {
       "Target commit was independently reconciled. Post-write diagnostics may be missing.",
     patch_not_committed:
       "The original target commit was fenced and confirmed absent. Parent directories may remain. Execution still requires the verified-patch policy and fresh checks.",
+    move_settled:
+      "File move settlement recorded; the current source and destination have not been rechecked here.",
+    move_reconciled:
+      "The source was absent and the original file was verified at the destination. Do not repeat the move; remaining work needs fresh checks.",
+    move_not_committed:
+      "The move was confirmed not committed and the original file remained at the source. This does not authorize automatic retry.",
     read_completed:
       "Read result recorded. It may no longer describe current state.",
     read_stopped:
@@ -90,6 +96,11 @@ const zh: LocaleOverride<typeof en> = {
     patch_reconciled: "已独立核对目标提交，写后诊断可能缺失。",
     patch_not_committed:
       "原执行已被封锁，已确认目标未提交；父目录可能已创建。执行仍需已验证补丁策略与现场检查。",
+    move_settled: "已记录文件移动结算，此处尚未重新核查当前源路径和目标路径。",
+    move_reconciled:
+      "已核实源路径为空，目标路径保留原文件。不要重复移动；后续工作仍需现场检查。",
+    move_not_committed:
+      "已确认移动未提交，原文件仍保留在源路径；这不代表允许自动重试。",
     read_completed: "已记录读取结果，内容可能不再反映当前状态。",
     read_stopped: "读取中断或失败，可重新核查当前状态。",
     effect_unresolved: "副作用未知或可能部分完成，对账前不能重复执行。",

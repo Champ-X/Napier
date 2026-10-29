@@ -6,8 +6,8 @@ import { transitionRunStatus } from "./run-state-machine.js";
 import { liveToolEffectAuthoritiesFromEvents } from "./sqlite-tool-effect-authority.js";
 import { effectIndeterminateEventPayload } from "./tool-effect-indeterminate-event.js";
 import { RUN_INTERRUPTION_REASON } from "./run-terminal-recovery.js";
+import { reconcileInterruptedWorkspaceOperations } from "./workspace-operation-reconciliation.js";
 import {
-  reconcileInterruptedWorkspacePatches,
   type PatchInterruptionReconciliation,
 } from "./workspace-patch-interruption-reconciliation.js";
 interface LostRunRecoveryHost {
@@ -82,13 +82,17 @@ export async function recoverLostRuns(
           recoveredAt: timestamp,
         }),
       }));
-      const reconciliation = await reconcileInterruptedWorkspacePatches({
+      const reconciliation = await reconcileInterruptedWorkspaceOperations({
         workspaceRoot: host.workspaceRoot,
         dataRoot: host.dataRoot,
         events,
         boundaries: recoverable.map((authority) => authority.boundaryEvent!),
       });
       reconciliations.push(reconciliation);
+      // Contention can belong to a recoverer still holding both paths through
+      // its atomic commit. Leave the original Run unknown; do not race that
+      // owner with a terminal safety failure. A later recovery can inspect it.
+      if (reconciliation.reason === "move_target_busy") continue;
       if (reconciliation.inputs.length === recoverable.length) {
         terminalEvents.push(
           ...host.appendEventsToThread(
@@ -104,7 +108,7 @@ export async function recoverLostRuns(
                 visibility: "user",
                 payload: {
                   status: "interrupted",
-                  reason: "patch_postcondition_reconciled",
+                  reason: reconciliation.terminalReason,
                   interruptedAt: timestamp,
                   operationIds,
                 },
@@ -116,7 +120,7 @@ export async function recoverLostRuns(
         transitionRunStatus(run, "interrupted");
         run.interruptedAt = timestamp;
         run.interruptionReason =
-          "Patch commit state reconciled; original executor fenced. Remaining work requires continuation.";
+          "Workspace operation state reconciled; original executor fenced. Remaining work requires continuation.";
         run.finishedAt = timestamp;
         run.error = run.interruptionReason;
         delete run.lease;
@@ -140,7 +144,7 @@ export async function recoverLostRuns(
                 outcome: "blocked_safety",
                 reason: "effect_indeterminate",
                 reconciliationReason:
-                  reconciliation.reason ?? "patch_reconciliation_unavailable",
+                  reconciliation.reason ?? "operation_reconciliation_unavailable",
                 message: RUN_EFFECT_INDETERMINATE_REASON,
                 operationIds,
               },

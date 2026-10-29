@@ -35,6 +35,8 @@ import { inheritedHarnessPolicyOptions } from "./harness-run-policy.js";
 import { assessAutomaticRecovery } from "./automatic-recovery.js";
 import { loadSettledPatchRecoveryEvidence } from "./workspace-patch-result-recovery.js";
 import { reconcileSettledWorkspacePatches } from "./workspace-patch-reconciliation.js";
+import { moveRecoveryEvidence } from "./workspace-file-move-evidence.js";
+import { reconcileSettledWorkspaceMoves } from "./workspace-file-move-reconciliation.js";
 import { operatorDecisionRecoveryContext } from "./operator-decision-recovery-context.js";
 import { isSubagentChildRun, latestPrimaryRun } from "./primary-run-selection.js";
 
@@ -151,6 +153,8 @@ export async function resumeInterruptedAgentRunAutomatically(
     host.store.dataRoot,
     patches,
   );
+  const moves = moveRecoveryEvidence(events).filter((move) => move.status === "completed");
+  await reconcileSettledWorkspaceMoves(host.store.workspaceRoot, host.store.dataRoot, moves);
   const patchPlan =
     modernRunConfiguration(interrupted.configuration) &&
     interrupted.configuration.automaticRecovery.mode === "verified_patches"
@@ -173,7 +177,8 @@ export async function resumeInterruptedAgentRunAutomatically(
       (await operatorDecisionRecoveryContext(host.store, interrupted)) +
       (patches.length
         ? `\n${patches.filter((patch) => !patch.preparedCapsuleSha256).length} settled patch operation(s) were retained; ${patches.filter((patch) => patch.preparedCapsuleSha256).length} prepared patch operation(s) were independently reconciled. Reconciled operations have no fabricated tool result; diagnostics after the write may be unavailable. Their latest file postconditions were rechecked before this recovery; do not repeat those writes. Continue the remaining read-only work. This does not verify the overall objective.\n<retained-patch-evidence>${JSON.stringify({ patches, retainedResults })}</retained-patch-evidence>`
-        : ""),
+        : "") +
+      (moves.length ? `\n${moves.length} file move operation was retained after checking both paths, parent identities and the destination file identity and bytes. No tool result was fabricated. Do not repeat the move; continue remaining read-only work.\n<retained-move-evidence>${JSON.stringify(moves.map(({ callId, operationId, evidenceSeq, reason }) => ({ callId, operationId, evidenceSeq, reason })))}</retained-move-evidence>` : ""),
     model: interrupted.configuration.model,
     agentRevision: interrupted.configuration.agentRevision,
     executionMode: patchPlan

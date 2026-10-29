@@ -8,6 +8,7 @@ import { settledPatchRecoveryCandidates } from "./run-patch-recovery-evidence.js
 import { reconciledPatchRecoveryEvidence } from "./workspace-patch-reconciled-evidence.js";
 import { uncommittedPatchCandidates } from "./workspace-patch-uncommitted-evidence.js";
 import { isSubagentChildRun } from "./primary-run-selection.js";
+import { moveRecoveryEvidence } from "./workspace-file-move-evidence.js";
 
 type Operation = RunRecoveryCheckpoint["operations"][number];
 const LIMIT = 10_000;
@@ -161,6 +162,8 @@ function patchProofs(
     number,
     Pick<Operation, "status" | "reason" | "evidenceSeq">
   >();
+  for (const move of moveRecoveryEvidence(events))
+    proofs.set(move.startedSeq, { status: move.status, reason: move.reason, evidenceSeq: move.evidenceSeq });
   for (const patch of settledPatchRecoveryCandidates(events))
     proofs.set(patch.startedSeq, {
       status: "completed",

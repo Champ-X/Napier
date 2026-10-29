@@ -1,4 +1,5 @@
 import { notCommittedPatchForBoundary } from "./workspace-patch-not-committed.js";
+import { moveProofForBoundary } from "./workspace-file-move-evidence.js";
 import type { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent, RunLeaseSummary } from "@napier/contracts";
@@ -51,6 +52,8 @@ export function assertEffectIndeterminateTerminalCommit(
         [
           "workspace.patch.reconciled",
           "workspace.patch.not_committed",
+          "workspace.file.move.reconciled",
+          "workspace.file.move.not_committed",
         ].includes(event.type),
       )
     )
@@ -93,7 +96,7 @@ export function assertNoContinuationAfterEffectIndeterminate(
   for (const event of events) {
     if (event.type === "tool.operation.effect_indeterminate") continue;
     if (
-      ["workspace.patch.reconciled", "workspace.patch.not_committed"].includes(
+      ["workspace.patch.reconciled", "workspace.patch.not_committed", "workspace.file.move.reconciled", "workspace.file.move.not_committed"].includes(
         event.type,
       )
     ) {
@@ -127,7 +130,7 @@ export function assertNoContinuationAfterEffectIndeterminate(
     // The journal fence and its read-only reconciliation proof are one
     // atomic recovery transition. A later executor cannot append this proof.
     if (
-      ["workspace.patch.reconciled", "workspace.patch.not_committed"].includes(
+      ["workspace.patch.reconciled", "workspace.patch.not_committed", "workspace.file.move.reconciled", "workspace.file.move.not_committed"].includes(
         event.type,
       ) &&
       events.some((candidate) => candidate.id === marker.id)
@@ -244,7 +247,8 @@ function assertMarkerCommit(
         [...priorEvents, ...events],
         boundary.boundaryEvent,
       );
-    const proofSeq = proof?.completedSeq ?? negative?.seq;
+    const move = boundary.boundaryEvent && moveProofForBoundary([...priorEvents, ...events], boundary.boundaryEvent);
+    const proofSeq = proof?.completedSeq ?? negative?.seq ?? move?.seq;
     if (
       proofSeq === undefined ||
       proofSeq <= marker.seq ||
@@ -252,7 +256,7 @@ function assertMarkerCommit(
     )
       throw markerError(
         marker,
-        "interrupted recovery requires bound patch reconciliation for every abandoned operation",
+        "interrupted recovery requires bound patch reconciliation or bound move reconciliation for every abandoned operation",
       );
   }
   if (
@@ -406,7 +410,7 @@ function pairedRecoveryTerminal(
         payload["reason"] === "effect_indeterminate") ||
         (event.type === "run.interrupted" &&
           payload?.["status"] === "interrupted" &&
-          payload["reason"] === "patch_postcondition_reconciled"))
+          ["patch_postcondition_reconciled", "operation_postcondition_reconciled"].includes(String(payload["reason"]))))
     );
   });
 }
