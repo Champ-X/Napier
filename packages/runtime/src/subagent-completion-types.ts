@@ -26,4 +26,3 @@ export interface FinishSubagentTaskInput {
   preparedCompletion?: PreparedSubagentCompletion;
   candidateId?: string;
 }
-

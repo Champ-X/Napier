@@ -18,4 +18,3 @@ export async function readCommittedSubagentResult(store: CommittedSubagentResult
   return { content: [{ type: "text" as const, text: formatDelegationResult(current, current.result ?? "", preview) }],
     details: subagentTaskDetails(current, preview) };
 }
-
