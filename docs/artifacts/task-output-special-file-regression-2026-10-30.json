@@ -1,0 +1,138 @@
+{
+  "kind": "napier.task-output-special-file-regression",
+  "schemaVersion": 1,
+  "head": "1d041856017773ec915d9e92f575df33c1d65afd",
+  "sourceHashes": {
+    "packages/runtime/src/task-deliverable-inspection.ts": "910b334062fc8cc2a95654a3463f9f68feb528fab853510fc257cce5db5d4ae5",
+    "packages/runtime/test/task-outcome-projection.test.ts": "6dacc0fcab41e17e207d9f1870ec2f28b2ab2dcc6d7e536dffedff96ac13064b"
+  },
+  "checks": [
+    {
+      "name": "compile",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-candidate-inspection-verify-20261030/node_modules/typescript/bin/tsc",
+        "-b",
+        "packages/runtime",
+        "--force"
+      ],
+      "cwd": "/private/tmp/napier-candidate-inspection-verify-20261030",
+      "startedAt": "2026-10-29T20:53:04.039356+00:00",
+      "finishedAt": "2026-10-29T20:53:11.341759+00:00",
+      "exitCode": 0,
+      "log": "compile.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-candidate-inspection-verify-20261030/node_modules/vitest/vitest.mjs",
+        "run",
+        "packages/runtime/test/task-outcome-projection.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=json",
+        "--outputFile=/tmp/napier-candidate-inspection-20261030/final-tests.json"
+      ],
+      "cwd": "/private/tmp/napier-candidate-inspection-verify-20261030",
+      "startedAt": "2026-10-29T20:53:11.344901+00:00",
+      "finishedAt": "2026-10-29T20:53:13.040699+00:00",
+      "exitCode": 0,
+      "log": "tests.log",
+      "logSha256": "3cf1a6fe90977b1fa87eb1915cb81f8322fc277171e0990ca2fe5352d7ebe8d3"
+    },
+    {
+      "name": "strict",
+      "argv": [
+        "/Users/champ/.local/node/bin/node",
+        "/private/tmp/napier-candidate-inspection-verify-20261030/node_modules/typescript/bin/tsc",
+        "-p",
+        "/tmp/napier-candidate-inspection-20261030/strict-tests.json"
+      ],
+      "cwd": "/private/tmp/napier-candidate-inspection-verify-20261030",
+      "startedAt": "2026-10-29T20:53:11.344978+00:00",
+      "finishedAt": "2026-10-29T20:53:14.675484+00:00",
+      "exitCode": 0,
+      "log": "strict.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "diff-check",
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/private/tmp/napier-candidate-inspection-verify-20261030",
+      "startedAt": "2026-10-29T20:53:13.040888+00:00",
+      "finishedAt": "2026-10-29T20:53:13.313992+00:00",
+      "exitCode": 0,
+      "log": "diff-check.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "sourceDrift": [],
+  "workspaceDrift": [],
+  "preservedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "modelCalls": 0,
+  "tests": {
+    "numTotalTests": 6,
+    "numPassedTests": 6,
+    "numFailedTests": 0,
+    "numPendingTests": 0
+  },
+  "passed": true,
+  "implementationCommit": "1ecf0f43e861b95a8f6ef76b7d5128dafac9a839",
+  "scope": "POSIX FIFO output-reference rejection through real Store detail and cached narrative; no browser or Windows filesystem acceptance. G01 remains incomplete.",
+  "prefixReproduction": "The added FIFO case failed before the fix after waiting 2 seconds without a writer; its cleanup opened a nonblocking peer to release the old pending open. Other five tests were unselected in that diagnostic run. Final suite ran all six without skips.",
+  "artifacts": {
+    "docs/artifacts/task-output-special-file-2026-10-30/compile.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/diff-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/final-tests.json": {
+      "sha256": "47fcfd2f867ef8c75e15532d3a321504ccc21b4a41ec340ab54a6675f57dfcde",
+      "bytes": 2737
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/prefix-manifest.json": {
+      "sha256": "6b43f9f47fe7ab464555cefefa13485c47a085ae0fe7ff5d517f0cff9fbac075",
+      "bytes": 477
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/prefix.json": {
+      "sha256": "807d1d0467dae0732e25564774435d54641d54fcd76e5f08aba0ce7aafd38288",
+      "bytes": 2941
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/prefix.log": {
+      "sha256": "380f7f6c0d735c184591c2a5c4dfd689fce820aa118ef5dcd00a81c39b1eb10c",
+      "bytes": 77
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/regression.json": {
+      "sha256": "b1ae668d32c21e7d6239e7a776cfe21158c7e527cb6fa9639778c163c3471bc5",
+      "bytes": 3099
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/source-final.json": {
+      "sha256": "3200407c50d04e383434b6e18c6232f6ec113cb47037d1fc6a05faa3c725841c",
+      "bytes": 255
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/strict-tests.json": {
+      "sha256": "eac8ef0cf9589ea23685e01cb9892528dbc94c8df846b2a4dffdd5e04de056cf",
+      "bytes": 559
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/strict.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "docs/artifacts/task-output-special-file-2026-10-30/tests.log": {
+      "sha256": "3cf1a6fe90977b1fa87eb1915cb81f8322fc277171e0990ca2fe5352d7ebe8d3",
+      "bytes": 82
+    }
+  }
+}

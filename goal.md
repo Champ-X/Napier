@@ -389,6 +389,12 @@
 - 最终构建快照 **99 文件／788 测试**通过（Runtime742、Server46，含真实loopback／SIGKILL／并发重放）；编译、相关类型检查通过。首轮strict因`/tmp`与`/private/tmp`混用产生5个nominal类型诊断，统一验证器路径后通过；源码和产物未变，未重复行为测试，失败及修正收据分别留存。旧agent-runtime的48项strict诊断与原始基线一致。4,026源文件／5,081产物哈希稳定，28个已有用户文件不变。
 - 仍有隔离快照7项既有架构失败、root1897/1896、internal18/16和两份digest不匹配，未修改预算或digest；历史release失败保留。该边界不宣称抵抗任意可信进程内Store对象图修改。完整child compiler／overflow／extension、共享父token／cost原子预留、coder恢复及G01–G07剩余目标继续 **active**。见[边界说明](docs/host-model-accounting-boundary.md)、[最终收据](docs/artifacts/host-model-accounting-boundary-regression-2026-10-30.json)和[证据索引](docs/artifacts/host-model-accounting-boundary-evidence-index-2026-10-30.json)。
 
+### 后续推进：G01 成果候选特殊文件阻塞修复（2026-10-30）
+
+- 检查G01成果候选时复现：最终回答显式引用工作区FIFO，`getDetail`在只读open等待writer，无法到达已有regular-file检查，连带阻塞整个任务详情。原始反例失败已留存，清理阶段主动打开非阻塞peer以释放旧调用。
+- 本地提交 `1ecf0f43` 对候选descriptor增加`O_NONBLOCK`，特殊文件可立即到达类型检查并被排除；原有路径、摘要与未验证候选语义保持。真实Store与缓存projection的FIFO用例、原有正常文件/越界/重复/版本等 **6/6** 测试通过，Runtime/Contracts编译和严格测试类型检查通过，28个已有用户文件不变，模型调用0。
+- [复现与验收收据](docs/artifacts/task-output-special-file-regression-2026-10-30.json)保留前后证据；这是本机POSIX文件系统检查，不是Windows或浏览器验收。未完成的独立目标验收生产者、成果来源/版本完整性、发现限额表达等G01任务仍保留，未 push。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
