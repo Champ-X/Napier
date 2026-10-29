@@ -16,6 +16,7 @@ import {
 } from "./subagent-outcomes.js";
 import type { LocalStore } from "./store.js";
 import { completeSubagentTask } from "./subagent-completion.js";
+import type { SubagentTaskFinisher } from "./subagent-child-execution.js";
 import type { SubagentModelSession } from "./subagent-model-session.js";
 import {
   formatDelegationResult,
@@ -48,6 +49,8 @@ export async function settleSubagentOutcome(input: {
   usage: SubagentTask["usage"];
   modelSession: SubagentModelSession;
   assertActive: () => void;
+  finishTask?: SubagentTaskFinisher;
+  publishCommitted?: () => Promise<void>;
   activateAgent: (next: () => void) => void;
   markOutcomeRejected: () => void;
   emit: Emit;
@@ -170,7 +173,8 @@ export async function settleSubagentOutcome(input: {
     isCommitted: () => input.store.listSubagentTasks(input.task.threadId, input.task.runId)
       .some((current) => current.id === input.task.id && current.status === "completed"),
     finish: async (_preview, assertActive) => {
-      const task = await input.store.finishSubagentTask(input.task.id, {
+      const finish = input.finishTask ?? ((value, active) => input.store.finishSubagentTask(input.task.id, value, active));
+      const task = await finish({
         status: "completed",
         stopReason: "completed",
         result,
@@ -182,6 +186,7 @@ export async function settleSubagentOutcome(input: {
     },
   });
   task = completion.value;
+  await input.publishCommitted?.();
   const { preview } = completion;
   await input.emit("subagent.outcome.accepted", task, {
     taskId: task.id,

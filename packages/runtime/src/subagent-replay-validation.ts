@@ -1,3 +1,7 @@
+import type { RunEvent, RunRecord, SubagentTask } from "@napier/contracts";
+import { assertModelRequestEvidenceBindings } from "./model-prompt-evidence-bindings.js";
+import { assertChildModelEvidence } from "./subagent-child-evidence-validation.js";
+import { validateSubagentChildRunState } from "./subagent-child-run-validation.js";
 import { SUBAGENT_WORKTREE_POLICY } from "./subagent-worktree-policy.js";
 import { assertSubagentFailureContext } from "./subagent-failure-context.js";
 import {
@@ -30,6 +34,11 @@ export function validateSubagentSupervisorReplayTask(
   }
   if (task["executionId"] !== undefined) {
     assertResourceId(task["executionId"], `${label}.executionId`);
+  }
+  if (task["childRunId"] !== undefined) {
+    assertResourceId(task["childRunId"], `${label}.childRunId`);
+    if (task["executionId"] === undefined)
+      invalid(`${label} child Run requires an execution identity`);
   }
   if ((task["providerId"] === undefined) !== (task["executionId"] === undefined)) {
     invalid(`${label} provider binding is incomplete`);
@@ -102,3 +111,16 @@ function invalid(message: string): never {
   throw new Error(`Thread replay bundle ${message}`);
 }
 
+export function assertReplaySubagentBindings(runs: readonly RunRecord[], tasks: readonly SubagentTask[],
+  events: readonly RunEvent[], currentRunId: unknown): void {
+  validateSubagentChildRunState(runs, tasks);
+  const childIds = new Set(runs.filter((run) => run.source === "subagent").map((run) => run.id));
+  if (typeof currentRunId === "string" && childIds.has(currentRunId))
+    invalid("child Run cannot be currentRunId");
+  assertModelRequestEvidenceBindings(events.filter((event) => !childIds.has(event.runId)), {
+    knownRunIds: new Set(runs.map((run) => run.id)), label: "Thread replay bundle",
+  });
+  for (const run of runs) {
+    if (childIds.has(run.id)) assertChildModelEvidence(run, events.filter((event) => event.runId === run.id));
+  }
+}

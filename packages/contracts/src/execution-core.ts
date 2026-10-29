@@ -17,6 +17,7 @@ export type RunInvocationSource =
   | "recovery"
   | "schedule"
   | "channel"
+  | "subagent"
   | "workflow"
   | "workflow_reuse"
   | "workflow_simulation"
@@ -99,6 +100,7 @@ export interface AutomaticRecoveryPolicy {
 
 export type RunExecutionMode =
   | "standard"
+  | "subagent"
   | "environment_degraded_read_only"
   | "safe_read_only_recovery"
   | "verified_patch_recovery"

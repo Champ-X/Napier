@@ -249,10 +249,14 @@ export function createImportedRuns(
             ...(source.error ? { error: source.error } : {}),
           }),
       ...(mappedParentId ? { parentRunId: mappedParentId } : {}),
+      ...(source.subagent ? { subagent: {
+        ...structuredClone(source.subagent), taskId: ids.taskIds.get(source.subagent.taskId)!,
+      } } : {}),
       ...(source.branchFromSeq !== undefined
         ? { branchFromSeq: source.branchFromSeq }
         : {}),
       usage: structuredClone(source.usage),
+      ...(source.usageStatus ? { usageStatus: source.usageStatus } : {}),
       agentRevision:
         source.agentRevision ??
         source.configuration?.agentRevision ??
@@ -262,6 +266,7 @@ export function createImportedRuns(
           source.configuration?.runLimits ??
           agent.runLimits ??
           structuredClone(DEFAULT_RUN_LIMITS),
+        source.source === "subagent" ? "subagent" : undefined,
       ),
       ...(source.configuration
         ? { configuration: structuredClone(source.configuration) }

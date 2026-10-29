@@ -26,7 +26,7 @@ export function environmentDegradedExecution(mode: RunExecutionMode): boolean {
 }
 
 export function restrictedReadOnlyExecution(mode: RunExecutionMode): boolean {
-  return mode !== "standard" && !environmentDegradedExecution(mode);
+  return mode !== "standard" && mode !== "subagent" && !environmentDegradedExecution(mode);
 }
 
 export function readOnlyExecutionToolsFor(
@@ -57,7 +57,7 @@ export function projectRunExecutionCapabilitySurface(
           ? profile.enabledTools.filter((tool) => allowedTools.has(tool))
           : [...profile.enabledTools],
     enabledSubagents:
-      restricted || degraded ? [] : [...(profile.enabledSubagents ?? [])],
+      restricted || degraded || mode === "subagent" ? [] : [...(profile.enabledSubagents ?? [])],
   };
 }
 
@@ -68,6 +68,7 @@ export function validRunExecutionCapabilitySurface(input: {
   enabledSubagents: readonly SubagentRole[];
 }): boolean {
   if (input.mode === "standard") return true;
+  if (input.mode === "subagent") return input.enabledSubagents.length === 0;
   if (
     (restrictedReadOnlyExecution(input.mode) ||
       environmentDegradedExecution(input.mode)) &&
@@ -84,6 +85,7 @@ export function validRunExecutionCapabilitySurface(input: {
 
 export const EXECUTION_MODES = new Set<RunExecutionMode>([
   "standard",
+  "subagent",
   "environment_degraded_read_only",
   "safe_read_only_recovery",
   "verified_patch_recovery",

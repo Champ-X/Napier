@@ -48,3 +48,20 @@ it("retains totals but rejects missing, estimated, duplicate, invalid or foreign
       ]).eligibleForObservedUsageComparison,
     ).toBe(false);
 });
+
+it("keeps unknown child physical usage ineligible even when the known subtotal reconciles", () => {
+  const task = { id: "childtask", runId: "r", childRunId: "childrun", usage: usage(0), usageStatus: "incomplete" };
+  const parent = collectUsageEvidence({ id: "r", usage: usage(10) }, [event("a", "model.response", 10)], [task]);
+  expect(parent.observedUsage).toEqual(usage(10));
+  expect(parent.blockers).toContain("childtask: incomplete_subagent_usage");
+  expect(parent.eligibleForObservedUsageComparison).toBe(false);
+  const child = collectUsageEvidence({ id: "r", source: "subagent", usage: usage(0), usageStatus: "incomplete" }, [
+    event("b", "model.response", undefined, { usageStatus: "unknown" }),
+  ]);
+  expect(child.blockers).toEqual(expect.arrayContaining(["incomplete_run_usage", "b: unknown_physical_usage", "b: missing_response_usage"]));
+  expect(child.eligibleForObservedUsageComparison).toBe(false);
+  const known = collectUsageEvidence({ id: "r", usage: usage(12) }, [event("a", "model.response", 10)], [
+    { ...task, usage: usage(2), usageStatus: "complete" },
+  ]);
+  expect(known.eligibleForObservedUsageComparison).toBe(true);
+});

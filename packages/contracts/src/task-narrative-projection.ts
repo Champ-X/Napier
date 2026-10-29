@@ -39,6 +39,7 @@ export function taskNarrativeView(
   source: TaskNarrativeSource,
   eventState: TaskNarrativeEventState,
 ): TaskNarrativeProjection {
+  source = { ...source, runs: source.runs.filter((run) => run.source !== "subagent") };
   const narrative = narrativeView(source, eventState);
   const facts = taskOutcomeFacts(source, narrative);
   const runId = source.thread.currentRunId ?? source.runs.at(-1)?.id ?? "";

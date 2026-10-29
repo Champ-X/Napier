@@ -41,6 +41,7 @@ export const automationCopyZh: LocaleOverride<typeof automationCopyEn> = {
     unknown_tool_effect: "无法证明工具效果为只读。",
     attempt_limit_reached: "冻结的尝试次数已用尽。",
     untrusted_recovery_chain: "恢复链或导入来源不可信。",
+    subagent_managed: "该子执行由所属任务管理。",
   },
   schedules: "定时运行",
   scheduleEyebrow: "持久触发器",

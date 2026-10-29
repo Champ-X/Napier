@@ -8,6 +8,7 @@ import type {
 } from "@napier/contracts";
 
 import { assessAutomaticRecovery } from "./automatic-recovery.js";
+import { isSubagentChildRun, latestPrimaryRun } from "./primary-run-selection.js";
 import {
   automaticRecoveryRoot,
   createAutomaticRecoveryAttemptRecord,
@@ -57,6 +58,8 @@ export function claimAutomaticRecoveryState(input: {
     if (current.status !== "claimed" && current.status !== "running") {
       continue;
     }
+    const interruptedRun = input.state.runs.find((run) => run.id === current.interruptedRunId);
+    if (interruptedRun && isSubagentChildRun(interruptedRun)) continue;
     const recoveryRun = current.recoveryRunId
       ? input.state.runs.find(
           (candidate) => candidate.id === current.recoveryRunId,
@@ -111,7 +114,10 @@ export function claimAutomaticRecoveryState(input: {
   }
 
   const candidates = input.state.runs
-    .filter((run) => run.status === "interrupted")
+    .filter((run) => run.status === "interrupted" && !isSubagentChildRun(run))
+    .filter((run) => latestPrimaryRun(input.state.runs.filter(
+      (candidate) => candidate.threadId === run.threadId,
+    ))?.id === run.id)
     .filter(
       (run) =>
         !input.state.runs.some(

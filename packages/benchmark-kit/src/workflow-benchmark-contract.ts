@@ -1,4 +1,5 @@
 import type { JsonValue, RunEvent } from "@napier/contracts";
+import { isSubagentChildRun } from "@napier/contracts/task-narrative";
 import { canonicalJson, sha256 } from "@napier/runtime/core";
 
 import {
@@ -298,7 +299,9 @@ function benchmarkOutcomeMatches(
   result: WorkflowBenchmarkResult,
   bundle: WorkflowBenchmarkLedgerBundle,
 ): boolean {
-  const mapRuns = bundle.runs.filter(
+  if (bundle.runs.some((run) => run.usageStatus === "incomplete")) return false;
+  const primaryRuns = bundle.runs.filter((run) => !isSubagentChildRun(run));
+  const mapRuns = primaryRuns.filter(
     (run) =>
       run.executionMode === "workflow_map_read_only" &&
       run.status === "completed",
@@ -346,8 +349,8 @@ function benchmarkOutcomeMatches(
       canonicalJson(result.evaluation as unknown as JsonValue) &&
     canonicalJson(mapRunIds as unknown as JsonValue) ===
       canonicalJson(bundle.workflow.mapRunIds as unknown as JsonValue) &&
-    bundle.runs.length === result.run.runCount &&
-    bundle.runs.filter((run) => run.status === "completed").length ===
+    primaryRuns.length === result.run.runCount &&
+    primaryRuns.filter((run) => run.status === "completed").length ===
       result.run.completedRunCount &&
     usageMatches(aggregateUsage(bundle), result.run.usage) &&
     workflowEvidenceMatches(result, bundle)
@@ -370,7 +373,7 @@ function workflowEvidenceMatches(
 }
 
 function aggregateUsage(bundle: WorkflowBenchmarkLedgerBundle) {
-  return bundle.runs.reduce(
+  return bundle.runs.filter((run) => !isSubagentChildRun(run)).reduce(
     (total, run) => ({
       inputTokens: total.inputTokens + run.usage.inputTokens,
       outputTokens: total.outputTokens + run.usage.outputTokens,

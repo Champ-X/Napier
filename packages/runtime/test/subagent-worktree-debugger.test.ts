@@ -15,6 +15,10 @@ import { SubagentWorktreeMutationManager } from "../src/subagent-worktree-mutati
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { WorkspaceProcessManager } from "../src/workspace-processes.js";
 import { createActiveTestRun } from "./active-run-test-fixture.js";
+import { authorizeSubagentChildRun } from "../src/subagent-child-authorization.js";
+import { effectiveRunProfile } from "../src/effective-run-profile.js";
+import { NodeDebuggerManager } from "../src/node-debugger.js";
+import { createNodeDebuggerTool } from "../src/node-debugger-tool.js";
 
 const temporaryRoots: string[] = [];
 const openProcesses: WorkspaceProcessManager[] = [];
@@ -33,6 +37,35 @@ afterEach(async () => {
 });
 
 describe("Subagent worktree debugger", () => {
+  it("owns candidate processes under the child Run and cleanup leaves the parent's paused debugger alive", async () => {
+    const fixture = await createFixture(debugSource(20), true);
+    const parent = fixture.store.listRuns(fixture.threadId).find((run) => run.id === fixture.runId)!;
+    const parentProfile = effectiveRunProfile(fixture.store.listAgents()[0]!, parent);
+    const task = await fixture.store.createSubagentTask({
+      threadId: parent.threadId, runId: parent.id, role: "coder", description: "Child debugger ownership",
+      prompt: "Inspect candidate execution", model: parent.configuration!.model,
+      providerId: "in_process", executionId: "subexec_debugger_fixture",
+    });
+    const child = await fixture.store.startSubagentChildRun({ taskId: task.id, executionId: task.executionId!,
+      authorization: authorizeSubagentChildRun({ parentRun: parent, parentProfile, taskId: task.id,
+        executionId: task.executionId!, limits: parent.configuration!.subagentLimits }),
+      lease: { ownerId: "worker_child_debugger", ttlMs: 60_000 },
+    });
+    const parentDebugger = new NodeDebuggerManager(fixture.processes, fixture.workspaceRoot);
+    const parentOwner = { threadId: parent.threadId, runId: parent.id };
+    const launch = { action: "launch" as const, path: "src/debug-target.mjs", breakpoints: [{ line: 2 }], timeoutMs: 2_000, sessionTimeoutMs: 20_000 };
+    try {
+      await createNodeDebuggerTool(parentDebugger, parentOwner).execute("parent-debugger", launch);
+      const { manager, worktree } = await createCandidate(fixture, { threadId: child.run.threadId, runId: child.run.id }, task.id);
+      await manager.createCoderTools(worktree).find((tool) => tool.name === "node_debugger")!.execute("child-debugger", launch);
+      expect((await activeSessions(fixture)).map((session) => session.runId).sort()).toEqual([parent.id, child.run.id].sort());
+      await manager.cleanup(worktree);
+      expect((await activeSessions(fixture)).map((session) => session.runId)).toEqual([parent.id]);
+    } finally {
+      await parentDebugger.cancelRun(parentOwner);
+    }
+  }, 20_000);
+
   it("debugs, steps, verifies, and merges unmerged candidate behavior", async () => {
     const fixture = await createFixture(debugSource(20));
     const { manager, worktree } = await createCandidate(fixture);
@@ -232,7 +265,7 @@ interface Fixture {
   runId: string;
 }
 
-async function createFixture(source: string): Promise<Fixture> {
+async function createFixture(source: string, childCapable = false): Promise<Fixture> {
   const root = await mkdtemp(path.join(tmpdir(), "napier-coder-debugger-"));
   temporaryRoots.push(root);
   const workspaceRoot = path.join(root, "workspace");
@@ -245,6 +278,9 @@ async function createFixture(source: string): Promise<Fixture> {
   const store = new LocalStore({ workspaceRoot, dataRoot });
   await store.initialize();
   openStores.push(store);
+  if (childCapable) await store.updateAgent(store.listAgents()[0]!.id, {
+    enabledSubagents: ["coder"], enabledTools: ["apply_patch", "lsp_diagnostics", "node_debugger"], toolPolicy: "workspace",
+  });
   const sandbox = directSandbox();
   const processes = new WorkspaceProcessManager({
     store,
@@ -268,7 +304,7 @@ async function createFixture(source: string): Promise<Fixture> {
   };
 }
 
-async function createCandidate(fixture: Fixture) {
+async function createCandidate(fixture: Fixture, executionOwner?: { threadId: string; runId: string }, taskId = "task_debugger1") {
   const manager = new SubagentWorktreeMutationManager({
     workspaceRoot: fixture.workspaceRoot,
     dataRoot: fixture.dataRoot,
@@ -282,9 +318,9 @@ async function createCandidate(fixture: Fixture) {
     enableCandidateDebugger: true,
     lifecycleDiagnostics: lifecycleDiagnosticsAdapter(),
   });
-  const worktree = await manager.createWorktree("task_debugger1", [
+  const worktree = await manager.createWorktree(taskId, [
     "src/debug-target.mjs",
-  ]);
+  ], undefined, executionOwner);
   return { manager, worktree };
 }
 
@@ -338,6 +374,9 @@ function diagnosticsDetails(): LspRenameApplyDiagnosticsDetails {
     schemaVersion: 1 as const,
     status: "clean" as const,
     beforeErrorCount: 0,
+    beforeDiagnosticCount: 0,
+    beforeResultSetSha256: sha256("before"),
+    durationMs: 0,
     beforeWarningCount: 0,
     beforeDiagnosticsSetSha256: sha256("before"),
     afterErrorCount: 0,

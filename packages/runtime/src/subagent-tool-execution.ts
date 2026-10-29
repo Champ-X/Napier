@@ -24,6 +24,7 @@ export function governSubagentTools(input: {
   executionId?: string | undefined;
   concurrencyGate: ToolConcurrencyGate;
   onEvent: EventSink | undefined;
+  assertActive?: () => void;
 }): AgentTool[] {
   const identify = createSubagentToolCallScope({ store: input.store, runId: input.run.id,
     taskId: input.taskId, ...(input.executionId ? { executionId: input.executionId } : {}) });
@@ -38,6 +39,7 @@ export function governSubagentTools(input: {
         ? { executionMode: "sequential" as const }
         : {}),
       execute: async (providerCallId, args, signal, onUpdate) => {
+        input.assertActive?.();
         const identity = await identify(providerCallId);
         const { callId } = identity;
         let started = false;
@@ -64,8 +66,10 @@ export function governSubagentTools(input: {
             onStarted: () => {
               started = true;
             },
-            execute: () =>
-              tool.execute(callId, args as never, signal, onUpdate),
+            execute: () => {
+              input.assertActive?.();
+              return tool.execute(callId, args as never, signal, onUpdate);
+            },
             settlement: (result) => ({ result, isError: false }),
           });
           await appendTerminal(input, tool, protocol, identity, args, {

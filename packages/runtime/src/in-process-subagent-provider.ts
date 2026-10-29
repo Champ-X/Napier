@@ -1,5 +1,4 @@
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
-import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   JsonValue,
   AgentProfile,
@@ -32,6 +31,8 @@ import type { SubagentContext, SubagentProvider } from "./subagent-provider.js";
 import { SubagentTaskRunner } from "./subagent-task-runner.js";
 import { subagentJsonValue } from "./subagent-task-evidence.js";
 import type { SubagentWorktreeMutationManager } from "./subagent-worktree-mutation.js";
+import type { SubagentExecutionCleanup, SubagentInheritedToolsFactory } from "./subagent-execution-context.js";
+import { resolveModelRouteSelection } from "./model-route-resolution.js";
 
 type EventSink = (event: RunEvent) => Promise<void> | void;
 type RunnerResult = Awaited<ReturnType<SubagentTaskRunner["execute"]>>;
@@ -59,11 +60,18 @@ export class InProcessSubagentProvider implements SubagentProvider {
       parentSignal: AbortSignal;
       concurrencyGate: ToolConcurrencyGate;
       worktrees?: SubagentWorktreeMutationManager;
-      createInheritedTools?: () => AgentTool[];
+      createInheritedTools?: SubagentInheritedToolsFactory;
+      cleanupExecutionResources?: SubagentExecutionCleanup;
       schedule?<T>(operation: () => Promise<T>): Promise<T>;
       onEvent?: EventSink;
     },
-  ) {}
+  ) {
+    this.options = {
+      ...options,
+      profile: structuredClone(options.profile),
+      run: structuredClone(options.run),
+    };
+  }
 
   async start(
     request: SubagentRequest,
@@ -71,7 +79,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
   ): Promise<SubagentHandle> {
     this.assertRequest(request);
     const executionId = createId("subexec");
-    const { model, route } = await this.resolveRoute(request);
+    const { model, createModelRoute } = await this.resolveRoute(request);
     const outputSchema = request.outputSchema
       ? normalizeSubagentOutputSchema(request.outputSchema)
       : undefined;
@@ -91,7 +99,6 @@ export class InProcessSubagentProvider implements SubagentProvider {
           }
         : {}),
       ...(request.writePaths ? { writePaths: [...request.writePaths] } : {}),
-      ...(route ? { routePlanId: route.plan.id } : {}),
       ...(request.revivedFromTaskId
         ? { revivedFromTaskId: request.revivedFromTaskId }
         : {}),
@@ -132,18 +139,18 @@ export class InProcessSubagentProvider implements SubagentProvider {
       store: this.options.store,
       models: this.options.models,
       model,
-      ...(route ? { modelRoute: route } : {}),
+      ...(createModelRoute ? { createModelRoute } : {}),
       run: this.options.run,
       limits: this.options.limits,
-      parentCapabilities: {
-        enabledTools: [...this.options.profile.enabledTools],
-        toolPolicy: this.options.profile.toolPolicy,
-      },
+      parentProfile: structuredClone(this.options.profile),
       parentSignal: this.options.parentSignal,
       concurrencyGate: this.options.concurrencyGate,
       ...(this.options.worktrees ? { worktrees: this.options.worktrees } : {}),
       ...(this.options.createInheritedTools
         ? { createInheritedTools: this.options.createInheritedTools }
+        : {}),
+      ...(this.options.cleanupExecutionResources
+        ? { cleanupExecutionResources: this.options.cleanupExecutionResources }
         : {}),
       control,
       ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
@@ -272,7 +279,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
 
   private async resolveRoute(request: SubagentRequest): Promise<{
     model: Model<Api>;
-    route?: ModelRouteSession;
+    createModelRoute?: (executionRun: RunRecord) => Promise<ModelRouteSession>;
   }> {
     if (!this.options.modelRouter) {
       if (
@@ -283,15 +290,32 @@ export class InProcessSubagentProvider implements SubagentProvider {
       }
       return { model: this.options.defaultModel };
     }
-    const route = await this.options.modelRouter.createSession({
-      run: this.options.run,
-      primary: this.options.defaultModel,
-      profile: this.options.profile,
-      ...(request.modelRoute ? { request: request.modelRoute } : {}),
-      subagentRole: request.role,
-      ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
+    const routeRequest = request.modelRoute ? structuredClone(request.modelRoute) : undefined;
+    const role = request.role;
+    const selection = resolveModelRouteSelection({
+      agentDefault: { provider: this.options.defaultModel.provider, id: this.options.defaultModel.id },
+      ...(this.options.profile.modelRoute ? { policy: this.options.profile.modelRoute } : {}),
+      ...(routeRequest ? { request: routeRequest } : {}),
+      source: this.options.run.source ?? "user",
+      subagentRole: role,
     });
-    return { model: route.primary, route };
+    const selected = selection.targets[0]!.model;
+    const model = selected.provider === this.options.defaultModel.provider && selected.id === this.options.defaultModel.id
+      ? this.options.defaultModel
+      : await this.options.modelRouter.resolveConfigured(selected);
+    if (!model) throw new Error(`Model route candidate must use a live model: ${selected.provider}/${selected.id}`);
+    return {
+      model,
+      createModelRoute: (executionRun) => this.options.modelRouter!.createSession({
+        run: executionRun,
+        selectionSource: this.options.run.source ?? "user",
+        primary: this.options.defaultModel,
+        profile: this.options.profile,
+        ...(routeRequest ? { request: routeRequest } : {}),
+        subagentRole: role,
+        ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
+      }),
+    };
   }
 
   private assertRequest(request: SubagentRequest): void {

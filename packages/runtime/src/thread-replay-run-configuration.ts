@@ -1,5 +1,6 @@
 import type { AgentProfile } from "@napier/contracts";
 
+import { validateRunConfigurationLimits } from "./agent-budget-policy.js";
 import { sha256 } from "./ed25519.js";
 import { normalizeModelRoutePolicy } from "./model-route-profile.js";
 import { createPromptVariableCatalog } from "./prompt-variables.js";
@@ -11,6 +12,7 @@ export function assertReplayRunConfiguration(
   runId: string,
   agentProfilesByRevision: ReadonlyMap<number, AgentProfile>,
 ): void {
+  if (run["limits"] !== undefined) validateRunConfigurationLimits(run["limits"], run["source"]);
   if (run["configuration"] === undefined) return;
   const configuration = validateRunConfigurationFingerprint(
     run["configuration"],

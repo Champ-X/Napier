@@ -7,6 +7,13 @@ import {
 } from "../src/environment-degradation-view";
 
 describe("Environment degradation task notice", () => {
+  it("retains the main environment warning when a child is later in history", () => {
+    const event = degradationEvent();
+    const detail = { thread: {}, runs: [{ id: event.runId, source: "user" },
+      { id: "run_child", source: "subagent", parentRunId: event.runId }], events: [event] } as never;
+    expect(environmentDegradationView(detail)?.runId).toBe(event.runId);
+    expect(visibleText(EnvironmentDegradationNotice({ detail }))).toContain("Read-only environment fallback");
+  });
   it("parses strict receipt evidence and renders the L0 fallback", () => {
     const event = degradationEvent();
     const detail = {

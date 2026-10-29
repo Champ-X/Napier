@@ -75,6 +75,7 @@ export function createWorkflowBenchmarkLedgerBundle(
       .map((run) => ({
         id: run.id,
         status: run.status,
+        ...(run.source ? { source: run.source } : {}),
         ...(run.parentRunId ? { parentRunId: run.parentRunId } : {}),
         ...(run.configuration && "executionMode" in run.configuration
           ? { executionMode: run.configuration.executionMode }
@@ -90,6 +91,7 @@ export function createWorkflowBenchmarkLedgerBundle(
                 Date.parse(run.finishedAt) - Date.parse(run.startedAt),
               ),
         usage: structuredClone(run.usage),
+        ...(run.usageStatus ? { usageStatus: run.usageStatus } : {}),
       }))
       .sort((left, right) => left.id.localeCompare(right.id)),
     evaluationEvent: structuredClone(input.evaluationEvent),
@@ -251,6 +253,7 @@ function validRun(value: unknown): boolean {
     exactRecord(value, [
       "id",
       "status",
+      ...(run["source"] === undefined ? [] : ["source"]),
       ...(run["parentRunId"] === undefined ? [] : ["parentRunId"]),
       ...(run["executionMode"] === undefined ? [] : ["executionMode"]),
       ...(run["configurationSha256"] === undefined
@@ -258,17 +261,27 @@ function validRun(value: unknown): boolean {
         : ["configurationSha256"]),
       "durationMs",
       "usage",
+      ...(run["usageStatus"] === undefined ? [] : ["usageStatus"]),
     ]) &&
     resourceId(run["id"]) &&
     typeof run["status"] === "string" &&
+    (run["source"] === undefined || validRunSource(run["source"])) &&
     (run["parentRunId"] === undefined || resourceId(run["parentRunId"])) &&
     (run["executionMode"] === undefined ||
       typeof run["executionMode"] === "string") &&
     (run["configurationSha256"] === undefined ||
       digest(run["configurationSha256"])) &&
     nonNegativeNumber(run["durationMs"]) &&
+    (run["usageStatus"] === undefined || run["usageStatus"] === "complete" || run["usageStatus"] === "incomplete") &&
     validUsage(run["usage"])
   );
+}
+
+function validRunSource(value: unknown): boolean {
+  return typeof value === "string" && [
+    "user", "recovery", "schedule", "channel", "workflow", "workflow_reuse",
+    "workflow_simulation", "context_compaction", "model_experiment", "tool_experiment", "subagent",
+  ].includes(value);
 }
 
 function validEvent(value: unknown): value is RunEvent {
@@ -291,7 +304,10 @@ function validRuns(value: unknown): boolean {
   const ids = value.map((run) => String(run["id"]));
   return (
     new Set(ids).size === ids.length &&
-    ids.every((id, index) => index === 0 || ids[index - 1]! < id)
+    ids.every((id, index) => index === 0 || ids[index - 1]! < id) &&
+    value.every((run) => run["source"] !== "subagent" || value.some(
+      (parent) => parent["id"] === run["parentRunId"] && parent["id"] !== run["id"] && parent["source"] !== "subagent",
+    ))
   );
 }
 

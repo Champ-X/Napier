@@ -4,6 +4,7 @@ import {
   type RunRecord,
   type Usage,
 } from "@napier/contracts";
+import { isSubagentChildRun } from "@napier/contracts/task-narrative";
 
 import type { WorkflowBenchmarkResult } from "./workflow-benchmark-types.js";
 
@@ -15,8 +16,11 @@ export function workflowBenchmarkRunEvidence(
   },
   runs: RunRecord[],
 ): WorkflowBenchmarkResult["run"] {
-  const starts = runs.map((run) => Date.parse(run.startedAt));
-  const finishes = runs.flatMap((run) =>
+  if (runs.some((run) => run.usageStatus === "incomplete"))
+    throw new Error("Workflow benchmark usage is incomplete");
+  const primaryRuns = runs.filter((run) => !isSubagentChildRun(run));
+  const starts = primaryRuns.map((run) => Date.parse(run.startedAt));
+  const finishes = primaryRuns.flatMap((run) =>
     run.finishedAt ? [Date.parse(run.finishedAt)] : [],
   );
   return {
@@ -27,9 +31,9 @@ export function workflowBenchmarkRunEvidence(
       starts.length > 0 && finishes.length > 0
         ? Math.max(0, Math.max(...finishes) - Math.min(...starts))
         : 0,
-    runCount: runs.length,
-    completedRunCount: runs.filter((run) => run.status === "completed").length,
-    usage: runs.map((run) => run.usage).reduce(addUsage, emptyUsage()),
+    runCount: primaryRuns.length,
+    completedRunCount: primaryRuns.filter((run) => run.status === "completed").length,
+    usage: primaryRuns.map((run) => run.usage).reduce(addUsage, emptyUsage()),
   };
 }
 

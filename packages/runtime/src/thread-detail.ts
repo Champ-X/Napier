@@ -18,6 +18,7 @@ import type {
 
 import { inspectTaskDeliverables } from "./task-deliverable-inspection.js";
 import { projectRunRecoveryCheckpoint } from "./run-recovery-checkpoint.js";
+import { latestPrimaryRun } from "./primary-run-selection.js";
 import { createContextCheckpointCalibrationReport } from "./checkpoint-calibration.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import { projectRunControlMessages } from "./run-control-messages.js";
@@ -128,7 +129,7 @@ export function createThreadDetail(
   },
   options?: { kernelProjections?: boolean },
 ): ThreadDetail {
-  const recoveryCheckpoint = projectRunRecoveryCheckpoint(input.runs.at(-1), input.events, input.runs);
+  const recoveryCheckpoint = projectRunRecoveryCheckpoint(latestPrimaryRun(input.runs), input.events, input.runs);
   const detail = {
     ...input,
     ...(recoveryCheckpoint ? { recoveryCheckpoint } : {}),

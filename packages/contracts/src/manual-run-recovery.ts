@@ -42,6 +42,7 @@ export type ManualRunRecoveryThreadStatus =
   | "failed";
 
 export type ManualRunRecoveryBlockReason =
+  | "subagent_managed"
   | "workflow_managed"
   | "context_compaction"
   | "model_experiment"
@@ -75,6 +76,7 @@ export function manualRunRecoverySettlementMatches(
 export function manualRunRecoveryBlockReason(
   run: RunRecord,
 ): ManualRunRecoveryBlockReason | undefined {
+  if (run.source === "subagent") return "subagent_managed";
   if (
     run.source === "workflow" ||
     run.source === "workflow_reuse" ||

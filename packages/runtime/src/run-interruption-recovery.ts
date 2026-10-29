@@ -120,6 +120,7 @@ async function reconcileInterruptedState(
   changed =
     orphanInterruptedSubagents(host.state, restartedRunIds, timestamp) ||
     changed;
+  changed = markTerminalParentsWithIncompleteChildUsage(host.state) || changed;
   const interruptedPlans = interruptActivePlanSteps(
     host.state,
     restartedRunIds,
@@ -170,7 +171,7 @@ function orphanInterruptedSubagents(
   let changed = false;
   for (const task of state.subagents) {
     if (
-      !interruptedRunIds.has(task.runId) ||
+      !(interruptedRunIds.has(task.runId) || (task.childRunId && interruptedRunIds.has(task.childRunId))) ||
       (task.status !== "pending" && task.status !== "running")
     ) {
       continue;
@@ -178,9 +179,24 @@ function orphanInterruptedSubagents(
     task.status = "failed";
     task.stopReason = "error";
     task.supervisorStatus = "orphaned";
-    task.error = "Parent run was interrupted by a runtime restart.";
+    task.error = task.childRunId && interruptedRunIds.has(task.childRunId)
+      ? "Child run was interrupted by a runtime restart; child continuation is unavailable."
+      : "Parent run was interrupted by a runtime restart.";
     task.finishedAt = timestamp;
     task.revision += 1;
+    changed = true;
+  }
+  return changed;
+}
+
+function markTerminalParentsWithIncompleteChildUsage(state: StoreRepositoryState): boolean {
+  let changed = false;
+  for (const task of state.subagents) {
+    if (!task.childRunId || task.usageStatus !== "incomplete") continue;
+    const parent = state.runs.find((run) => run.id === task.runId);
+    if (!parent || parent.status === "queued" || parent.status === "running" ||
+        parent.usageStatus === "incomplete") continue;
+    parent.usageStatus = "incomplete";
     changed = true;
   }
   return changed;

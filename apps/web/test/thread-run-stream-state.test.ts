@@ -95,6 +95,72 @@ describe("Thread Run stream state", () => {
     expect(activeRunStreamingText(events, "run_old")).toBe("");
   });
 
+  it("retains child lifecycle, route and tool events without replacing the primary stream owner", () => {
+    const threadId = "thread_a";
+    const parentId = "run_parent";
+    const childId = "run_child";
+    const started = (runId: string, seq: number, source: "user" | "subagent"): RunEvent => ({
+      ...event(threadId, runId, seq, ""), type: "run.started", category: "lifecycle",
+      payload: { source, ...(source === "subagent" ? { parentRunId: parentId, taskId: "task_child" } : {}) },
+    });
+    const childEvents: RunEvent[] = [
+      started(childId, 3, "subagent"),
+      { ...event(threadId, childId, 4, ""), type: "route_plan_created", category: "model",
+        payload: { id: "route_child", runId: childId, subagentRole: "researcher" } },
+      { ...event(threadId, childId, 5, ""), type: "tool.started", category: "tool",
+        payload: { callId: "call_child", toolName: "web_fetch", taskId: "task_child" } },
+      modelResponse(threadId, childId, 6),
+      { ...event(threadId, childId, 7, ""), type: "run.completed", category: "lifecycle", payload: { status: "completed" } },
+    ];
+    let sessions = attachThreadRun({}, threadId);
+    let current = detail(threadId, []);
+    let boot = bootstrap(current, current.thread);
+    const events = [started(parentId, 1, "user"), event(threadId, parentId, 2, "Parent pending"), ...childEvents];
+    for (const next of events) {
+      sessions = applyThreadRunEvent(sessions, threadId, next);
+      current = applyThreadStreamFrameToDetail(current, threadId, frame(next))!;
+      boot = applyThreadStreamFrameToBootstrap(boot, threadId, frame(next))!;
+    }
+    expect(sessions[threadId]).toEqual({ runId: parentId, streamingText: "Parent pending" });
+    expect(current.thread.currentRunId).toBe(parentId);
+    expect(boot.activeThread?.thread.currentRunId).toBe(parentId);
+    expect(current.events.filter((item) => item.runId === childId)).toEqual(childEvents);
+    expect(activeRunStreamingText(current.events, parentId)).toBe("Parent pending");
+    const completed: RunEvent = { ...event(threadId, parentId, 8, ""),
+      type: "run.completed", category: "lifecycle", payload: { status: "completed" } };
+    sessions = applyThreadRunEvent(sessions, threadId, completed);
+    expect(sessions[threadId]).toEqual({ runId: parentId, streamingText: "" });
+    expect(activeRunStreamingText([...current.events, completed], parentId)).toBe("");
+    const snapshot = { ...current, events: [...current.events, completed],
+      runs: [parentId, childId].map((id) => ({ id, threadId, agentId: "agent", status: "completed" as const,
+        source: id === childId ? "subagent" as const : "user" as const,
+        ...(id === childId ? { parentRunId: parentId } : {}),
+        startedAt: "2026-08-07T00:00:00.000Z", finishedAt: "2026-08-07T00:00:08.000Z",
+        usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, costUsd: 0 },
+      })) };
+    const snapshotFrame: StreamFrame = { type: "snapshot", detail: snapshot,
+      detailSha256: "f".repeat(64), detailBytes: 1, eventBytes: 1 };
+    const restored = applyThreadStreamFrameToDetail(current, threadId, snapshotFrame)!;
+    expect(restored.runs.map((run) => run.id)).toEqual([parentId, childId]);
+    expect(restored.thread.currentRunId).toBe(parentId);
+    expect(applyThreadStreamFrameToBootstrap(boot, threadId, snapshotFrame)?.activeThread?.runs).toEqual(snapshot.runs);
+    expect(threadRunViewState(restored, detachThreadRun(sessions, threadId))).toEqual({
+      activeRunId: undefined, isRunning: false, streamingText: "",
+    });
+  });
+
+  it("accepts a new primary recovery start while ignoring a child start before attachment", () => {
+    let sessions = attachThreadRun({}, "thread_a");
+    sessions = applyThreadRunEvent(sessions, "thread_a", { ...event("thread_a", "run_child", 1, ""),
+      type: "run.started", category: "lifecycle", payload: { source: "subagent", parentRunId: "run_parent" } });
+    expect(sessions.thread_a).toEqual({ streamingText: "" });
+    sessions = applyThreadRunEvent(sessions, "thread_a", event("thread_a", "run_parent", 2, "Before recovery"));
+    sessions = applyThreadRunEvent(sessions, "thread_a", { ...event("thread_a", "run_recovery", 3, ""),
+      type: "run.started", category: "lifecycle", payload: { source: "recovery", parentRunId: "run_parent" } });
+    sessions = applyThreadRunEvent(sessions, "thread_a", event("thread_a", "run_recovery", 4, "Recovered"));
+    expect(sessions.thread_a).toEqual({ runId: "run_recovery", streamingText: "Recovered" });
+  });
+
   it("hands intermediate tool-calling text to progress notes without concatenating rounds", () => {
     const events = [
       event("thread_a", "run_active", 1, "先检查结构"),

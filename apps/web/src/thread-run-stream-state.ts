@@ -67,6 +67,9 @@ export function applyThreadRunEvent(
   event: RunEvent,
 ): ThreadRunSessions {
   const current = sessions[threadId];
+  if (event.threadId !== threadId || primaryRunIdForEvent(current?.runId, event) !== event.runId) {
+    return sessions;
+  }
   let streamingText =
     current?.runId === undefined || current.runId === event.runId
       ? (current?.streamingText ?? "")
@@ -81,6 +84,7 @@ export function applyThreadRunEvent(
     isToolCallingModelResponse(event) ||
     isCapabilityRecoveryModelResponse(event) ||
     event.type === "run.recovery.prompt" ||
+    isTerminalRunEvent(event) ||
     event.type === "model.advisor.blocked" ||
     event.type === "model.advisor.correction.requested"
   ) {
@@ -122,6 +126,7 @@ export function activeRunStreamingText(
       isToolCallingModelResponse(event) ||
       isCapabilityRecoveryModelResponse(event) ||
       event.type === "run.recovery.prompt" ||
+      isTerminalRunEvent(event) ||
       event.type === "model.advisor.blocked" ||
       event.type === "model.advisor.correction.requested"
     ) {
@@ -150,6 +155,19 @@ function isCapabilityRecoveryModelResponse(event: RunEvent): boolean {
     !Array.isArray(payload) &&
     payload["responseDisposition"] === "capability_recovery_required",
   );
+}
+
+// A Thread stream interleaves primary and child events. Only an explicit
+// primary start can replace an established owner; recovery Runs remain primary.
+function primaryRunIdForEvent(currentRunId: string | undefined, event: RunEvent): string | undefined {
+  if (event.type === "run.started") {
+    return payloadString(event.payload, "source") === "subagent" ? currentRunId : event.runId;
+  }
+  return currentRunId ?? event.runId;
+}
+
+function isTerminalRunEvent(event: RunEvent): boolean {
+  return event.type === "run.completed" || event.type === "run.cancelled" || event.type === "run.failed";
 }
 
 export function applyThreadStreamFrameToDetail(
@@ -340,6 +358,7 @@ function appendEvent(
   event: RunEvent,
   projections?: Extract<StreamFrame, { type: "event" }>["projections"],
 ): WebThreadDetail {
+  const currentRunId = primaryRunIdForEvent(detail.thread.currentRunId, event);
   return {
     ...detail,
     ...(projections?.taskNarrative
@@ -371,7 +390,7 @@ function appendEvent(
     thread: {
       ...detail.thread,
       status: "running",
-      currentRunId: event.runId,
+      ...(currentRunId ? { currentRunId } : {}),
       eventCount: Math.max(detail.thread.eventCount, event.seq),
       updatedAt: event.createdAt,
     },

@@ -210,6 +210,7 @@ export class ThreadReplayImportRepository {
           id: taskId,
           threadId,
           runId: runIds.get(source.runId)!,
+          ...(source.childRunId ? { childRunId: runIds.get(source.childRunId)! } : {}),
           ...(!active && source.outcome
             ? {
                 outcome: rebindSubagentOutcome(source.outcome, {

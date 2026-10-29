@@ -12,6 +12,7 @@ import type {
 import type { EventSink } from "./event-sink.js";
 import { nowIso } from "./ids.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
+import { isSubagentChildRun } from "./primary-run-selection.js";
 import { reconcileInterruptedRuns } from "./run-interruption-recovery.js";
 import {
   cancelPendingOperatorDecisions,
@@ -69,6 +70,9 @@ export class RunLifecycleRepository {
     const result = await this.host.stateQueue.run(
       async (): Promise<FinishRunResult> => {
         const run = this.host.mutableRun(runId);
+        if (isSubagentChildRun(run)) {
+          throw new Error("Subagent child Runs must settle atomically with their task");
+        }
         assertRunLease(run, options.leaseToken);
         const thread = this.host.mutableThread(run.threadId);
         const currentEvents = this.host.requireLedger().listEvents(thread.id);
@@ -93,6 +97,8 @@ export class RunLifecycleRepository {
           options.waitForOperatorDecisionId,
           waitingDecision,
         );
+        if (this.host.state.subagents.some((task) => task.runId === run.id && task.childRunId &&
+          task.usageStatus === "incomplete")) run.usageStatus = "incomplete";
         settleRunRecord(run, status, options);
         thread.updatedAt = run.finishedAt!;
         const remainingActiveRuns = activeRunsAfter(
@@ -287,6 +293,7 @@ function activeRunsAfter(
     .filter(
       (run) =>
         run.threadId === thread.id &&
+        !isSubagentChildRun(run) &&
         run.id !== finishedRunId &&
         (run.status === "queued" || run.status === "running"),
     )

@@ -366,6 +366,7 @@ import { readLegacyEvents } from "./store-legacy-events.js";
 import {
   operatorDecisionForRun,
   parentRunStartEvents,
+  latestPrimaryRun, assertOrdinaryRunInput,
 } from "./store-run-query-guards.js";
 import type { ChannelDeliveryExecution } from "./store-port.js";
 import type { RunEventQueryScope } from "./run-event-query-port.js";
@@ -373,7 +374,10 @@ import { validatePersistedStoreState } from "./store-state-validation.js";
 import { EMPTY_STORE_STATE, type PersistedStoreState } from "./store-state.js";
 import {
   SubagentRepository,
+  SubagentChildRunRepository,
   type CreateSubagentTaskInput,
+  type StartSubagentChildRunInput, type SubagentChildRunFence, type ReserveSubagentChildInvocationInput,
+  type SettleSubagentChildInvocationInput, type FinishSubagentChildRunInput, type SubagentChildProgressInput, type BindSubagentChildRouteInput,
 } from "./subagent-repository.js";
 import { validateThreadImportProvenanceLedgerReceipt } from "./thread-import-provenance-validation.js";
 import type {
@@ -518,6 +522,7 @@ export class LocalStore {
   private stateRevision = 0;
   private initialized = false;
   readonly subagentRepository: SubagentRepository;
+  readonly subagentChildRunRepository: SubagentChildRunRepository;
   readonly threadInteractionRepository: ThreadInteractionRepository;
   readonly runControlRepository: RunControlRepository;
   readonly runLifecycleRepository: RunLifecycleRepository;
@@ -661,6 +666,7 @@ export class LocalStore {
     );
     this.runControlRepository = new RunControlRepository(repositoryHost);
     this.runLifecycleRepository = new RunLifecycleRepository(repositoryHost);
+    this.subagentChildRunRepository = new SubagentChildRunRepository(repositoryHost);
     this.compatibilityProjections = new StoreCompatibilityProjectionWriter(
       this.statePath,
       this.eventsRoot,
@@ -2403,34 +2409,23 @@ export class LocalStore {
     );
   }
 
-  listSubagentTasks(threadId: string, runId?: string): SubagentTask[] {
-    return this.subagentRepository.list(threadId, runId);
-  }
+  listSubagentTasks(threadId: string, runId?: string): SubagentTask[] { return this.subagentRepository.list(threadId, runId); }
+  createSubagentTask(input: CreateSubagentTaskInput) { return this.subagentRepository.create(input); }
+  startSubagentTask(taskId: string) { return this.subagentRepository.start(taskId); }
 
-  async createSubagentTask(
-    input: CreateSubagentTaskInput,
-  ): Promise<SubagentTask> {
-    return this.subagentRepository.create(input);
-  }
+  // Child authority and aggregate mutations belong to the dedicated repository.
+  startSubagentChildRun(input: StartSubagentChildRunInput) { return this.subagentChildRunRepository.start(input); }
+  assertSubagentChildRunActive(input: SubagentChildRunFence) { return this.subagentChildRunRepository.assertActive(input); }
+  reserveSubagentChildInvocation(input: ReserveSubagentChildInvocationInput) { return this.subagentChildRunRepository.reserveInvocation(input); }
+  settleSubagentChildInvocation(input: SettleSubagentChildInvocationInput) { return this.subagentChildRunRepository.settleInvocation(input); }
+  recordSubagentChildProgress(input: SubagentChildProgressInput) { return this.subagentChildRunRepository.progress(input); }
+  bindSubagentChildRoute(input: BindSubagentChildRouteInput) { return this.subagentChildRunRepository.bindRoute(input); }
+  finishSubagentChildRun(input: FinishSubagentChildRunInput) { return this.subagentChildRunRepository.finish(input); }
 
-  async startSubagentTask(taskId: string): Promise<SubagentTask> {
-    return this.subagentRepository.start(taskId);
+  recordSubagentProgress(...args: Parameters<SubagentRepository["progress"]>): Promise<SubagentTask> {
+    return this.subagentRepository.progress(...args);
   }
-
-  async recordSubagentProgress(
-    taskId: string,
-    input: {
-      stepDelta?: number;
-      turnDelta?: number;
-      usage?: SubagentTask["usage"];
-    },
-  ): Promise<SubagentTask> {
-    return this.subagentRepository.progress(taskId, input);
-  }
-
-  finishSubagentTask(
-    ...args: Parameters<SubagentRepository["finish"]>
-  ): Promise<SubagentTask> {
+  finishSubagentTask(...args: Parameters<SubagentRepository["finish"]>): Promise<SubagentTask> {
     return this.subagentRepository.finish(...args);
   }
 
@@ -3173,6 +3168,7 @@ export class LocalStore {
       summary: NonNullable<RunRecord["lease"]>;
     },
   ): { run: PersistedRunRecord; events: RunEvent[] } {
+    assertOrdinaryRunInput(input);
     const thread = this.mutableThread(input.threadId);
     const workflowExecution = input[WORKFLOW_NODE_EXECUTION];
     const simulationExecution = validateWorkflowSimulationRunGate({
@@ -3245,7 +3241,7 @@ export class LocalStore {
     });
     const executionMode = input.executionMode ?? "standard";
     const patchRecoveryPlan = assertWorkspacePatchRecoveryGrant({
-      source: input.source, executionMode, latestRunId: thread.runIds.at(-1), operatorDecisionId: input.operatorDecisionId,
+      source: input.source, executionMode, latestRunId: latestPrimaryRun(this.state.runs.filter((run) => run.threadId === thread.id))?.id, operatorDecisionId: input.operatorDecisionId,
       parent: this.state.runs.find((candidate) => candidate.id === input.parentRunId),
       agentId: input.agentId, agentRevision: effectiveRunAgent.revision, threadId: thread.id,
       carrier: input, events: input.parentRunId ? this.requireLedger().listRunEvents(input.parentRunId) : [],

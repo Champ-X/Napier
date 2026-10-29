@@ -1,0 +1,619 @@
+{
+  "schemaVersion": 1,
+  "kind": "napier.subagent-child-run-independent-evidence-index",
+  "createdAt": "2026-10-29T14:59:25.776603+00:00",
+  "baselineCommit": "f65fc47b058ceb17bec420a5e3cc5f4a5bd0c7ed",
+  "artifacts": [
+    {
+      "label": "resource-source-stream",
+      "path": "/tmp/napier-child-owner-summary-20261029.json",
+      "sha256": "c20284722dd8700648ac84b600def1b02d639aa88122eb16984a6b201adc4081",
+      "interpretation": "47 Runtime and 78 Web green tests. Ownership baseline has 2 new regressions plus 1 preexisting superseded-recovery fixture failure; 8 filtered cases. Stream baseline has 2 failures and 12 controls.",
+      "receipt": {
+        "kind": "napier.child-execution-owner-evidence",
+        "schemaVersion": 1,
+        "baselineCommit": "f65fc47b058ceb17bec420a5e3cc5f4a5bd0c7ed",
+        "capturedAt": "2026-10-29T14:39:19.344087+00:00",
+        "sourceBinding": [
+          {
+            "path": "packages/runtime/src/subagent-execution-context.ts",
+            "sha256": "e45b9e14c3208a3a1f56c099d21a1333e7ed0224f3a8d092683918c0deafb00a"
+          },
+          {
+            "path": "packages/runtime/src/subagent-capability-factory.ts",
+            "sha256": "1b48b181e69eed491ca4556b50c62de85b21e5d9cdfa8fb17488c66942f8152b"
+          },
+          {
+            "path": "packages/runtime/src/agent-capability-runtime.ts",
+            "sha256": "4d3d086b1f4b33353d6880ecbef8528aff2eeba1d75d22c019d1d4b6706ded8d"
+          },
+          {
+            "path": "packages/runtime/src/agent-runtime.ts",
+            "sha256": "45dccfdaf28d9a5825ee1646f8b5add86e0c36b55c1351901f047c60567f7479"
+          },
+          {
+            "path": "packages/runtime/src/subagents.ts",
+            "sha256": "e169b8ad1e6022700e14a62cbb9d6c7eae8826b7087bcbf71433cd22e8abf335"
+          },
+          {
+            "path": "packages/runtime/src/in-process-subagent-provider.ts",
+            "sha256": "c2c265fcc33865356c3d8207e17bff69bbc9cce0c6b438cb0d46598ec9e27fe1"
+          },
+          {
+            "path": "packages/runtime/src/model-route.ts",
+            "sha256": "3fe7a37fbd598b0b3bc332686a3e7431083b2d1bfa56ceff35abbb2b9aaae2b5"
+          },
+          {
+            "path": "packages/runtime/src/subagent-worktree-mutation.ts",
+            "sha256": "61dd36239d9e062f0d073c3629d0d83b983749fd826c31d2463f1ac534e10dfa"
+          },
+          {
+            "path": "packages/runtime/src/source-continuity-lineage.ts",
+            "sha256": "aefbe1d0df7a3aa166408b9187a6e032c9fa66662f5a428b7146686768c83f8d"
+          },
+          {
+            "path": "packages/runtime/src/web-fetch-continuity.ts",
+            "sha256": "747a8e0734d271fd46e154a7644b27b18a63421aa15efe24ac37c5b44e16d990"
+          },
+          {
+            "path": "packages/runtime/src/research-source-continuity.ts",
+            "sha256": "4b27be0a8607f66d2e28cee18d1816b2b39dcb283eab0eea43fefeb2afdbb2a5"
+          },
+          {
+            "path": "packages/runtime/src/research-source-replay.ts",
+            "sha256": "74849cbb670354f17be03b2ed1b606113533b29dbabb543f7550beaf71809fe7"
+          },
+          {
+            "path": "packages/runtime/src/thread-bundles.ts",
+            "sha256": "19b5fae9fe7cd90c786bebab17c7b2a415db5baa87c70bcb8ccd818a38429a0c"
+          },
+          {
+            "path": "packages/runtime/test/subagent-execution-tools.test.ts",
+            "sha256": "2aa8277b47ce14c13e64c3168cd20e5eb32e2455465b33c58006d5d7253e7e9d"
+          },
+          {
+            "path": "packages/runtime/test/subagent-child-route.test.ts",
+            "sha256": "df23105d8e707bcbe59a0ec74fc45551525686820f3aa0b7e38d94bea96110d3"
+          },
+          {
+            "path": "packages/runtime/test/subagent-child-execution-integration.test.ts",
+            "sha256": "01e56f8b60aae09ab36de0c57941dfeac3d2276a1e38df099c2a21ef7b2ee181"
+          },
+          {
+            "path": "packages/runtime/test/subagent-worktree-debugger.test.ts",
+            "sha256": "c779c9d0f9a978e12d16436c14082c57db9c3c3a778bf2193d42dc52e78f79d6"
+          },
+          {
+            "path": "packages/runtime/test/web-fetch-continuity.test.ts",
+            "sha256": "c87f920b3da984853a40468f642fbabd2719cb986dc60c531134e1a09f985d1a"
+          },
+          {
+            "path": "apps/web/src/thread-run-stream-state.ts",
+            "sha256": "cac261cae40bd196d06cc85d767997b748aa8b0c6657a036f28631b3ae93360d"
+          },
+          {
+            "path": "apps/web/test/thread-run-stream-state.test.ts",
+            "sha256": "ce9aa5f59f9c6684ca3c8a9b0ebb2225aaf12efe5b0399d0a40548adf9b1127e"
+          }
+        ],
+        "sharedFiles": [
+          "packages/runtime/src/agent-runtime.ts",
+          "packages/runtime/src/thread-bundles.ts"
+        ],
+        "reports": [
+          {
+            "path": "/tmp/napier-child-execution-baseline-red-v2-20261029.json",
+            "sha256": "b377bd02252872b2051e26596677c80f2e32fed64b3ba9de589e2838b93756ed"
+          },
+          {
+            "path": "/tmp/napier-child-owner-sources-final-v2-20261029.json",
+            "sha256": "9b8d345d81acc1c7301afec2256a62fbba599ab32a53dd148e9edf249c48e0ba"
+          },
+          {
+            "path": "/tmp/napier-child-stream-owner-red-20261029.json",
+            "sha256": "c548cf9f79cd77b6c2a1579ddc8a29ee8a641d95725349ee393ff06ee13c8afb"
+          },
+          {
+            "path": "/tmp/napier-child-stream-owner-final-20261029.json",
+            "sha256": "7c4e59f5bfc605ebc83dacd7b9e9d259661945b46caa091c56adf6ef16394b54"
+          },
+          {
+            "path": "/tmp/napier-child-owner-sources-final-v3-20261029.json",
+            "sha256": "92e99e08c61c11b02889fc9fadb7470c5dcba3b7f898949c7cf8a48b52b758c6"
+          }
+        ],
+        "browserReceipt": {
+          "path": "/tmp/napier-child-stream-browser-receipt-20261029.json",
+          "sha256": "ff49c76d74b7a7810a361c367d38f30e97a4b681af075d53b7d292a32c5a5167"
+        },
+        "checks": {
+          "runtimeNoEmit": "passed",
+          "ownedRuntimeTestStrictTypecheck": "passed",
+          "webNoEmit": "passed including final snapshot assertions",
+          "diffCheck": "passed",
+          "runtimeFinalV2": "47 passed",
+          "webFinal": "78 passed",
+          "runtimeFinalV3": {
+            "numTotalTests": 47,
+            "numPassedTests": 47,
+            "numFailedTests": 0,
+            "success": true
+          }
+        },
+        "preexistingFixtureRepair": {
+          "path": "packages/runtime/test/web-fetch-continuity.test.ts",
+          "baselineFailure": "Recovery checkpoint superseded by a later Run",
+          "repair": "Separate ordinary child/storage denials from tampered capsule using fresh current interrupted parent; no production rule change"
+        },
+        "limitations": [
+          "Full child Run metadata is available in inspect and final snapshot; no incremental executionRuns projection added",
+          "Browser narrow/theme/terminal states not verified",
+          "Shared file hashes may drift if root changes them after this capture"
+        ],
+        "noCommit": true,
+        "noDistDeletingBuild": true
+      }
+    },
+    {
+      "label": "browser",
+      "path": "/tmp/napier-child-stream-browser-receipt-20261029.json",
+      "sha256": "ff49c76d74b7a7810a361c367d38f30e97a4b681af075d53b7d292a32c5a5167",
+      "interpretation": "Actual native Chrome and production TaskNarrativeBar/reducers in isolated Vite harness. Parent to 5 child events inspected. No screenshot. Narrow/theme/terminal stages not browser-verified. No backend/model requests.",
+      "receipt": {
+        "kind": "napier.child-stream-browser-smoke",
+        "schemaVersion": 1,
+        "observedAt": "2026-10-29T14:39:19.343697+00:00",
+        "url": "http://127.0.0.1:5189/__child_stream_smoke",
+        "harnessDirectory": "/tmp/napier-child-stream-browser-20261029",
+        "method": "Native Google Chrome through mcp__cua_repl after browser host reported unavailable",
+        "productionModules": [
+          "apps/web/src/thread-run-stream-state.ts",
+          "apps/web/src/run-intent-id.ts",
+          "apps/web/src/TaskNarrativeBar.tsx",
+          "apps/web/src/task-narrative-view-model.ts"
+        ],
+        "observations": [
+          {
+            "phase": "parent",
+            "visibleVerdict": "PASS parent",
+            "primaryOwner": "run_parent_browser",
+            "threadCurrentRun": "run_parent_browser",
+            "currentAttempt": "run_parent_browser",
+            "pendingText": "Parent pending text",
+            "retainedChildEvents": 0,
+            "taskNarrative": "运行中 模型正在准备下一步动作"
+          },
+          {
+            "action": "Clicked Apply child events",
+            "phase": "child",
+            "visibleVerdict": "PASS child",
+            "primaryOwner": "run_parent_browser",
+            "threadCurrentRun": "run_parent_browser",
+            "currentAttempt": "run_parent_browser",
+            "pendingText": "Parent pending text",
+            "retainedChildEvents": 5,
+            "types": [
+              "run.started",
+              "route_plan_created",
+              "tool.started",
+              "model.response",
+              "run.completed"
+            ],
+            "taskNarrative": "运行中 模型正在准备下一步动作"
+          }
+        ],
+        "notBrowserVerified": [
+          "narrow layout",
+          "theme change",
+          "parent terminal and snapshot"
+        ],
+        "interruption": "CUA rejected subsequent action after user changed active Chrome window; no more UI actions sent",
+        "screenshotCaptured": false,
+        "serverStopped": true,
+        "backendRequests": 0,
+        "modelRequests": 0,
+        "scope": "Isolated real-browser component and reducer smoke, not full application acceptance"
+      }
+    },
+    {
+      "label": "foundation",
+      "path": "/tmp/napier-child-foundation-handoff-v2-20261029.json",
+      "sha256": "c22fee831be220994508730ac15a329b44b6f3b010ae8d916aeb6b7c12ceee8d",
+      "interpretation": "Broad 70/70; final repository/effect/recovery 32/32. Includes earlier 22/22 and capture 16/16. Post-run handoff hashes do not establish pre/post source stability.",
+      "receipt": {
+        "createdAt": "2026-10-29T14:45:12.729791+00:00",
+        "workspace": "/Users/champ/orca/Napier",
+        "head": "f65fc47b058ceb17bec420a5e3cc5f4a5bd0c7ed",
+        "fileSha256": {
+          "packages/contracts/src/execution-core.ts": "bcc88cba05c936e4068ccd37bffb1dbfeeb558955ad1ca460e44aa867aa9a8d9",
+          "packages/contracts/src/execution-runs.ts": "821c8d00d48066fe5416910e0162f756e8bd4dedd504979ce1b17fcf532932eb",
+          "packages/contracts/src/run-event-domain-definitions-v1.ts": "25152fdd7ca523367e8ced8af64d4a9b7eb112aabe9dd715f2dae73935848de7",
+          "packages/contracts/src/subagent-supervisor.ts": "9cff1230ab948f8db17189fdee7f2e96df67ab2cfd8926bdd585a01359cd3cac",
+          "packages/contracts/src/task-narrative-projection.ts": "e597587c3b341b07f0d83d2c1fccd58b80c426cb1e0cb4d9d9c3aca70172e75e",
+          "packages/runtime/src/agent-budget-policy.ts": "a4a66b551e6ab8fdae211941c0a9406857b63c8137b6d7e843349823ca16eb0e",
+          "packages/runtime/src/agents.ts": "6f9acb1865025c3ac5df8aa2aa1002979f2536ea29a7553c2e3be5a861dab85c",
+          "packages/runtime/src/run-config.ts": "62aeeffcac15984756d4438b09a089cd2480fb2e8625f12aabdc60e365fa308f",
+          "packages/runtime/src/run-execution-tool-surface.ts": "afaea7aaba6dabd04eeacfd76fdf158aaf27dc9fe0c790864b29765a8e62c08d",
+          "packages/runtime/src/run-interruption-recovery.ts": "b82e10a32563e2268f588a8b35a34c4ea28afb8547bb7137b5690801c2d52751",
+          "packages/runtime/src/run-lifecycle-repository.ts": "bf892725f3d228ed3dd1ce82ebf884ce329f7f5fe637d7eebd0dca29a21fd8aa",
+          "packages/runtime/src/run-lost-owner-recovery.ts": "f4f2f1e717ae46a9ecf2df5e7b1c556afd0c9b7fcfa46614b6915b80d683cd78",
+          "packages/runtime/src/store-run-query-guards.ts": "c782a847b982ecc369696b1a63e9b8f2eb4b2a4fb2245d92798957c5e94d5b66",
+          "packages/runtime/src/store-state-run-validation.ts": "2293bcd56929ed0fda2b4189e0cecbc3d741241bd9f889b771924920b83facd6",
+          "packages/runtime/src/store.ts": "c1dd55897e7f4b5812d223f7112eb25ac12a11fb49cf941387fdcd4a4c08f7f1",
+          "packages/runtime/src/subagent-child-authorization.ts": "4d04af727862f8d2310f60fcc7079666cea00e8d1e8ebaa94c760444fec892a0",
+          "packages/runtime/src/subagent-child-evidence-validation.ts": "7553a96a90704b13076b1a0ccab60ca73abbc95c122eb32b5c102d594ebec20f",
+          "packages/runtime/src/subagent-child-invocation-capture.ts": "524f61e5f10857a8f84737a4c8b27998a83cc20fc40482ef0bde97dce06a9710",
+          "packages/runtime/src/subagent-child-invocations.ts": "ab3c777f508cfd8f66aff446b419f8ac6d19ce27d728ad2e482c39fc3c996ba2",
+          "packages/runtime/src/subagent-child-profile.ts": "6247ed66da288fbd9c1a8db077e025781f2a771fa557a0341eed04321887e750",
+          "packages/runtime/src/subagent-child-run-fence.ts": "3bb415f22bade1c5f910bf6a96d011008cf6c51ba8e11055db9c08b5b71cf8d2",
+          "packages/runtime/src/subagent-child-run-host.ts": "e4f5ea8d5f3b33b2d96151aa6f9adb5c6dd86d531e32456a788c501c3ebb415e",
+          "packages/runtime/src/subagent-child-run-repository.ts": "7b49053fb56b7f819541db63ad5841152a8b8838df3c237d2d1c0b78c1ed5038",
+          "packages/runtime/src/subagent-child-run-types.ts": "2528177efeec092993972aaf759303229586b32b49414a568c2073ee1e76a178",
+          "packages/runtime/src/subagent-child-run-validation.ts": "4fe87a0f40a610880c6c26368b118faf26e52817e27abdd5500d91f2aa5568b7",
+          "packages/runtime/src/subagent-replay-validation.ts": "a3233a264edf79a7b2a484a2ddd4974caf2a232940bb899621d673d60741646b",
+          "packages/runtime/src/subagent-repository.ts": "82522f5b54b42ca1f634706d8e41eead1121ff9d6bc6b7d93a17ac65fbc54a52",
+          "packages/runtime/src/thread-bundles.ts": "19b5fae9fe7cd90c786bebab17c7b2a415db5baa87c70bcb8ccd818a38429a0c",
+          "packages/runtime/src/thread-replay-import-context.ts": "bf0631bc61858599cff203ba1316a2bab035635fc0b3fc15e278b6ecb94c0a80",
+          "packages/runtime/src/thread-replay-import-repository.ts": "b47c7fef903b775d95d21774326f80240cabfd840a095e2be8f5082c2b53767c",
+          "packages/runtime/src/thread-replay-run-configuration.ts": "9b7a4a007ad8edad3190803a5bf5422221c7939d46d776d228441fcde06033b8",
+          "packages/runtime/test/subagent-child-run-repository.test.ts": "ccfdb91de75aaff818d6cb9a0abc4fbc46b88384f02895fab9106e3580fc137c"
+        },
+        "reports": [
+          {
+            "path": "/tmp/napier-child-foundation-broad.json",
+            "sha256": "59048b98bd49ca1fb04ca18378192cbf4be9be71c88f422332565f2c8b77b14a",
+            "numTotalTests": 70,
+            "numPassedTests": 70,
+            "numFailedTests": 0,
+            "numPendingTests": 0
+          },
+          {
+            "path": "/tmp/napier-child-foundation-final.json",
+            "sha256": "194263dc4dfafce207aac12004c759348603cb12ba590be89db2f46744b5dd40",
+            "numTotalTests": 22,
+            "numPassedTests": 22,
+            "numFailedTests": 0,
+            "numPendingTests": 0
+          },
+          {
+            "path": "/tmp/napier-child-foundation-capture-final.json",
+            "sha256": "f7de8f7f087f35235405d7d1988ecbfc73182075515e3b9152205d462fd653fd",
+            "numTotalTests": 16,
+            "numPassedTests": 16,
+            "numFailedTests": 0,
+            "numPendingTests": 0
+          },
+          {
+            "path": "/tmp/napier-child-foundation-final-v2.json",
+            "sha256": "84a439d01f0e8ef9c889d61941d5094bda776cdbeaf3aa932ba02a6aa6f94449",
+            "numTotalTests": 32,
+            "numPassedTests": 32,
+            "numFailedTests": 0,
+            "numPendingTests": 0
+          }
+        ],
+        "typecheck": [
+          "/tmp/napier-child-foundation-typecheck-v2.log",
+          "/tmp/napier-child-foundation-test-typecheck-final.log"
+        ],
+        "architecture": "/tmp/napier-child-foundation-architecture-v3.log",
+        "effectHandoff": "/tmp/napier-child-effect-fencing-final-20261029/receipt.json",
+        "projectionHandoff": "/tmp/napier-child-run-projection-handoff-20261029.json",
+        "boundary": "Handoff hashes captured after green runs, not a pre/post source assertion for those green executions. Shared files include parent and resource-agent changes. Root owns final verification. No private durable transcript, checkpoint consumption, compaction, or automatic child continuation implemented.",
+        "commands": [
+          "npx vitest run packages/runtime/test/subagent-child-run-repository.test.ts packages/runtime/test/subagent-child-effect-fencing.test.ts --maxWorkers=2 --testTimeout=30000 --reporter=json --outputFile=/tmp/napier-child-foundation-final.json",
+          "npx tsc -p packages/runtime/tsconfig.json --noEmit",
+          "npx tsc --noEmit --target ES2023 --module NodeNext --moduleResolution NodeNext --strict --skipLibCheck --esModuleInterop --exactOptionalPropertyTypes --noUncheckedIndexedAccess --noUnusedLocals --noUnusedParameters --resolveJsonModule packages/runtime/test/subagent-child-run-repository.test.ts",
+          "node scripts/check-architecture.mjs",
+          "git diff --check"
+        ],
+        "recoveryCompletenessRed": "/tmp/napier-child-recovery-completeness-red.json",
+        "recoveryCompletenessRedSource": "/tmp/napier-child-recovery-completeness-red-source",
+        "changesSinceInitialHandoff": "Terminal recovery now propagates incomplete child usage into terminal parent Run. Regression red then32/32 green. Prior projection/effect artifact hashes remain unchanged."
+      }
+    },
+    {
+      "label": "projection-recovery-benchmark",
+      "path": "/tmp/napier-child-run-projection-handoff-20261029.json",
+      "sha256": "acb28479b53456d3606fdb905e31217941a814fd5d3f007105fa349769ed2e48",
+      "interpretation": "Runtime 31/31 and benchmark 11/11. Frozen f65fc47b original 2246 source hashes unchanged. Initial 10 behavioral reds; supplemental 2 reds and 10 filtered. Clean benchmark source baseline 5 reds and 2 controls. Missing-config/mixed-dist attempts excluded as behavioral evidence.",
+      "receipt": {
+        "createdAt": "2026-10-29T14:30:02.900755+00:00",
+        "workspace": "/Users/champ/orca/Napier",
+        "head": "f65fc47b058ceb17bec420a5e3cc5f4a5bd0c7ed",
+        "status": "focused-validation-passed",
+        "fileSha256": {
+          "packages/contracts/src/primary-run-selection.ts": "902ea8b0a86e1ed19819fa78ce8e2c85d1ec29cbcb567cc048de30c87c8f274b",
+          "packages/contracts/src/task-narrative.ts": "9cb4b8afd34ec9aac64b16e32172febd5834ff6780b92aee6ceaf9a494eaa0c8",
+          "packages/runtime/src/primary-run-selection.ts": "670545e9538a1d7cf61efa2bab723155d318ad404554226915aa30c40b01e800",
+          "packages/runtime/src/agent-run-recovery.ts": "a7b3d92a162ec575fd8177ada45c90ac43c1aa0a571e4be6a9034e3310821fd8",
+          "packages/runtime/src/automatic-recovery.ts": "f6131ea54565936d8efe8d739352831c8b8bc9648f8074d06864606da37e606f",
+          "packages/runtime/src/automatic-recovery-store-claims.ts": "e50d8a485906bb17860b12825dffe1a6f70c07a4f06bfcae892e11d2a6bbb829",
+          "packages/runtime/src/thread-detail.ts": "2a249434340da1ca46fe1d4e73f623f5a9641d49cbaad50f12e59357d279849f",
+          "packages/runtime/src/run-recovery-checkpoint.ts": "5342e507f35f69b788e2da111d5aea8ba4e98f97d5ccd763120095fb06ecf3ee",
+          "packages/runtime/src/run-lifecycle-repository.ts": "bf892725f3d228ed3dd1ce82ebf884ce329f7f5fe637d7eebd0dca29a21fd8aa",
+          "packages/runtime/src/run-terminal-recovery.ts": "d17c41eb9f6e6a2c4a75c2c6b19bd1bf22ce53a99f786bde34b26d10f673745e",
+          "packages/runtime/src/conversation-artifacts-projection.ts": "321ef2330e9595d7d1ce51e8593ee338a709d691bd40cebeb7a0e2b88b807c2e",
+          "packages/runtime/src/conversation-plans-projection.ts": "353ad7a972a6fb38bea290e2cd691ac2ad6a1c1675d9d95d9ec9af02240368f2",
+          "packages/runtime/test/subagent-child-run-projection.test.ts": "24d86f8c8c1c2b036031c67ec626a878f08bc20526cef37cd2f2e732232e369e",
+          "packages/benchmark-kit/src/workflow-benchmark-run-summary.ts": "ead5eda97729cbe6101d4a969eb2c51d8a25d8562c347731ec3e589881d95ce9",
+          "packages/benchmark-kit/src/workflow-benchmark-types.ts": "f3bda27f2ea14cedf94f6aeca1f5ce93f1be577a37377a71d698e628e43395c9",
+          "packages/benchmark-kit/src/workflow-benchmark-ledger.ts": "c76537f1be719f1cbeb77805b83b2f34dcfc32f71e4e934e27323753edc892b1",
+          "packages/benchmark-kit/src/workflow-benchmark-contract.ts": "aa53fae3a60d615b42e7e2feb435156bca1e507f2a6794971fbc4a3a27397ddc",
+          "packages/benchmark-kit/test/workflow-benchmark-child-usage.test.ts": "97f573521e782e7f0560e0ae39f0caebe61b4e8c2e95c315bacf12e084d386b2"
+        },
+        "bindingBoundary": "Current owned file hashes were captured after the focused green runs. They are handoff bindings, not a pre/post hash assertion for green execution. Root owns final broad verification.",
+        "sharedOwnership": {
+          "packages/runtime/src/run-lifecycle-repository.ts": "Includes parent agent incomplete-child-usage propagation; preserve it."
+        },
+        "greenReports": [
+          {
+            "path": "/tmp/napier-child-run-projections-final.json",
+            "sha256": "1de590e82a44a650eae2a5944770daf375cb9b05607071563c15374e01d7e5bd",
+            "numTotalTests": 31,
+            "numPassedTests": 31,
+            "numFailedTests": 0,
+            "numPendingTests": 0,
+            "success": true
+          },
+          {
+            "path": "/tmp/napier-workflow-child-usage-current.json",
+            "sha256": "b5ad2834f4d1d603941a891a31aca4ac55a8af462eadb9661367fea2278d7877",
+            "numTotalTests": 11,
+            "numPassedTests": 11,
+            "numFailedTests": 0,
+            "numPendingTests": 0,
+            "success": true
+          }
+        ],
+        "strictTypes": {
+          "config": "/tmp/napier-child-run-projection-types.json",
+          "configSha256": "8eff2ea1d92fddc347c6e55947d36ed4196f1dfa9ce4dfed9189f9831ce9b153",
+          "log": "/tmp/napier-child-run-projection-types.log",
+          "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "exitCode": 0
+        },
+        "reproductionCommands": [
+          {
+            "cwd": "/Users/champ/orca/Napier/packages/runtime",
+            "argv": [
+              "/Users/champ/orca/Napier/node_modules/.bin/vitest",
+              "run",
+              "test/subagent-child-run-projection.test.ts",
+              "test/automatic-recovery.test.ts",
+              "test/agent-manual-run-recovery.test.ts",
+              "test/run-lifecycle-atomic-settlement.test.ts",
+              "test/conversation-plans-projection.test.ts",
+              "test/kernel-conversation-plans-projection.test.ts",
+              "--maxWorkers=1",
+              "--testTimeout=30000"
+            ]
+          },
+          {
+            "cwd": "/Users/champ/orca/Napier/packages/benchmark-kit",
+            "argv": [
+              "/Users/champ/orca/Napier/node_modules/.bin/vitest",
+              "run",
+              "test/workflow-benchmark-child-usage.test.ts",
+              "test/workflow-benchmark.test.ts",
+              "--maxWorkers=1",
+              "--testTimeout=30000"
+            ]
+          },
+          {
+            "cwd": "/Users/champ/orca/Napier",
+            "argv": [
+              "/Users/champ/orca/Napier/node_modules/.bin/tsc",
+              "-p",
+              "/tmp/napier-child-run-projection-types.json"
+            ]
+          }
+        ],
+        "frozenBaseline": {
+          "root": "/tmp/napier-child-run-baseline-zcy1oe92",
+          "head": "f65fc47b058ceb17bec420a5e3cc5f4a5bd0c7ed",
+          "originalManifestEntriesVerified": 2246,
+          "mismatches": [],
+          "artifactSha256": {
+            "manifest.json": "f2100d5407ffcaa8ac34c313bf484577e4052b2ad94000399a2c1766fbb374b9",
+            "projection-red-command.sh": "19afebd27f6e7fb13b15bf1131ca275676eacd8511c33e35105e4b98de918de3",
+            "projection-red-results.json": "fa750fad4d42a9f49b2e8731052d14d95dc3d663b778a2149dba63d18dbafa7e",
+            "projection-red.log": "c365fd997411f401369d35fd9bc889eb4a0951d18f8a987ab1867ec9356fa2cc",
+            "projection-test-binding.json": "b1c241748be63a6d201c1ab337d6a98e121ecd44dcebd78319b7a34d27c74b04",
+            "additional-red-command.sh": "27736f4b7f8446be213720ace430e4aad500a93c9c1e2e3c4f5011f224472f4b",
+            "additional-red-results.json": "7a89ff728a13eb41f443583763f20128b07aba6ecf08bc9788dee88d0ca02dca",
+            "additional-red.log": "2df02173580d07b2ff8090fe2b484462c550579aa8fdc2243552beceaca19996",
+            "additional-test-binding.json": "5d344265def60dd1173a28228eb48b42658ceb3f3d2712f26152e4efc1b8f54c",
+            "benchmark-source-binding.json": "1f2197cf973e1740e47364942002f66e353c750ae6ed8dcc56b6f6f11e1f22e0",
+            "vitest-baseline.config.mts": "bb9d36fbbf3673f43045bb9bfeaf5674adbc78d1568aa57d8ee6c61e22e40faf",
+            "benchmark-source-red-command.sh": "229fc44a5579d8ef4c7aa00b152c08d8a05fc7871884c0a3bb49e2e10b1ce7ac",
+            "benchmark-source-red-results.json": "ec1dce029c68634c40e947161c1c3d1fc9a394f3c5ab50e47f37cca7ad8c8585",
+            "benchmark-source-red.log": "6afd3bc57baa9f29e2ac611e6c08a8e95320fd2018fe1a5bfa4736557ace853c"
+          },
+          "reports": [
+            {
+              "path": "/tmp/napier-child-run-baseline-zcy1oe92/projection-red-results.json",
+              "sha256": "fa750fad4d42a9f49b2e8731052d14d95dc3d663b778a2149dba63d18dbafa7e",
+              "numTotalTests": 10,
+              "numPassedTests": 0,
+              "numFailedTests": 10,
+              "numPendingTests": 0,
+              "success": false
+            },
+            {
+              "path": "/tmp/napier-child-run-baseline-zcy1oe92/additional-red-results.json",
+              "sha256": "7a89ff728a13eb41f443583763f20128b07aba6ecf08bc9788dee88d0ca02dca",
+              "numTotalTests": 12,
+              "numPassedTests": 0,
+              "numFailedTests": 2,
+              "numPendingTests": 10,
+              "success": false
+            },
+            {
+              "path": "/tmp/napier-child-run-baseline-zcy1oe92/benchmark-source-red-results.json",
+              "sha256": "ec1dce029c68634c40e947161c1c3d1fc9a394f3c5ab50e47f37cca7ad8c8585",
+              "numTotalTests": 7,
+              "numPassedTests": 2,
+              "numFailedTests": 5,
+              "numPendingTests": 0,
+              "success": false
+            }
+          ]
+        },
+        "redInterpretation": {
+          "runtimeInitial": "10 actual behavior failures, zero skipped",
+          "runtimeSupplemental": "2 actual behavior failures, 10 intentionally excluded test cases",
+          "benchmarkCleanSourceBaseline": "5 actual behavior failures, 2 preexisting passing controls, zero skipped",
+          "invalidAttemptsExcluded": [
+            "benchmark-setup-* missing archived CLI tsconfig",
+            "benchmark-compiled-dependency-* mixed newer Runtime dist with old Contracts; final source aliases replace this evidence"
+          ]
+        },
+        "limits": [
+          "No full child checkpoint, mailbox consumption, compaction or restart continuation acceptance.",
+          "Benchmark tests validate accounting/provenance using an extra child usage view on deterministic Workflow evidence; actual child execution is covered by other agents.",
+          "No builds, commits, external models or preserved user file edits performed by this subtask."
+        ]
+      }
+    },
+    {
+      "label": "sqlite-effect-parent-loss",
+      "path": "/tmp/napier-child-effect-fencing-final-20261029/receipt.json",
+      "sha256": "552710342cc48bd6240ab3fa21e9be5a25d5894049e6eeab9cf8cbdebce68333",
+      "interpretation": "22/22 and strict types. Real parent-lease-loss red retained; intermediate assertion/typecheck fixes listed. Independent authority-bypass review found no issue.",
+      "receipt": {
+        "createdAt": "2026-10-29T14:42:02.786930+00:00",
+        "workspace": "/Users/champ/orca/Napier",
+        "head": "f65fc47b058ceb17bec420a5e3cc5f4a5bd0c7ed",
+        "ownedFilesSha256": {
+          "packages/runtime/src/sqlite-child-parent-loss.ts": "6777d8832ef397209f52fce069ba00393f4788d04498c6d2b1982a017401855e",
+          "packages/runtime/src/sqlite-effect-indeterminate-commit.ts": "f0d30d95160acbafd66585547a88a31a61fe8f81bdf6ebd988732946b3202396",
+          "packages/runtime/test/subagent-child-effect-fencing.test.ts": "d925940f8395a1ef121459857ca545ae38450a1ce007ed26c295d86faec1fe1f"
+        },
+        "artifactSha256": {
+          "napier-child-effect-fencing-proof-final.json": "d4820fa0953306067a3aa7078c1b78adb8e76d22dccab8838349817a0d597b76",
+          "napier-child-effect-fencing-proof-final.log": "3d73dca156591e1583f514748bfc8e3d2e09eea299fd1dbc5bb99537d78a6e65",
+          "napier-child-effect-fencing-types.json": "b7d454d07a60bc88f0fafa8a43d368d2377dd4cf53dd26116c0a6667a1ae3b2f",
+          "napier-child-effect-fencing-types-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "napier-child-effect-fencing-architecture.log": "5edbfbd8cfc8d31f69ea745f0bfdf44b71a4133505ef5e975aaa43a5a51c716d"
+        },
+        "sourceBinding": "Post-run handoff snapshot; final root broad test owns complete checkout pre/post binding.",
+        "green": {
+          "numTotalTests": 22,
+          "numPassedTests": 22,
+          "numFailedTests": 0,
+          "numPendingTests": 0,
+          "success": true
+        },
+        "strictTypecheck": {
+          "exitCode": 0,
+          "config": "napier-child-effect-fencing-types.json",
+          "log": "napier-child-effect-fencing-types-final.log"
+        },
+        "architecture": {
+          "exitCode": 1,
+          "ownedFileViolations": [],
+          "mainValidatorLines": 494,
+          "note": "Global check has previous/shared file growth and stale ratchet entries; no owned-file violations. No budgets changed."
+        },
+        "commands": [
+          {
+            "cwd": "/Users/champ/orca/Napier/packages/runtime",
+            "command": "/Users/champ/orca/Napier/node_modules/.bin/vitest run test/subagent-child-effect-fencing.test.ts test/tool-operation-terminal-fence.test.ts test/tool-effect-indeterminate-recovery.test.ts --maxWorkers=1 --testTimeout=30000 --reporter=verbose --reporter=json --outputFile=/tmp/napier-child-effect-fencing-proof-final.json > /tmp/napier-child-effect-fencing-proof-final.log 2>&1"
+          },
+          {
+            "cwd": "/Users/champ/orca/Napier",
+            "command": "/Users/champ/orca/Napier/node_modules/.bin/tsc -p /tmp/napier-child-effect-fencing-types.json > /tmp/napier-child-effect-fencing-types-final.log 2>&1"
+          },
+          {
+            "cwd": "/Users/champ/orca/Napier",
+            "command": "node scripts/check-architecture.mjs > /tmp/napier-child-effect-fencing-architecture.log 2>&1"
+          }
+        ],
+        "red": {
+          "directory": "/tmp/napier-child-effect-fencing-red-20261029",
+          "passed": 2,
+          "failed": 1,
+          "skipped": 0,
+          "observedFailure": "EffectIndeterminateCommitError: the Run owner lease is still preservable",
+          "interpretation": "Real behavior failure during Store initialize after only parent lease expiry, while child lease and unresolved effect are live."
+        },
+        "intermediateAttempts": [
+          {
+            "report": "/tmp/napier-child-effect-fencing-proof-v1.json",
+            "note": "Production recovery fixed; replay assertion expected rejection but existing API correctly returns admitted:false/indeterminate_replay. This test expectation was corrected."
+          },
+          {
+            "log": "/tmp/napier-child-effect-fencing-types.log",
+            "note": "New test predicate lacked JsonValue payload narrowing; corrected with explicit object guard."
+          }
+        ],
+        "scope": "Durable tool operation authority and real SQLite lifecycle tests; no model or external effects. No other source/test files edited by this supplemental task.",
+        "independentReview": {
+          "reviewer": "/root/resource_admission_audit",
+          "scope": "Read-only authority bypass review of both production files",
+          "result": "No authority-bypass issue found. Durable previous binding and normalized parent lease are checked inside writer transaction; existing child lease, exact effect boundary, paired terminal, operation-set and no-prior-outcome gates remain.",
+          "executionBoundary": "Code review only; 22-case test evidence is reported separately."
+        }
+      }
+    },
+    {
+      "label": "individual-child-budget",
+      "path": "/tmp/napier-child-run-budget-v1-20261029.json",
+      "sha256": "57f8098fe663c325b45641c8a06efb86225a427e8df3ef7b29160109c5cdeb6c",
+      "interpretation": "21/21 comprising 4 new token/cost/repair cases, 3 denial cases and 14 integration cases. Independent read-only review found no blocking issue within next-call individual-child limits. Route-candidate exhaustion is not directly tested; shared-parent atomic limits and in-flight output bounds are absent.",
+      "receipt": {
+        "numTotalTests": 21,
+        "numPassedTests": 21,
+        "numFailedTests": 0,
+        "numPendingTests": 0,
+        "success": true
+      }
+    }
+  ],
+  "boundaries": [
+    "Independent counts overlap and must not be summed as unique coverage.",
+    "Private tmp paths refer to local retained evidence; embedded handoffs preserve their hashes and interpretation.",
+    "Authoritative current pre/post checkout binding is in the final root regression receipt.",
+    "No external or paid model calls. No live-model quality, performance, complete browser usability, G03 completion or release acceptance claimed."
+  ],
+  "rootVerification": [
+    {
+      "path": "docs/artifacts/subagent-child-runs-foundation-2026-10-29.json",
+      "sha256": "dda19aed87c357f83b2ccffb357b34dbaac384b91cfb93cb6e23e9a6cc7c68a9",
+      "passedRequiredChecks": false,
+      "requiredFailures": [
+        "new-runtime-tests-strict"
+      ],
+      "sourceCount": 4100,
+      "sourceDrift": [],
+      "emittedCount": 68,
+      "emittedDrift": [],
+      "preserved": {
+        "manifest": "/tmp/napier-overlay-preserved-user-files-20261029.json",
+        "count": 28,
+        "changed": []
+      }
+    },
+    {
+      "path": "docs/artifacts/subagent-child-runs-foundation-final-2026-10-29.json",
+      "sha256": "245dd1b65987eaee9a288ab057605ea9953c9bb8840062ecdede048cbac415ef",
+      "passedRequiredChecks": true,
+      "requiredFailures": [],
+      "sourceCount": 4100,
+      "sourceDrift": [],
+      "emittedCount": 67,
+      "emittedDrift": [],
+      "preserved": {
+        "manifest": "/tmp/napier-overlay-preserved-user-files-20261029.json",
+        "count": 28,
+        "changed": []
+      }
+    }
+  ],
+  "resourceBaseline": {
+    "path": "/tmp/napier-child-execution-baseline-manifest-20261029.json",
+    "sha256": "739db1856e87c48208211b1981c1a4a7fe1fe061b2ed1bec5ee6e3457e27ad56",
+    "boundary": "Archived runtime sources with workspace dependencies and Contracts dist. Separate two ownership regressions from the preexisting superseded-recovery fixture failure."
+  }
+}

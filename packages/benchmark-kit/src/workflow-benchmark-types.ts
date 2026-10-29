@@ -3,6 +3,7 @@ import type {
   ModelRef,
   RunEvent,
   RunExecutionMode,
+  RunInvocationSource,
   RunStatus,
   Usage,
 } from "@napier/contracts";
@@ -304,11 +305,13 @@ export interface WorkflowBenchmarkLedgerBundle {
   runs: Array<{
     id: string;
     status: RunStatus;
+    source?: RunInvocationSource;
     parentRunId?: string;
     executionMode?: RunExecutionMode;
     configurationSha256?: string;
     durationMs: number;
     usage: Usage;
+    usageStatus?: "complete" | "incomplete";
   }>;
   evaluationEvent: RunEvent;
   terminalEvent: RunEvent;

@@ -191,10 +191,21 @@ export interface RunRecord {
   startedAt: string;
   finishedAt?: string;
   parentRunId?: string;
+  /** Internal delegated execution; the parent remains the Thread interaction Run. */
+  subagent?: {
+    taskId: string;
+    executionId: string;
+    parentConfigurationSha256: string;
+    /** Execution CAS revision, independent of lease heartbeat revisions. */
+    executionRevision: number;
+    nextInvocationIndex: number;
+  };
   branchFromSeq?: number;
   interruptedAt?: string;
   interruptionReason?: string;
   usage: Usage;
+  /** Known subtotal only when an invocation has no attributable physical result. */
+  usageStatus?: "complete" | "incomplete";
   agentRevision?: number;
   limits?: RunLimits;
   configuration?: RunConfigurationFingerprint;

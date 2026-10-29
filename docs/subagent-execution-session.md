@@ -1,8 +1,9 @@
 # Main and child execution boundaries
 
 This G03 design follows the current production paths. The tool boundaries and a
-shared model invocation mechanism are implemented. Durable child Runs, child
-compaction and restart continuation remain separate unfinished work. External
+shared model invocation mechanism and durable child Runs are implemented. Child
+compaction and restart continuation remain unfinished work. The current ownership,
+accounting and recovery foundation is described in [subagent-child-runs.md](subagent-child-runs.md). External
 model requests are excluded from the local regression work.
 
 ## Capabilities already shared
@@ -23,13 +24,13 @@ responsibilities to preserve, not functionality a new engine needs to replace.
 
 | Capability | Current boundary | Required change |
 | --- | --- | --- |
-| Model lifecycle | Main turns, child turns and both repair paths use `ModelSession.open` for exact capture and deadline/abort transport. Main retains overflow/thinking-loop policy. | Add child compaction and durable response/checkpoint boundaries; a captured request alone is not restartable execution. |
+| Model lifecycle | Main turns, child turns and both repair paths use `ModelSession.open`; child response and usage now commit atomically under its lease. Main retains overflow/thinking-loop policy. | Add child compaction and private working-set checkpoints; a captured request alone is not restartable execution. |
 | Context and compaction | Main preparation, prompt compilation and compaction use a ledger Run. Child starts from role instructions and a task prompt. | Give child-local context, compaction and capture an explicit owner; passing the parent Run unchanged would import the wrong history and checkpoint scope. |
-| Usage | `aggregateRunUsage` combines parent `model.response` events and `SubagentTask.usage`. | Use one authoritative accounting source per invocation. Adding child responses to the parent model stream without changing aggregation would count twice. |
+| Usage | Child canonical responses settle its Run and Task subtotal once. `aggregateRunUsage` combines only parent-scoped responses and Task roll-up. Benchmark totals exclude child Runs. | Reconcile late physical usage and shared concurrent parent budget reservations. Incomplete usage cannot establish a known zero cost. |
 | Controls | Accepted/delivered mailbox events persist; pending `Agent.steer` work is in memory. Delivered is enqueue evidence, not a durable context-consumption checkpoint. | Persist message consumption with the child context/checkpoint identity, and replay only unconsumed messages. |
-| Run lineage | Tasks retain the parent Run ID and an optional provider execution ID. Ordinary threads permit one active Run; workflow children have a separate limited exception. | Add an internal child Run creation path and lineage/scheduling rules. Merely filling `parentRunId` cannot create concurrent child executions. |
-| Recovery | Restart marks active tasks failed/orphaned. Revival starts a new task from the old prompt. Step records can be truncated or redacted. | Persist a validated private working set and settled-tool boundary before claiming continuation from previous progress. |
-| Resources | Some inherited capabilities are owned by the parent Run, and worktree cleanup errors are currently swallowed at runner exit. | Address child-scoped cancellation and cleanup obligations separately; a terminal task/result is not proof that its resources were reclaimed. |
+| Run lineage | An opaque internal grant creates and leases a child Run after the queue slot is acquired. Task.runId remains the parent; Task.childRunId names execution. Child Runs never own Thread controls or generic recovery. | Persist checkpoint/control consumption on that identity. Merely filling parentRunId cannot grant execution. |
+| Recovery | Lost child execution is explicitly interrupted with continuation unavailable; unresolved effects retain blocked_safety and durable fencing. Revival remains a new task. | Persist a validated private working set and settled-tool boundary before claiming continuation from previous progress. |
+| Resources | Inherited factories, journal records, candidate debugger and cleanup now use the child Run. Explicit bounded network-source copies retain read continuity without borrowing live parent resources. | A terminal task/result is not proof that all OS descendants or unknown provider resources were reclaimed. |
 
 Relevant production entry points are `agent-model-stream-lifecycle.ts`,
 `agent-invocation-context.ts`, `run-context-compaction.ts`,
@@ -37,7 +38,7 @@ Relevant production entry points are `agent-model-stream-lifecycle.ts`,
 `subagent-execution-control.ts`, `run-replay.ts`,
 `run-interruption-recovery.ts` and `store.ts` under `packages/runtime/src`.
 
-## First bounded changes
+## First bounded changes (historical stage before child Runs)
 
 The child's tool surface must remain within the effective parent profile and
 its role. Recreating baseline read tools cannot restore a parent-disabled tool;
@@ -137,13 +138,14 @@ tails across snapshots; text markers and another Run's messages do not acquire
 that ownership. Capture and provider receive the same detached context. This
 adds copying work; its latency and allocation cost have not been measured.
 
-Child invocation, response and cancellation-failure receipts use
-`subagent.model.*`, explicit parent ledger/task/execution identity, phase and a
-session-local invocation index. Cache observations are scoped to that session
-and phase. They never become parent `model.response` events or main experiment
-candidates. Capsule v1 still names the real parent ledger container and uses
-its existing `agent_turn` purpose; child identity comes from the outer receipt.
-The capsule alone cannot establish which child owns it.
+Child supervisor receipts use `subagent.model.*` with explicit parent, child,
+task and execution identity. The invocation index is durably reserved on the
+child Run. Cache observations remain scoped to session and phase. Canonical
+child `model.response` and context envelope/adapter receipts commit together on
+the child Run; parent aggregation still consumes Task usage once. Capsules now
+name the actual child Run. No child `context.model_invocation` is added to the
+main experiment candidate stream. A captured request alone does not establish
+a restartable transcript.
 
 Both repairs consume one response with an empty tool catalog. Any tool call is
 rejected, even if a later scripted response would be valid JSON. Route retry and

@@ -1,4 +1,5 @@
 import type { RunEvent, ThreadDetail } from "@napier/contracts";
+import { latestPrimaryRun } from "@napier/contracts/task-narrative";
 
 export interface EnvironmentDegradationView {
   runId: string;
@@ -14,7 +15,7 @@ export function environmentDegradationView(
   detail: Pick<ThreadDetail, "thread" | "runs" | "events"> | undefined,
 ): EnvironmentDegradationView | undefined {
   if (!detail) return undefined;
-  const runId = detail.thread.currentRunId ?? detail.runs.at(-1)?.id;
+  const runId = detail.thread.currentRunId ?? latestPrimaryRun(detail.runs)?.id;
   if (!runId) return undefined;
   const event = detail.events.findLast(
     (candidate) =>

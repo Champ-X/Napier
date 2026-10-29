@@ -372,7 +372,7 @@ describe("Web Fetch continuity", () => {
     reopenedStore.close();
   });
 
-  it("fails closed for ordinary children, storage failure, and tampering", async () => {
+  it("fails closed for ordinary children and storage failure", async () => {
     const fixture = await continuityFixture();
     const capsules = new WebFetchCapsuleStore(fixture.dataRoot);
     const first = manager(
@@ -435,7 +435,19 @@ describe("Web Fetch continuity", () => {
         output: "No Web Sources fetched in this Run.",
       }),
     );
+    fixture.store.close();
+  });
 
+  it("rejects a tampered capsule from the current interrupted recovery parent", async () => {
+    const fixture = await continuityFixture();
+    const capsules = new WebFetchCapsuleStore(fixture.dataRoot);
+    const first = manager(fixture, {
+      request: vi.fn(async () => response("FETCH_PRIVATE_TAMPER_TEXT", "text/plain")),
+    }, capsules);
+    const owner = { threadId: fixture.threadId, runId: fixture.parentRunId };
+    const fetched = await first.execute(owner, { action: "fetch", url: "https://example.com/source.txt" });
+    await appendCompletion(fixture.store, owner, fetched.details);
+    await fixture.store.finishRun(fixture.parentRunId, "interrupted");
     const manifestPath = path.join(
       capsules.manifestRootPath,
       `${fetched.details.stateCapsule!.manifestCapsuleSha256}.json`,
@@ -448,7 +460,6 @@ describe("Web Fetch continuity", () => {
       ),
     );
     await chmod(manifestPath, 0o600);
-    await fixture.store.finishRun(ordinary.id, "completed");
     const recovery = await fixture.store.createRun({
       threadId: fixture.threadId,
       agentId: fixture.agentId,

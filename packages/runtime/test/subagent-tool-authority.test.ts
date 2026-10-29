@@ -83,7 +83,10 @@ describe("SubagentCoordinator", () => {
         fauxAssistantMessage(typedResult("Allowed research completed.")),
       ]);
       await coordinator.createTool().execute("authority-allowed", delegatedTask);
-      const events = await store.listRunEvents(run.id);
+      const task = store.listSubagentTasks(run.threadId, run.id)[0]!;
+      expect(task.childRunId).toBeTypeOf("string");
+      const events = await store.listRunEvents(task.childRunId!);
+      expect((await store.listRunEvents(run.id)).filter((event) => event.category === "tool")).toEqual([]);
       for (const type of ["tool.admitted", "tool.started", "tool.completed"]) {
         expect(events.filter((event) => event.type === type)).toEqual([
           expect.objectContaining({ payload: expect.objectContaining({ toolName: "web_search" }) }),

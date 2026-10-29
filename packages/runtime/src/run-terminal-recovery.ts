@@ -5,6 +5,7 @@ import type {
 } from "@napier/contracts";
 
 import { projectOperatorDecisions } from "./operator-decisions.js";
+import { isSubagentChildRun } from "./primary-run-selection.js";
 import {
   cancelPendingOperatorDecisions,
   cancelPendingRunControlMessages,
@@ -123,14 +124,16 @@ export function resetTerminalThreads(
 ): boolean {
   let changed = false;
   for (const thread of host.state.threads) {
-    const repairedRunIds = thread.runIds.filter((runId) =>
-      terminalStatuses.has(runId),
-    );
+    const repairedRunIds = thread.runIds.filter((runId) => {
+      const run = host.state.runs.find((candidate) => candidate.id === runId);
+      return terminalStatuses.has(runId) && run && !isSubagentChildRun(run);
+    });
     if (repairedRunIds.length === 0) continue;
     const activeRuns = host.state.runs
       .filter(
         (run) =>
           run.threadId === thread.id &&
+          !isSubagentChildRun(run) &&
           (run.status === "queued" || run.status === "running"),
       )
       .sort((left, right) => left.startedAt.localeCompare(right.startedAt));

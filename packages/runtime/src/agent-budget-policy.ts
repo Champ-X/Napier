@@ -1,6 +1,7 @@
 import type {
   AutomaticRecoveryPolicy,
   RunLimits,
+  RunExecutionMode,
   SubagentLimits,
 } from "@napier/contracts";
 
@@ -62,9 +63,9 @@ export function normalizeSubagentLimits(input: SubagentLimits): SubagentLimits {
   };
 }
 
-export function normalizeRunLimits(input: RunLimits): RunLimits {
+export function normalizeRunLimits(input: RunLimits, mode?: RunExecutionMode): RunLimits {
   return {
-    maxTurns: boundedInteger(input.maxTurns, "run maxTurns", 1, 128),
+    maxTurns: boundedInteger(input.maxTurns, "run maxTurns", 1, mode === "subagent" ? 32 : 128),
     maxTotalTokens:
       input.maxTotalTokens === 0
         ? 0
@@ -78,8 +79,8 @@ export function normalizeRunLimits(input: RunLimits): RunLimits {
     timeoutMs: boundedInteger(
       input.timeoutMs,
       "run timeoutMs",
-      10_000,
-      3_600_000,
+      mode === "subagent" ? 1_000 : 10_000,
+      mode === "subagent" ? 900_000 : 3_600_000,
     ),
   };
 }
@@ -108,4 +109,14 @@ function boundedNumber(
     throw new Error(`${label} must be from ${minimum} to ${maximum}`);
   }
   return Math.round(value * 1_000_000) / 1_000_000;
+}
+
+/** Exact persisted configuration shape, before applying mode-specific bounds. */
+export function validateRunConfigurationLimits(value: unknown, mode?: unknown): RunLimits {
+  const keys = ["maxTurns", "maxTotalTokens", "maxCostUsd", "timeoutMs"];
+  if (!value || typeof value !== "object" || Array.isArray(value) ||
+      Object.keys(value).length !== keys.length ||
+      keys.some((key) => !Object.hasOwn(value, key) || typeof (value as Record<string, unknown>)[key] !== "number"))
+    throw new Error("Run configuration fingerprint runLimits is invalid");
+  return normalizeRunLimits(value as RunLimits, mode === "subagent" ? "subagent" : undefined);
 }

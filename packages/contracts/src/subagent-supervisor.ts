@@ -276,6 +276,8 @@ export interface SubagentTask {
   id: string;
   threadId: string;
   runId: string;
+  /** Present only after a durable child execution starts; runId remains the parent. */
+  childRunId?: string;
   role: SubagentRole;
   description: string;
   prompt: string;
@@ -298,6 +300,7 @@ export interface SubagentTask {
   stepCount: number;
   turnCount: number;
   usage: Usage;
+  usageStatus?: "complete" | "incomplete";
   createdAt: string;
   startedAt?: string;
   finishedAt?: string;

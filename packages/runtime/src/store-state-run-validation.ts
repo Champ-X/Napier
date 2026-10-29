@@ -8,8 +8,14 @@ import { normalizeRunReleaseIdentity } from "./release-product-identity-policy.j
 import { validateRunConfigurationFingerprint } from "./run-config.js";
 import { assertOutcome } from "./run-outcomes.js";
 import type { PersistedStoreState } from "./store-state.js";
+import { validateSubagentChildRunState } from "./subagent-child-run-validation.js";
 export function validatePersistedRunState(state: PersistedStoreState): void {
   validateRuns(state);
+  validateSubagentChildRunState(state.runs, state.subagents);
+  for (const thread of state.threads) {
+    if (state.runs.find((run) => run.id === thread.currentRunId)?.source === "subagent")
+      throw new Error("Child Run cannot be the current Thread interaction Run");
+  }
   validateRecoveryAssessments(state);
   validateRecoveryAttempts(state);
 }
@@ -52,6 +58,7 @@ function validateRuns(state: PersistedStoreState): void {
         configuration?.runLimits ??
         agent?.runLimits ??
         structuredClone(DEFAULT_RUN_LIMITS),
+      run.source === "subagent" ? "subagent" : undefined,
     );
     if (
       configuration &&

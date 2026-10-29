@@ -18,7 +18,8 @@ export interface ResearchSourceState {
   citations: ResearchSourceCitationRecord[];
 }
 
-type RecoveryStore = Pick<LocalStore, "listRuns" | "listEvents" | "getThread">;
+type RecoveryStore = Pick<LocalStore, "listRuns" | "listEvents" | "getThread"> &
+  Partial<Pick<LocalStore, "listSubagentTasks">>;
 export type ResearchSourceCapsulePort = Pick<
   ResearchSourceCapsuleStore,
   "put" | "read"

@@ -32,25 +32,18 @@ import { createWebFetchTool } from "./web-fetch-tool.js";
 import { RunWebFetchSaveManager } from "./web-fetch-save.js";
 import { createWebFetchSaveTool } from "./web-fetch-save-tool.js";
 import { prepareNetworkSourceContinuity } from "./research-source-recovery-context.js";
+import { createSubagentCapabilityTools, type AgentCapabilityOwner, type SubagentCapabilityFactoryOptions, type SubagentExecutionContext } from "./subagent-capability-factory.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
-import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { createSkillLoadTool } from "./skill-load-tool.js";
 import { createSkillAccessState } from "./skill-access-state.js";
 import { createSkillResourceTool } from "./skill-resource-tool.js";
 import type { GovernedCodeBridgeDispatcher } from "./governed-code-bridge-model.js";
 
-interface AgentCapabilityOwner {
-  threadId: string;
-  runId: string;
-}
-
-export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner {
+export interface CreateAgentCapabilityToolsOptions extends AgentCapabilityOwner, SubagentCapabilityFactoryOptions {
   profile: AgentProfile;
   beforeWorkspaceWrite?: () => Promise<void>;
-  projectSkillSnapshot?: SkillSnapshot;
-  skillLoadAllowed?: boolean;
   browserInteractionConfirmationAllowed?: boolean;
   restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
@@ -251,6 +244,13 @@ export class AgentCapabilityRuntime {
       tools.push(createWorkspaceProcessTool(this.processes, owner));
     }
     return tools;
+  }
+
+  async createSubagentTools(
+    context: SubagentExecutionContext,
+    options: SubagentCapabilityFactoryOptions = {},
+  ): Promise<AgentTool[]> {
+    return createSubagentCapabilityTools(this.store, this, context, options);
   }
 
   async cancelRun(owner: AgentCapabilityOwner): Promise<void> {

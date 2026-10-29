@@ -81,6 +81,7 @@ export interface ThreadRecord extends ThreadSummary {
 }
 
 export type AutomaticRecoveryBlockReason =
+  | "subagent_managed"
   | "configuration_missing"
   | "legacy_configuration"
   | "policy_manual"

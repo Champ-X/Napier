@@ -10,6 +10,7 @@ import type {
   AgentProfile,
   CredentialReference,
   RunRecord,
+  RunInvocationSource,
 } from "@napier/contracts";
 import type {
   ModelRouteCandidate,
@@ -48,6 +49,7 @@ import type {
 } from "./model-route-types.js";
 import type { ModelRegistry } from "./models.js";
 import type { LocalStore } from "./store.js";
+import { assertSubagentExecutionBinding } from "./subagent-execution-context.js";
 
 export {
   classifyRouteFailure,
@@ -79,6 +81,8 @@ export interface CreateModelRouteSessionInput {
   request?: ModelRouteRequest;
   explicitPrimary?: boolean;
   subagentRole?: import("@napier/contracts").SubagentRole;
+  /** Internal child execution preserves the frozen immediate parent's route path. */
+  selectionSource?: RunInvocationSource;
   onEvent?: EventSink;
 }
 
@@ -101,6 +105,11 @@ export class ModelRouter {
   async createSession(
     input: CreateModelRouteSessionInput,
   ): Promise<ModelRouteSession> {
+    if (input.selectionSource !== undefined) {
+      const { authorityOriginRun } = assertSubagentExecutionBinding(this.store, input.run);
+      if (input.selectionSource !== (authorityOriginRun.source ?? "user"))
+        throw new Error("Subagent model route source binding is invalid");
+    }
     const policy = normalizeModelRoutePolicy(
       input.profile?.modelRoute ??
         defaultModelRoutePolicy({
@@ -112,7 +121,7 @@ export class ModelRouter {
       agentDefault: { provider: input.primary.provider, id: input.primary.id },
       policy,
       ...(input.request ? { request: input.request } : {}),
-      source: input.run.source ?? "user",
+      source: input.selectionSource ?? input.run.source ?? "user",
       ...(input.explicitPrimary
         ? {
             explicitPrimary: {

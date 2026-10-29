@@ -11,7 +11,6 @@ import {
 } from "@napier/contracts";
 
 import type { ModelRouteSession } from "./model-route.js";
-import { ENVIRONMENT_DEGRADED_READ_TOOL_NAMES } from "./read-only-tool-names.js";
 import type { LocalStore } from "./store.js";
 import type { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import type { SubagentExecutionControl } from "./subagent-execution-control.js";
@@ -24,10 +23,8 @@ import {
   subagentRoleInstructionsForSchema,
 } from "./subagent-role-instructions.js";
 import {
-  MAX_SUBAGENT_RESULT_CHARS,
   subagentTaskPayload,
   subagentJsonValue,
-  truncateSubagentText,
   type DelegationDetails,
 } from "./subagent-task-evidence.js";
 import { SubagentTaskObserver } from "./subagent-task-observer.js";
@@ -37,6 +34,12 @@ import { finishSubagentTypedOutput } from "./subagent-typed-output-settlement.js
 import type { SubagentWorktreeMutationManager } from "./subagent-worktree-mutation.js";
 import type { SubagentWorktreeSession } from "./subagent-worktree-files.js";
 import { createWorkspaceTools } from "./tools.js";
+import { authorizeSubagentChildRun } from "./subagent-child-authorization.js";
+import { SubagentChildExecution } from "./subagent-child-execution.js";
+import { INHERITED_SUBAGENT_TOOL_NAMES } from "./subagent-child-profile.js";
+import type { SubagentExecutionCleanup, SubagentInheritedToolsFactory } from "./subagent-execution-context.js";
+import { createProcessLeaseOwnerId } from "./ids.js";
+import { subagentTaskFailure } from "./subagent-task-failure.js";
 
 type EventSink = (event: RunEvent) => Promise<void> | void;
 
@@ -46,14 +49,15 @@ export class SubagentTaskRunner {
       store: LocalStore;
       models: MutableModels;
       model: Model<Api>;
-      modelRoute?: ModelRouteSession;
+      createModelRoute?: (childRun: RunRecord) => Promise<ModelRouteSession>;
       run: RunRecord;
       limits: SubagentLimits;
-      parentCapabilities: Pick<AgentProfile, "enabledTools" | "toolPolicy">;
+      parentProfile: AgentProfile;
       parentSignal: AbortSignal;
       concurrencyGate: ToolConcurrencyGate;
       worktrees?: SubagentWorktreeMutationManager;
-      createInheritedTools?: () => AgentTool[];
+      createInheritedTools?: SubagentInheritedToolsFactory;
+      cleanupExecutionResources?: SubagentExecutionCleanup;
       control?: SubagentExecutionControl;
       onEvent?: EventSink;
     },
@@ -79,9 +83,12 @@ export class SubagentTaskRunner {
     const signals = [this.options.parentSignal, toolSignal].filter(
       (signal): signal is AbortSignal => Boolean(signal),
     );
-    let task = await this.options.store.startSubagentTask(initialTask.id);
-    const lifetime = new SubagentExecutionLifetime(signals, this.options.limits.timeoutMs);
+    let task = initialTask;
+    let child: SubagentChildExecution | undefined;
+    const leaseAbort = new AbortController();
+    const lifetime = new SubagentExecutionLifetime([...signals, leaseAbort.signal], this.options.limits.timeoutMs);
     lifetime.start();
+    const assertActive = () => { lifetime.assertActive(); child?.assertActive(); };
     let worktree: SubagentWorktreeSession | undefined;
     let agent: Agent | undefined;
     let observer: SubagentTaskObserver | undefined;
@@ -96,7 +103,25 @@ export class SubagentTaskRunner {
     };
     lifetime.signal.addEventListener("abort", abort, { once: true });
     try {
-      lifetime.assertActive();
+      assertActive();
+      if (!task.executionId) throw new Error("Subagent Task has no execution identity");
+      const started = await this.options.store.startSubagentChildRun({
+        taskId: task.id, executionId: task.executionId,
+        authorization: authorizeSubagentChildRun({
+          parentRun: this.options.run, parentProfile: this.options.parentProfile,
+          taskId: task.id, executionId: task.executionId, limits: this.options.limits,
+        }),
+        lease: { ownerId: createProcessLeaseOwnerId("subworker"), ttlMs: 60_000 },
+      });
+      child = new SubagentChildExecution(this.options.store, started, this.options.onEvent);
+      child.signal.addEventListener("abort", () => leaseAbort.abort(child!.signal.reason), { once: true });
+      child.startHeartbeat();
+      task = started.task;
+      await child.publish();
+      assertActive();
+      const modelRoute = await this.options.createModelRoute?.(child.run);
+      if (modelRoute) task = await child.bindRoute(modelRoute.plan.id);
+      assertActive();
       if (task.role === "coder") {
         if (!this.options.worktrees || !writePaths) {
           throw new Error("Coder Subagent worktree is unavailable");
@@ -105,14 +130,16 @@ export class SubagentTaskRunner {
           task.id,
           writePaths,
           lifetime.signal,
+          { threadId: child.run.threadId, runId: child.run.id },
         );
       }
-      lifetime.assertActive();
+      assertActive();
       await this.emit("subagent.started", task, {
         taskId: task.id,
         role: task.role,
         description: task.description,
         status: task.status,
+        childRunId: child.run.id,
         limits: this.options.limits,
         ...(worktree
           ? {
@@ -131,25 +158,30 @@ export class SubagentTaskRunner {
         models: this.options.models,
         task,
         limits: this.options.limits,
-        lifetime,
+        lifetime: child.lifetime(lifetime),
+        child,
         assertTurnAvailable: () => observer?.assertTurnAvailable(),
-        ...(this.options.modelRoute ? { modelRoute: this.options.modelRoute } : {}),
+        ...(modelRoute ? { modelRoute } : {}),
         ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
       });
       const tools = governSubagentTools({
-        tools: createSubagentRoleTools(
+        tools: await createSubagentRoleTools(
           this.options.store,
           this.options.worktrees,
-          this.options.createInheritedTools,
+          this.options.createInheritedTools ? () => this.options.createInheritedTools!({
+            executionRun: child!.run, authorityOriginRun: this.options.run,
+            parentProfile: this.options.parentProfile, childProfile: started.profile, role: task.role,
+          }) : undefined,
           worktree,
-          this.options.parentCapabilities,
+          started.profile,
         ),
         store: this.options.store,
-        run: this.options.run,
+        run: child.run,
         taskId: task.id,
         executionId: task.executionId,
         concurrencyGate: this.options.concurrencyGate,
         onEvent: this.options.onEvent,
+        assertActive,
       });
       agent = new Agent({
         initialState: {
@@ -157,12 +189,12 @@ export class SubagentTaskRunner {
             ? subagentRoleInstructionsForSchema(task.role, task.outputSchema)
             : subagentRoleInstructions(task.role),
           model: this.options.model,
-          thinkingLevel: this.options.model.reasoning ? "medium" : "off",
+          thinkingLevel: this.options.model.reasoning ? started.profile.thinkingLevel : "off",
           tools,
           messages: [],
         },
         streamFn: createSubagentStream(modelSession),
-        sessionId: `${this.options.run.id}:${task.id}`,
+        sessionId: `${child.run.id}:${task.id}`,
         toolExecution: "parallel",
         afterToolCall: async () =>
           observer?.turnCapped ? { terminate: true } : undefined,
@@ -174,12 +206,13 @@ export class SubagentTaskRunner {
         usage,
         this.options.limits,
         (type, currentTask, payload) => this.emit(type, currentTask, payload),
+        (delta) => child!.progress(delta),
       );
       agent.subscribe((event) => observer!.observe(event));
 
-      lifetime.assertActive();
+      assertActive();
       await this.options.control?.activate(agent);
-      lifetime.assertActive();
+      assertActive();
       await agent.prompt(prompt);
       this.options.control?.deactivate(agent);
       task = observer.task;
@@ -187,24 +220,24 @@ export class SubagentTaskRunner {
       turnCapped = observer.turnCapped;
       let finalText = observer.finalText;
       const lastError = observer.lastError;
-      lifetime.assertActive();
+      assertActive();
       if (turnCapped) {
         throw new Error(
           `Subagent turn budget exhausted (${this.options.limits.maxTurns})`,
         );
       }
-      if (lastError) throw new Error(lastError);
+      if (lastError) throw observer.lastFailure ?? new Error(lastError);
       task = await this.options.store.setSubagentSupervisorStatus(
         task.id,
         "reviewing",
       );
-      lifetime.assertActive();
+      assertActive();
       if (task.outputSchema) {
         const settled = await settleSubagentTypedOutput({
           store: this.options.store,
           models: this.options.models,
           model: this.options.model,
-          runId: this.options.run.id,
+          runId: child.run.id,
           limits: this.options.limits,
           task,
           resultText: finalText,
@@ -218,7 +251,7 @@ export class SubagentTaskRunner {
         task = settled.task;
         usage = settled.usage;
         finalText = settled.resultText;
-        lifetime.assertActive();
+        assertActive();
         const terminal = await finishSubagentTypedOutput({
           store: this.options.store,
           ...(this.options.worktrees
@@ -228,7 +261,9 @@ export class SubagentTaskRunner {
           resultText: finalText,
           output: settled.output,
           usage,
-          assertActive: () => lifetime.assertActive(),
+          assertActive,
+          finishTask: child.finish,
+          publishCommitted: () => child!.publish(),
           ...(worktree ? { worktree } : {}),
           toolSignal: lifetime.signal,
           emit: (type, currentTask, payload) =>
@@ -241,13 +276,15 @@ export class SubagentTaskRunner {
         store: this.options.store,
         models: this.options.models,
         model: this.options.model,
-        runId: this.options.run.id,
+        runId: child.run.id,
         limits: this.options.limits,
         task,
         resultText: finalText,
         usage,
         modelSession,
-        assertActive: () => lifetime.assertActive(),
+        assertActive,
+        finishTask: child.finish,
+        publishCommitted: () => child!.publish(),
         activateAgent,
         markOutcomeRejected: () => {
           outcomeRejected = true;
@@ -275,46 +312,24 @@ export class SubagentTaskRunner {
       // that fact or publish a contradictory failed/cancelled terminal event.
       if (task.status === "completed") throw error;
       turnCapped ||= observer?.turnCapped ?? false;
-      const message = turnCapped
-        ? `Subagent turn budget exhausted (${this.options.limits.maxTurns})`
-        : error instanceof Error
-          ? error.message
-          : String(error);
-      const status = lifetime.timedOut
-        ? "timed_out"
-        : signals.some((signal) => signal.aborted)
-          ? "cancelled"
-          : "failed";
-      const stopReason = lifetime.timedOut
-        ? "timeout"
-        : status === "cancelled"
-          ? "cancelled"
-          : turnCapped
-            ? "turn_capped"
-            : "error";
-      task = await this.options.store.finishSubagentTask(task.id, {
-        status,
-        stopReason,
-        ...(!outcomeRejected && finalText
-          ? {
-              result: truncateSubagentText(
-                finalText,
-                MAX_SUBAGENT_RESULT_CHARS,
-              ),
-            }
-          : {}),
-        error: message,
-        usage,
+      const failure = subagentTaskFailure(error, {
+        turnCapped, maxTurns: this.options.limits.maxTurns, timedOut: lifetime.timedOut,
+        cancelled: signals.some((signal) => signal.aborted), finalText, outcomeRejected, usage,
       });
-      await this.emit(`subagent.${status}`, task, subagentTaskPayload(task));
-      throw new Error(`Delegation ${task.id} ${status}: ${message}`);
+      const finish = child?.finish ?? ((input) => this.options.store.finishSubagentTask(task.id, input));
+      task = await finish(failure);
+      await child?.publish();
+      await this.emit(`subagent.${failure.status}`, task, subagentTaskPayload(task));
+      throw new Error(`Delegation ${task.id} ${failure.status}: ${failure.error}`);
     } finally {
+      child?.dispose();
       if (agent) this.options.control?.deactivate(agent);
       lifetime.dispose();
       lifetime.signal.removeEventListener("abort", abort);
       if (worktree) {
         await this.options.worktrees?.cleanup(worktree).catch(() => undefined);
       }
+      if (child) await this.options.cleanupExecutionResources?.(child.run);
     }
   }
 
@@ -358,18 +373,6 @@ export class SubagentTaskRunner {
   }
 }
 
-const INHERITED_SUBAGENT_TOOL_NAMES = new Set<string>([
-  ...ENVIRONMENT_DEGRADED_READ_TOOL_NAMES,
-  "git_inspect",
-  "workspace_file_preview",
-  "lsp_diagnostics",
-  "lsp_symbols",
-  "lsp_definition",
-  "lsp_references",
-  "lsp_rename",
-  "lsp_code_actions",
-]);
-
 /**
  * Subagents inherit the parent's enabled research and inspection surface.
  * Mutation remains role-owned: coders write only through their isolated
@@ -391,13 +394,13 @@ export function mergeSubagentTools(
   return [...merged.values()];
 }
 
-function createSubagentRoleTools(
+async function createSubagentRoleTools(
   store: LocalStore,
   worktrees: SubagentWorktreeMutationManager | undefined,
-  createInheritedTools: (() => AgentTool[]) | undefined,
+  createInheritedTools: (() => AgentTool[] | Promise<AgentTool[]>) | undefined,
   worktree: SubagentWorktreeSession | undefined,
   parentCapabilities: Pick<AgentProfile, "enabledTools" | "toolPolicy">,
-): AgentTool[] {
+): Promise<AgentTool[]> {
   const enabled = new Set(parentCapabilities.enabledTools);
   const roleTools = worktree
     ? worktrees!.createCoderTools(worktree)
@@ -410,7 +413,7 @@ function createSubagentRoleTools(
       return Boolean(worktree) && parentCapabilities.toolPolicy !== "observe"
         && enabled.has("apply_patch") && enabled.has("lsp_diagnostics");
     }),
-    (createInheritedTools?.() ?? []).filter((tool) =>
+    (await createInheritedTools?.() ?? []).filter((tool) =>
       // Keep only an actually constructed resource loader; skill_load alone
       // cannot manufacture the safe snapshot/access state it requires.
       enabled.has(tool.name === "skill_resource" ? "skill_load" : tool.name)),

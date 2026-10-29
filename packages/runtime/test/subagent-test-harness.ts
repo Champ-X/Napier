@@ -38,7 +38,7 @@ export async function createHarness(
   });
   await store.initialize();
   const seededAgent = store.listAgents()[0]!;
-  const profile: AgentProfile = {
+  const profile = await store.updateAgent(seededAgent.id, {
     ...seededAgent,
     enabledSubagents: ["researcher"],
     subagentLimits: {
@@ -49,7 +49,7 @@ export async function createHarness(
       ...limits,
     },
     ...profileOverrides,
-  };
+  });
   const thread = await store.createThread({
     title: "Subagent harness",
     agentId: profile.id,

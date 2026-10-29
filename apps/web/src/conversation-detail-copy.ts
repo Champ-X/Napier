@@ -162,6 +162,7 @@ export const conversationDetailCopyEn = {
       unknown_tool_effect: "A tool effect is not proven read-only.",
       attempt_limit_reached: "The frozen attempt limit is exhausted.",
       untrusted_recovery_chain: "The recovery chain is not trusted.",
+      subagent_managed: "This child execution is managed by its parent task.",
     },
   },
 } as const;
@@ -326,6 +327,7 @@ export const conversationDetailZh: LocaleOverride<
       unknown_tool_effect: "无法证明工具效果为只读。",
       attempt_limit_reached: "已用尽冻结的尝试次数。",
       untrusted_recovery_chain: "恢复链不可信。",
+      subagent_managed: "该子执行由所属任务管理。",
     },
   },
 };

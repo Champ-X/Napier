@@ -171,6 +171,7 @@ export class SubagentWorktreeMutationManager {
     taskId: string,
     writePaths: string[],
     signal?: AbortSignal,
+    executionOwner?: SubagentWorktreeDebuggerOwner,
   ): Promise<SubagentWorktreeSession> {
     const session = await createSubagentWorktree({
       workspaceRoot: this.options.workspaceRoot,
@@ -186,14 +187,15 @@ export class SubagentWorktreeMutationManager {
         candidateRoot: session.root,
         ...(signal ? { signal } : {}),
       });
+      const debuggerOwner = executionOwner ?? this.options.debuggerOwner;
       const candidateDebugger =
         this.options.enableCandidateDebugger &&
         this.options.processes &&
-        this.options.debuggerOwner
+        debuggerOwner
           ? createSubagentWorktreeDebugger({
               processes: this.options.processes,
               session,
-              owner: this.options.debuggerOwner,
+              owner: debuggerOwner,
               ...(toolchain ? { toolchain } : {}),
             })
           : undefined;

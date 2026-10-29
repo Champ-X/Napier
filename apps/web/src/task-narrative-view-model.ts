@@ -5,7 +5,7 @@ import {
   latestModelHarnessView,
   type ModelHarnessFamily,
 } from "./model-harness-view";
-import { projectTaskNarrative } from "@napier/contracts/task-narrative";
+import { latestPrimaryRun, projectTaskNarrative } from "@napier/contracts/task-narrative";
 
 type TaskNarrativeProjection = NonNullable<ThreadDetail["taskNarrative"]>;
 type TaskNarrativePhase = TaskNarrativeProjection["phase"];
@@ -68,7 +68,7 @@ export function taskNarrative(
     { ...detail, taskNarrative: projection },
     now,
   )!;
-  const runId = detail.thread.currentRunId ?? detail.runs.at(-1)?.id;
+  const runId = detail.thread.currentRunId ?? latestPrimaryRun(detail.runs)?.id;
   const harness = latestModelHarnessView(detail.events, runId);
   return localizeNarrative({
     ...narrative,

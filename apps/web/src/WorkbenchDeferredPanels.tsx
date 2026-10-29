@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { latestPrimaryRun } from "@napier/contracts/task-narrative";
 
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 import { taskArtifactPaths } from "./task-completion-output-paths";
@@ -24,7 +25,7 @@ export function WorkbenchDeferredNotices({ vm, onInspect, onOpenWorkflow }: {
   onOpenWorkflow: () => void;
 }) {
   const checkpoint = vm.detail?.recoveryCheckpoint;
-  const latest = vm.detail?.runs.at(-1);
+  const latest = latestPrimaryRun(vm.detail?.runs ?? []);
   const run = !vm.isRunning && latest &&
     (latest.id === checkpoint?.runId || latest.id === vm.resumableRun?.id) ? latest : undefined;
   const showNotices = Boolean(vm.error || run);

@@ -1,4 +1,5 @@
 import type { RunEvent, RunRecord } from "@napier/contracts";
+import { latestPrimaryRun } from "@napier/contracts/task-narrative";
 
 const INTENT_ID = /^intent_[a-z0-9]{8,80}$/u;
 
@@ -35,10 +36,18 @@ export function currentRunAttempt(
   events: readonly RunEvent[],
   intentIds: ReadonlyMap<string, string>,
 ): CurrentRunAttempt | undefined {
-  const runId = runs.at(-1)?.id ?? events.at(-1)?.runId;
+  const runId = latestPrimaryRun(runs)?.id ?? (runs.length === 0
+    ? primaryEventRunId(events) : undefined);
   if (!runId) return undefined;
   const intentId = intentIds.get(runId);
   return { runId, ...(intentId ? { intentId } : {}) };
+}
+
+function primaryEventRunId(events: readonly RunEvent[]): string | undefined {
+  const childRunIds = new Set(events.flatMap((event) =>
+    event.type === "run.started" && event.payload && typeof event.payload === "object" &&
+    !Array.isArray(event.payload) && event.payload["source"] === "subagent" ? [event.runId] : []));
+  return events.findLast((event) => !childRunIds.has(event.runId))?.runId;
 }
 
 export function runIdsBelongToCurrentAttempt(

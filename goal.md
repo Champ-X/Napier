@@ -314,6 +314,15 @@
 - 验证使用实际主 Agent、provider、子任务 runner、SQLite 与候选文件系统，模型响应全部为本地 fixture。[最终收据](docs/artifacts/shared-model-session-regression-2026-10-29.json)：27 文件／250 测试通过，0 skipped；1,971 个源码／测试／配置文件前后哈希一致。独立 13 项实际调用集成检查另绑定 2,246 个文件。Contracts build、Runtime build:compile、Server build、新增测试严格 TypeScript 通过；Runtime 完整 build 仍因既有 release source manifest 不匹配失败，未改写清单。架构仍为原有 9 项、公开 API 仍为 2 项；只下调 store 行数／耦合和 runner 复杂度预算。旧版失败、实现期间暴露的 clone／runtime-tail／启动窗口问题均保留，不用重跑覆盖失败。
 - 边界：这里没有 child Run、child compaction、mailbox 消费 checkpoint 或重启续跑。忽略 abort 的物理请求仍占用原 lease 至真正结束；迟到物理用量到 child 的精确归属仍未完成。复制／捕获的额外耗时和内存未测量，不宣称端到端性能或模型质量改善。G03 与 G01–G07 总目标继续 active，全部剩余验收保留。
 
+### 后续推进：G03 独立 child Run 与原子结算基础
+
+- 现有 supervisor／semaphore 准入后，在同一事务中创建持租约的 child Run 并绑定 Task；Task.runId 保留父身份，childRunId 指向执行。冻结父配置的进程内授权限定角色工具、并发／总数及模型选择；普通 createRun、伪造 parentRunId 或通用终态方法不能绕过。child 工具、route、调用捕获、进程与候选清理按自身 Run 归属，不借用父进程／浏览器资源。
+- 每次物理调用前持久化 reservation；canonical model.response、context envelope／adapter、child Run 与 Task 用量原子结算。相同结算幂等，冲突拒绝。父汇总只消费 Task 一次，benchmark 排除 child 的重复总计。未知用量显式 incomplete 并传播到终态父 Run，成本证据拒绝不完整账本；未派发预算拒绝不制造额外 turn 或零用量响应。子任务复用 RunBudgetTracker，限制已知消耗后的下一次调用，尚无并发共享父 token／cost 原子额度预留。
+- 子 Run token、执行 revision、父权限与独立 heartbeat 围栏覆盖派发／进度／完成。父 lease 丢失时拒绝新工作，已知用量仍可结算。启动保留有效 lease；不可续跑 child 明确记录 continuation unavailable。未决工具副作用保持 blocked_safety；父丢失证明在 SQLite writer 事务内读取既有持久 lineage 和标准化父 lease，不能由拟写入快照伪造。
+- 主任务／恢复／成果／计划选择器排除 child。实际流式 reducer 修复子 route／tool／model／terminal 事件抢占父 currentRunId、清空待显示正文的问题，trace 继续保留 child 事件。Chrome 中实际 TaskNarrativeBar 与生产 reducer 的隔离 harness 已检查父→5 个子事件；无截图，窄窗口／主题／父终态尚未浏览器验收，也不替代完整应用验收。
+- [最终收据](docs/artifacts/subagent-child-runs-foundation-final-2026-10-29.json)：57 文件／381 测试通过，0 failed／skipped；Contracts／Runtime／Server 编译、Benchmark／Web 类型检查、新增测试严格类型检查通过。4,100 个源码／测试／配置、67 个 emitted module 前后哈希一致，用户已有 28 文件完整保留。[首轮收据](docs/artifacts/subagent-child-runs-foundation-2026-10-29.json) 保留严格检查命令缺失 exactOptionalPropertyTypes 等仓库选项的失败，未用重跑覆盖。公开 API 恢复原 1,897／1,896 与 digest 两项历史失败；架构 8 项既有失败，预算只下调；完整 release build 仍因原 manifest 不匹配失败，未重写清单。[独立证据索引](docs/artifacts/subagent-child-runs-evidence-index-2026-10-29.json) 区分冻结源码行为红例、fixture 前置缺陷和测试环境失败，不叠加重合测试数。
+- 后续仍需私有 transcript／working set、capsule-first checkpoint CAS、mailbox 消费 cursor、tool／invocation frontier、同一 ModelSession 内 compaction 和安全 child 重启续跑；忽略 abort 后迟到物理用量归属与完整增量 Run 元数据投影仍未实现。全部模型响应为本地 fixture，零外部付费模型请求；不宣称模型质量、性能或 G03／全目标验收完成。实现边界见 [subagent-child-runs.md](docs/subagent-child-runs.md)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -434,8 +443,8 @@
 **实施任务**
 
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
-- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair 与取消结算已实现；完整 child context compiler／compaction 和崩溃原子计量仍待完成。）
-- [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。
+- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair、原子调用用量／事件结算与工具归属已实现；完整 child context compiler／compaction、私有执行进度 checkpoint 和迟到物理用量归属仍待完成。）
+- [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查已实现；mailbox 消费持久化与并发共享父 token／cost 原子额度仍待完成。）
 - [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。
 

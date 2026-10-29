@@ -1,6 +1,7 @@
 import { BadgeCheck, Clock3 } from "lucide-react";
 
 import type { ThreadDetail } from "@napier/contracts";
+import { latestPrimaryRun } from "@napier/contracts/task-narrative";
 import { copy } from "./copy";
 import {
   taskValidationMatrix,
@@ -14,7 +15,7 @@ export function TaskValidationPanel({
 }: {
   detail: ValidationDetail | undefined;
 }) {
-  const latestRun = detail?.runs.at(-1);
+  const latestRun = latestPrimaryRun(detail?.runs ?? []);
   const rows = taskValidationMatrix(detail?.events ?? [], detail?.plans ?? []);
 
   return (

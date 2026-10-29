@@ -6,6 +6,7 @@ import type {
 } from "@napier/contracts";
 
 import { projectRunIntents } from "./run-intents.js";
+import { latestPrimaryRun } from "./primary-run-selection.js";
 
 export type ConversationArtifact = NonNullable<
   ThreadDetail["artifacts"]
@@ -62,7 +63,7 @@ export function projectConversationArtifacts(
   limit = 6,
 ): ConversationArtifact[] {
   const plansById = new Map(plans.map((plan) => [plan.id, plan]));
-  const currentRunId = runs.at(-1)?.id ?? state.latestRunId;
+  const currentRunId = latestPrimaryRun(runs)?.id ?? state.latestRunId;
   const currentIntentId = currentRunId
     ? state.intentIds[currentRunId]
     : undefined;

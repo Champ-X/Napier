@@ -7,6 +7,7 @@ import {
 import { settledPatchRecoveryCandidates } from "./run-patch-recovery-evidence.js";
 import { reconciledPatchRecoveryEvidence } from "./workspace-patch-reconciled-evidence.js";
 import { uncommittedPatchCandidates } from "./workspace-patch-uncommitted-evidence.js";
+import { isSubagentChildRun } from "./primary-run-selection.js";
 
 type Operation = RunRecoveryCheckpoint["operations"][number];
 const LIMIT = 10_000;
@@ -18,7 +19,7 @@ export function projectRunRecoveryCheckpoint(
   source: RunEvent[],
   runs: RunRecord[] = [],
 ): RunRecoveryCheckpoint | undefined {
-  if (!run || (run.status !== "interrupted" && run.status !== "failed"))
+  if (!run || isSubagentChildRun(run) || (run.status !== "interrupted" && run.status !== "failed"))
     return undefined;
   const origin = inspectionOrigin(run, runs);
   const events = source
@@ -150,7 +151,7 @@ function inspectionOrigin(
     if (!parent) return undefined;
     run = parent;
   }
-  return run;
+  return isSubagentChildRun(run) ? undefined : run;
 }
 
 function patchProofs(

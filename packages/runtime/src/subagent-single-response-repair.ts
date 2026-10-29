@@ -6,6 +6,7 @@ import { sha256 } from "./ed25519.js";
 import type { ModelRouteStreamPort } from "./model-route-types.js";
 import { createSubagentModelSession, type SubagentModelSession } from "./subagent-model-session.js";
 import type { LocalStore } from "./store.js";
+import { subagentModelDenial } from "./subagent-model-turn-denial.js";
 
 export interface SubagentRepairPorts {
   store: LocalStore;
@@ -71,9 +72,16 @@ export async function runSingleResponseRepair(input: SubagentRepairPorts & {
     message ??= await source.result();
   } catch (error) { failure = errorMessage(error); }
   if (message) {
+    const denial = subagentModelDenial(message);
+    if (denial) throw denial;
     resultText = contentText(message.content);
-    usage = addUsage(usage, message.usage);
-    task = await input.store.recordSubagentProgress(task.id, { turnDelta: 1, stepDelta: 1, usage });
+    if (input.session.modelSession.recordProgress) {
+      task = await input.session.modelSession.recordProgress({ turnDelta: 1, stepDelta: 1 });
+      usage = task.usage;
+    } else {
+      usage = addUsage(usage, message.usage);
+      task = await input.store.recordSubagentProgress(task.id, { turnDelta: 1, stepDelta: 1, usage });
+    }
     const toolCallCount = message.content.filter((block) => block.type === "toolCall").length;
     await input.emit("subagent.step", task, {
       taskId: task.id, messageIndex: task.stepCount,

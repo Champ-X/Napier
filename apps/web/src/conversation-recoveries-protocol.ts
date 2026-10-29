@@ -25,6 +25,7 @@ const BLOCK_REASONS = new Set([
   "unknown_tool_effect",
   "attempt_limit_reached",
   "untrusted_recovery_chain",
+  "subagent_managed",
 ]);
 
 export function isConversationRecoveries(

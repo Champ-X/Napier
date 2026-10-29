@@ -6,6 +6,7 @@ import type { RunEvent, RunLeaseSummary } from "@napier/contracts";
 import { reconciledPatchForBoundary } from "./workspace-patch-reconciled-evidence.js";
 import { lostRunLeaseDisposition } from "./run-lease-loss.js";
 import { listRunLeases } from "./sqlite-run-leases.js";
+import { childParentAuthorityLost } from "./sqlite-child-parent-loss.js";
 import { liveToolEffectAuthoritiesFromEvents } from "./sqlite-tool-effect-authority.js";
 import { recoveryRunLeaseBindingSha256 } from "./tool-effect-indeterminate-event.js";
 import {
@@ -80,6 +81,7 @@ export function assertEffectIndeterminateTerminalCommit(
       nextRuns,
       markerKeys,
       commitNowMs,
+      previousStateJson,
     );
   }
 }
@@ -164,6 +166,7 @@ function assertMarkerCommit(
   nextRuns: ReadonlyMap<string, SnapshotRun>,
   markerKeys: Set<string>,
   commitNowMs: number,
+  previousStateJson: string,
 ): void {
   const payload = record(marker.payload);
   const operationId = text(payload?.["operationId"]);
@@ -206,7 +209,7 @@ function assertMarkerCommit(
     nextRuns,
     reconciled,
   );
-  assertRunLeaseEvidence(database, marker, previous, payload, commitNowMs);
+  assertRunLeaseEvidence(database, marker, previous, payload, commitNowMs, previousStateJson);
   const priorEvents = runEventsBefore(database, marker);
   const boundary = liveToolEffectAuthoritiesFromEvents(priorEvents).find(
     (authority) =>
@@ -300,6 +303,7 @@ function assertRunLeaseEvidence(
   previous: SnapshotRun,
   payload: Record<string, unknown>,
   commitNowMs: number,
+  previousStateJson: string,
 ): void {
   const binding = recoveryRunLeaseBindingSha256(previous);
   if (payload["recoveryRunLeaseBindingSha256"] !== binding) {
@@ -329,7 +333,8 @@ function assertRunLeaseEvidence(
   ) {
     throw markerError(marker, "the Run lease table and snapshot disagree");
   }
-  const expectedDisposition = lostRunLeaseDisposition(
+  const expectedDisposition = childParentAuthorityLost(database, previousStateJson, previous, commitNowMs)
+    ? "run_owner_unavailable" : lostRunLeaseDisposition(
     previous.lease,
     Boolean(previous.leaseTokenSha256),
     commitNowMs,

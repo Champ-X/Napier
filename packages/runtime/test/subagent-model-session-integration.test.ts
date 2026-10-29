@@ -1,5 +1,5 @@
 import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
-import { emptyUsage, type Usage, type WorkflowValueSchema } from "@napier/contracts";
+import { emptyUsage, type RunEvent, type Usage, type WorkflowValueSchema } from "@napier/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -33,6 +33,26 @@ afterEach(async () => {
 });
 
 describe("Subagent ModelSession actual task settlement", () => {
+  it("publishes committed child lifecycle and canonical response before parent delivery", async () => {
+    const streamed: RunEvent[] = [];
+    const fixture = await createModelSessionFixture({ onEvent: (event) => { streamed.push(event); } });
+    fixture.faux.setResponses([fauxAssistantMessage('{"summary":"Owned child result","items":[],"unknowns":[]}')]);
+    const handle = await fixture.supervisor.start(fixture.request());
+    const collected = await fixture.supervisor.collect(handle);
+    expect(collected.status, collected.task.error).toBe("completed");
+    const task = fixture.store.listSubagentTasks(fixture.thread.id)[0]!;
+    const childEvents = streamed.filter((event) => event.runId === task.childRunId);
+    expect(childEvents.map((event) => event.type)).toEqual([
+      "run.started", "route_plan_created", "route_attempt_started",
+      "subagent.child.invocation_reserved", "context.model_envelope", "context.model_adapter", "model.response",
+      "route_attempt_ended", "run.completed",
+    ]);
+    const committed = await fixture.store.listRunEvents(task.childRunId!);
+    for (const event of childEvents) expect(committed).toContainEqual(event);
+    expect(streamed.indexOf(childEvents.at(-1)!)).toBeLessThan(streamed.findIndex((event) => event.type === "subagent.completed"));
+    expect(fixture.store.getThread(fixture.thread.id).currentRunId).toBe(fixture.run.id);
+  });
+
   it("settles an inherited-tool setup exception as a durable failed task before model dispatch", async () => {
     const fixture = await createModelSessionFixture({
       createInheritedTools: () => { throw new Error("fixture inherited-tool setup failed"); },
@@ -180,16 +200,21 @@ describe("Subagent ModelSession actual task settlement", () => {
       const responses = events.filter((event) => event.type === "subagent.model.response");
       expect(invocations).toHaveLength(4);
       expect(responses).toHaveLength(4);
-      expect(events.filter((event) => event.type === "model.response")).toHaveLength(0);
+      expect(events.filter((event) => event.type === "model.response" && event.runId === fixture.run.id)).toHaveLength(0);
+      expect(events.filter((event) => event.type === "model.response" && event.runId !== fixture.run.id)).toHaveLength(4);
       const capsules = new ModelInvocationCapsuleStore(fixture.store.dataRoot);
       for (const [index, event] of invocations.entries()) {
         const invocation = event.payload as unknown as ChildInvocation;
         const handle = handles[Math.floor(index / 2)]!;
+        const childRunId = fixture.store.listSubagentTasks(fixture.thread.id)
+          .find((task) => task.id === handle.taskId)!.childRunId;
+        expect(childRunId).toBeTypeOf("string");
         const phase = index % 2 === 0 ? "subagent_turn" : mode.name === "typed" ? "typed_repair" : "outcome_repair";
         expect(event.runId).toBe(fixture.run.id);
         expect(event.category).toBe("subagent");
         expect(invocation.owner).toEqual({
           kind: "subagent", threadId: fixture.thread.id, parentRunId: fixture.run.id,
+          childRunId,
           taskId: handle.taskId, executionId: handle.executionId,
         });
         expect(invocation.taskId).toBe(handle.taskId);
@@ -201,7 +226,7 @@ describe("Subagent ModelSession actual task settlement", () => {
         const receipt = invocation.captures.find((capture) => capture.kind === "invocation")!.payload;
         const capsule = await capsules.read(String(receipt["capsuleSha256"]));
         expect(capsule.sourceThreadId).toBe(fixture.thread.id);
-        expect(capsule.sourceRunId).toBe(fixture.run.id);
+        expect(capsule.sourceRunId).toBe(childRunId);
         expect(capsule.context).toEqual(observed[index]!.context);
         expect(capsule.options.maxTokens).toBe(observed[index]!.maxTokens);
         expect(capsule.options.cacheRetention).toBe(observed[index]!.cacheRetention);

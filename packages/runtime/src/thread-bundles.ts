@@ -13,6 +13,7 @@ import {
   type EvaluationSuiteExecution,
   type EvaluationRubricSnapshot,
   type RunEvent,
+  type RunRecord,
   type RunEvaluationRecord,
   type SubagentTask,
   type ThreadDetail,
@@ -59,7 +60,6 @@ import {
   MODEL_CONTEXT_ENVELOPE_EVENT,
   validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
-import { assertModelRequestEvidenceBindings } from "./model-prompt-evidence-bindings.js";
 import { normalizeModelRoutePolicy } from "./model-route-profile.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import {
@@ -82,7 +82,7 @@ import {
 } from "./tool-loop-guard.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { subagentRoleInstructions } from "./subagent-role-instructions.js";
-import { validateSubagentSupervisorReplayTask } from "./subagent-replay-validation.js";
+import { validateSubagentSupervisorReplayTask, assertReplaySubagentBindings } from "./subagent-replay-validation.js";
 import {
   subagentOutcomeRepairInstructions,
   validateSubagentOutcomeRepairOutcome,
@@ -106,6 +106,7 @@ const THREAD_IMPORTED_EVENT = "thread.imported";
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/;
 const THREAD_STATUSES = new Set(["idle", "running", "waiting", "failed"]);
 const RUN_SOURCES = new Set([
+  "subagent",
   "user",
   "recovery",
   "schedule",
@@ -602,9 +603,6 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         `runs[${index}].agentRevision`,
       );
     }
-    if (run["limits"] !== undefined) {
-      assertRunLimits(run["limits"], `runs[${index}].limits`);
-    }
     assertReplayRunConfiguration(run, runId, agentProfilesByRevision);
   }
   if (
@@ -816,11 +814,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       );
     }
   }
-  assertModelRequestEvidenceBindings(typedEvents, {
-    knownRunIds: runIds,
-    label: "Thread replay bundle",
-  });
-  assertSourceContinuityContexts(typedEvents, runsById, thread);
+  assertSourceContinuityContexts(typedEvents, runsById, thread, subagents as SubagentTask[]);
   const toolLoopTriggerEvents = typedEvents.filter(
     (event) => event.type === TOOL_LOOP_GUARD_TRIGGERED_EVENT,
   );
@@ -1387,6 +1381,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     }
     taskRecords.set(taskId, value as SubagentTask);
   }
+  assertReplaySubagentBindings(runs as RunRecord[], subagents as SubagentTask[], typedEvents, thread["currentRunId"]);
 
   const outcomeRepairRequests = new Map<
     string,

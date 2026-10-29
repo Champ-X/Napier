@@ -5,8 +5,9 @@ import {
   type AssistantMessageEventStream,
   type Model,
 } from "@earendil-works/pi-ai";
+import { RunBudgetExceededError } from "./run-budget.js";
 
-const undispatchedMessages = new WeakSet<AssistantMessage>();
+const undispatchedMessages = new WeakMap<AssistantMessage, Error>();
 
 export class SubagentModelTurnDeniedError extends Error {
   override readonly name = "SubagentModelTurnDeniedError";
@@ -22,7 +23,7 @@ export function subagentModelTurnDeniedStream(
   model: Model<Api>,
   error: unknown,
 ): AssistantMessageEventStream | undefined {
-  if (!(error instanceof SubagentModelTurnDeniedError)) return undefined;
+  if (!(error instanceof SubagentModelTurnDeniedError) && !(error instanceof RunBudgetExceededError)) return undefined;
   const message: AssistantMessage = {
     role: "assistant",
     content: [],
@@ -41,7 +42,7 @@ export function subagentModelTurnDeniedStream(
   Object.freeze(message.usage.cost);
   Object.freeze(message.usage);
   Object.freeze(message);
-  undispatchedMessages.add(message);
+  undispatchedMessages.set(message, error);
   const stream = createAssistantMessageEventStream();
   stream.push({ type: "error", reason: "error", error: message });
   return stream;
@@ -50,4 +51,8 @@ export function subagentModelTurnDeniedStream(
 /** Provider-controlled fields or matching error text cannot attest host denial. */
 export function isUndispatchedSubagentModelTurn(message: AssistantMessage): boolean {
   return undispatchedMessages.has(message);
+}
+
+export function subagentModelDenial(message: AssistantMessage): Error | undefined {
+  return undispatchedMessages.get(message);
 }

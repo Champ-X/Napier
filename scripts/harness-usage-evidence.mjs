@@ -32,6 +32,9 @@ export function collectUsageEvidence(run, events, subagents = []) {
     receipts = [],
     seen = new Set();
   const owned = events.filter((e) => e.runId === run.id);
+  if (run.usageStatus === "incomplete" ||
+      (run.source === "subagent" && run.usageStatus !== "complete"))
+    blockers.push("incomplete_run_usage");
   if (owned.length !== events.length) blockers.push("foreign_run_events");
   const responseEvents = owned.filter((e) => e.type === "model.response");
   const primary = responseEvents.length
@@ -61,7 +64,11 @@ export function collectUsageEvidence(run, events, subagents = []) {
     }
     seen.add(event.id);
     const usage = event.payload?.usage;
+    if (event.payload?.usageStatus === "unknown")
+      blockers.push(`${event.id}: unknown_physical_usage`);
     if (usage === undefined) {
+      if (event.type === "model.response")
+        blockers.push(`${event.id}: missing_response_usage`);
       if (discarded.has(event.type))
         blockers.push(`${event.id}: missing_discarded_usage`);
       continue;
@@ -86,6 +93,9 @@ export function collectUsageEvidence(run, events, subagents = []) {
     });
   }
   for (const task of subagents) {
+    if (task.usageStatus === "incomplete" ||
+        (task.childRunId && task.usageStatus !== "complete"))
+      blockers.push(`${task.id}: incomplete_subagent_usage`);
     if (
       !task.id ||
       seen.has(`task:${task.id}`) ||

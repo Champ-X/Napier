@@ -623,11 +623,8 @@ export class AgentRuntime {
               profile: agentProfile,
               sandbox: this.verificationSandbox,
               processes: this.workspaceProcesses,
-              createInheritedTools: () =>
-                this.capabilities.createTools({
-                  profile: agentProfile,
-                  threadId: run.threadId,
-                  runId: run.id,
+              createInheritedTools: (context) =>
+                this.capabilities.createSubagentTools(context, {
                   ...(projectSkillSnapshot
                     ? { projectSkillSnapshot }
                     : {}),
@@ -635,8 +632,9 @@ export class AgentRuntime {
                     firstClassSkillLoading &&
                     (invocationSource === "user" ||
                       invocationSource === "recovery"),
-                  browserInteractionConfirmationAllowed: false,
                 }),
+              cleanupExecutionResources: (executionRun) =>
+                this.capabilities.cancelRun({ threadId: executionRun.threadId, runId: executionRun.id }),
               concurrencyGate: this.toolConcurrencyGate,
               worktreeOwnerId: this.workerId,
               parentSignal: abortController.signal,

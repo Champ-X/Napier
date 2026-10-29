@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { fauxProvider } from "@earendil-works/pi-ai";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type { AgentProfile, RunEvent, SubagentRequest } from "@napier/contracts";
+import type { AgentProfile, RunEvent, RunLimits, SubagentRequest } from "@napier/contracts";
 
 import { InProcessSubagentProvider } from "../src/in-process-subagent-provider.js";
 import { ModelRouter } from "../src/model-route.js";
@@ -27,6 +27,7 @@ export async function createModelSessionFixture(options: {
   maxTurns?: number;
   timeoutMs?: number;
   admission?: ModelCallAdmission;
+  runLimits?: Partial<RunLimits>;
   createInheritedTools?: () => AgentTool[];
 } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "napier-subagent-model-session-"));
@@ -37,9 +38,8 @@ export async function createModelSessionFixture(options: {
   await store.initialize();
   const agent = store.listAgents()[0]!;
   const thread = await store.createThread({ title: "Child ModelSession", agentId: agent.id });
-  const run = await store.createRun({ threadId: thread.id, agentId: agent.id });
   const faux = fauxProvider({
-    provider: `faux-${run.id}`,
+    provider: `faux-${thread.id}`,
     api: "openai-responses",
     tokensPerSecond: 1_000_000,
   });
@@ -74,6 +74,13 @@ export async function createModelSessionFixture(options: {
       },
     };
   }
+  profile = await store.updateAgent(agent.id, {
+    ...profile,
+    enabledSubagents: ["researcher", "reviewer", "general", "coder"],
+    subagentLimits: { maxConcurrent: 2, maxTotal: 4, maxTurns: options.maxTurns ?? 4, timeoutMs: options.timeoutMs ?? 5_000 },
+    ...(options.runLimits ? { runLimits: { ...agent.runLimits!, ...options.runLimits } } : {}),
+  });
+  const run = await store.createRun({ threadId: thread.id, agentId: agent.id });
   const parent = new AbortController();
   const provider = new InProcessSubagentProvider({
     store,

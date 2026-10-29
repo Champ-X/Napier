@@ -43,6 +43,7 @@ export const automationCopyEn = {
     unsafe_tool_effect: "A write or delegated side effect was observed.",
     unknown_tool_effect: "A tool effect is not proven read-only.",
     attempt_limit_reached: "The frozen attempt limit is exhausted.",
+    subagent_managed: "This child execution is managed by its parent task.",
     untrusted_recovery_chain:
       "The recovery chain or import provenance is untrusted.",
   },

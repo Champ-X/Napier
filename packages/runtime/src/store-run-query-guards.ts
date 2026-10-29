@@ -6,6 +6,12 @@ import type {
 
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import type { SqliteLedger } from "./sqlite-ledger.js";
+export { latestPrimaryRun } from "./primary-run-selection.js";
+
+export function assertOrdinaryRunInput(input: { source?: string; executionMode?: string }): void {
+  if (input.source === "subagent" || input.executionMode === "subagent")
+    throw new Error("Subagent Runs require the internal child execution lifecycle");
+}
 
 const OPERATOR_DECISION_EVENT_TYPES = [
   "operator.decision.requested",

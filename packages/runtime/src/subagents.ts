@@ -27,6 +27,7 @@ import { ModelRouter } from "./model-route.js";
 import { resolveModelRouteSelection } from "./model-route-resolution.js";
 import type { DelegationDetails } from "./subagent-task-evidence.js";
 import { SubagentSupervisor } from "./subagent-supervisor.js";
+import type { SubagentExecutionCleanup, SubagentInheritedToolsFactory } from "./subagent-execution-context.js";
 import {
   createSubagentSupervisorTools,
   subagentRequestFromToolInput,
@@ -94,7 +95,8 @@ export interface SubagentCoordinatorOptions {
   profile: AgentProfile;
   sandbox: OsSandboxAdapter;
   processes?: WorkspaceProcessManager | undefined;
-  createInheritedTools?: () => AgentTool[];
+  createInheritedTools?: SubagentInheritedToolsFactory;
+  cleanupExecutionResources?: SubagentExecutionCleanup;
   concurrencyGate?: ToolConcurrencyGate;
   worktreeOwnerId: string;
   parentSignal: AbortSignal;
@@ -140,10 +142,6 @@ export class SubagentCoordinator {
         ownerId: options.worktreeOwnerId,
         sandbox: options.sandbox,
         ...(options.processes ? { processes: options.processes } : {}),
-        debuggerOwner: {
-          threadId: options.run.threadId,
-          runId: options.run.id,
-        },
         enableCandidateDebugger:
           options.profile.enabledTools.includes("node_debugger"),
         enableCandidateVerification:
@@ -180,6 +178,9 @@ export class SubagentCoordinator {
         ...(this.worktrees ? { worktrees: this.worktrees } : {}),
         ...(options.createInheritedTools
           ? { createInheritedTools: options.createInheritedTools }
+          : {}),
+        ...(options.cleanupExecutionResources
+          ? { cleanupExecutionResources: options.cleanupExecutionResources }
           : {}),
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       }),

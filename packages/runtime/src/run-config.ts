@@ -33,6 +33,7 @@ import {
   normalizeRunLimits,
   normalizeSubagentLimits,
 } from "./agents.js";
+import { validateRunConfigurationLimits } from "./agent-budget-policy.js";
 import {
   fingerprintAutomaticRecovery,
   fingerprintExecutionMode,
@@ -233,6 +234,7 @@ export function createRunConfigurationFingerprint(
     ),
     runLimits: normalizeRunLimits(
       profile.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
+      executionMode,
     ),
     systemPromptSha256: sha256(profile.systemPrompt),
     automaticRecovery: effectiveAutomaticRecoveryPolicy(profile),
@@ -324,7 +326,7 @@ export function validateRunConfigurationFingerprint(
     return role as SubagentRole;
   });
   const subagentLimits = assertSubagentLimits(record["subagentLimits"]);
-  const runLimits = assertRunLimits(record["runLimits"]);
+  const runLimits = validateRunConfigurationLimits(record["runLimits"], record["executionMode"]);
   const systemPromptSha256 = assertSha256(
     record["systemPromptSha256"],
     "systemPromptSha256",
@@ -693,31 +695,6 @@ function assertSubagentLimits(
     maxTotal: positiveInteger(limits["maxTotal"], "subagentLimits.maxTotal"),
     maxTurns: positiveInteger(limits["maxTurns"], "subagentLimits.maxTurns"),
     timeoutMs: positiveInteger(limits["timeoutMs"], "subagentLimits.timeoutMs"),
-  });
-}
-
-function assertRunLimits(
-  value: unknown,
-): RunConfigurationFingerprint["runLimits"] {
-  const limits = assertExactRecord(
-    value,
-    "Run configuration fingerprint runLimits",
-    ["maxTurns", "maxTotalTokens", "maxCostUsd", "timeoutMs"],
-  );
-  const maxCostUsd = limits["maxCostUsd"];
-  if (typeof maxCostUsd !== "number" || !Number.isFinite(maxCostUsd)) {
-    throw new Error(
-      "Run configuration fingerprint runLimits.maxCostUsd is invalid",
-    );
-  }
-  return normalizeRunLimits({
-    maxTurns: positiveInteger(limits["maxTurns"], "runLimits.maxTurns"),
-    maxTotalTokens:
-      limits["maxTotalTokens"] === 0
-        ? 0
-        : positiveInteger(limits["maxTotalTokens"], "runLimits.maxTotalTokens"),
-    maxCostUsd,
-    timeoutMs: positiveInteger(limits["timeoutMs"], "runLimits.timeoutMs"),
   });
 }
 

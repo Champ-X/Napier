@@ -1,10 +1,10 @@
 import type { RunRecord, ThreadImportProvenance } from "@napier/contracts";
 import { isManualRunRecoveryParent } from "@napier/contracts/manual-run-recovery";
+import { assertSubagentExecutionBinding, type SubagentExecutionBindingStore } from "./subagent-execution-context.js";
 
 export const SOURCE_CONTINUITY_RETENTION_MS = 24 * 60 * 60 * 1_000;
 
-export interface SourceContinuityStore {
-  listRuns(threadId: string): RunRecord[];
+export interface SourceContinuityStore extends SubagentExecutionBindingStore {
   getThread(threadId: string): { importProvenance?: ThreadImportProvenance };
 }
 
@@ -42,6 +42,9 @@ export function sourceContinuityPredecessor(
     }
     return parent;
   }
+  if (current.source === "subagent") {
+    return delegatedSourcePredecessor(store, current, options.explicitRunId);
+  }
   if (options.explicitRunId) {
     return explicitPredecessor(
       store,
@@ -72,6 +75,13 @@ export function sourceContinuityPredecessor(
     return undefined;
   }
   return predecessor;
+}
+
+function delegatedSourcePredecessor(store: SourceContinuityStore, current: RunRecord, parentRunId?: string): RunRecord | undefined {
+  if (!parentRunId) return undefined;
+  if (store.getThread(current.threadId).importProvenance)
+    throw new Error("Imported child Source delegation is not allowed");
+  return assertSubagentExecutionBinding(store, current, parentRunId).authorityOriginRun;
 }
 
 function explicitPredecessor(

@@ -35,7 +35,10 @@ async function harness(options: { models?: Array<{ id: string }> } = {}) {
     workspaceRoot,
   });
   await store.initialize();
-  const agent = store.listAgents()[0]!;
+  const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+    enabledSubagents: ["researcher", "reviewer", "general", "coder"],
+    subagentLimits: { maxConcurrent: 2, maxTotal: 4, maxTurns: 4, timeoutMs: 5_000 },
+  });
   const thread = await store.createThread({ title: "Supervisor", agentId: agent.id });
   const run = await store.createRun({ threadId: thread.id, agentId: agent.id });
   const faux = fauxProvider({

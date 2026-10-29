@@ -44,7 +44,13 @@ export async function recoverLostRuns(
   const terminalEvents: RunEvent[] = [];
   for (const run of host.state.runs) {
     if (run.status !== "queued" && run.status !== "running") continue;
-    const disposition = lostRunLeaseDisposition(
+    const parent = run.source === "subagent"
+      ? host.state.runs.find((candidate) => candidate.id === run.parentRunId)
+      : undefined;
+    const parentLost = parent && run.subagent?.parentConfigurationSha256 === parent.configuration?.contentSha256 &&
+      ((parent.status !== "running" && parent.status !== "queued") || lostRunLeaseDisposition(
+        parent.lease, Boolean(parent.leaseTokenSha256), timestampMs, interruptActiveLeases));
+    const disposition = parentLost ? "run_owner_unavailable" : lostRunLeaseDisposition(
       run.lease,
       Boolean(run.leaseTokenSha256),
       timestampMs,

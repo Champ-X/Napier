@@ -9,8 +9,9 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
+import type { SubagentProgress } from "./subagent-child-execution.js";
 import {
-  isUndispatchedSubagentModelTurn,
+  subagentModelDenial,
   SubagentModelTurnDeniedError,
 } from "./subagent-model-turn-denial.js";
 import {
@@ -30,6 +31,7 @@ export class SubagentTaskObserver {
   task: SubagentTask;
   finalText = "";
   lastError = "";
+  lastFailure: Error | undefined;
   usage: Usage;
   stepIndex = 0;
   turnCapped = false;
@@ -40,6 +42,7 @@ export class SubagentTaskObserver {
     usage: Usage,
     private readonly limits: SubagentLimits,
     private readonly emit: Emit,
+    private readonly recordProgress?: (delta: SubagentProgress) => Promise<SubagentTask>,
   ) {
     this.task = task;
     this.usage = usage;
@@ -65,12 +68,14 @@ export class SubagentTaskObserver {
       role: "assistant";
     },
   ): Promise<void> {
-    if (isUndispatchedSubagentModelTurn(message)) {
+    const denial = subagentModelDenial(message);
+    if (denial) {
       this.lastError = message.errorMessage ?? "Subagent model turn was denied";
-      this.turnCapped = true;
+      this.lastFailure = denial;
+      this.turnCapped = denial instanceof SubagentModelTurnDeniedError;
       return;
     }
-    this.task = await this.store.recordSubagentProgress(this.task.id, {
+    this.task = await this.progress({
       turnDelta: 1,
     });
     if (
@@ -82,12 +87,13 @@ export class SubagentTaskObserver {
     const text = contentText(message.content);
     if (text) this.finalText = text;
     if (message.errorMessage) this.lastError = message.errorMessage;
-    this.usage = addSubagentUsage(this.usage, message.usage);
+    if (!this.recordProgress) this.usage = addSubagentUsage(this.usage, message.usage);
     this.stepIndex += 1;
-    this.task = await this.store.recordSubagentProgress(this.task.id, {
+    this.task = await this.progress({
       stepDelta: 1,
-      usage: this.usage,
+      ...(!this.recordProgress ? { usage: this.usage } : {}),
     });
+    this.usage = this.task.usage;
     const candidateOutput =
       message.stopReason !== "toolUse" || this.task.role === "coder";
     await this.emit("subagent.step", this.task, {
@@ -119,7 +125,7 @@ export class SubagentTaskObserver {
     event: Extract<AgentEvent, { type: "tool_execution_end" }>,
   ): Promise<void> {
     this.stepIndex += 1;
-    this.task = await this.store.recordSubagentProgress(this.task.id, {
+    this.task = await this.progress({
       stepDelta: 1,
     });
     const text = subagentToolResultText(event);
@@ -133,5 +139,9 @@ export class SubagentTaskObserver {
       textBytes: Buffer.byteLength(text, "utf8"),
       contentRedacted: true,
     });
+  }
+
+  private progress(delta: SubagentProgress & { usage?: Usage }): Promise<SubagentTask> {
+    return this.recordProgress ? this.recordProgress(delta) : this.store.recordSubagentProgress(this.task.id, delta);
   }
 }

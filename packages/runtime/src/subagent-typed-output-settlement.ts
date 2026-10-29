@@ -7,6 +7,7 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import { completeSubagentTask } from "./subagent-completion.js";
+import type { SubagentTaskFinisher } from "./subagent-child-execution.js";
 import {
   formatDelegationResult,
   MAX_SUBAGENT_RESULT_CHARS,
@@ -35,6 +36,8 @@ export async function finishSubagentTypedOutput(input: {
   output: JsonValue;
   usage: SubagentTask["usage"];
   assertActive: () => void;
+  finishTask?: SubagentTaskFinisher;
+  publishCommitted?: () => Promise<void>;
   worktree?: SubagentWorktreeSession;
   toolSignal?: AbortSignal;
   emit: Emit;
@@ -61,7 +64,8 @@ export async function finishSubagentTypedOutput(input: {
     isCommitted: () => input.store.listSubagentTasks(input.task.threadId, input.task.runId)
       .some((current) => current.id === input.task.id && current.status === "completed"),
     finish: async (_preview, assertActive) => {
-      const task = await input.store.finishSubagentTask(input.task.id, {
+      const finish = input.finishTask ?? ((value, active) => input.store.finishSubagentTask(input.task.id, value, active));
+      const task = await finish({
         status: "completed",
         stopReason: "completed",
         result: resultText,
@@ -73,6 +77,7 @@ export async function finishSubagentTypedOutput(input: {
     },
   });
   const { value: task, preview } = completion;
+  await input.publishCommitted?.();
   await input.emit("subagent.output.accepted", task, {
     taskId: task.id,
     status: "accepted",

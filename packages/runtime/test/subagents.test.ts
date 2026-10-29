@@ -509,7 +509,7 @@ describe("SubagentCoordinator", () => {
       }),
     );
     const events = await store.listEvents(thread.id);
-    expect(events.map((event) => event.type)).toEqual([
+    expect(events.filter((event) => event.runId === task!.runId).map((event) => event.type)).toEqual([
       "subagent.queued",
       "subagent.started",
       "subagent.model.invocation",

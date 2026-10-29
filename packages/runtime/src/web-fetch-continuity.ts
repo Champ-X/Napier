@@ -15,6 +15,7 @@ export interface WebFetchState {
 
 type RecoveryStore = {
   listRuns(threadId: string): RunRecord[];
+  listSubagentTasks?: NonNullable<import("./subagent-execution-context.js").SubagentExecutionBindingStore["listSubagentTasks"]>;
   listEvents(threadId: string): Promise<RunEvent[]>;
   getThread(threadId: string): {
     importProvenance?: import("@napier/contracts").ThreadImportProvenance;

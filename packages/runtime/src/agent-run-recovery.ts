@@ -36,6 +36,7 @@ import { assessAutomaticRecovery } from "./automatic-recovery.js";
 import { loadSettledPatchRecoveryEvidence } from "./workspace-patch-result-recovery.js";
 import { reconcileSettledWorkspacePatches } from "./workspace-patch-reconciliation.js";
 import { operatorDecisionRecoveryContext } from "./operator-decision-recovery-context.js";
+import { isSubagentChildRun, latestPrimaryRun } from "./primary-run-selection.js";
 
 export { continueAnsweredOperatorDecision } from "./agent-operator-decision-continuation.js";
 
@@ -60,7 +61,7 @@ export async function resumeInterruptedAgentRun(
   options: ResumeInterruptedRunOptions,
 ): Promise<RunRecord> {
   const thread = host.store.getThread(options.threadId);
-  const interrupted = host.store.listRuns(thread.id).at(-1);
+  const interrupted = latestPrimaryRun(host.store.listRuns(thread.id));
   if (!interrupted ||
       !manualRunRecoverySettlementMatches(thread.status, interrupted) ||
       (options.runId && options.runId !== interrupted.id))
@@ -203,7 +204,9 @@ export async function resumeInterruptedAgentRunAutomatically(
 function assertManualRecoveryAllowed(run: RunRecord): void {
   const blockReason = manualRunRecoveryBlockReason(run);
   const message =
-    blockReason === "workflow_managed"
+    blockReason === "subagent_managed"
+      ? "Subagent child Runs do not support generic recovery"
+      : blockReason === "workflow_managed"
       ? "Workflow node Runs must be resumed through their Workflow Plan"
       : blockReason === "model_experiment"
         ? "Model invocation experiment Runs must be retried from their source checkpoint"
@@ -224,6 +227,7 @@ function automaticRecoveryEligible(
   return Boolean(
     run &&
     run.status === "interrupted" &&
+    !isSubagentChildRun(run) &&
     !isWorkflowRunSource(run.source) &&
     run.configuration &&
     modernRunConfiguration(run.configuration) &&

@@ -4,6 +4,12 @@ import { describe, expect, it } from "vitest";
 import { latestManuallyResumableRun } from "../src/manual-run-recovery";
 
 describe("manual Run recovery view model", () => {
+  it("keeps a primary checkpoint selected after a later child execution", () => {
+    const primary = run("failed", "run_parent", { outcome: "paused_budget" });
+    const child = run("interrupted", "run_child", { source: "subagent", parentRunId: primary.id });
+    expect(latestManuallyResumableRun("idle", [primary, child])).toEqual(primary);
+    expect(latestManuallyResumableRun("idle", [child])).toBeUndefined();
+  });
   it("exposes the latest paused-budget Run from an idle Thread", () => {
     const completed = run("completed", "run_completed");
     const pausedBudget = run("failed", "run_paused", {

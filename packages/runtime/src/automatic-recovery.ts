@@ -15,6 +15,8 @@ import {
   normalizeAutomaticRecoveryPolicy,
 } from "./agents.js";
 import { fingerprintAutomaticRecovery } from "./run-config.js";
+import { isSubagentChildRun } from "./primary-run-selection.js";
+import { isWorkflowRunSource } from "./workflow-node-execution.js";
 
 import {
   collectRunToolEffectObservations,
@@ -35,6 +37,7 @@ const BLOCK_REASON_ORDER: readonly AutomaticRecoveryBlockReason[] = [
   "policy_manual",
   "run_not_interrupted",
   "workflow_managed",
+  "subagent_managed",
   "demo_model",
   "event_limit_exceeded",
   "unresolved_tool_call",
@@ -112,13 +115,10 @@ export function assessAutomaticRecovery(
   if (options.run.status !== "interrupted") {
     blockReasons.add("run_not_interrupted");
   }
+  if (isSubagentChildRun(options.run)) blockReasons.add("subagent_managed");
   if (
-    options.run.source === "workflow" ||
-    options.run.source === "workflow_reuse" ||
-    options.run.source === "workflow_simulation" ||
-    options.run.source === "context_compaction" ||
-    options.run.source === "model_experiment" ||
-    options.run.source === "tool_experiment"
+    isWorkflowRunSource(options.run.source) ||
+    ["context_compaction", "model_experiment", "tool_experiment"].includes(options.run.source ?? "")
   ) {
     blockReasons.add("workflow_managed");
   }

@@ -9,6 +9,10 @@ import {
   type CreateSubagentTaskInput,
   type FinishSubagentTaskInput,
 } from "./subagent-store-records.js";
+export { SubagentChildRunRepository } from "./subagent-child-run-repository.js";
+export type { StartSubagentChildRunInput, SubagentChildRunFence, ReserveSubagentChildInvocationInput,
+  SettleSubagentChildInvocationInput, FinishSubagentChildRunInput, SubagentChildProgressInput,
+  BindSubagentChildRouteInput } from "./subagent-child-run-types.js";
 
 const TERMINAL_STATUSES = new Set<SubagentTask["status"]>([
   "completed",
@@ -91,6 +95,8 @@ export class SubagentRepository {
     },
   ): Promise<SubagentTask> {
     return this.update(taskId, (task) => {
+      if (task.childRunId)
+        throw new Error("Child Task progress requires its execution fence");
       task.stepCount += Math.max(0, input.stepDelta ?? 0);
       task.turnCount += Math.max(0, input.turnDelta ?? 0);
       if (input.usage) task.usage = structuredClone(input.usage);
@@ -104,6 +110,8 @@ export class SubagentRepository {
     assertActive?: () => void,
   ): Promise<SubagentTask> {
     return this.update(taskId, (task) => {
+      if (task.childRunId)
+        throw new Error("Child Task terminal requires atomic child Run settlement");
       // Run inside the serialized mutation, including any CAS retry. Checking
       // only before enqueue leaves a cancellation window behind other writers.
       assertActive?.();
