@@ -267,21 +267,26 @@ export function agentModelStreamLife(
               model: candidate,
               context: finalizedCall.context,
               options: finalizedCall.options,
-              capture: ({ model, context, options }) => captureCompiledModelInvocation({
-                store: input.host.store,
-                capsules: input.host.modelInvocationCapsules,
-                run: input.run,
-                model,
-                context,
-                options,
-                turnIndex: input.nextTurnIndex(),
-                purpose: "agent_turn",
-                compiledPrompt,
-                ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-              }),
-              invoke: (captured, next) => {
+              capture: async ({ model, context, options }) => {
+                const captured = await captureCompiledModelInvocation({
+                  store: input.host.store,
+                  capsules: input.host.modelInvocationCapsules,
+                  run: input.run,
+                  model,
+                  context,
+                  options,
+                  turnIndex: input.nextTurnIndex(),
+                  purpose: "agent_turn",
+                  compiledPrompt,
+                  ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+                });
+                // Capture can finish after cancellation. Bind its durable receipt
+                // before ModelSession rejects dispatch so the terminal still owns it.
                 currentEnvelope = captured.envelope;
                 input.onEnvelope(captured.envelope);
+                return captured;
+              },
+              invoke: (captured, next) => {
                 const call = {
                   run: input.run,
                   attempt,
