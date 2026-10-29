@@ -1,0 +1,302 @@
+{
+  "kind": "napier.rotation-reclamation-regression",
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-29T11:32:58.184Z",
+  "sourceHead": "0560f00944804b151086269b190377c6f8a0a7ce",
+  "sourceState": "local worktree with separate source/build bindings in physical receipt",
+  "externalModelRequests": 0,
+  "uniqueTestFiles": 7,
+  "uniquePassedTests": 38,
+  "files": [
+    {
+      "path": "apps/server/test/receipt-trust-directory-worker-lifetime.test.ts",
+      "sha256": "9b5c5d07994f63dcdb8259dfc24fd18eb8fcf8c8bb2363e63c970278fe57f35d",
+      "status": "passed",
+      "assertions": [
+        {
+          "name": "receipt trust worker lifetime drains a delayed sibling before reporting settlement persistence failure",
+          "status": "passed"
+        },
+        {
+          "name": "receipt trust worker lifetime drains a delayed sibling before reporting audit persistence failure",
+          "status": "passed"
+        },
+        {
+          "name": "receipt trust worker lifetime does not retain a rejected manual claim, but owns successful claim preparation through shutdown",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/server/test/workspace-runtime-rotation-idle.test.ts",
+      "sha256": "a797b28323ac792ab25643d998d8915d4cd2ba9ea55a4be77d3aa1e25dc81c41",
+      "status": "passed",
+      "assertions": [
+        {
+          "name": "production host rotation-aware idle reclamation reclaims paused settled rotation and historical baseline, cold-reopens its data root, and retains another workspace's automation",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains 'active rotation subscription' without exposing private queue state",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains 'paused future approval' without exposing private queue state",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains 'paused future policy approval' without exposing private queue state",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains 'paused live refresh claim' without exposing private queue state",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains 'paused expired refresh claim' without exposing private queue state",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains a paused graph during manual refresh claim preparation, then reclaims after settlement",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains a paused graph during manual refresh discovery, then reclaims after settlement",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains a paused graph during manual refresh audit persistence, then reclaims after settlement",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains the graph and real store when manual settlement persistence fails",
+          "status": "passed"
+        },
+        {
+          "name": "production host rotation-aware idle reclamation retains the graph and real store when manual audit persistence fails",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/server/test/receipt-trust-directory-subscriptions.test.ts",
+      "sha256": "46bcf45b1b027f02248041b891d09ed2f9c4452a72afaf839f32cf6b87387a1b",
+      "status": "passed",
+      "assertions": [
+        {
+          "name": "receipt trust anchor directory subscription HTTP surface promotes only valid CAS-bound refreshes and retains last-good trust",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/server/test/workspace-runtime-host.test.ts",
+      "sha256": "d792ae4f1cddbac5536a0138516a6eeecc31133bda05183d8a0e954264a2f1ff",
+      "status": "passed",
+      "assertions": [
+        {
+          "name": "production workspace host reclaims idle graphs but retains future automation until it is paused",
+          "status": "passed"
+        },
+        {
+          "name": "production workspace host closes its catalog if registry policy validation fails",
+          "status": "passed"
+        },
+        {
+          "name": "production workspace host keeps recent navigation in the explicitly configured state home",
+          "status": "passed"
+        },
+        {
+          "name": "production workspace host opens B while A streams, keeps the legacy address on A, scopes HTML assets, and restores custom roots",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/server/test/workspace-runtime-process-lifetime.test.ts",
+      "sha256": "3800d717ce060a058957f6fc8643ab8530b29ce4d53249fad457b71d70ec4e3a",
+      "status": "passed",
+      "assertions": [
+        {
+          "name": "workspace process lifetime and idle reclamation retains a browser start awaiting credentials even before it has a task ID",
+          "status": "passed"
+        },
+        {
+          "name": "workspace process lifetime and idle reclamation retains preparation, a live OS process, and terminal persistence before reclaiming historical sessions",
+          "status": "passed"
+        },
+        {
+          "name": "workspace process lifetime and idle reclamation retains and drains compensation after a real failed writer has exited",
+          "status": "passed"
+        },
+        {
+          "name": "workspace process lifetime and idle reclamation terminates a launched process that registers only after shutdown starts",
+          "status": "passed"
+        },
+        {
+          "name": "workspace process lifetime and idle reclamation releases the lifecycle reservation after a rejected launch",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/server/test/workspace-runtime-registry.test.ts",
+      "sha256": "912ef76362d20ffc2b95a2fd1ab8da5635b72a96bc37833b07bc951ce967e146",
+      "status": "passed",
+      "assertions": [
+        {
+          "name": "workspace runtime registry deduplicates concurrent preparation and keeps leases independently pinned",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry retains active/background work under capacity pressure and evicts only idle runtimes",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry counts pending cold starts toward capacity and recovers after preparation fails",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry waits for disposal before preparing the same workspace again",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry rechecks other candidates after an awaited disposal",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry quarantines a partially disposed runtime and preserves ownership",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry drains request leases during shutdown and rejects new admission",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry restores all workspace identities and custom ledgers after reopening",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry deduplicates aliases and rejects a different ledger or reused data root",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry fails closed on a missing or retargeted data root without affecting other workspaces",
+          "status": "passed"
+        },
+        {
+          "name": "workspace runtime registry does not let another live catalog owner initialize the same ledger",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/receipt-trust-directory-subscriptions.test.ts",
+      "sha256": "ec83824a86ae3b8869fc33a0ae1e9192cf4e0874389d1bd66228d80a064e7304",
+      "status": "passed",
+      "assertions": [
+        {
+          "name": "receipt trust anchor directory subscriptions persists last-good discoveries and rejects stale or invalid promotion",
+          "status": "passed"
+        },
+        {
+          "name": "receipt trust anchor directory subscriptions validates the private source locator against the public hash projection",
+          "status": "passed"
+        },
+        {
+          "name": "receipt trust anchor directory subscriptions evaluates hash-only quorum across independent last-good sources",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "rawReports": [
+    {
+      "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-rotation-reclamation-ypzmuhpl/final-rotation-tests.json",
+      "sha256": "df4427197043eafdd4c64cf5e1d0a2a1a3a0a88e596f87b928ff407420a25681",
+      "passed": 14
+    },
+    {
+      "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-rotation-reclamation-ypzmuhpl/existing-rotation-regressions.json",
+      "sha256": "b1020ab850ee97e4c01d9d8060ca9e2618b364208aabe645ed3eab6b40732506",
+      "passed": 10
+    },
+    {
+      "path": "/tmp/napier-rotation-existing-server-20261029.json",
+      "sha256": "114d19d6a49f6a36223188e775690ad5e84671259defe27a5eb2f61a31523ff6",
+      "passed": 16
+    },
+    {
+      "path": "/tmp/napier-rotation-existing-runtime-20261029.json",
+      "sha256": "b69249dac612a41523e9c218d8fff866871e90cae12c91a9b358fb84bafac1c2",
+      "passed": 3
+    }
+  ],
+  "deduplication": "Repeated trust HTTP and host files counted once by exact path/assertion list and source hash",
+  "redGreen": {
+    "binding": {
+      "capturedAt": "2026-10-29T11:30:07.113265+00:00",
+      "baselineCommit": "6ea6638e8affd6c099f1e1a051467f1089d158ee",
+      "sourcePath": "apps/server/src/receipt-trust-directory-subscriptions.ts",
+      "baselineSourceSha256": "af8c1e887c3161b3750f5e9b6b7a20bed3575f00fa5f934273d603a8308746f9",
+      "currentSourceSha256": "ddf123b7c28f2b1ff69e727c0078c83097b7e28b9bbd3e1c159f6ce1fa74e4bd",
+      "baselineCommand": [
+        "npx",
+        "vitest",
+        "run",
+        "test/receipt-trust-directory-worker-lifetime.test.ts",
+        "-t",
+        "drains a delayed sibling",
+        "--testTimeout=30000",
+        "--reporter=default",
+        "--reporter=json",
+        "--outputFile.json=/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-rotation-reclamation-ypzmuhpl/baseline-red.json"
+      ],
+      "testSha256": {
+        "apps/server/test/receipt-trust-directory-worker-lifetime.test.ts": "9b5c5d07994f63dcdb8259dfc24fd18eb8fcf8c8bb2363e63c970278fe57f35d",
+        "apps/server/test/workspace-runtime-rotation-idle.test.ts": "a797b28323ac792ab25643d998d8915d4cd2ba9ea55a4be77d3aa1e25dc81c41",
+        "apps/server/test/receipt-trust-worker-test-fixture.ts": "73722a7bd899680ca1a62eeb99da8e315239e163e1f05677e2aa4b4daf18e787"
+      },
+      "baselineExitCode": 1,
+      "restoredSourceSha256": "ddf123b7c28f2b1ff69e727c0078c83097b7e28b9bbd3e1c159f6ce1fa74e4bd",
+      "sourceRestored": true
+    },
+    "rawBinding": {
+      "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-rotation-reclamation-ypzmuhpl/baseline-source-binding.json",
+      "sha256": "1a23503c775dee5332f9cc6ac2a8d62d5af283ac98dcbd197fe11d2cb933f265"
+    },
+    "rawRed": {
+      "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-rotation-reclamation-ypzmuhpl/baseline-red.json",
+      "sha256": "0adfb9843463d0b9a50948d4f53011d1ebb2112996754a3be29739f701879337"
+    },
+    "failedCases": [
+      {
+        "name": "receipt trust worker lifetime drains a delayed sibling before reporting settlement persistence failure",
+        "failure": "AssertionError: expected true to be false // Object.is equality"
+      },
+      {
+        "name": "receipt trust worker lifetime drains a delayed sibling before reporting audit persistence failure",
+        "failure": "AssertionError: expected true to be false // Object.is equality"
+      }
+    ],
+    "selectionBoundary": "Two delayed sibling cases intentionally selected; third test skipped only in red baseline, all three pass in final green"
+  },
+  "physicalReceipt": {
+    "path": "docs/artifacts/workspace-resource-reclaim-2026-10-29.json",
+    "sha256": "9bfb76c974bb6af8e93afa9e948a8dd0675bd18b4f266bb681a3510b3bace6ac"
+  },
+  "validation": {
+    "runtimeCompile": "passed",
+    "serverBuild": "passed after source restoration",
+    "strictNewTestTypeScript": "passed",
+    "architecture": "nine existing failures; server subscription line override lowered919 to909",
+    "publicApi": "same existing1897/1896 and compatibility digest failures",
+    "diffCheck": "passed"
+  },
+  "limits": [
+    "Synthetic validated rotation state in a real SQLite snapshot does not demonstrate an externally accepted approval gate.",
+    "Discovery providers are deterministic injected fixtures; no external provider/model execution.",
+    "Physical reclaim receipt uses real processes/Chromium and loopback HTTP, future active automation without due execution.",
+    "Resource reconciliation after owner death remains a separate incomplete G05-B requirement."
+  ]
+}

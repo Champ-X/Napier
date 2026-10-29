@@ -271,6 +271,15 @@
 - [当前基线](docs/artifacts/harness-preparation-baseline-2026-10-29.json)：10k 循环检查 15.86–20.28 ms，100k 为 192.38–217.36 ms；100k 事件＋10k 事实准备冷索引 4,301.21 ms，暖索引 1,255.28–1,277.26 ms。暖索引复用 9,000 条事实，但每次仍读取 10,000 次依赖，实际唯一源文件 32 个。100／1,000 条过期摘要及三个越权／未审阅／过期事实均被排除，冷暖上下文摘要一致。
 - 该采样含 observer 开销；SQL 为返回行数而非扫描行数，JSON CPU 为实际样本而非全量归因。RSS 含历史阶段、worker clone 与未强制 GC，不能据约 266→1,185 MiB 的进程观测声称内存泄漏。调用准备目前覆盖 working-state／memory 入口和单独 loop guard，尚非完整模型管线。下一片引入 Run 内 typed-event cursor 与保持新鲜度的依赖复用，并用完整 replay 作基准；mailbox、增量索引与模型／任务族消融仍待完成。说明见 [harness-preparation-profiling.md](docs/harness-preparation-profiling.md)。
 
+
+### 后续推进：G05-B rotation 义务与受控空闲回收
+
+- G07 当前基线已保存为本地 `0560f009`，未 push。本片用内部 pending-work 计数取代 rotation 订阅／历史 approval baseline 的永久保留：active polling、persisted refresh claim、待执行 approval／policy apply 和当前 worker 操作继续保留；paused 且已结算的历史可回收，公开投影仍隐藏私有 claim／queue。
+- worker 现在在 manual／scheduled claim 准备前登记生命周期，并覆盖 discovery、结算和 audit 持久化。关闭拒绝新工作，等待所有已启动 sibling 后才报告错误；持久化失败保持图与真实 SQLite 可用。固定旧 `6ea6638e` 源码上两个延迟 sibling 用例均复现 stop 提前返回；当前同一用例通过，旧／恢复源码及 fixture 摘要已核对。
+- [回归收据](docs/artifacts/rotation-reclamation-regression-2026-10-29.json) 去重后 7 文件／38 测试通过，包括新 14 个义务／manual／失败排空用例及既有信任 HTTP、registry、host、process 和 Runtime 订阅行为。Runtime compile、Server build、严格新测试 TS、diff check 通过；架构仍 9 项既有失败，server subscription 行数预算仅从 919 下调至 909；public API 仍原 2 项。
+- [真实回收收据](docs/artifacts/workspace-resource-reclaim-2026-10-29.json) 通过 10 项：真实 Guardian 与 Chromium 资源先保留 A，确认清理后 maxIdle 0 只回收 A，旧 A SQLite 明确关闭；实际 loopback TCP scoped HTTP 冷开第二代 A，复用原自定义 dataRoot 与完全一致的 seeded events。B 保持第一代图、活动的未来 automation 及可查询 store；此处两次 tick 均无到期任务，不冒充 due automation 执行。7 次 Chromium 代理尝试全部拒绝，最终外连计数／字节和模型 invocation 为 0；6 source/build 树、脚本和截图复核一致，28 个用户文件原摘要不变。
+- 受控空闲回收与 UI 切换保留后台义务这一实施项已有当前及先前 workspace 证据；跨重启资源自动对账仍未实现，owner 丢失后的 unknown 容量不能清空。G05-B 总体验收和 G01–G04／G06–G07 剩余要求继续保持，不以本片代替整个目标完成。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -456,7 +465,7 @@
 - [x] 建立按 workspaceId 管理的 Runtime Registry，保持本地部署形态。（生产 host 已接入；持久身份、自定义账本与恢复失败重试已实现。）
 - [x] HTTP、SSE、控制消息和产物访问显式绑定 workspace，前端选中项不再决定 worker 是否运行。（真实 A/B 浏览器、复制 ID、预览资源与后台自动化已覆盖；Workflow 审批／扩展信任 review 已验证功能隔离，窄屏双弹窗已另修复并验证；其他 review 流程仍有边界。）
 - [ ] 全局协调并发、预算和资源；活跃任务不得被普通 LRU 淘汰。（持久模型准入／额度、执行／浏览器资源容量和活跃生命周期保护已有真实证据；跨重启资源对账及 rotation 回收义务仍待完成。）
-- [ ] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。
+- [x] 空闲 runtime 可受控回收；工作区 automation / recovery 不因 UI 切换而意外暂停。（资源释放→真实回收→scoped HTTP 冷开、自定义账本和 rotation 义务已有验证；重启后 unknown 资源自动对账仍属上一项待办。）
 
 **验收**：A 项目长任务运行时可切到 B 提交新任务；A 后台任务和自动化继续；SSE、权限和成果无串线；重启后各工作区恢复；空闲资源能够释放。
 

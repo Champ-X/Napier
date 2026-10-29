@@ -10,6 +10,7 @@ export function workspaceRuntimeCanDispose(services: NapierServices): boolean {
   if (runs.some((run) => run.status === "queued" || run.status === "running")) return false;
   if (services.workspaceProcesses.hasPendingWork()) return false;
   if (services.browserTasks.hasPendingWork()) return false;
+  if (services.receiptTrustDirectorySubscriptions.hasPendingWork()) return false;
   if (store.listSchedules().some((schedule) => schedule.status === "active" || schedule.claim)) return false;
   if (store.listInboundChannels().some((channel) => channel.status === "active")) return false;
   if (store.listInboundDeliveries().some((delivery) =>
@@ -24,10 +25,6 @@ export function workspaceRuntimeCanDispose(services: NapierServices): boolean {
   if (store.listReceiptTrustAnchorDirectorySubscriptions().some((entry) => entry.status === "active")) return false;
   if (store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions()
     .some((entry) => entry.status === "active")) return false;
-  // Rotation subscriptions also own queued approval applies. Retain them even
-  // when polling is paused until that service exposes a complete pending index.
-  if (store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions().length) return false;
-  if (store.listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines().length) return false;
   return true;
 }
 

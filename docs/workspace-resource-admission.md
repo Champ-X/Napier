@@ -244,6 +244,52 @@ node scripts/check-execution-resource-coordination.mjs \
   docs/artifacts/<new-physical-receipt>.json
 ```
 
+## Controlled idle reclamation and rotation obligations
+
+Rotation subscriptions now expose an internal count of active polling, persisted
+refresh claims and pending approval/apply queues. Public projections continue to
+omit private queue and claim state. Paused, settled subscriptions and historical
+approval baselines alone no longer keep a graph resident. Pending or expired
+unsettled claims and queued applies still do; pausing does not silently clear an
+obligation or change apply eligibility.
+
+The subscription worker owns manual and scheduled refresh work before claim
+preparation, and keeps ownership through discovery, settlement and audit writes.
+Stop rejects new refresh admission, waits for every started sibling, and preserves
+persistence errors. A failed writer prevents Runtime/store disposal even after its
+other siblings finish. Ordinary discovery errors still follow existing persisted
+outcome semantics. A rejected manual claim that created no owned work does not
+permanently pin the graph.
+
+The [regression receipt](artifacts/rotation-reclamation-regression-2026-10-29.json)
+records 38 unique passed tests in seven files. Two delayed-sibling cases fail on
+the fixed earlier source because stop finishes before the sibling; the exact
+same tests pass after the change. The raw red/green reports, old/restored source
+hashes and unchanged fixture hashes are retained. Runtime/Server builds and strict
+test TypeScript pass. Architecture retains nine failures, with the old server
+subscription line allowance lowered from 919 to 909; public API retains its two
+existing failures.
+
+The [physical reclaim receipt](artifacts/workspace-resource-reclaim-2026-10-29.json)
+passes ten checks using a real guarded process and native Chromium. After their
+affirmative cleanup, `maxIdle: 0` retires A and the old SQLite store rejects reads.
+Scoped loopback TCP HTTP then creates a new graph for A at the same custom data
+root, preserving the exact seeded events. B stays in its original graph with an
+active future automation schedule and queryable store. The future schedule does
+not execute in this capture; due automation behavior has separate earlier
+workspace evidence. Model invocations remain zero. Seven Chromium proxy attempts
+are all rejected, with final zero outbound counters. All source/build/script and
+screenshot hashes remain bound, and owned process cleanup completes.
+
+```sh
+node scripts/check-workspace-resource-reclaim.mjs \
+  docs/artifacts/<new-reclaim-receipt>.json
+```
+
+This closes the resource-release-to-idle-reclaim boundary. It does not reconcile
+quarantined execution resources after an owner restart; that requires durable
+backend identity/cleanup evidence and remains unfinished.
+
 ## Retained Sandbox lifetime baseline
 
 `node scripts/check-sandbox-execution-lifetime.mjs <new-output-path>` captures an

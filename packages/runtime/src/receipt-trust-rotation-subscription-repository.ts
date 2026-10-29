@@ -29,6 +29,28 @@ export interface DueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
 export class ReceiptTrustRotationSubscriptionRepository {
   constructor(private readonly host: StoreRepositoryHost) {}
 
+  /** Internal lifecycle counts. Public subscription projections deliberately
+   * omit claims and approval queues, so they cannot establish graph idleness. */
+  backgroundWork() {
+    this.host.assertInitialized();
+    const work = {
+      activeSubscriptions: 0,
+      refreshClaims: 0,
+      pendingApprovalApplies: 0,
+      pendingApprovalPolicyApplies: 0,
+    };
+    for (const subscription of this.host.state
+      .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions) {
+      if (subscription.status === "active") work.activeSubscriptions += 1;
+      if (subscription.claim) work.refreshClaims += 1;
+      if (subscription.pendingApprovalApply?.status === "pending")
+        work.pendingApprovalApplies += 1;
+      if (subscription.pendingApprovalPolicyApply?.status === "pending")
+        work.pendingApprovalPolicyApplies += 1;
+    }
+    return work;
+  }
+
   listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription[] {
     this.host.assertInitialized();
     return this.host.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions

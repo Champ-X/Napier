@@ -36,6 +36,7 @@ import {
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineGate,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate,
 } from "./receipt-trust-rotation-proposals.js";
+import { ReceiptTrustSubscriptionWorker, settleReceiptTrustSubscriptionWork } from "./receipt-trust-subscription-worker.js";
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
 const DEFAULT_CLAIM_LEASE_MS = 30_000;
@@ -50,8 +51,7 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
   private readonly workerId: string;
   private readonly pollIntervalMs: number;
   private readonly claimLeaseMs: number;
-  private timer: ReturnType<typeof setInterval> | undefined;
-  private activeTick: Promise<void> | undefined;
+  private readonly worker: ReceiptTrustSubscriptionWorker;
 
   constructor(
     private readonly store: LocalStore,
@@ -67,19 +67,21 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
       options.claimLeaseMs ?? DEFAULT_CLAIM_LEASE_MS,
       "claim lease",
     );
+    this.worker = new ReceiptTrustSubscriptionWorker(() => this.refreshDue(), this.pollIntervalMs);
   }
 
   start(): void {
-    if (this.timer) return;
-    this.timer = setInterval(() => this.scheduleTick(), this.pollIntervalMs);
-    this.timer.unref();
-    this.scheduleTick();
+    this.worker.start();
   }
 
-  async stop(): Promise<void> {
-    if (this.timer) clearInterval(this.timer);
-    this.timer = undefined;
-    await this.activeTick;
+  stop(): Promise<void> {
+    return this.worker.stop();
+  }
+
+  hasPendingWork(): boolean {
+    return this.worker.hasPendingWork() || Object.values(
+      this.store.receiptTrustRotationSubscriptionRepository.backgroundWork(),
+    ).some((count) => count > 0);
   }
 
   async refresh(
@@ -95,16 +97,21 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
         "Receipt trust anchor directory subscription audit thread changed",
       );
     }
-    const claim = await this.store.claimReceiptTrustAnchorDirectorySubscription(
-      subscriptionId,
-      expectedRevision,
-      this.workerId,
-      { leaseMs: this.claimLeaseMs },
-    );
-    return this.refreshClaim(claim);
+    let claimed = false;
+    return this.worker.run(async () => {
+      const claim = await this.store.claimReceiptTrustAnchorDirectorySubscription(
+        subscriptionId, expectedRevision, this.workerId, { leaseMs: this.claimLeaseMs },
+      );
+      claimed = true;
+      return this.refreshClaim(claim);
+    }, () => claimed);
   }
 
-  async refreshDue(now = new Date()): Promise<number> {
+  refreshDue(now = new Date()): Promise<number> {
+    return this.worker.run(() => this.refreshDueWork(now));
+  }
+
+  private async refreshDueWork(now: Date): Promise<number> {
     const { claims: directoryClaims } =
       await this.store.claimDueReceiptTrustAnchorDirectorySubscriptions(
         this.workerId,
@@ -145,7 +152,7 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
           leaseMs: this.claimLeaseMs,
         },
       );
-    await Promise.all([
+    return settleReceiptTrustSubscriptionWork([
       ...directoryClaims.map((claim) => this.refreshClaim(claim)),
       ...checkpointClaims.map((claim) => this.refreshCheckpointClaim(claim)),
       ...rotationProposalClaims.map((claim) =>
@@ -158,23 +165,6 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
         this.applyRotationProposalApprovalPolicyClaim(claim),
       ),
     ]);
-    return (
-      directoryClaims.length +
-      checkpointClaims.length +
-      rotationProposalClaims.length +
-      approvalApplyClaims.length +
-      approvalPolicyApplyClaims.length
-    );
-  }
-
-  private scheduleTick(): void {
-    if (this.activeTick) return;
-    this.activeTick = this.refreshDue()
-      .then(() => undefined)
-      .catch(() => undefined)
-      .finally(() => {
-        this.activeTick = undefined;
-      });
   }
 
   private async refreshClaim(
@@ -222,14 +212,14 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
         "Receipt trust anchor directory quorum activation selection checkpoint subscription audit thread changed",
       );
     }
-    const claim =
-      await this.store.claimReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
-        subscriptionId,
-        expectedRevision,
-        this.workerId,
-        { leaseMs: this.claimLeaseMs },
+    let claimed = false;
+    return this.worker.run(async () => {
+      const claim = await this.store.claimReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+        subscriptionId, expectedRevision, this.workerId, { leaseMs: this.claimLeaseMs },
       );
-    return this.refreshCheckpointClaim(claim);
+      claimed = true;
+      return this.refreshCheckpointClaim(claim);
+    }, () => claimed);
   }
 
   private async refreshCheckpointClaim(
@@ -285,14 +275,14 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
         "Receipt trust anchor directory quorum activation selection rotation proposal subscription audit thread changed",
       );
     }
-    const claim =
-      await this.store.claimReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
-        subscriptionId,
-        expectedRevision,
-        this.workerId,
-        { leaseMs: this.claimLeaseMs },
+    let claimed = false;
+    return this.worker.run(async () => {
+      const claim = await this.store.claimReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+        subscriptionId, expectedRevision, this.workerId, { leaseMs: this.claimLeaseMs },
       );
-    return this.refreshRotationProposalClaim(claim);
+      claimed = true;
+      return this.refreshRotationProposalClaim(claim);
+    }, () => claimed);
   }
 
   private async refreshRotationProposalClaim(
