@@ -263,6 +263,14 @@
 - 首次捕获误将 proxy requestCount 当作实际外连，保留 [失败收据](docs/artifacts/execution-resource-physical-coordination-2026-10-29.json.failure-ed910cc3-9893-479e-85f2-d66d075dd8fc.json)。[v1](docs/artifacts/execution-resource-physical-coordination-2026-10-29.json) 已通过资源断言，但网络快照早于 close；v2 增加每个真实代理 close 后最终计数与全部被动请求日志对账，不覆盖旧证据。
 - 本片不声称全 OS 后代、CPU／RSS、真实 OCI／BrowserUse provider 或跨机器容量验收；HostDirect 无 OS 隔离。跨重启资源自动对账尚未实现，unknown 必须持续占槽。下一片推进 rotation 后台义务与受控空闲回收，再验证资源释放→回收→冷启动；G01／G02／G03／G04／G06／G07 的剩余目标全部保留，总目标 active。实现和复现说明见 [workspace-resource-admission.md](docs/workspace-resource-admission.md)。
 
+
+### 后续推进：G07 调用准备性能基线
+
+- 资源准入已本地提交 `6ea6638e`，未 push，提交后 0 behind／27 ahead。本轮先测量现有热路径，未改模型策略或声明质量／成本收益。新增 benchmark-only observer，采样 SQLite 主线程／真实 read worker 的返回行数、每 32 次 JSON 解码的线程 CPU／wall time、文件读取、RSS 和既有 FTS 复用回执。
+- 使用现有 LocalStore 写入 10k／100k 确定性事件，并通过生产循环检测和 `prepareAgentInvocationContext` 处理 1k／10k 已审阅 fixture 事实；0 provider dispatch／模型调用。100／50 smoke 与完整 12 次采样通过，源文件子集／全部消费的 Runtime＋Contracts JS／脚本绑定前后一致。工作区同时保留正在进行的 rotation 回收实现，已编译快照在采样前固定；不当作 clean release 验收。
+- [当前基线](docs/artifacts/harness-preparation-baseline-2026-10-29.json)：10k 循环检查 15.86–20.28 ms，100k 为 192.38–217.36 ms；100k 事件＋10k 事实准备冷索引 4,301.21 ms，暖索引 1,255.28–1,277.26 ms。暖索引复用 9,000 条事实，但每次仍读取 10,000 次依赖，实际唯一源文件 32 个。100／1,000 条过期摘要及三个越权／未审阅／过期事实均被排除，冷暖上下文摘要一致。
+- 该采样含 observer 开销；SQL 为返回行数而非扫描行数，JSON CPU 为实际样本而非全量归因。RSS 含历史阶段、worker clone 与未强制 GC，不能据约 266→1,185 MiB 的进程观测声称内存泄漏。调用准备目前覆盖 working-state／memory 入口和单独 loop guard，尚非完整模型管线。下一片引入 Run 内 typed-event cursor 与保持新鲜度的依赖复用，并用完整 replay 作基准；mailbox、增量索引与模型／任务族消融仍待完成。说明见 [harness-preparation-profiling.md](docs/harness-preparation-profiling.md)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
