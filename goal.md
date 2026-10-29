@@ -343,6 +343,21 @@
 - [最终联合收据](docs/artifacts/subagent-safe-continuation-regression-final-2026-10-30.json)：**80 文件／566 测试通过，0 failed／skipped**；Contracts／Runtime／Server 编译、Benchmark／Web 类型检查与新增测试 strict 全通过；4,158 源码／测试／配置及 65 emitted module 哈希稳定，用户 28 文件保留。首轮同样 566 行为测试通过但 strict 揭示进程 fixture 的 usage 参数被忽略；最终显式设置并先断言 10 tokens／USD 0.03，再验继承仅一次。旧报告不支持该非零用量结论，原样留存。[证据索引](docs/artifacts/subagent-safe-continuation-evidence-index-2026-10-30.json) 记录独立重叠测试、失败演化和最终纯空行修正，不累加测试数。
 - 架构仍为 8 项既有失败，公开 API 仍为 1897／1896 与 digest 两项，历史 release manifest 仍失败；只降低已过时架构 allowance，没有改写发布证据。全部模型为本地 fixture、零外部付费调用，无平台／断电／质量／性能泛化。下一步继续迟到物理用量持久归因、native 历史候选迁移与 G02 跨 suite／campaign 的任务族暴露分区；coder 恢复、完整编译管线、并发共享额度及 G01–G07 其余要求均保持 **active**。详见 [subagent-safe-continuation.md](docs/subagent-safe-continuation.md)。
 
+### 后续推进：G03 原生历史候选受限对账（2026-10-30）
+
+- 本地实现提交 `24909ead`：保留原完成 Task／child Run／accepted／completed／terminal 证据和同一真实 data root 的私有 v1 capsule，分别验证 outcome 与 typed output，新增独立 migration 收据；不伪造旧 completion，不修改原 capsule／ID／到期时间。导入证据不授予本地写权限；导入之后新产生的原生执行可凭自己的证据验证。
+- 独立审计复现了旧事件不绑定精确 capsule ID／read-set 的限制，已明确记录 `current_private_capsule`，以原始完整 source snapshot 约束迁移及每次实际 merge preflight（包括 diagnostics 之后）。因此历史候选连无关源变更也保守阻断；不宣称历史精确字节认证。首次写入和 rollback retry 保留原 expiry；已验证 settled applied 结果可在到期后只读复用，不追加授权或写入。
+- 最终 [回归收据](docs/artifacts/subagent-legacy-candidate-regression-2026-10-30.json)：81 文件／594 测试，required compile／strict types 全通过；4,179 源码／配置摘要、22 个本次变更 emitted modules 和 28 个用户文件无漂移。独立旧 `8f2a26c` producer 的 outcome／typed 两条真实 apply→reopen→repeat 通过，原 Task／Run、父发布事件、child terminal、capsule／expiry 保持，重试 inode／mtime／ctime 不变；另有 6 项边界审计。测试集合存在重叠，不相加计算独立覆盖。
+- [证据索引](docs/artifacts/subagent-legacy-candidate-evidence-index-2026-10-30.json) 保留 rehashed capsule 反例和首次 root 把 `typed_output` 误写为 `typed` 的失败；最终用新 fixture 重做。现有 8 项架构、公开 API 1897／1896 与 digest、历史 release manifest 失败保留。零模型调用；文件摘要 fixture 不代表 LSP／模型质量、断电或其他平台验收。详见 [实现边界](docs/subagent-legacy-candidate-reconciliation.md)。G03 与全目标继续 active。
+
+### 后续推进：G02 跨 suite 任务族暴露与发布资格（2026-10-30）
+
+- 本地实现提交 `ead04871`：版本化 catalog／family map、不可被 supplement 擦除的已知暴露下限、精确 task／source／family 绑定进入 frozen analysis plan 和 child reports。holdout seal 绑定完整 family membership 与原始声明字节，校验规范路径／realpath／实体文件；真实发布 audit 和 acceptance generator 统一使用 corpus qualification，旧 promotion flag 不能直接授权发布，历史 receipt 字节不变。
+- 当前真实盘点：52 source roots（49 optimization）、15 suites、41 精确 task identities、35 canonical families、184 campaign references、166 不同 Runs、25／25 raw reports 摘要已验证。suite membership 为 **206 tuning／1 regression／0 holdout**，207 行包含版本化别名，不是 207 个独立任务；没有将已有任务改名为 unseen。
+- 最终 [回归收据](docs/artifacts/harness-corpus-regression-2026-10-30.json)：12 文件／125 测试，含 4 个实际生产消费者测试；compile／strict types／inventory／新旧 receipt verifier 通过，4,532 源码／配置与 4,227 emitted 文件无漂移，28 用户文件保留。独立边界审计 16／16。新 [0.1.5 contract receipt](docs/artifacts/harness-experiment-contract-evidence-0.1.5.json) 仅含 360 本地 faux Runs，明确 contract_only、不可 promotion，零外部模型请求。
+- [证据索引](docs/artifacts/harness-corpus-evidence-index-2026-10-30.json) 原样保存 121 pass／50 fail 的早期 aggregate；50 个旧 release tests 在 fixture construction 失败，精确旧 HEAD `31e9edb9` 的独立 checkout／五包编译后复现相同名称／状态／错误／完整栈（仅归一化路径），不计为通过。临时 OCI fixture 修正已撤销，没有改写历史 stage11–22 证据或提高预算。
+- **G02 仍未完成**：真实独立 curator cohort、研究／候选范围的 tuning exclusion、首揭示与后续使用记录，以及目标模型的有效 live-quality 观察仍缺失。合成 sealed-family 只证明机制，声明时间只证明内部一致性，不是外部认证或 universal non-exposure。详见 [语料来源与暴露边界](docs/harness-corpus-provenance.md)。后续继续 G03 持久迟到用量、coder 恢复／完整编译管线／共享额度，以及 G01–G07 所有保留目标；未 push。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -437,7 +452,7 @@
 - [x] 增加按 case / task family 聚类的 paired bootstrap 区间，避免把同任务重复运行视为独立任务。
 - [x] 将固定 baseline→candidate 顺序改为记录在案的平衡 AB/BA 顺序，控制环境与缓存影响。（通用 executor 已修复；真实 campaign 复用已存在的 paired schedule，并通过当前 CLI/调度测试。顺序平衡本身不证明缓存因果。）
 - [x] 显式区分 contract_fixture、deterministic_integration、live_model、production_task，绑定可支持的结论范围。（通用实验与现有真实 campaign 均接入；旧报告仅保留其历史/描述性范围。）
-- [ ] 保留失败与缺失结果，不以重试后的最佳结果替换；划分调参、回归与未参与调参的任务族。
+- [ ] 保留失败与缺失结果，不以重试后的最佳结果替换；划分调参、回归与未参与调参的任务族。（失败留存及跨 suite 暴露 catalog／frozen binding／发布消费者门控已实现；真实目录仍为零 holdout，独立未见任务族和 live-quality 观察尚未验收。）
 - [x] 将真实使用中的失败案例纳入现有 Casebook / campaign，而非另建重复系统。（保留异步队列真实失败，现有 exporter / suite 可加载，历史失败与 reference 均经当前 grader 重放。）
 
 **验收**
@@ -465,7 +480,7 @@
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
 - [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 source checkpoint、原子调用用量／事件结算与工具归属已实现；完整 child context compiler／overflow／thinking parity 和迟到物理用量归属仍待完成。）
 - [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查与 mailbox 稀疏消费持久化已实现；并发共享父 token／cost 原子额度仍待完成。）
-- [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明、安全恢复授权、严格 tail 校验与原生只读 continuation 已实现；coder／工作区重建、未覆盖尾部和历史候选迁移仍待完成。）
+- [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明、安全恢复授权、严格 tail 校验、原生只读 continuation 和具备完整原生证明的历史 v1 候选受限对账已实现；coder／工作区重建、未覆盖尾部及缺失证明的历史记录仍待完成。）
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。
 
 **验收**

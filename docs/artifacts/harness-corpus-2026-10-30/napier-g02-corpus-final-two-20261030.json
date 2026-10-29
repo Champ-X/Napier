@@ -1,0 +1,132 @@
+{
+  "auditedAt": "2026-10-29T17:39:35.398Z",
+  "root": "/tmp/napier-g02-final-two-SFmpR9",
+  "modelCalls": 0,
+  "productionWrites": 0,
+  "invalidBound": 0,
+  "totalBoundControls": 2,
+  "sourceDigests": {
+    "packages/harness-eval/src/harness-corpus.ts": "890bc8f5a53da81735fab4a154eb1880954500fe266e464bec767c6816bc8fe6",
+    "packages/harness-eval/dist/harness-corpus.js": "1a19da518e0533a67e6639e8854de66ffa7eaf27548a5e7eea3175e6d05d2868",
+    "scripts/harness-campaign-analysis-plan.mjs": "770998b3592b86bc9fd12e8f51aa539098a2c7cac3b057d5dc06daad61eb8f02",
+    "scripts/harness-corpus-catalog.mjs": "f64540ebd876a024e1624625addeb2ae65442030e0447250440af4b267a9129f",
+    "scripts/harness-corpus-test-fixture.mjs": "270c3ebf0868a099f38f64504f6ca4e38ed0869e0cc3a156e58867b3864a3e78",
+    "scripts/run-harness-optimization-suite.mjs": "aaf5109a0f405aacf341782ea1c81fa95bdee150ec8c3030ab6e3ea43aceb61d"
+  },
+  "sourceStable": true,
+  "checks": [
+    {
+      "name": "valid_frozen_artifact_read_and_bind",
+      "expected": "accept",
+      "accepted": true,
+      "pass": true,
+      "bound": true
+    },
+    {
+      "name": "canonical_path_leading-dot",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Corpus paths must be canonical lowercase relative references"
+    },
+    {
+      "name": "canonical_path_embedded-dot",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Corpus paths must be canonical lowercase relative references"
+    },
+    {
+      "name": "canonical_path_double-slash",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Corpus paths must be canonical lowercase relative references"
+    },
+    {
+      "name": "canonical_path_trailing-slash",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Corpus paths must be canonical lowercase relative references"
+    },
+    {
+      "name": "canonical_path_uppercase",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Corpus paths must be canonical lowercase relative references"
+    },
+    {
+      "name": "canonical_path_dotdot",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Corpus paths must be canonical lowercase relative references"
+    },
+    {
+      "name": "rehash_plan_absent_physical_artifacts",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "ENOENT: no such file or directory, lstat '/tmp/napier-g02-final-two-SFmpR9/corpus-provenance/absent/fixture-auditfamily-0.json'"
+    },
+    {
+      "name": "rehash_plan_missing_provenance_root",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Frozen holdout provenance directory is required"
+    },
+    {
+      "name": "changed_frozen_physical_bytes",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Holdout provenance artifact bytes changed\n+ actual - expected\n\n+ 'e06524a0926941b254b0c47e1eef3f9a4c9bd471246a2ae87e765effcd0f98da'\n- '26b107972eeef88cebffbcdf3787ae333590e8fa4cb4536f9b2db8df656bd630'\n"
+    },
+    {
+      "name": "missing_frozen_physical_file",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "ENOENT: no such file or directory, lstat '/tmp/napier-g02-final-two-SFmpR9/corpus-provenance/synthetic/auditfamily-0.json'"
+    },
+    {
+      "name": "within_root_ancestor_symlink_alias",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Holdout provenance uses an alias or escapes its catalog directory\n+ actual - expected\n\n+ '/private/tmp/napier-g02-final-two-SFmpR9/corpus-provenance/synthetic/auditfamily-0.json'\n- '/private/tmp/napier-g02-final-two-SFmpR9/corpus-provenance/alias/auditfamily-0.json'\n"
+    },
+    {
+      "name": "wrong_declaration_json_pointer",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Frozen holdout declaration pointer is missing"
+    },
+    {
+      "name": "generic_binding_missing_embedded_artifact",
+      "expected": "reject",
+      "accepted": false,
+      "pass": true,
+      "error": "Frozen holdout declaration artifact is required for qualification"
+    },
+    {
+      "name": "generic_binding_exact_embedded_artifacts",
+      "expected": "accept",
+      "accepted": true,
+      "pass": true,
+      "selectionCount": 30
+    },
+    {
+      "name": "valid_frozen_artifact_after_negatives",
+      "expected": "accept",
+      "accepted": true,
+      "pass": true,
+      "bound": true
+    }
+  ],
+  "pass": true
+}

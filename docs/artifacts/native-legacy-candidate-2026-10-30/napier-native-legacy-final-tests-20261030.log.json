@@ -1,0 +1,8 @@
+{
+  "kind": "napier.archived-log",
+  "originalPath": "/tmp/napier-native-legacy-final-tests-20261030.log",
+  "originalBytes": 231,
+  "originalSha256": "d18f0ecdd2d7ba863746bef13296ec3fab84674163319dedcd38288eccb8134b",
+  "encoding": "utf-8",
+  "text": "\n RUN  v4.1.9 /Users/champ/orca/Napier/packages/runtime\n\n\n Test Files  9 passed (9)\n      Tests  116 passed (116)\n   Start at  01:40:59\n   Duration  28.80s (transform 2.90s, setup 0ms, import 5.48s, tests 46.86s, environment 0ms)\n\n"
+}

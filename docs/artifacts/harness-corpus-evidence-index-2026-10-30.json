@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T18:03:49.558443+00:00",
+  "baselineCommit": "31e9edb96c022358008c1e3877697af0c2341980",
+  "combinedImplementationCommits": [
+    "24909eadf1175458d6fa875faf6ace6f7efcecdf",
+    "ead04871ff3a8deecd9d0778dea74a4bd6e61261"
+  ],
+  "validationScope": "Both frozen implementation slices plus the 28 pre-existing preserved user files; receipts bind exact bytes, not an isolated clean commit.",
+  "externalModelCalls": 0,
+  "releaseAccepted": false,
+  "overallGoalComplete": false,
+  "historicalEvidenceRewritten": false,
+  "preservedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "stagedSourceWhitespaceChecks": "passed including newly tracked files before both source commits",
+  "kind": "napier.harness-corpus-evidence-index",
+  "implementationCommit": "ead04871ff3a8deecd9d0778dea74a4bd6e61261",
+  "finalRegression": {
+    "path": "docs/artifacts/harness-corpus-regression-2026-10-30.json",
+    "sha256": "1f4e0112dabc15a5a8f2eeb3699e94625173a75bda85efeda874aeeb67e62946",
+    "files": 12,
+    "passed": 125,
+    "failed": 0,
+    "skipped": 0,
+    "report": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/focused-tests.json",
+    "reportSha256": "1d295d5cb6f643cf697d1371e19cf0bb5f36a033ee166fa582aec8b2998f1acd",
+    "passedRequiredChecks": true,
+    "sourceCount": 4532,
+    "emittedCount": 4227,
+    "sourceDrift": [],
+    "emittedDrift": []
+  },
+  "inventory": {
+    "catalogContentSha256": "1e8decce5c781a6ba5e2f373bc3e88f8e122c55a041425e8c090d5f07ed6db44",
+    "sourceRoots": 52,
+    "optimizationRoots": 49,
+    "suiteCount": 15,
+    "taskCount": 41,
+    "familyCount": 35,
+    "campaignEvidenceCount": 184,
+    "distinctObservedRunCount": 166,
+    "boundRawReportsVerified": 25,
+    "boundRawReportsUnavailable": 0,
+    "suiteMembershipPartitions": {
+      "tuning": 206,
+      "regression": 1
+    },
+    "membershipCountIsNotIndependentTaskCount": true
+  },
+  "holdoutMembershipCount": 0,
+  "contractEvidence": {
+    "path": "docs/artifacts/harness-experiment-contract-evidence-0.1.5.json",
+    "sha256": "41713b66b9d5172dd1ebad4acc11619feb1e6f679c149bc7b7dafd8e406ea796",
+    "runs": 360,
+    "claimScope": "contract_only",
+    "promotionReady": false
+  },
+  "independentBoundaryChecks": 16,
+  "blockedReleaseSuite": {
+    "failed": 50,
+    "passed": 0,
+    "baselineCommit": "31e9edb96c022358008c1e3877697af0c2341980",
+    "normalizedNamesStatusesErrorsStacksMatch": true,
+    "failurePhase": "unchanged OCI fixture construction before consumer assertions",
+    "notPassingCoverage": true
+  },
+  "artifacts": [
+    {
+      "originalPath": "/tmp/napier-g02-corpus-handoff-20261030.json",
+      "originalBytes": 14124,
+      "originalSha256": "198234f685f9910869263a770cc1aa14833962a53130f9cc8acacc3539b3c7f2",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-g02-corpus-handoff-20261030.json",
+      "bytes": 14124,
+      "sha256": "198234f685f9910869263a770cc1aa14833962a53130f9cc8acacc3539b3c7f2"
+    },
+    {
+      "originalPath": "/tmp/napier-g02-corpus-final-two-audit-20261030.md",
+      "originalBytes": 2466,
+      "originalSha256": "4298009362b2bc2d58ca38c0f616a14601e0a5f0ecaf8ca5d4b65e44f60bb63b",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-g02-corpus-final-two-audit-20261030.md",
+      "bytes": 2466,
+      "sha256": "4298009362b2bc2d58ca38c0f616a14601e0a5f0ecaf8ca5d4b65e44f60bb63b"
+    },
+    {
+      "originalPath": "/tmp/napier-g02-corpus-final-two-20261030.json",
+      "originalBytes": 4672,
+      "originalSha256": "77ee7c71322f3252f4877d1e9df2086e44088237a877d9f4b673facc301d0c6f",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-g02-corpus-final-two-20261030.json",
+      "bytes": 4672,
+      "sha256": "77ee7c71322f3252f4877d1e9df2086e44088237a877d9f4b673facc301d0c6f"
+    },
+    {
+      "originalPath": "/tmp/napier-g02-corpus-audit-20261030.json",
+      "originalBytes": 2551,
+      "originalSha256": "e707398124248fef1e4e2fcc22300e70c383327bd779fb20731bb22df0ebc74b",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-g02-corpus-audit-20261030.json",
+      "bytes": 2551,
+      "sha256": "e707398124248fef1e4e2fcc22300e70c383327bd779fb20731bb22df0ebc74b"
+    },
+    {
+      "originalPath": "/tmp/napier-g02-corpus-remaining-20261030.json",
+      "originalBytes": 463,
+      "originalSha256": "fa06c19df6f4ae221153f10b3a05bc44b8b5667d72f895b7820b6805c08a2074",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-g02-corpus-remaining-20261030.json",
+      "bytes": 463,
+      "sha256": "fa06c19df6f4ae221153f10b3a05bc44b8b5667d72f895b7820b6805c08a2074"
+    },
+    {
+      "originalPath": "/tmp/napier-g02-corpus-trust-audit-20261030.md",
+      "originalBytes": 9784,
+      "originalSha256": "1f06e7337b88e37149f27051d7c8a8d193821aec7f150615b3b50cf0a7b664e7",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-g02-corpus-trust-audit-20261030.md",
+      "bytes": 9784,
+      "sha256": "1f06e7337b88e37149f27051d7c8a8d193821aec7f150615b3b50cf0a7b664e7"
+    },
+    {
+      "originalPath": "/tmp/napier-harness-corpus-frozen-tests-20261030.json",
+      "originalBytes": 91115,
+      "originalSha256": "2106c55326f6dc022a61756778ca70a59afe4fa00c7613b9ad0d79fca8726d20",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-harness-corpus-frozen-tests-20261030.json",
+      "bytes": 91115,
+      "sha256": "2106c55326f6dc022a61756778ca70a59afe4fa00c7613b9ad0d79fca8726d20"
+    },
+    {
+      "originalPath": "/tmp/napier-harness-release-qualification-v2-20261030.json",
+      "originalBytes": 2280,
+      "originalSha256": "2bb9b8f7800870f44b488756aa1e8b59c8388a3a1f35f5fbc71875f0db19b929",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-harness-release-qualification-v2-20261030.json",
+      "bytes": 2280,
+      "sha256": "2bb9b8f7800870f44b488756aa1e8b59c8388a3a1f35f5fbc71875f0db19b929"
+    },
+    {
+      "originalPath": "/tmp/napier-harness-corpus-inventory-final-20261030.json",
+      "originalBytes": 4869,
+      "originalSha256": "4e8e8765e90f8a9a7c9269f6222ba31c8dd7eb113bb4700529d0db1efa892bb3",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-harness-corpus-inventory-final-20261030.json",
+      "bytes": 4869,
+      "sha256": "4e8e8765e90f8a9a7c9269f6222ba31c8dd7eb113bb4700529d0db1efa892bb3"
+    },
+    {
+      "originalPath": "/tmp/napier-release-consumer-baseline-report-20261030.json",
+      "originalBytes": 13876,
+      "originalSha256": "452cb8de7321fd3e4d78027ae8ea33d69f28a8bd55c2c2fb8b38824e52243825",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-release-consumer-baseline-report-20261030.json",
+      "bytes": 13876,
+      "sha256": "452cb8de7321fd3e4d78027ae8ea33d69f28a8bd55c2c2fb8b38824e52243825"
+    },
+    {
+      "originalPath": "/tmp/napier-release-consumer-baseline-report-20261030.md",
+      "originalBytes": 2508,
+      "originalSha256": "eede2d595fdc8e178ebe77694bdbb24b3b273843844fcf842497f616b6c54870",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-release-consumer-baseline-report-20261030.md",
+      "bytes": 2508,
+      "sha256": "eede2d595fdc8e178ebe77694bdbb24b3b273843844fcf842497f616b6c54870"
+    },
+    {
+      "originalPath": "/tmp/napier-oci-release-fixture-audit-20261030.md",
+      "originalBytes": 2702,
+      "originalSha256": "8ec64f1aceb7d6a1d7df41ec171d57acc08835fe85dd2c8ce3a648a6c2e73800",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-oci-release-fixture-audit-20261030.md",
+      "bytes": 2702,
+      "sha256": "8ec64f1aceb7d6a1d7df41ec171d57acc08835fe85dd2c8ce3a648a6c2e73800"
+    },
+    {
+      "originalPath": "/tmp/napier-oci-fixture-head-proof-20261030.json",
+      "originalBytes": 7419,
+      "originalSha256": "ac4f638605591afa7e3fed9e21368bcfa72ce64383985c5644a8b5ed5370cde9",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-oci-fixture-head-proof-20261030.json",
+      "bytes": 7419,
+      "sha256": "ac4f638605591afa7e3fed9e21368bcfa72ce64383985c5644a8b5ed5370cde9"
+    },
+    {
+      "originalPath": "/tmp/napier-harness-corpus-release-fixture-v1-20261030.json",
+      "originalBytes": 53112,
+      "originalSha256": "9c631703929dd734893adb1f9ca41b108ca9b3b3a727c8c2c13f46e54482f08f",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-harness-corpus-release-fixture-v1-20261030.json",
+      "bytes": 53112,
+      "sha256": "9c631703929dd734893adb1f9ca41b108ca9b3b3a727c8c2c13f46e54482f08f"
+    },
+    {
+      "originalPath": "/tmp/napier-g02-root-final-20261030.py",
+      "originalBytes": 5601,
+      "originalSha256": "0d21bfd95019ef3e4fbc358baaeac365036929e25baf934e8af243f67c06c84a",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/napier-g02-root-final-20261030.py",
+      "bytes": 5601,
+      "sha256": "0d21bfd95019ef3e4fbc358baaeac365036929e25baf934e8af243f67c06c84a"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/harness-compile.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveEncoding": "json-utf8-text",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-harness-compile.log.json",
+      "bytes": 304,
+      "sha256": "95ba32228ba8387ebb02b5c1a56d488cdef651dae9825c23efd52982ca53efe6"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/harness-strict-test-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveEncoding": "json-utf8-text",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-harness-strict-test-types.log.json",
+      "bytes": 314,
+      "sha256": "e35538a60390c97d74cc5904a13fe4ea215ac7cd67e5a9d5bcd678402a1bb50f"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/read-only-corpus-inventory.log",
+      "originalBytes": 4869,
+      "originalSha256": "4e8e8765e90f8a9a7c9269f6222ba31c8dd7eb113bb4700529d0db1efa892bb3",
+      "archiveEncoding": "json-utf8-text",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-read-only-corpus-inventory.log.json",
+      "bytes": 5512,
+      "sha256": "3f1cfa11b61133f00d7f1647565d1c6d4ccf8f375cf7d4991fb4998ea1b6af36"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/historical-contract-verification.log",
+      "originalBytes": 243,
+      "originalSha256": "bf5f47d0c0172ebc9a37ef9edb8c4010f7c2e29c7580bfbf7f801ea28be5496e",
+      "archiveEncoding": "json-utf8-text",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-historical-contract-verification.log.json",
+      "bytes": 585,
+      "sha256": "22d9031c58123ffb9183539ea147e51c62f15f16e7ac5b499d678f4ff96ef4c3"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/focused-tests.log",
+      "originalBytes": 122,
+      "originalSha256": "2552d946c43c1d9eb5c077a57c51d012b57283c2735810bb36c2cbb35efcd486",
+      "archiveEncoding": "json-utf8-text",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-focused-tests.log.json",
+      "bytes": 427,
+      "sha256": "d87f077e46606a2db9178554b015c52047c2fa94ceb37db47e39cb78b09e581d"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/new-local-contract-evidence.log",
+      "originalBytes": 178,
+      "originalSha256": "190b9452aa6a114c09724b30d95f6460a15b58633ec85bf39568014334b8187c",
+      "archiveEncoding": "json-utf8-text",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-new-local-contract-evidence.log.json",
+      "bytes": 507,
+      "sha256": "f9367da94a03c0548eebf304e9619a76212ccd2a158469f203dbbed03240e5f6"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/new-contract-verification.log",
+      "originalBytes": 349,
+      "originalSha256": "e1532d12365baaa4d60aa30f3d762f7108666632879043d4bc40bb5eb3e53d2d",
+      "archiveEncoding": "json-utf8-text",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-new-contract-verification.log.json",
+      "bytes": 690,
+      "sha256": "c8c813cc39414415ee940cba1dfbdb3ad4ccc95f8ac6e7027736ef64ee6e9a46"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/tracked-diff-check.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archiveEncoding": "json-utf8-text",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-tracked-diff-check.log.json",
+      "bytes": 307,
+      "sha256": "d086a9ef2b9bed5d0b76a8b98a88f09a5a360acdaa4df5d8a7045deafb106fe2"
+    },
+    {
+      "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/focused-tests.json",
+      "originalBytes": 40958,
+      "originalSha256": "1d295d5cb6f643cf697d1371e19cf0bb5f36a033ee166fa582aec8b2998f1acd",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/regression-focused-tests.json",
+      "bytes": 40958,
+      "sha256": "1d295d5cb6f643cf697d1371e19cf0bb5f36a033ee166fa582aec8b2998f1acd"
+    },
+    {
+      "originalPath": "/tmp/napier-release-baseline-31e9-gb13scbr/vitest.json",
+      "originalBytes": 61188,
+      "originalSha256": "8ab276d9e11727fd761c7056fdaa209791014153e6e497363ed4a2d9fe7afa63",
+      "path": "docs/artifacts/harness-corpus-2026-10-30/baseline-release-consumer-vitest.json",
+      "bytes": 61188,
+      "sha256": "8ab276d9e11727fd761c7056fdaa209791014153e6e497363ed4a2d9fe7afa63"
+    }
+  ],
+  "limits": [
+    "125 final tests include 4 actual production-consumer tests; synthetic sealed-corpus positive control proves mechanism only. Counts overlap earlier receipts and other slice tests.",
+    "No existing task relabeled unseen. Real catalog has zero holdout; independent curator cohort and valid target-model observations are still required.",
+    "Curator declarations and time strings are not authenticated external chronology or universal non-exposure proof.",
+    "Historical receipt remains byte-valid/descriptive but current qualification is blocked; new360 Run receipt is fixture contract-only, not release authorization.",
+    "Architecture/public API/historical release blockers remain; G02 and overall goal remain incomplete."
+  ],
+  "contentSha256": "a86eb4f7066c32c5a9ae41263670f1e1c662a310374995e1739b146b1d2db3c9"
+}

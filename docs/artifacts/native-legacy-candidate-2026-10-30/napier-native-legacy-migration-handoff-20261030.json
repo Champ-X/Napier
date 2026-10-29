@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "kind": "napier.native-legacy-migration-handoff",
+  "baseCommit": "31e9edb96c022358008c1e3877697af0c2341980",
+  "state": "production source frozen pending root final independent acceptance; no commit performed",
+  "owned": [
+    {
+      "path": "packages/runtime/src/subagent-candidate-legacy-capability.ts",
+      "sha256": "fac7bb90ac791cd8aa705a165d7c7cc62516a01d0638df4993aaa5ac9b29ee49",
+      "lines": 60
+    },
+    {
+      "path": "packages/runtime/src/subagent-candidate-legacy-repository.ts",
+      "sha256": "e7bc3ef064ab297b162e95f0ea8b0a23ce712884e88dbe751fc1f37e250cc413",
+      "lines": 176
+    },
+    {
+      "path": "packages/runtime/src/subagent-candidate-legacy-storage.ts",
+      "sha256": "f62389ea61843d8aae054cb66487fc694bb704481faacb437b8140483a49fe89",
+      "lines": 36
+    },
+    {
+      "path": "packages/runtime/src/subagent-candidate-legacy-validation.ts",
+      "sha256": "9c0c51d76131806433c5cee2f2b128fc3641fe5b8b2683331d5abd0cd4915402",
+      "lines": 66
+    },
+    {
+      "path": "packages/runtime/src/subagent-candidate-state.ts",
+      "sha256": "52de540e4cc92a2c99288d5dfd03d7bc5d44e58c69b194f1d76996887999885c",
+      "lines": 20
+    },
+    {
+      "path": "packages/runtime/src/subagent-candidate-store.ts",
+      "sha256": "8f6b3dca637f75cec1356460a239051bfadda694ab94e34c1c67228532631038",
+      "lines": 480
+    },
+    {
+      "path": "packages/runtime/src/subagent-completion-candidate.ts",
+      "sha256": "c2fa79469e2fc405939f56ea90073795f1ee2c3e419ec290ed63fd09bef5af62",
+      "lines": 33
+    },
+    {
+      "path": "packages/runtime/src/subagent-legacy-source-snapshot.ts",
+      "sha256": "8ab8dc900a71fcfff777bb89d4083d8727a202bb0e3b85f7b87114879d903347",
+      "lines": 10
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-delivery.ts",
+      "sha256": "49d2e27b547832b130254e745a538e1baa4ddb3126270a0ccb9376f2ef4db659",
+      "lines": 131
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-files.ts",
+      "sha256": "c447e64ecdc70f4b7b326c7d86c822184ebb2648d55de0aabf5e6dd3ba503a4e",
+      "lines": 178
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-merge.ts",
+      "sha256": "e7256f329cd80f79d4e43729b34d041be0f6929253e04cdb4d089475b6eb9aaf",
+      "lines": 160
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-mutation.ts",
+      "sha256": "b30c0689eef2529a2dac35ac9b801f1586f3c2775a760f3348c36de544936991",
+      "lines": 345
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-mutation-model.ts",
+      "sha256": "2307cdeaf35259bdef57f04e8c96da50c949fd54d2a5beab190249ee59df00fa",
+      "lines": 83
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-path.ts",
+      "sha256": "df6f8c74d673ae9658ca7fc357bd24fd42012a2916d9eeef034f6640e2c17b54",
+      "lines": 20
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-snapshot.ts",
+      "sha256": "6e26b513d78d2af689b298eba77c7381f52e8d5ef382f15c55db2992ad5ce402",
+      "lines": 308
+    },
+    {
+      "path": "packages/runtime/test/subagent-legacy-fixture-producer.ts",
+      "sha256": "9f9a8ddbe07f20f0925679cdac7243d0003011a4e28afaa049e8eedd5af3dcdd",
+      "lines": 81
+    },
+    {
+      "path": "packages/runtime/test/subagent-legacy-fixture.ts",
+      "sha256": "3c729b39034af65651d871f8556cf89681d639606543104d289bc6dfea19fdaf",
+      "lines": 47
+    },
+    {
+      "path": "packages/runtime/test/subagent-legacy-migration-worker.ts",
+      "sha256": "f66d379d3cdb46ddef3dcb31d3b75a85fe3fdc9eb4d9a03ebaf5fdc34b707220",
+      "lines": 31
+    },
+    {
+      "path": "packages/runtime/test/subagent-legacy-migration.test.ts",
+      "sha256": "d28d9bdbba9c5b8aaeba27cb5f7fd917c43132c5758e53898a932959f5779ddd",
+      "lines": 295
+    }
+  ],
+  "shared": [
+    {
+      "path": "packages/runtime/src/subagent-child-run-repository.ts",
+      "sha256": "48002bfb331344bb2c2f40777996d6f972eb162ec878bb707bd05c4480ff1f30",
+      "lines": 251,
+      "scope": "Legacy repository proof/ID facade only"
+    },
+    {
+      "path": "packages/runtime/src/store.ts",
+      "sha256": "bdf6478aa39eb273f6348eb11d935df78e850b2bdcf2480b7daf10f031a949f3",
+      "lines": 3755,
+      "scope": "reconcileLegacySubagentCandidate facade plus one adjacent blank line removed to retain existing line budget"
+    },
+    {
+      "path": "packages/runtime/src/subagents.ts",
+      "sha256": "05dc01aef0d8c6ad4669d2832df6e760b54462bc1782bbf0d52848df6f449159",
+      "lines": 499,
+      "scope": "Production legacyCandidateAuthority callback only"
+    },
+    {
+      "path": "packages/runtime/src/thread-import-event-payload.ts",
+      "sha256": "9a5f9a31945cb391d2e09eec9e551c26f08fb3640b13dd3e25bdac1276f1f53c",
+      "lines": 116,
+      "scope": "Drop private local migration authority event during import"
+    },
+    {
+      "path": "packages/contracts/src/run-event-domain-definitions-v1.ts",
+      "sha256": "90899cfe7d3e72a2fcf33dddba6e1f24416ada40491208ed00dd4d0babbc9a0b",
+      "lines": 500,
+      "scope": "Register subagent.candidate.legacy_migrated as run_any debug-capable subagent event"
+    }
+  ],
+  "api": {
+    "public": "LocalStore.reconcileLegacySubagentCandidate(candidateId)",
+    "production": "strict apply validates via ephemeral locked proof and the same repository; grants separate migration event only",
+    "receiptEvent": "subagent.candidate.legacy_migrated",
+    "historicalTaskMutation": false,
+    "capsuleMutation": false
+  },
+  "validation": {
+    "finalCombined": {
+      "files": 9,
+      "passed": 116,
+      "failed": 0,
+      "log": "/tmp/napier-native-legacy-final-tests-20261030.log",
+      "logSha256": "d18f0ecdd2d7ba863746bef13296ec3fab84674163319dedcd38288eccb8134b"
+    },
+    "newMigrationCases": 23,
+    "strictRuntimeTypecheck": "passed tsc -p packages/runtime/tsconfig.json --noEmit",
+    "strictNewTestTypecheck": "passed --noEmit --module NodeNext --moduleResolution NodeNext --target ES2023 --strict --exactOptionalPropertyTypes --noUncheckedIndexedAccess --noUnusedLocals --noUnusedParameters --skipLibCheck --esModuleInterop on four new test/fixture/worker modules",
+    "diffCheck": "passed",
+    "architecture": "No new violations or budget increases; global audit retains 8 unrelated existing violations",
+    "externalModelCalls": 0
+  },
+  "producer": {
+    "commit": "8f2a26cbe074b8a543da825e6df96ab398656dc0",
+    "method": "git archive to isolated temp checkout, isolated old contracts compile, actual old settleSubagentOutcome or finishSubagentTypedOutput plus original child finish/publication",
+    "generator": {
+      "path": "packages/runtime/test/subagent-legacy-fixture-producer.ts",
+      "sha256": "9f9a8ddbe07f20f0925679cdac7243d0003011a4e28afaa049e8eedd5af3dcdd",
+      "lines": 81
+    },
+    "fixtureModes": [
+      "outcome",
+      "typed",
+      "typed_invalid",
+      "post_import",
+      "dependency"
+    ],
+    "qualityBoundary": "Direct valid local final payload; fixture hash diagnostics, no language server or model-quality claim"
+  },
+  "evidenceBoundaries": [
+    "Existing local v1 capsule hash is its current object identity, not proof of a historically logged exact candidate ID or original read set. Receipt declares current_private_capsule explicitly.",
+    "Original publication independently anchors changedFileSetSha256 and full sourceSnapshotSha256. Pending or rolled-back migration checks full live original baseline including file count/bytes; every actual strict merge preflight enforces that full baseline again.",
+    "Legacy unrelated workspace drift now blocks first/retried writes; this conservative restriction is intentional because the historical read set is not independently anchored.",
+    "Historical Task/completion, requested capsule bytes/ID/expiry, and applying/settled/revoked merge state are never rewritten by migration.",
+    "Unexpired old outcome and schema-valid typed output both supported. Imported evidence interval rejected, but original native executions after an import cutoff supported. Migration authority events are dropped on replay import.",
+    "Expired known-applied state may return its stored receipt read-only after native proof; no new migration event is minted. Expiry still blocks first writes and verified-rollback retries.",
+    "Unknown, revoked, applying, ambiguous, cross-dataRoot, missing publication and schema-invalid typed outcomes fail closed.",
+    "Two Store instances, two real processes, and real SIGKILL before/after SQLite commit tested separately. No power-loss or external provider evidence claimed."
+  ],
+  "independentReview": {
+    "initialRehashedCapsuleProbe": "/tmp/napier-native-legacy-audit-20261030.json",
+    "rootAcceptance": "Pending root v2 final receipt; original outcome already independently passed, typed first assertion corrected from typed to typed_output by root",
+    "followupReadSetReview": {
+      "status": "passed",
+      "cases": 6,
+      "path": "/tmp/napier-native-legacy-final-audit-20261030.md",
+      "sha256": "9775c5d7ae523d27f2cc0b605764f7cea5118140b3f5d57ba8e783dd3d6d3b70",
+      "scope": "Rehashed omitted readset; pre-migration/pre-apply/post-diagnostics drift; rollback-retry preservation; intact baseline; expired settled read-only reuse"
+    }
+  },
+  "priorSliceCorrection": "Previous completion handoff stays an earlier snapshot. Root corrected unsupported fauxAssistantMessage usage options to explicit nonzero usage plus inherited 10-token assertion before prior f06ec79d integration; old pre-correction 6/6 alone did not prove nonzero inherited usage."
+}

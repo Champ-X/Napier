@@ -1,0 +1,7 @@
+{
+  "kind": "fixture_assertion_failure",
+  "error": "Expected typed but receipt discriminator is typed_output",
+  "location": "script line28; second typed case after committed migration, before apply",
+  "outcomeCase": "Completed prior case assertions including first apply, reopen, repeat inode/mtime/ctime and no original history rewrite; first script did not persist partial receipt",
+  "externalModelCalls": 0
+}

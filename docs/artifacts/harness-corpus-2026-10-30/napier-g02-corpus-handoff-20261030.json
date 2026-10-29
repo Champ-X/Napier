@@ -1,0 +1,353 @@
+{
+  "kind": "napier.g02-corpus-implementation-handoff",
+  "schemaVersion": 1,
+  "state": "frozen",
+  "generatedAt": "2026-10-29T17:52:06.481898+00:00",
+  "checkout": "/Users/champ/orca/Napier",
+  "branch": "main",
+  "baseCommit": "31e9edb96c022358008c1e3877697af0c2341980",
+  "ownedFiles": [
+    {
+      "path": "benchmarks/harness-corpus-catalog-v1.json",
+      "change": "new",
+      "sha256": "0d478303b3b1601e70f1f906ba9d520e270def707e769893c63c9e7da4d72bc0"
+    },
+    {
+      "path": "benchmarks/harness-corpus-family-map-v1.json",
+      "change": "new",
+      "sha256": "91b03ba02d48ed043fd2a5037a6797a0dd6fe65edcd3893272f746d4cb691201"
+    },
+    {
+      "path": "packages/contracts/src/harness-corpus.ts",
+      "change": "new",
+      "sha256": "b21cb8111db185e8c6d44385d98c0da9dd2a1678ca63519914bde6dd4419d010"
+    },
+    {
+      "path": "packages/harness-eval/src/harness-corpus.ts",
+      "change": "new",
+      "sha256": "890bc8f5a53da81735fab4a154eb1880954500fe266e464bec767c6816bc8fe6"
+    },
+    {
+      "path": "packages/harness-eval/src/harness-corpus-baseline.ts",
+      "change": "new",
+      "sha256": "ee7c541abea97d687083c14f4857c6002d62eac3b7e784c4bb8a680b378f4496"
+    },
+    {
+      "path": "packages/harness-eval/test/harness-corpus.test.ts",
+      "change": "new",
+      "sha256": "5f525ba0573de6d249d7504a8474a955a3aa6fe8c2e99ef389b38b880db3a020"
+    },
+    {
+      "path": "scripts/harness-corpus-catalog.mjs",
+      "change": "new",
+      "sha256": "f64540ebd876a024e1624625addeb2ae65442030e0447250440af4b267a9129f"
+    },
+    {
+      "path": "scripts/harness-corpus-inventory.mjs",
+      "change": "new",
+      "sha256": "daf8209c5547834258310af3c62f238e45e137cbc3ec3272f72fff7fae28dac2"
+    },
+    {
+      "path": "scripts/check-harness-corpus-catalog.mjs",
+      "change": "new",
+      "sha256": "2995d9600e4a58ee4389bc114fccc3a32ee947064cd501f7832df7b439d65eb3"
+    },
+    {
+      "path": "scripts/harness-corpus-catalog.test.mjs",
+      "change": "new",
+      "sha256": "d069527d172e4dc4a492015e06d8f5b8227c1cdc5adb12ebfe2a55931f8efcb5"
+    },
+    {
+      "path": "scripts/harness-corpus-test-fixture.mjs",
+      "change": "new",
+      "sha256": "270c3ebf0868a099f38f64504f6ca4e38ed0869e0cc3a156e58867b3864a3e78"
+    },
+    {
+      "path": "scripts/harness-release-qualification.test.mjs",
+      "change": "new",
+      "sha256": "1c073935965dbcbf036718b518e6dfd44aac2582179c631b787602401ceeec1f"
+    },
+    {
+      "path": "packages/contracts/src/harness-experiments.ts",
+      "change": "modified",
+      "sha256": "cc4315f0ea0429ebfa86c58984c64c38fdc66ba1c867978cd641f8644e29c62d"
+    },
+    {
+      "path": "packages/harness-eval/src/harness-experiments.ts",
+      "change": "modified",
+      "sha256": "e38a8036947b8766c61e7dc09a40564384bb0bc5274bd0a208a3eeff722b789a"
+    },
+    {
+      "path": "packages/harness-eval/src/harness-experiment-definition.ts",
+      "change": "modified",
+      "sha256": "eb2bb81cdc87c602f7f16f05c62b995abd5dbb8c62929d766a52024a2183c1ca"
+    },
+    {
+      "path": "packages/harness-eval/src/harness-experiment-release-evidence.ts",
+      "change": "modified",
+      "sha256": "2fdd1e55c9c4ebfaa09f5afe884186a7c757c84b542f6ae2ef8366e23c4c2c8b"
+    },
+    {
+      "path": "packages/harness-eval/test/harness-experiment-analysis.test.ts",
+      "change": "modified",
+      "sha256": "d891b92844db40e45aba31318f220f23f30760fd05bb695a88a39e94ce91b5d5"
+    },
+    {
+      "path": "packages/harness-eval/test/harness-experiments.test.ts",
+      "change": "modified",
+      "sha256": "432f1158bc1c473bb8706f17f205652af9696625f6750afacf943594304b15df"
+    },
+    {
+      "path": "scripts/harness-suite.mjs",
+      "change": "modified",
+      "sha256": "a03116f220845d035a7f47b14991e5c02fdc0b4810baee65d4c857ff942cc696"
+    },
+    {
+      "path": "scripts/harness-campaign-analysis-plan.mjs",
+      "change": "modified",
+      "sha256": "770998b3592b86bc9fd12e8f51aa539098a2c7cac3b057d5dc06daad61eb8f02"
+    },
+    {
+      "path": "scripts/harness-campaign-analysis.mjs",
+      "change": "modified",
+      "sha256": "9294efe8ada01f7ebdaff10df4ed695bc484788546efd7ad24d5f6a10c53e3b3"
+    },
+    {
+      "path": "scripts/harness-campaign-analysis.test.mjs",
+      "change": "modified",
+      "sha256": "d4a7ba4481b1631b9795f9422b9d2ddcad4b403264cd3793957f3a5eba16cfe8"
+    },
+    {
+      "path": "scripts/run-harness-optimization-suite.mjs",
+      "change": "modified",
+      "sha256": "aaf5109a0f405aacf341782ea1c81fa95bdee150ec8c3030ab6e3ea43aceb61d"
+    },
+    {
+      "path": "scripts/run-harness-optimization-campaign.mjs",
+      "change": "modified",
+      "sha256": "b1af4c3f57dc620cb19f8d32624df9e66aed444f36ae9596002468b19e9efd39"
+    },
+    {
+      "path": "scripts/create-harness-experiment-release-evidence.mjs",
+      "change": "modified",
+      "sha256": "96288a08e5f7a1160ceee59c00fbcc55299ed7ca913fabf74f70a4d285599ed5"
+    },
+    {
+      "path": "scripts/check-release-artifacts.mjs",
+      "change": "modified",
+      "sha256": "da1f4551d0afae3cb4d73fd8092c58957bda20aaa67bf1ddfb58937ac1c72302"
+    },
+    {
+      "path": "scripts/create-agent-harness-acceptance-evidence.mjs",
+      "change": "modified",
+      "sha256": "b2bb239f0971a0855c506544fc573d6706181978c316a8ae9e93b01619ba92ee"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/napier-harness-partition-design-20261030.md",
+      "sha256": "cadc09efa754b1db4d8d18abbab4986ec67d9fa297e6f583e7c322b03c539be9"
+    },
+    {
+      "path": "/tmp/napier-harness-corpus-frozen-tests-20261030.json",
+      "sha256": "2106c55326f6dc022a61756778ca70a59afe4fa00c7613b9ad0d79fca8726d20"
+    },
+    {
+      "path": "/tmp/napier-harness-corpus-frozen-tests-20261030.log",
+      "sha256": "707af24739297f46865c90cc5d34757c3617635e16877780c049457164d058d2"
+    },
+    {
+      "path": "/tmp/napier-harness-release-qualification-v2-20261030.json",
+      "sha256": "2bb9b8f7800870f44b488756aa1e8b59c8388a3a1f35f5fbc71875f0db19b929"
+    },
+    {
+      "path": "/tmp/napier-harness-release-qualification-v2-20261030.log",
+      "sha256": "d08a6bdc9485ec91ac9b2b3d0e86b73a8d51a2aeeac0a5db93f4a88fb520396b"
+    },
+    {
+      "path": "/tmp/napier-harness-corpus-inventory-final-20261030.json",
+      "sha256": "4e8e8765e90f8a9a7c9269f6222ba31c8dd7eb113bb4700529d0db1efa892bb3"
+    },
+    {
+      "path": "/tmp/napier-harness-corpus-architecture-final-20261030.log",
+      "sha256": "d44d6843eb706456f44f1b4f1cb8aed25eecd3c61cab1a74a0e0548dba1f454c"
+    },
+    {
+      "path": "/tmp/napier-harness-corpus-strict-types.json",
+      "sha256": "802b55a0de04510cbbf475952947207e49d4606136a173b6557c485d48685593"
+    },
+    {
+      "path": "/tmp/napier-g02-corpus-reaudit-20261030.json",
+      "sha256": "15778ed20a1b9e9817216aaa9bf70eb69311a19529a93953f36855b1ccb72e3c"
+    },
+    {
+      "path": "/tmp/napier-g02-corpus-final-two-audit-20261030.md",
+      "sha256": "4298009362b2bc2d58ca38c0f616a14601e0a5f0ecaf8ca5d4b65e44f60bb63b"
+    },
+    {
+      "path": "/tmp/napier-g02-corpus-final-two-20261030.json",
+      "sha256": "77ee7c71322f3252f4877d1e9df2086e44088237a877d9f4b673facc301d0c6f"
+    },
+    {
+      "path": "/tmp/napier-release-consumer-baseline-report-20261030.json",
+      "sha256": "452cb8de7321fd3e4d78027ae8ea33d69f28a8bd55c2c2fb8b38824e52243825"
+    },
+    {
+      "path": "/tmp/napier-oci-release-fixture-audit-20261030.md",
+      "sha256": "8ec64f1aceb7d6a1d7df41ec171d57acc08835fe85dd2c8ce3a648a6c2e73800"
+    },
+    {
+      "path": "/tmp/napier-oci-fixture-head-proof-20261030.json",
+      "sha256": "ac4f638605591afa7e3fed9e21368bcfa72ce64383985c5644a8b5ed5370cde9"
+    },
+    {
+      "path": "/tmp/napier-harness-corpus-release-fixture-v1-20261030.json",
+      "sha256": "9c631703929dd734893adb1f9ca41b108ca9b3b3a727c8c2c13f46e54482f08f"
+    }
+  ],
+  "validation": {
+    "g02AndRelatedPassed": 121,
+    "newProductionConsumerTestsPassed": 4,
+    "combinedRelevantPassed": 125,
+    "blockedBroadSuiteFailed": 50,
+    "broadAggregate": {
+      "passed": 121,
+      "failed": 50,
+      "total": 171,
+      "byFile": [
+        {
+          "path": "scripts/check-release-artifacts.test.mjs",
+          "passed": 0,
+          "failed": 50
+        },
+        {
+          "path": "scripts/harness-campaign-analysis.test.mjs",
+          "passed": 14,
+          "failed": 0
+        },
+        {
+          "path": "scripts/harness-campaign-evidence.test.mjs",
+          "passed": 14,
+          "failed": 0
+        },
+        {
+          "path": "scripts/harness-corpus-catalog.test.mjs",
+          "passed": 6,
+          "failed": 0
+        },
+        {
+          "path": "scripts/harness-paired-schedule.test.mjs",
+          "passed": 17,
+          "failed": 0
+        },
+        {
+          "path": "scripts/harness-paired-suite-cli.test.mjs",
+          "passed": 4,
+          "failed": 0
+        },
+        {
+          "path": "scripts/harness-retained-failure.test.mjs",
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "path": "scripts/harness-sample-identity.test.mjs",
+          "passed": 11,
+          "failed": 0
+        },
+        {
+          "path": "scripts/harness-suite.test.mjs",
+          "passed": 5,
+          "failed": 0
+        },
+        {
+          "path": "packages/harness-eval/test/harness-corpus.test.ts",
+          "passed": 19,
+          "failed": 0
+        },
+        {
+          "path": "packages/harness-eval/test/harness-experiment-analysis.test.ts",
+          "passed": 17,
+          "failed": 0
+        },
+        {
+          "path": "packages/harness-eval/test/harness-experiments.test.ts",
+          "passed": 13,
+          "failed": 0
+        }
+      ]
+    },
+    "broadFailure": "All 50 release-artifact tests fail during unchanged OCI fixture setup before qualification assertions. Root independently reproduced exact HEAD with separate builds and matched test names/statuses/errors/stacks.",
+    "buildsPassed": [
+      "npx tsc -b packages/contracts --pretty false",
+      "npx tsc -p packages/harness-eval/tsconfig.json --pretty false",
+      "npx tsc -p /tmp/napier-harness-corpus-strict-types.json --pretty false"
+    ],
+    "diffCheckPassed": true,
+    "architecture": {
+      "passed": false,
+      "existingUnrelatedFindings": 8,
+      "g02Findings": 0,
+      "budgetsRaised": false
+    },
+    "independentAudit": {
+      "finalBoundaryChecksPassed": 16,
+      "invalidChildBindings": 0,
+      "earlierCasesReaudited": 6
+    }
+  },
+  "inventory": {
+    "catalogContentSha256": "1e8decce5c781a6ba5e2f373bc3e88f8e122c55a041425e8c090d5f07ed6db44",
+    "sourceRoots": 52,
+    "optimizationRoots": 49,
+    "suiteCount": 15,
+    "taskCount": 41,
+    "familyCount": 35,
+    "campaignEvidenceCount": 184,
+    "distinctObservedRunCount": 166,
+    "boundRawReportsVerified": 25,
+    "boundRawReportsUnavailable": 0,
+    "suiteMembershipPartitions": {
+      "tuning": 206,
+      "regression": 1
+    },
+    "membershipCountIsNotIndependentTaskCount": true
+  },
+  "commands": {
+    "readOnlyInventory": "node scripts/check-harness-corpus-catalog.mjs",
+    "readOnlyHistoricalVerification": "node scripts/create-harness-experiment-release-evidence.mjs --verify docs/artifacts/harness-experiment-release-evidence-0.1.3.json",
+    "focusedRegression": "npx vitest run packages/harness-eval/test/harness-corpus.test.ts packages/harness-eval/test/harness-experiment-analysis.test.ts packages/harness-eval/test/harness-experiments.test.ts scripts/harness-corpus-catalog.test.mjs scripts/harness-campaign-analysis.test.mjs scripts/harness-suite.test.mjs scripts/harness-paired-schedule.test.mjs scripts/harness-paired-suite-cli.test.mjs scripts/harness-campaign-evidence.test.mjs scripts/harness-retained-failure.test.mjs scripts/harness-sample-identity.test.mjs scripts/harness-release-qualification.test.mjs --reporter=json --outputFile=/tmp/napier-g02-root-final-regression-20261030.json",
+    "blockedHistoricalSuite": "npx vitest run scripts/check-release-artifacts.test.mjs --reporter=json --outputFile=/tmp/napier-g02-root-historical-release-suite-20261030.json",
+    "strictTestTypes": "npx tsc -p /tmp/napier-harness-corpus-strict-types.json --pretty false",
+    "newContractReceiptAfterRootBuildFreeze": "node scripts/create-harness-experiment-release-evidence.mjs",
+    "verifyNewContractReceipt": "node scripts/create-harness-experiment-release-evidence.mjs --verify docs/artifacts/harness-experiment-contract-evidence-0.1.5.json"
+  },
+  "receiptPlan": {
+    "newContractOutput": "docs/artifacts/harness-experiment-contract-evidence-0.1.5.json",
+    "generatedDuringThisSlice": false,
+    "exclusiveWrite": true,
+    "externalModelCalls": 0,
+    "historicalEvidenceRewritten": false
+  },
+  "limits": [
+    "G02 remains incomplete: real catalog has zero holdout; genuinely unseen curator-sealed families and live-quality evaluation remain required.",
+    "Synthetic sealed-family and live-labelled observation tests prove mechanism only; no real unseen-family or model-quality claim.",
+    "No semantic paraphrase detection or universal non-exposure claim; family mapping is explicit curator provenance.",
+    "Historical evidence parses unchanged but cannot authorize current live qualification from raw promotion flags.",
+    "The broad release suite remains blocked by independently reproduced baseline fixture failures; targeted production consumers are separately exercised."
+  ],
+  "rootFollowup": [
+    "Run final combined compilation before hash-freezing regression; do not rebuild Harness Eval dist while campaign hash-binding tests execute.",
+    "Update goal/docs with implemented mechanism and remaining genuine unseen-family/live-quality requirement; do not mark G02 complete.",
+    "Generate new 0.1.5 contract receipt only if desired after final combined source/build freeze; retain old historical receipts.",
+    "Keep user Web/docs/start.sh and independent Runtime/G03 changes out of this ownership manifest."
+  ],
+  "prohibitedActionsTaken": {
+    "commits": 0,
+    "pushes": 0,
+    "externalModelCalls": 0,
+    "goalMdEdits": 0,
+    "historicalArtifactOverwrites": 0,
+    "architectureBudgetIncreases": 0
+  }
+}

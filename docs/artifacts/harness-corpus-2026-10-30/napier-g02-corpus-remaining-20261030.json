@@ -1,0 +1,18 @@
+{
+  "modelCalls": 0,
+  "checks": [
+    {
+      "name": "standalone_plan_missing_artifact",
+      "accepted": true,
+      "bindAccepted": true
+    },
+    {
+      "name": "normalized_known_path_family_remap",
+      "accepted": true,
+      "knownPath": "benchmarks/coding/pricing-options-migration-v1",
+      "claimedPath": "./benchmarks/coding/pricing-options-migration-v1",
+      "knownFamily": "pricing-policy",
+      "selectedFamily": "auditfamily-0"
+    }
+  ]
+}

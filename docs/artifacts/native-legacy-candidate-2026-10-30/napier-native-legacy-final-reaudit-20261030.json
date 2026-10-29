@@ -1,0 +1,77 @@
+{
+  "auditedAt": "2026-10-29T17:42:15.519Z",
+  "root": "/tmp/napier-native-final-0et7dS",
+  "historicalCommit": "8f2a26cbe074b8a543da825e6df96ab398656dc0",
+  "historicalRuntimeSpotChecks": [
+    "packages/runtime/src/subagent-candidate-store.ts",
+    "packages/runtime/src/subagent-outcome-settlement.ts",
+    "packages/runtime/src/subagent-child-run-repository.ts"
+  ],
+  "builds": 0,
+  "modelCalls": 0,
+  "productionWrites": 0,
+  "rootOriginalFixturesAccessed": false,
+  "sourceDigests": {
+    "packages/runtime/src/subagent-candidate-store.ts": "8f6b3dca637f75cec1356460a239051bfadda694ab94e34c1c67228532631038",
+    "packages/runtime/src/subagent-candidate-legacy-storage.ts": "f62389ea61843d8aae054cb66487fc694bb704481faacb437b8140483a49fe89",
+    "packages/runtime/src/subagent-candidate-legacy-validation.ts": "9c0c51d76131806433c5cee2f2b128fc3641fe5b8b2683331d5abd0cd4915402",
+    "packages/runtime/src/subagent-candidate-legacy-repository.ts": "e7bc3ef064ab297b162e95f0ea8b0a23ce712884e88dbe751fc1f37e250cc413",
+    "packages/runtime/src/subagent-candidate-legacy-capability.ts": "fac7bb90ac791cd8aa705a165d7c7cc62516a01d0638df4993aaa5ac9b29ee49",
+    "packages/runtime/src/subagent-legacy-source-snapshot.ts": "8ab8dc900a71fcfff777bb89d4083d8727a202bb0e3b85f7b87114879d903347",
+    "packages/runtime/src/subagent-worktree-merge.ts": "e7256f329cd80f79d4e43729b34d041be0f6929253e04cdb4d089475b6eb9aaf",
+    "packages/runtime/src/subagent-worktree-mutation.ts": "b30c0689eef2529a2dac35ac9b801f1586f3c2775a760f3348c36de544936991"
+  },
+  "sourceStable": true,
+  "checks": [
+    {
+      "name": "rehash_changed_counts_rejects_migration",
+      "pass": true,
+      "root": "/tmp/napier-native-final-0et7dS/counts",
+      "error": "Legacy candidate requires its complete original source snapshot; retained for inspection"
+    },
+    {
+      "name": "rehash_omitted_readset_current_baseline_migrates_then_drift_rejects_apply",
+      "pass": true,
+      "root": "/tmp/napier-native-final-0et7dS/pre-apply-drift",
+      "pureMigrationAccepted": true,
+      "receiptIdentity": "current_private_capsule",
+      "sourceConstraint": {
+        "kind": "original_full_source_snapshot",
+        "contentSha256": "85c47bdca02e1210abe5a94e5703d3f5fd9c719741387af237a98e6c411ed4b1"
+      },
+      "error": "Legacy candidate requires its complete original source snapshot; retained for inspection"
+    },
+    {
+      "name": "rehash_omitted_readset_unrelated_new_file_rejects_before_migration",
+      "pass": true,
+      "root": "/tmp/napier-native-final-0et7dS/new-file-drift",
+      "error": "Legacy candidate requires its complete original source snapshot; retained for inspection"
+    },
+    {
+      "name": "rehash_omitted_readset_drift_during_diagnostics_rejects_final_preflight",
+      "pass": true,
+      "root": "/tmp/napier-native-final-0et7dS/diagnostic-drift",
+      "beforeCalls": 1,
+      "afterCalls": 0,
+      "commitCalls": 0,
+      "error": "Legacy candidate requires its complete original source snapshot; retained for inspection"
+    },
+    {
+      "name": "rehash_omitted_readset_rolled_back_retry_drift_rejects_preserving_state",
+      "pass": true,
+      "root": "/tmp/napier-native-final-0et7dS/rollback-drift",
+      "rollbackStatus": "rolled_back",
+      "rollbackStateUnchanged": true,
+      "error": "Legacy candidate requires its complete original source snapshot; retained for inspection"
+    },
+    {
+      "name": "intact_baseline_applies_and_expired_settled_drift_reuses_readonly",
+      "pass": true,
+      "root": "/tmp/napier-native-final-0et7dS/readonly-control",
+      "applied": "applied",
+      "reusedReadonly": true,
+      "commitCalls": 0
+    }
+  ],
+  "pass": true
+}
