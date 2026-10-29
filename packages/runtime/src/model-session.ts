@@ -18,6 +18,7 @@ import {
 import { closeUnpreparedModelInvocation, dispatchAccountedModelInvocation, type ModelInvocationAccounting } from "./model-call-accounting-driver.js";
 import { createModelCallCaptureBinding } from "./model-call-capture.js";
 import { linkLogicalModelStream } from "./model-call-logical-linkage.js";
+import type { ModelCallRecoveryHandle } from "./model-call-recovery.js";
 
 export interface ModelSessionLifetime {
   signal?: AbortSignal;
@@ -81,6 +82,7 @@ export class ModelSession {
 
   async open(input: OpenModelSessionInvocation): Promise<ModelSessionInvocation & {
     source: AssistantMessageEventStream;
+    recovery?: ModelCallRecoveryHandle;
   }> {
     try { this.assertActive(input.options); }
     catch (error) {
@@ -138,7 +140,7 @@ export class ModelSession {
       phase: input.phase as ModelAccountingPhase, model: request.model,
       capture: captured.accountingCapture!, invoke,
     });
-    return { ...invocation, source: linkLogicalModelStream(dispatched.value, dispatched.attribution) };
+    return { ...invocation, source: linkLogicalModelStream(dispatched.value, dispatched.attribution), recovery: dispatched.recovery };
   }
 
   private assertActive(options: SimpleStreamOptions | undefined): void {

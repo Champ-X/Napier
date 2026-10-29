@@ -18,7 +18,11 @@ import {
   ModelThinkingLoopError,
   type ModelThinkingLoopEvidence,
 } from "./model-thinking-loop-policy.js";
+import { attestHostModelAbort } from "./model-abort-provenance.js";
 import { ModelSemanticStallObserver } from "./model-semantic-stall-observer.js";
+import { awaitModelCallRecovery, type ModelCallRecoveryHandle, type ModelRecoveryReadiness } from "./model-call-recovery.js";
+import { MODEL_STREAM_CANCELLATION_GRACE_MS } from "./model-stream-transport.js";
+import { issueModelThinkingSuppression, type ModelThinkingSuppressionProof } from "./model-thinking-suppression.js";
 import {
   ModelThinkingTrace,
   type ModelThinkingTraceSnapshot,
@@ -28,12 +32,22 @@ import {
   thinkingDeltaBytes,
 } from "./model-output-commit-policy.js";
 
+export interface ModelThinkingLoopAttemptSource {
+  context: Context;
+  options: SimpleStreamOptions;
+  source: AssistantMessageEventStream;
+  logicalResult?(): Promise<AssistantMessage>;
+  recovery?(): { handle?: ModelCallRecoveryHandle; attribution?: ModelCallAttributionV1 };
+  settleLogical?(message: AssistantMessage, suppressed?: ModelThinkingLoopEvidence, proof?: ModelThinkingSuppressionProof): Promise<void>;
+}
+
 export interface ModelThinkingLoopGuardInput {
   model: Model<Api>;
   context: Context;
   options: SimpleStreamOptions;
   rootSignal: AbortSignal;
   nativeAccounting?: boolean;
+  remainingMs?(): number;
   attribution?(): ModelCallAttributionV1 | undefined;
   createSource(input: {
     attempt: 1 | 2;
@@ -41,16 +55,13 @@ export interface ModelThinkingLoopGuardInput {
     options: SimpleStreamOptions;
     signal: AbortSignal;
     priorEvidence?: ModelThinkingLoopEvidence;
-  }): Promise<{
-    context: Context;
-    options: SimpleStreamOptions;
-    source: AssistantMessageEventStream;
-  }>;
+  }): Promise<ModelThinkingLoopAttemptSource>;
   onDetected(
     evidence: ModelThinkingLoopEvidence,
     action: "retry" | "finalize",
     terminalMessage?: AssistantMessage,
     trace?: ModelThinkingTraceSnapshot,
+    recovery?: { readiness: ModelRecoveryReadiness; outputDisposition: "suppressed_thinking_recovery" },
   ):
     | Promise<"retry" | "finalize" | "budget_exhausted">
     | "retry"
@@ -68,6 +79,8 @@ export function guardModelThinkingLoop(
   });
   let currentController: AbortController | undefined;
   let currentIterator: AsyncIterator<AssistantMessageEvent> | undefined;
+  let currentSource: ModelThinkingLoopAttemptSource | undefined;
+  let logicalSettled = false;
   let settled = false;
   const settle = (message: AssistantMessage): void => {
     if (settled) return;
@@ -96,101 +109,46 @@ export function guardModelThinkingLoop(
           signal,
           ...(priorEvidence ? { priorEvidence } : {}),
         });
+        currentSource = created;
+        logicalSettled = false;
         context = created.context;
         options = created.options;
         currentIterator = created.source[Symbol.asyncIterator]();
-        const detector = new ModelThinkingLoopDetector();
-        const buffered: AssistantMessageEvent[] = [];
-        let bufferedBytes = 0;
-        let buffering = true;
-        let detected: ModelThinkingLoopEvidence | undefined;
-        let terminalMessage: AssistantMessage | undefined;
-        const semanticStall = new ModelSemanticStallObserver();
-        const thinkingTrace = new ModelThinkingTrace();
-
-        try {
-          while (true) {
-            const step = await currentIterator.next();
-            const event = step.done
-              ? eventFromMessage(await created.source.result())
-              : step.value;
-            if (event.type === "done" || event.type === "error") {
-              detected = semanticStall.terminalEvidence(event, attempt);
-              if (detected) {
-                // A watchdog error is synthesized locally and may carry zero
-                // usage; retain the observed-byte estimate for that attempt.
-                terminalMessage =
-                  event.type === "done" ? event.message : undefined;
-                break;
-              }
-              const message =
-                event.type === "done" ? event.message : event.error;
-              settle(message);
-              if (buffering) {
-                buffered.push(event);
-                for (const bufferedEvent of buffered) yield bufferedEvent;
-              } else {
-                yield event;
-              }
-              return;
-            }
-            semanticStall.observe(event);
-            thinkingTrace.observeEvent(event);
-            if (buffering) {
-              buffered.push(event);
-              if (event.type === "thinking_delta") {
-                bufferedBytes += thinkingDeltaBytes(event);
-                detected = detector.observe(event.delta, attempt);
-                if (detected) break;
-                if (bufferedBytes >= MAX_UNCOMMITTED_THINKING_BYTES) {
-                  for (const bufferedEvent of buffered) yield bufferedEvent;
-                  buffered.length = 0;
-                  buffering = false;
-                }
-                continue;
-              }
-              if (isThinkingPreamble(event)) continue;
-              for (const bufferedEvent of buffered) yield bufferedEvent;
-              buffered.length = 0;
-              buffering = false;
-            } else {
-              yield event;
-            }
-          }
-        } finally {
-          if (detected) {
-            currentController.abort(new ModelThinkingLoopError(detected));
-            await Promise.resolve(currentIterator.return?.()).catch(
-              () => undefined,
-            );
-          }
-          currentIterator = undefined;
-          currentController = undefined;
-        }
-
-        if (!detected) return;
-        const action = await input.onDetected(
-          detected,
-          attempt === 1 ? "retry" : "finalize",
-          terminalMessage,
-          thinkingTrace.snapshot(),
-        );
-        if (action === "retry") {
-          priorEvidence = detected;
-          continue;
-        }
-        if (action === "budget_exhausted") {
-          const message = budgetMessage(input.model);
+        const observed = yield* consumeThinkingAttempt(created, currentIterator, attempt, async (message) => {
+          await created.settleLogical?.(message);
+          logicalSettled = true;
           settle(message);
-          yield { type: "done", reason: "length", message };
-          return;
-        }
-        const error = errorMessage(
-          input.model,
-          new ModelThinkingLoopError(detected),
+        });
+        if (!observed) return;
+        const { evidence: detected, terminalMessage, logicalMessage, trace } = observed;
+        const recoveryDeadlineAt = Date.now() + Math.max(0, Math.min(
+          MODEL_STREAM_CANCELLATION_GRACE_MS, input.remainingMs?.() ?? MODEL_STREAM_CANCELLATION_GRACE_MS,
+        ));
+        currentController.abort(new ModelThinkingLoopError(detected));
+        closeIterator(currentIterator);
+        currentIterator = undefined;
+        currentController = undefined;
+        const readiness = await settleSuppressedAttempt(input, created, detected, logicalMessage, recoveryDeadlineAt);
+        logicalSettled = true;
+        const retryReady = ["known", "undispatched", "legacy_unaccounted"].includes(readiness);
+        let action = await input.onDetected(
+          detected,
+          attempt === 1 && retryReady ? "retry" : "finalize",
+          terminalMessage,
+          trace,
+          { readiness, outputDisposition: "suppressed_thinking_recovery" },
         );
-        settle(error);
-        yield { type: "error", reason: "error", error };
+        if (action === "retry" && attempt === 1 && retryReady) {
+          if (retryWithinDeadline(input, recoveryDeadlineAt)) {
+            priorEvidence = detected;
+            continue;
+          }
+          if (!input.rootSignal.aborted) action = await input.onDetected(detected, "finalize", terminalMessage, trace,
+            { readiness: "pending_timeout", outputDisposition: "suppressed_thinking_recovery" });
+        }
+        const final = detectionTerminal(input, action, detected);
+        settle(final.type === "done" ? final.message : final.error);
+        yield final;
         return;
       }
     } catch (error) {
@@ -199,13 +157,100 @@ export function guardModelThinkingLoop(
       yield { type: "error", reason: "error", error: message };
     } finally {
       currentController?.abort(new Error("Thinking-loop stream closed"));
-      await Promise.resolve(currentIterator?.return?.()).catch(() => undefined);
+      closeIterator(currentIterator);
+      if (!logicalSettled && currentSource && (currentSource.settleLogical || currentSource.logicalResult)) {
+        const message = await (currentSource.logicalResult?.() ?? currentSource.source.result());
+        await currentSource.settleLogical?.(message);
+        settle(message);
+      }
       currentController = undefined;
       currentIterator = undefined;
     }
   };
   output.result = () => terminal;
   return output;
+}
+
+interface ObservedThinkingSuppression {
+  evidence: ModelThinkingLoopEvidence;
+  logicalMessage?: AssistantMessage;
+  terminalMessage?: AssistantMessage;
+  trace: ModelThinkingTraceSnapshot;
+}
+
+async function* consumeThinkingAttempt(created: ModelThinkingLoopAttemptSource,
+  iterator: AsyncIterator<AssistantMessageEvent>, attempt: 1 | 2,
+  accepted: (message: AssistantMessage) => Promise<void>): AsyncGenerator<AssistantMessageEvent, ObservedThinkingSuppression | undefined> {
+  const detector = new ModelThinkingLoopDetector(), semanticStall = new ModelSemanticStallObserver(), trace = new ModelThinkingTrace();
+  const buffered: AssistantMessageEvent[] = [];
+  let bufferedBytes = 0, buffering = true;
+  for (;;) {
+    const step = await iterator.next();
+    const event = step.done ? eventFromMessage(await created.source.result()) : step.value;
+    if (event.type === "done" || event.type === "error") {
+      const message = event.type === "done" ? event.message : event.error;
+      const evidence = semanticStall.terminalEvidence(event, attempt);
+      if (evidence) return { evidence, logicalMessage: message, trace: trace.snapshot(),
+        // A synthetic watchdog zero is never physical usage evidence.
+        ...(event.type === "done" ? { terminalMessage: message } : {}) };
+      await accepted(message);
+      if (buffering) { buffered.push(event); yield* buffered; }
+      else yield event;
+      return;
+    }
+    semanticStall.observe(event);
+    trace.observeEvent(event);
+    if (!buffering) { yield event; continue; }
+    buffered.push(event);
+    if (event.type === "thinking_delta") {
+      bufferedBytes += thinkingDeltaBytes(event);
+      const evidence = detector.observe(event.delta, attempt);
+      if (evidence) return { evidence, trace: trace.snapshot() };
+      if (bufferedBytes >= MAX_UNCOMMITTED_THINKING_BYTES) { yield* buffered; buffered.length = 0; buffering = false; }
+      continue;
+    }
+    if (isThinkingPreamble(event)) continue;
+    yield* buffered;
+    buffered.length = 0;
+    buffering = false;
+  }
+}
+
+function retryWithinDeadline(input: ModelThinkingLoopGuardInput, deadlineAt: number): boolean {
+  return !input.rootSignal.aborted && (!input.nativeAccounting ||
+    (Date.now() < deadlineAt && (input.remainingMs?.() ?? 1) > 0));
+}
+
+function detectionTerminal(input: ModelThinkingLoopGuardInput, action: "retry" | "finalize" | "budget_exhausted",
+  evidence: ModelThinkingLoopEvidence): Extract<AssistantMessageEvent, { type: "done" | "error" }> {
+  if (input.rootSignal.aborted) {
+    const error = attestHostModelAbort({ ...errorMessage(input.model, input.rootSignal.reason ?? "Model owner cancelled recovery"),
+      stopReason: "aborted" }, { owner: "caller" });
+    return { type: "error", reason: "aborted", error };
+  }
+  if (action === "budget_exhausted") return { type: "done", reason: "length", message: budgetMessage(input.model) };
+  return { type: "error", reason: "error", error: errorMessage(input.model, new ModelThinkingLoopError(evidence)) };
+}
+
+function closeIterator(iterator: AsyncIterator<AssistantMessageEvent> | undefined): void {
+  try { void Promise.resolve(iterator?.return?.()).catch(() => undefined); }
+  catch { /* A broken provider close cannot bypass logical settlement or the retry bound. */ }
+}
+
+async function settleSuppressedAttempt(input: ModelThinkingLoopGuardInput, created: ModelThinkingLoopAttemptSource,
+  evidence: ModelThinkingLoopEvidence, logicalMessage: AssistantMessage | undefined, deadlineAt: number): Promise<ModelRecoveryReadiness> {
+  // This is the isolated logical terminal, never the admitted raw result.
+  // Main calls have no child reservation; child settlement durably closes
+  // its reservation before the independent physical readiness wait.
+  const message = logicalMessage ?? (created.logicalResult ? await created.logicalResult() :
+    created.settleLogical ? await created.source.result() : undefined);
+  const binding = created.recovery?.();
+  if (created.settleLogical && message) await created.settleLogical(message, evidence,
+    issueModelThinkingSuppression({ message, evidence, ...(binding?.attribution ? { attribution: binding.attribution } : {}) }));
+  if (evidence.attempt === 2) return "not_requested";
+  if (!input.nativeAccounting) return "legacy_unaccounted";
+  return awaitModelCallRecovery({ handle: binding?.handle, attribution: binding?.attribution,
+    signal: input.rootSignal, deadlineAt });
 }
 
 export function thinkingLoopRetryMessage(

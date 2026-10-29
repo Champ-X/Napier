@@ -19,7 +19,7 @@ import {
 } from "./model-turn-deadline.js";
 
 const ABORTED = Symbol("model-stream-aborted");
-const CANCELLATION_GRACE_MS = 5_000;
+export const MODEL_STREAM_CANCELLATION_GRACE_MS = 5_000;
 
 export interface ModelStreamCancellationFailure {
   provider: string;
@@ -146,10 +146,10 @@ function attachAbortIsolation(
           onCancellationFailure({
             provider: model.provider,
             model: model.id,
-            graceMs: CANCELLATION_GRACE_MS,
+            graceMs: MODEL_STREAM_CANCELLATION_GRACE_MS,
           }),
         ).catch(() => undefined);
-      }, CANCELLATION_GRACE_MS);
+      }, MODEL_STREAM_CANCELLATION_GRACE_MS);
       timer.unref?.();
     }
   };

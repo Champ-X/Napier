@@ -27,6 +27,11 @@ import { addSubagentUsage, subagentJsonValue } from "./subagent-task-evidence.js
 import type { SubagentChildExecution, SubagentProgress } from "./subagent-child-execution.js";
 import { createUsageAccounting } from "./token-accounting.js";
 import { modelAccountingLinkage, modelResultAttribution } from "./model-call-attribution.js";
+import { guardModelThinkingLoop, shortThinkingLoopRetryOptions, thinkingLoopRetryMessage,
+  type ModelThinkingLoopAttemptSource } from "./model-thinking-loop-guard.js";
+import type { ModelThinkingLoopEvidence } from "./model-thinking-loop-policy.js";
+import { readModelRegistryRuntimeSettings } from "./model-registry-runtime-settings.js";
+import type { ModelThinkingSuppressionProof } from "./model-thinking-suppression.js";
 
 export type SubagentModelPhase = "subagent_turn" | "typed_repair" | "outcome_repair" | "context_compaction";
 
@@ -64,7 +69,11 @@ export function createSubagentModelSession(input: {
   const lifetime = input.lifetime ?? new SubagentExecutionLifetime(
     input.signal ? [input.signal] : [], input.limits.timeoutMs,
   );
-  const session = new ModelSession({ models: input.models, lifetime });
+  const settings = readModelRegistryRuntimeSettings(input.models);
+  const session = new ModelSession({ models: input.models, lifetime,
+    ...(settings?.deadlinePolicy ? { deadlinePolicy: settings.deadlinePolicy } : {}) });
+  const shortReasoningThroughCall = new Map<string, number>();
+  let modelCallIndex = 0;
   const capsules = new ModelInvocationCapsuleStore(input.store.dataRoot);
   const owner = {
     kind: "subagent" as const,
@@ -76,18 +85,19 @@ export function createSubagentModelSession(input: {
   };
   let nextInvocationIndex = 0;
   const append = async (
-    type: "subagent.model.invocation" | "subagent.model.response" | "subagent.model.cancellation_failed",
+    type: "subagent.model.invocation" | "subagent.model.response" | "subagent.model.cancellation_failed" | "model.thinking_loop.detected",
     content: Record<string, unknown>,
   ): Promise<void> => {
     const payload = { schemaVersion: 1, owner, taskId: owner.taskId, ...content };
-    const event = await input.store.appendEvent({
+    const eventInput = {
       threadId: owner.threadId,
-      runId: owner.parentRunId,
-      type,
-      category: "subagent",
-      visibility: "debug",
+      runId: type === "model.thinking_loop.detected" ? input.child?.run.id ?? owner.parentRunId : owner.parentRunId,
+      visibility: "debug" as const,
       payload: subagentJsonValue({ ...payload, contentSha256: sha256(canonicalJson(payload)) }),
-    });
+    };
+    const event = type === "model.thinking_loop.detected"
+      ? await input.store.appendEvent({ ...eventInput, type, category: "model" })
+      : await input.store.appendEvent({ ...eventInput, type, category: "subagent" });
     try { await input.onEvent?.(event); } catch {
       // A disconnected observer does not revoke the durable receipt.
     }
@@ -114,22 +124,31 @@ export function createSubagentModelSession(input: {
         throw error;
       }
       let modelAttempt = 0;
-      const invoke = async (candidate: Model<Api>, routedOptions: SimpleStreamOptions) => {
+      const callIndex = ++modelCallIndex;
+      let thinkingRetryUsed = false;
+      const invokePhysical = async (candidate: Model<Api>, routedOptions: SimpleStreamOptions,
+        invocationContext = context): Promise<ModelThinkingLoopAttemptSource> => {
         modelAttempt += 1;
-        let activeContext = context;
+        let activeContext = invocationContext;
         let reservation;
         try {
           lifetime.assertActive();
           invocationSignal.throwIfAborted();
+          if (phase !== "context_compaction") {
+            input.assertTurnAvailable?.();
+            input.child?.assertTurnAvailable();
+          }
+          input.assertParentBudgetAvailable?.();
+          input.child?.assertCanInvoke();
           if (phase === "subagent_turn" && input.child) activeContext = await compactSubagentContext({
             host: { store: input.store, modelRegistry: { models: input.models }, modelInvocationCapsules: capsules },
-            child: input.child, session: modelSession, model: candidate, context, options: routedOptions, modelAttempt,
+            child: input.child, session: modelSession, model: candidate, context: invocationContext, options: routedOptions, modelAttempt,
             ...(input.onEvent ? { onEvent: input.onEvent } : {}),
           });
           reservation = await input.child?.reserve(phase);
         } catch (error) {
           const denied = subagentModelTurnDeniedStream(candidate, error, invocationSignal);
-          if (denied) return denied;
+          if (denied) return { source: denied, context: activeContext, options: routedOptions };
           throw error;
         }
         const invocationIndex = reservation?.invocationIndex ?? ++nextInvocationIndex;
@@ -187,12 +206,15 @@ export function createSubagentModelSession(input: {
             }
           },
         });
-        return observeResponse(opened.source, async (message) => {
+        let settled: Promise<void> | undefined;
+        const settleLogical = (message: AssistantMessage, suppressed?: ModelThinkingLoopEvidence,
+          proof?: ModelThinkingSuppressionProof): Promise<void> => settled ??= (async () => {
           const attribution = modelResultAttribution(message);
           const usage = hostModelAbortProvenance(message) ? undefined : addSubagentUsage(emptyUsage(), message.usage);
           if (input.child && reservation) {
             const payload = subagentJsonValue({
               ...hooks?.responseEvidence?.(message),
+              ...(suppressed ? { outputDisposition: "suppressed_thinking_recovery", thinkingRecovery: suppressed } : {}),
               ...(attribution ? modelAccountingLinkage(attribution) : {}),
               model: `${message.provider}/${message.model}`, stopReason: message.stopReason,
               responseSha256: sha256(canonicalJson(message)),
@@ -209,15 +231,66 @@ export function createSubagentModelSession(input: {
               })),
             }) as JsonObject;
             await input.child.settle(reservation.invocationId, payload, usage,
-              envelope ? { envelope, ...(adapter ? { adapter } : {}) } : undefined);
+              envelope ? { envelope, ...(adapter ? { adapter } : {}) } : undefined, proof);
           }
           await append("subagent.model.response", {
             ...(attribution ? modelAccountingLinkage(attribution) : {}),
             kind: "napier.subagent-model-response", phase, invocationIndex,
             contextEnvelopeSha256, model: { provider: message.provider, id: message.model },
             responseSha256: sha256(canonicalJson(message)), stopReason: message.stopReason,
+            ...(suppressed ? { outputDisposition: "suppressed_thinking_recovery", thinkingRecovery: suppressed } : {}),
             ...(usage ? { usage: message.usage } : { usageStatus: "unknown" }),
           });
+        })();
+        const attribution = modelResultAttribution(opened.source);
+        return { source: opened.source, context: activeContext, options: opened.options ?? routedOptions, settleLogical,
+          logicalResult: () => opened.source.result(),
+          recovery: () => ({ ...(opened.recovery ? { handle: opened.recovery } : {}), ...(attribution ? { attribution } : {}) }) };
+      };
+      const invoke = async (candidate: Model<Api>, routedOptions: SimpleStreamOptions): Promise<AssistantMessageEventStream> => {
+        if (phase !== "subagent_turn") {
+          const opened = await invokePhysical(candidate, routedOptions);
+          return opened.settleLogical ? observeResponse(opened.source, opened.settleLogical) : opened.source;
+        }
+        let current: ModelThinkingLoopAttemptSource | undefined;
+        return guardModelThinkingLoop({ model: candidate, context, options: routedOptions, rootSignal: invocationSignal,
+          nativeAccounting: settings?.nativeAccounting !== false,
+          remainingMs: () => lifetime.remainingMs(),
+          attribution: () => current?.recovery?.().attribution,
+          createSource: async ({ attempt, context: priorContext, options: priorOptions, signal, priorEvidence }) => {
+            const nextContext = priorEvidence ? { ...priorContext, messages: [...priorContext.messages,
+              { role: "user" as const, content: thinkingLoopRetryMessage(priorEvidence), timestamp: Date.now() }] } : priorContext;
+            const nextOptions = { ...priorOptions, signal };
+            const adjusted = attempt === 1 && (shortReasoningThroughCall.get(`${candidate.provider}/${candidate.id}`) ?? 0) < callIndex
+              ? nextOptions : shortThinkingLoopRetryOptions(candidate, nextOptions);
+            current = undefined;
+            current = await invokePhysical(candidate, adjusted, nextContext);
+            return current;
+          },
+          onDetected: async (evidence, action, _terminal, _trace, recovery) => {
+            let effectiveAction: "retry" | "finalize" = action === "retry" && !thinkingRetryUsed ? "retry" : "finalize";
+            if (effectiveAction === "retry") {
+              try {
+                lifetime.assertActive();
+                invocationSignal.throwIfAborted();
+                input.assertTurnAvailable?.();
+                input.assertParentBudgetAvailable?.();
+                input.child?.assertTurnAvailable();
+                input.child?.assertCanInvoke();
+              } catch { effectiveAction = "finalize"; }
+            }
+            const attribution = current?.recovery?.().attribution;
+            await append("model.thinking_loop.detected", { kind: "napier.subagent-thinking-loop",
+              phase, action: effectiveAction, ...evidence,
+              ...(recovery ? { recoveryReadiness: recovery.readiness, outputDisposition: recovery.outputDisposition } : {}),
+              ...(attribution ? modelAccountingLinkage(attribution) : {}),
+            });
+            if (effectiveAction === "retry") {
+              thinkingRetryUsed = true;
+              shortReasoningThroughCall.set(`${candidate.provider}/${candidate.id}`, callIndex + 3);
+            }
+            return effectiveAction;
+          },
         });
       };
       // Auxiliary compaction is already inside the chosen route candidate. Its

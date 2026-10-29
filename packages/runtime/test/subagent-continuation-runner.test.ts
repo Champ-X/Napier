@@ -104,14 +104,21 @@ describe("native child runner continuation", () => {
 
   it("settles a parent budget denial at the physical gate as known zero without a synthetic turn", async () => {
     const budget = new RunBudgetTracker({ maxTurns: 4, maxTotalTokens: 1_000, maxCostUsd: 1, timeoutMs: 60_000 });
-    const admission = vi.fn(() => {
-      if (admission.mock.calls.length === 2) budget.observeAuxiliaryUsage({ ...emptyUsage(), inputTokens: 1_000 });
-      budget.assertCanStartAuxiliaryCall();
-    });
+    const admission = vi.fn(() => budget.assertCanStartAuxiliaryCall());
     const f = await continuationRunnerFixture({ assertParentBudgetAvailable: admission });
     const active = await f.interruptAndClaim();
+    const append = active.store.appendEvent.bind(active.store);
+    let captureSeq: number | undefined;
+    vi.spyOn(active.store, "appendEvent").mockImplementation(async (...args) => {
+      const event = await append(...args);
+      if (args[0].type === "subagent.model.invocation") {
+        captureSeq = event.seq;
+        budget.observeAuxiliaryUsage({ ...emptyUsage(), inputTokens: 1_000 });
+      }
+      return event;
+    });
     await expect(active.runner.resume(active.continuation)).rejects.toThrow("tokens");
-    expect(admission).toHaveBeenCalledTimes(2);
+    expect(captureSeq).toBeDefined();
     expect(f.faux.state.callCount).toBe(0);
     const task = active.store.listSubagentTasks(f.thread.id).find((task) => task.id === active.continuation.execution.task.id)!;
     expect(task).toMatchObject({ status: "failed", turnCount: 0, stepCount: 0, usageStatus: "complete", usage: emptyUsage() });
@@ -120,6 +127,7 @@ describe("native child runner continuation", () => {
     const response = events.filter((event) => event.type === "model.response");
     expect(response).toHaveLength(1);
     expect(response[0]!.payload).toMatchObject({ usageStatus: "known", usage: emptyUsage(), stopReason: "error" });
+    expect(captureSeq).toBeLessThan(response[0]!.seq);
   });
 
   it.each([

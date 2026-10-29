@@ -2,14 +2,35 @@ import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import type { RunEvent } from "@napier/contracts";
 import type { LedgerSnapshot } from "./sqlite-ledger-model.js";
+import { readLedgerSnapshot } from "./sqlite-ledger-state.js";
 
 export interface LedgerModelAccountingPort {
   listRunEvents(runId: string): RunEvent[];
   readRunAccountingView(runId: string): { snapshot: LedgerSnapshot | undefined; events: RunEvent[] };
+  readModelAttemptView(physicalId: string): LedgerModelAttemptView;
   modelAccountingIdentity(): string;
   modelAttribution(physicalId: string): LedgerModelAttribution | undefined;
   modelUsageClaim(physicalId: string): LedgerModelUsageClaim | undefined;
   modelChildInvocationClosed(invocationId: string): boolean;
+}
+
+export interface LedgerModelAttemptView {
+  workspaceLedgerId: string;
+  snapshot: LedgerSnapshot | undefined;
+  attribution: LedgerModelAttribution | undefined;
+  claim: LedgerModelUsageClaim | undefined;
+  event: RunEvent | undefined;
+}
+
+/** Caller owns one read transaction across snapshot, native identity and claim evidence. */
+export function readModelAttemptView(database: DatabaseSync, physicalId: string): LedgerModelAttemptView {
+  if (!database.isTransaction) throw new Error("Model attempt read requires its Store transaction");
+  const claim = readModelUsageClaim(database, physicalId);
+  const row = claim?.eventId ? database.prepare("SELECT event_json FROM ledger_events WHERE event_id = ?")
+    .get(claim.eventId) as { event_json: string } | undefined : undefined;
+  return { workspaceLedgerId: readModelAccountingIdentity(database), snapshot: readLedgerSnapshot(database),
+    attribution: readModelAttribution(database, physicalId), claim,
+    event: row ? JSON.parse(row.event_json) as RunEvent : undefined };
 }
 
 export interface LedgerModelAttribution {

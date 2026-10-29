@@ -31,6 +31,7 @@ import { mergeRouteStreamOptions } from "./model-route-options.js";
 import type { ModelRegistry } from "./models.js";
 import { modelStreamCancellationFailureSink, streamCtx } from "./model-stream-cancellation.js";
 import { ModelSession } from "./model-session.js";
+import type { ModelCallRecoveryHandle } from "./model-call-recovery.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import type { LocalStore } from "./store.js";
@@ -143,10 +144,12 @@ export function agentModelStreamLife(
     let currentEnvelope: ModelContextEnvelopeReceipt | undefined;
     let currentServingModel = model;
     const rootSignal = options?.signal ?? new AbortController().signal;
-    return guardModelThinkingLoop({
+    let thinkingRetryUsed = false;
+    const createCandidateStream = (servingModel: Model<Api>, routeContext?: ModelRouteAttemptContext) => guardModelThinkingLoop({
       nativeAccounting: !!input.host.modelRegistry.accountingRepository,
+      remainingMs: () => input.budget.remainingTimeoutMs(),
       attribution: () => currentAttribution,
-      model,
+      model: servingModel,
       context,
       options: options ?? {},
       rootSignal,
@@ -157,6 +160,16 @@ export function agentModelStreamLife(
         signal,
         priorEvidence,
       }) => {
+        let attemptRecovery: ModelCallRecoveryHandle | undefined;
+        let attemptAttribution: ModelCallAttributionV1 | undefined;
+        let attemptLogicalSource: AssistantMessageEventStream | undefined;
+        const recovery = () => ({ ...(attemptRecovery ? { handle: attemptRecovery } : {}),
+          ...(attemptAttribution ? { attribution: attemptAttribution } : {}) });
+        const logicalResult = () => {
+          if (!attemptLogicalSource) throw new Error("Thinking recovery has no logical model attempt");
+          return attemptLogicalSource.result();
+        };
+        currentAttribution = undefined;
         currentEnvelope = undefined;
         input.onEnvelope(undefined);
         const nextContext =
@@ -269,6 +282,7 @@ export function agentModelStreamLife(
             );
             currentAttribution = undefined;
             await input.budget.refreshAccounting();
+            if (attempt === 2) input.budget.assertCanStartAuxiliaryCall();
             const accounting = input.host.modelRegistry.accountingForRun(input.run.id);
             const opened = await session.open({
               phase: "agent_turn",
@@ -311,10 +325,15 @@ export function agentModelStreamLife(
               },
             });
             currentAttribution = modelResultAttribution(opened.source);
+            attemptRecovery = opened.recovery;
+            attemptAttribution = currentAttribution;
+            attemptLogicalSource = opened.source;
             return { ...opened, options: opened.options ?? {} };
           };
           const first = await createInvocation(0);
           return {
+            recovery,
+            logicalResult,
             context: first.context,
             options: first.options,
             source: recoverModelContextOverflow({
@@ -340,31 +359,22 @@ export function agentModelStreamLife(
             }),
           };
         };
-        if (input.modelRoute) {
-          return {
-            context: nextContext,
-            options: nextOptions,
-            source: input.modelRoute.stream({
-              signal,
-              invoke: async (candidate, routeContext) =>
-                (await createCandidateSource(candidate, routeContext)).source,
-            }),
-          };
-        }
-        return createCandidateSource(model);
+        return createCandidateSource(servingModel, routeContext);
       },
-      onDetected: async (evidence, action, terminalMessage, trace) => {
+      onDetected: async (evidence, action, terminalMessage, trace, recovery) => {
         const result = await recordDetection(
           input,
           currentServingModel,
           evidence,
-          action,
+          action === "retry" && thinkingRetryUsed ? "finalize" : action,
           currentEnvelope,
           terminalMessage,
           trace,
           currentAttribution,
+          recovery,
         );
         if (result === "retry") {
+          thinkingRetryUsed = true;
           shortReasoningThroughCall.set(
             `${currentServingModel.provider}/${currentServingModel.id}`,
             callIndex + 3,
@@ -373,6 +383,8 @@ export function agentModelStreamLife(
         return result;
       },
     });
+    return input.modelRoute ? input.modelRoute.stream({ signal: rootSignal,
+      invoke: async (candidate, routeContext) => createCandidateStream(candidate, routeContext) }) : createCandidateStream(model);
   };
 }
 

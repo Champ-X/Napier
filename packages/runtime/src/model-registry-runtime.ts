@@ -10,6 +10,7 @@ import { createModelAdapterModels } from "./model-adapters.js";
 import { ModelAccountingRegistry } from "./model-accounting-registry.js";
 import type { ModelTurnDeadlinePolicy } from "./model-turn-deadline.js";
 import type { ToolDeadlinePolicy } from "./tool-deadline-policy.js";
+import { bindModelRegistryRuntimeSettings } from "./model-registry-runtime-settings.js";
 
 /** Runtime policy and provider wiring shared by the catalog-facing registry. */
 export class ModelRegistryRuntime extends ModelAccountingRegistry {
@@ -43,6 +44,10 @@ export class ModelRegistryRuntime extends ModelAccountingRegistry {
       }),
       admission,
     );
+    bindModelRegistryRuntimeSettings(this.models, {
+      nativeAccounting: accountingRepository !== undefined,
+      deadlinePolicy: () => this.modelTurnDeadlinePolicy,
+    });
     for (const provider of builtinProviders()) {
       this.models.setProvider(withDeepSeekVisionModel(provider));
     }

@@ -32,13 +32,14 @@ import type { TerminalRunStatus } from "./run-event-admission.js";
 import { SqliteLedgerQuery } from "./sqlite-ledger-query.js";
 import { SqliteLedgerReadWorker } from "./sqlite-ledger-read-worker.js";
 import { applyModelAccountingMutation, childInvocationIsClosed, listModelAttributions,
-  readModelAccountingIdentity, readModelAttribution, readModelUsageClaim,
+  readModelAccountingIdentity, readModelAttribution, readModelUsageClaim, readModelAttemptView,
   type LedgerModelAccountingMutation } from "./sqlite-model-accounting.js";
 import { SqliteToolConcurrencyLeaseBackend } from "./sqlite-tool-concurrency-leases.js";
 import { createLazyToolConcurrencyLeaseBackend } from "./tool-concurrency-store-backend.js";
 import {
   readLedgerSchemaReport,
   readLedgerSnapshot,
+  readSqliteTransaction,
   rollbackSqliteTransaction,
 } from "./sqlite-ledger-state.js";
 import {
@@ -135,20 +136,7 @@ export class SqliteLedger {
 
   /** All synchronous projection reads in the callback share the same WAL snapshot. */
   readTransaction<T>(read: () => T & (T extends PromiseLike<unknown> ? never : unknown)): T {
-    const database = this.requireDatabase();
-    const ownsTransaction = !database.isTransaction;
-    if (ownsTransaction) database.exec("BEGIN");
-    try {
-      const result = read();
-      if (result && typeof (result as { then?: unknown }).then === "function") {
-        throw new Error("SQLite ledger read transaction callback must be synchronous");
-      }
-      if (ownsTransaction) database.exec("COMMIT");
-      return result;
-    } catch (error) {
-      if (ownsTransaction) rollbackSqliteTransaction(database);
-      throw error;
-    }
+    return readSqliteTransaction(this.requireDatabase(), read);
   }
 
   bootstrap(stateJson: string, events: RunEvent[]): LedgerSnapshot {
@@ -259,6 +247,10 @@ export class SqliteLedger {
   /** One SQLite read snapshot for current Run/Task state and accounting evidence. */
   readRunAccountingView(runId: string) {
     return this.readTransaction(() => ({ snapshot: this.readSnapshot(), events: this.listRunEvents(runId) }));
+  }
+
+  readModelAttemptView(physicalId: string) {
+    return this.readTransaction(() => readModelAttemptView(this.requireDatabase(), physicalId));
   }
 
   commitEvents(

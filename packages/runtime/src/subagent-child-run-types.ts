@@ -7,6 +7,7 @@ import type { SubagentChildRunAuthorization } from "./subagent-child-authorizati
 import type { FinishSubagentTaskInput } from "./subagent-completion-types.js";
 import type { PrepareSubagentCompletionInput, PreparedSubagentCompletionResult } from "./subagent-completion-types.js";
 import type { ModelAccountingRepository } from "./model-accounting-repository.js";
+import type { ModelThinkingSuppressionProof } from "./model-thinking-suppression.js";
 
 export interface StartSubagentChildRunInput {
   taskId: string;
@@ -37,6 +38,7 @@ export interface SettleSubagentChildInvocationInput extends SubagentChildRunFenc
   /** Unknown physical completion must not manufacture a known zero-usage receipt. */
   usageStatus?: "known" | "unknown";
   capture?: { envelope: ModelContextEnvelopeReceipt; adapter?: JsonObject };
+  thinkingSuppression?: ModelThinkingSuppressionProof;
 }
 export interface FinishSubagentChildRunInput extends SubagentChildRunFence {
   finish: FinishSubagentTaskInput;

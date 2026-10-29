@@ -5,6 +5,7 @@ import { assertChildRunFence, childRunState } from "./subagent-child-run-fence.j
 import { bindChildInvocationCapture } from "./subagent-child-invocation-capture.js";
 import { refreshRunAccounting } from "./model-accounting-projection.js";
 import { readModelAccountingEvidence } from "./model-accounting-fold.js";
+import { claimChildThinkingSuppression } from "./subagent-response-disposition.js";
 export { assertChildLogicalInvocationsSettled } from "./model-accounting-fold.js";
 import type { ReserveSubagentChildInvocationInput, SettleSubagentChildInvocationInput,
   SubagentChildInvocationReservation, SubagentChildRunState } from "./subagent-child-run-types.js";
@@ -68,6 +69,7 @@ export async function settleChildInvocation(host: SubagentChildRunHost,
       subagentTaskId: task.id, subagentExecutionId: input.executionId,
       subagentPhase: reserved["phase"]!, invocationIndex: reserved["invocationIndex"]!,
       usageStatus: usage ? "known" : "unknown", ...(usage ? { usage } : {}) };
+    claimChildThinkingSuppression(input.thinkingSuppression, payload, { threadId: run.threadId, runId: run.id });
     const previous = events.find((event) => event.type === "model.response" &&
       record(event.payload)?.["childInvocationId"] === input.invocationId);
     if (previous) {

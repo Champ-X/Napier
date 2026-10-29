@@ -17,6 +17,7 @@ import { readVerifiedModelUsageDelivery, type VerifiedModelUsageDelivery } from 
 import { createUndispatchedModelObservation, freezeModelAccountingBasis, validateModelCallAttribution } from "./model-usage-observation.js";
 import type { ModelUsageSource } from "./model-usage-source.js";
 import { assertChildRunFence } from "./subagent-child-run-fence.js";
+import { readModelAttemptReceipt, type ModelAttemptReceiptInput } from "./model-attempt-receipt.js";
 
 export interface ModelAccountingPrepareInput {
   owner: ModelUsagePreparationAuthority;
@@ -209,6 +210,15 @@ export class ModelAccountingRepository {
     const result = foldModelAccounting(events, tasks, run.accounting);
     return { workspaceRevision: snapshot.revision, runId, accountingRevision: result.summary.revision,
       usage: result.usage, usageStatus: result.summary.usageStatus, knownBudgetCostUsd: result.summary.knownBudgetCostUsd, summary: result.summary };
+  }
+
+  readAttemptReceipt(input: ModelAttemptReceiptInput) {
+    this.host.assertInitialized();
+    const configuration = this.config();
+    return readModelAttemptReceipt(input, this, this.host.requireLedger(), {
+      sourceId: configuration.source.sourceId, ...this.roots(),
+      ...(configuration.hostWorkspaceId ? { hostWorkspaceId: configuration.hostWorkspaceId } : {}),
+    });
   }
 
   private authority(owner: ModelUsagePreparationOwner): ModelUsagePreparationAuthority {

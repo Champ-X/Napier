@@ -37,6 +37,22 @@ export function rollbackSqliteTransaction(database: DatabaseSync): void {
   }
 }
 
+export function readSqliteTransaction<T>(database: DatabaseSync,
+  read: () => T & (T extends PromiseLike<unknown> ? never : unknown)): T {
+  const ownsTransaction = !database.isTransaction;
+  if (ownsTransaction) database.exec("BEGIN");
+  try {
+    const result = read();
+    if (result && typeof (result as { then?: unknown }).then === "function")
+      throw new Error("SQLite ledger read transaction callback must be synchronous");
+    if (ownsTransaction) database.exec("COMMIT");
+    return result;
+  } catch (error) {
+    if (ownsTransaction) rollbackSqliteTransaction(database);
+    throw error;
+  }
+}
+
 export function readLedgerSchemaReport(database: DatabaseSync): LedgerSchemaReport {
     const versionRow = database.prepare("PRAGMA user_version").get() as {
       user_version: number;

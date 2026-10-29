@@ -3,6 +3,7 @@ import { canonicalJson } from "./ed25519.js";
 import { bindChildInvocationCapture } from "./subagent-child-invocation-capture.js";
 import { validateModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import { foldModelAccounting, hasModelAccounting } from "./model-accounting-fold.js";
+import { assertChildResponseDisposition } from "./subagent-response-disposition.js";
 
 const PHASES = new Set(["subagent_turn", "typed_repair", "outcome_repair", "context_compaction"]);
 const USAGE_KEYS = Object.keys(emptyUsage()) as Array<keyof Usage>;
@@ -21,6 +22,7 @@ export function assertChildModelEvidence(run: RunRecord, events: readonly RunEve
     if (event.type === "context.model_envelope") assertCaptureSequence(events, index);
     if (event.type !== "model.response") continue;
     const payload = record(event.payload);
+    assertChildResponseDisposition(payload);
     const id = String(payload["childInvocationId"]);
     const reserved = reservations.get(id);
     if (!reserved || settled.has(id) || event.seq <= reserved.event.seq ||

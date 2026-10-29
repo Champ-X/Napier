@@ -1,6 +1,7 @@
 import type { JsonObject, RunEvent, RunRecord, SubagentTask } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { SubagentWorkingSetBinding, SubagentWorkingSetTranscriptEvidence } from "./subagent-working-set-types.js";
+import { isDeliveredChildResponse } from "./subagent-response-disposition.js";
 
 /** A self-hashed capsule is storage evidence; these bindings prove the actual child source. */
 export function assertChildCheckpointTranscript(binding: SubagentWorkingSetBinding, run: RunRecord,
@@ -11,6 +12,7 @@ export function assertChildCheckpointTranscript(binding: SubagentWorkingSetBindi
   assertUserSource(binding, task);
   const responses = events.filter((event) => event.type === "model.response" &&
     record(event.payload)["subagentPhase"] === "subagent_turn" &&
+    isDeliveredChildResponse(record(event.payload)) &&
     !["error", "aborted"].includes(String(record(event.payload)["stopReason"])));
   const hashes = [...(inherited?.transcript.assistantMessageSha256s ?? []), ...responses.map((event) => record(event.payload)["responseSha256"])];
   if (canonicalJson(hashes) !== canonicalJson(binding.transcript.assistantMessageSha256s))

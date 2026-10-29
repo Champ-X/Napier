@@ -66,7 +66,7 @@ export class StoreEventService {
   constructor(private readonly host: StoreEventServiceHost) {}
 
   append(input: AppendEventInput): Promise<RunEvent> {
-    assertNotAccountingWrite(input.type);
+    assertNotAccountingWrite(input);
     return this.appendResolved(resolveRegisteredEventInput(input));
   }
 
@@ -74,7 +74,7 @@ export class StoreEventService {
     input: AppendEventInput,
     idempotency: AppendEventOnceOptions,
   ): Promise<RunEvent> {
-    assertNotAccountingWrite(input.type);
+    assertNotAccountingWrite(input);
     return this.appendResolvedOnce(
       resolveRegisteredEventInput(input),
       idempotency,
@@ -85,7 +85,7 @@ export class StoreEventService {
     input: AppendEventInput,
     options: AppendEventOnceAtRunHeadOptions,
   ): Promise<AppendEventOnceAtRunHeadResult> {
-    assertNotAccountingWrite(input.type);
+    assertNotAccountingWrite(input);
     const { expectedRunHeadSeq, ...idempotency } = options;
     return this.appendResolvedOnceAtRunHead(
       resolveRegisteredEventInput(input),
@@ -143,7 +143,7 @@ export class StoreEventService {
   }
 
   private appendResolved(input: ResolvedRunEventInput): Promise<RunEvent> {
-    assertNotAccountingWrite(input.type);
+    assertNotAccountingWrite(input);
     this.host.assertReady();
     return appendResolvedRunEvent(
       {
@@ -158,7 +158,7 @@ export class StoreEventService {
     input: ResolvedRunEventInput,
     idempotency: EventIdempotencyKey,
   ): Promise<RunEvent> {
-    assertNotAccountingWrite(input.type);
+    assertNotAccountingWrite(input);
     this.host.assertReady();
     return appendResolvedRunEventOnce(
       {
@@ -177,7 +177,7 @@ export class StoreEventService {
     idempotency: EventIdempotencyKey,
     expectedRunHeadSeq: number,
   ): Promise<RunEventAppendResult> {
-    assertNotAccountingWrite(input.type);
+    assertNotAccountingWrite(input);
     this.host.assertReady();
     return appendResolvedRunEventOnceAtRunHead(
       {
@@ -250,7 +250,11 @@ export class StoreEventService {
   }
 }
 
-function assertNotAccountingWrite(type: string): void {
-  if (type.startsWith("model.accounting.") || type === "model.usage.reconciled")
+function assertNotAccountingWrite(input: { type: string; payload: unknown }): void {
+  if (input.type.startsWith("model.accounting.") || input.type === "model.usage.reconciled")
     throw new Error("Model accounting events require native repository authority");
+  const payload = input.payload as Record<string, unknown> | null;
+  if (input.type === "model.response" && payload && typeof payload === "object" &&
+      (payload["outputDisposition"] !== undefined || payload["thinkingRecovery"] !== undefined))
+    throw new Error("Child thinking suppression requires native guard authority and settlement");
 }

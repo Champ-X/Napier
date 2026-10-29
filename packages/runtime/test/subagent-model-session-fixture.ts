@@ -32,6 +32,7 @@ export async function createModelSessionFixture(options: {
   timeoutMs?: number;
   admission?: ModelCallAdmission;
   nativeAccounting?: boolean;
+  reasoning?: boolean;
   runLimits?: Partial<RunLimits>;
   createInheritedTools?: () => AgentTool[];
 } = {}) {
@@ -47,6 +48,7 @@ export async function createModelSessionFixture(options: {
     provider: `faux-${thread.id}`,
     api: "openai-responses",
     tokensPerSecond: 1_000_000,
+    ...(options.reasoning ? { models: [{ id: "faux-1", reasoning: true }] } : {}),
   });
   const source = options.nativeAccounting ? await ModelUsageReceiptSpool.open(path.join(root, "usage.sqlite")) : undefined;
   if (source) {

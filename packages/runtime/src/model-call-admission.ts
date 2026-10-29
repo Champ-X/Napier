@@ -14,6 +14,7 @@ import { bindModelCallRegistry, bindModelResultAttribution, consumeModelCallAttr
 import { modelAdmittedRequestDigests } from "./model-call-capture.js";
 import { projectPendingModelUsage, type ModelUsageProjectionPort } from "./model-usage-projection.js";
 import type { ModelUsageSource } from "./model-usage-source.js";
+import { observeModelCallRecovery } from "./model-call-recovery.js";
 
 export type ModelCallMethod = "stream" | "streamSimple" | "complete" | "completeSimple";
 export type ModelCallAdmissionCode = "capacity" | "budget" | "accounting" | "closed";
@@ -136,6 +137,11 @@ function reserve(
   }
   let settled = false;
   let observation: Promise<void> | undefined;
+  let completed: () => void = () => undefined;
+  let failed: (error: unknown) => void = () => undefined;
+  const completion = new Promise<void>((resolve, reject) => { completed = resolve; failed = reject; });
+  void completion.catch(() => undefined);
+  observeModelCallRecovery(active?.call, completion);
   return { ...(active ? { call: active.call, attribution: active.attribution } : {}), settle(message) {
     if (observation) return observation;
     const attempt = async () => {
@@ -153,6 +159,7 @@ function reserve(
       }
     };
     observation = attempt();
+    void observation.then(completed, failed);
     return observation;
   } };
 }

@@ -12,6 +12,7 @@ import type {
   SubagentChildRunState, SubagentChildExecutionStore,
 } from "./subagent-child-run-types.js";
 import type { ModelInvocationAccounting } from "./model-call-accounting-driver.js";
+import type { ModelThinkingSuppressionProof } from "./model-thinking-suppression.js";
 
 export type SubagentProgress = { turnDelta?: number; stepDelta?: number };
 export interface SubagentTaskFinisher {
@@ -120,11 +121,13 @@ export class SubagentChildExecution {
   }
 
   settle(invocationId: string, payload: JsonObject, usage?: Usage,
-    capture?: { envelope: ModelContextEnvelopeReceipt; adapter?: JsonObject }): Promise<SubagentTask> {
+    capture?: { envelope: ModelContextEnvelopeReceipt; adapter?: JsonObject },
+    thinkingSuppression?: ModelThinkingSuppressionProof): Promise<SubagentTask> {
     return this.serialize(async () => {
       this.state = await this.store.settleSubagentChildInvocation({
         ...this.fence(), invocationId, payload,
         ...(capture ? { capture } : {}),
+        ...(thinkingSuppression ? { thinkingSuppression } : {}),
         ...(usage ? { usage, usageStatus: "known" as const } : { usageStatus: "unknown" as const }),
       });
       this.pendingEvents.push(...this.state.events ?? []);

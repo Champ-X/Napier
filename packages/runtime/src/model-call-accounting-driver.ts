@@ -1,34 +1,11 @@
 import type { Api, Model, Models } from "@earendil-works/pi-ai";
 import type { ModelAccountingPhase, ModelCallAttributionV1, ModelCallCaptureBinding, ModelCallMethod } from "@napier/contracts/model-accounting";
 import { bindModelResultAttribution, issueModelUndispatchedDriverProof, modelCallEnteredRaw,
-  readPreparedModelCall, readModelUsagePreparationAuthority, withModelCallAttribution,
-  type EnteredModelCall, type ModelUndispatchedDriverProof, type ModelUsagePreparationAuthority,
-  type PreparedModelCall } from "./model-call-attribution.js";
-import type { ModelUsageProjectionPort } from "./model-usage-projection.js";
+  readPreparedModelCall, readModelUsagePreparationAuthority, withModelCallAttribution } from "./model-call-attribution.js";
+import { prepareModelCallRecovery, type ModelCallRecoveryHandle } from "./model-call-recovery.js";
 
-export interface ModelCallAccountingRepositoryPort extends ModelUsageProjectionPort {
-  prepare(input: {
-    owner: ModelUsagePreparationAuthority;
-    method: ModelCallMethod;
-    phase: ModelAccountingPhase;
-    logicalCallId: string;
-    model: Model<Api>;
-    capture: ModelCallCaptureBinding;
-    route?: ModelCallAttributionV1["route"];
-    recovery?: ModelCallAttributionV1["recovery"];
-  }): Promise<PreparedModelCall>;
-  enter(call: PreparedModelCall): Promise<EnteredModelCall>;
-  rejectUndispatched(proof: ModelUndispatchedDriverProof, reason: string): Promise<unknown>;
-  closeUndispatchedChildInvocation(proof: ModelUndispatchedDriverProof, reason: string): Promise<void>;
-}
-
-export interface ModelInvocationAccounting {
-  repository: ModelCallAccountingRepositoryPort;
-  owner: ModelUsagePreparationAuthority;
-  logicalCallId: string;
-  route?: ModelCallAttributionV1["route"];
-  recovery?: ModelCallAttributionV1["recovery"];
-}
+import type { ModelInvocationAccounting } from "./model-call-accounting-port.js";
+export type { ModelInvocationAccounting, ModelCallAccountingRepositoryPort } from "./model-call-accounting-port.js";
 
 /** Preparation can await; the scoped closure enters the admitted API only once. */
 export async function dispatchAccountedModelInvocation<T extends object>(input: {
@@ -40,7 +17,7 @@ export async function dispatchAccountedModelInvocation<T extends object>(input: 
   capture: ModelCallCaptureBinding;
   onAttribution?(attribution: ModelCallAttributionV1): void;
   invoke(): T;
-}): Promise<{ value: T; attribution: ModelCallAttributionV1 }> {
+}): Promise<{ value: T; attribution: ModelCallAttributionV1; recovery: ModelCallRecoveryHandle }> {
   const { accounting } = input;
   const call = await accounting.repository.prepare({
     owner: accounting.owner, method: input.method, phase: input.phase,
@@ -61,12 +38,13 @@ export async function dispatchAccountedModelInvocation<T extends object>(input: 
   try {
     input.onAttribution?.(attribution);
     const entered = await accounting.repository.enter(call);
+    const recovery = prepareModelCallRecovery(entered, accounting, attribution);
     const value = withModelCallAttribution(entered, input.models, input.invoke);
     // An async complete API can reject before raw entry. Observe that promise
     // immediately while the independent undispatched transaction is awaited.
     if (value instanceof Promise) void value.catch(() => undefined);
     if (!modelCallEnteredRaw(call)) await reject();
-    return { value: bindModelResultAttribution(value, attribution), attribution };
+    return { value: bindModelResultAttribution(value, attribution), attribution, recovery };
   } catch (error) {
     await reject();
     throw error;

@@ -15,6 +15,7 @@ import { recordModelThinkingTrace } from "./model-thinking-trace-store.js";
 import { mapModelUsage } from "./agent-model-projection.js";
 import { createUsageAccounting } from "./token-accounting.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import type { ModelRecoveryReadiness } from "./model-call-recovery.js";
 
 interface RecoveryEvidenceInput {
   host: {
@@ -87,6 +88,7 @@ export async function recordDetection(
   terminalMessage?: AssistantMessage,
   trace?: ModelThinkingTraceSnapshot,
   invocationAttribution?: ModelCallAttributionV1,
+  recovery?: { readiness: ModelRecoveryReadiness; outputDisposition: "suppressed_thinking_recovery" },
 ): Promise<"retry" | "finalize" | "budget_exhausted"> {
   const attribution = modelResultAttribution(terminalMessage) ?? invocationAttribution;
   const usage = terminalMessage
@@ -129,6 +131,7 @@ export async function recordDetection(
       ? "provider_terminal"
       : "reasoning_bytes_estimate",
     usageAccounting,
+    ...(recovery ? { recoveryReadiness: recovery.readiness, outputDisposition: recovery.outputDisposition } : {}),
     ...(reasoningTrace ? { reasoningTrace } : {}),
     ...(effectiveAction === "retry" && envelope
       ? {
