@@ -31,7 +31,7 @@ import { verifyProductPerformanceReportFile } from "./product-performance-report
 import { verifyCodingExecutorComparison } from "./check-coding-executor-comparison.mjs";
 import { parseControlledHarnessEvidence } from "../packages/runtime/dist/controlled-harness-evidence.js";
 import { validateAgentHarnessAcceptanceEvidence } from "../packages/runtime/dist/agent-harness-acceptance.js";
-import { validateHarnessExperimentReleaseEvidence } from "../packages/harness-eval/dist/harness-experiments.js";
+import { validateHarnessExperimentReleaseEvidence, qualifyHarnessExperimentReleaseEvidence } from "../packages/harness-eval/dist/harness-experiments.js";
 import { loadOpenWebComparisonAttemptReceipt } from "./open-web-comparison-attempt-artifacts.mjs";
 import { loadOpenWebComparisonCampaignArtifacts } from "./open-web-comparison-campaign-artifacts.mjs";
 import { verifyOpenWebComparisonCampaign } from "./open-web-comparison-campaign.mjs";
@@ -847,6 +847,7 @@ export async function auditReleaseArtifacts(options = {}) {
     errors,
   );
   let harnessExperimentReleaseEvidence;
+  let harnessExperimentReleaseQualification;
   try {
     harnessExperimentReleaseEvidence = validateHarnessExperimentReleaseEvidence(
       await readJsonArtifact(
@@ -855,9 +856,10 @@ export async function auditReleaseArtifacts(options = {}) {
         errors,
       ),
     );
-    if (!harnessExperimentReleaseEvidence.promotionReady) {
+    harnessExperimentReleaseQualification = qualifyHarnessExperimentReleaseEvidence(harnessExperimentReleaseEvidence);
+    if (!harnessExperimentReleaseQualification.promotionReady) {
       errors.push(
-        `harness experiment release evidence: ${harnessExperimentReleaseEvidence.blockers.join(",")}`,
+        `harness experiment release evidence: ${harnessExperimentReleaseQualification.blockers.join(",")}`,
       );
     }
   } catch {
@@ -1239,7 +1241,7 @@ export async function auditReleaseArtifacts(options = {}) {
       sha256: harnessExperimentReleaseArtifact.sha256,
       valid:
         harnessExperimentReleaseArtifact.readable &&
-        Boolean(harnessExperimentReleaseEvidence?.promotionReady) &&
+        Boolean(harnessExperimentReleaseQualification?.promotionReady) &&
         latestExperimentBinding?.sourceManifestSha256 ===
           releaseProductSourceManifest?.contentSha256 &&
         harnessExperimentReleaseEvidence?.productVersion ===

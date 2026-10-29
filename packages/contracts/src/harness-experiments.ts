@@ -1,5 +1,7 @@
 import type { ModelRef } from "./execution-core.js";
 import type { ModelRole } from "./model-route.js";
+import type { HarnessCorpusBinding } from "./harness-corpus.js";
+export type * from "./harness-corpus.js";
 
 export type HarnessExperimentMetric =
   | "task_success"
@@ -141,6 +143,7 @@ export interface HarnessExperiment {
   decisionRule: ExperimentDecisionRule;
   /** Absent only on historical definitions, which cannot prove live quality. */
   analysis?: HarnessAnalysisProtocol;
+  corpus?: HarnessCorpusBinding;
   contentSha256: string;
 }
 
@@ -289,6 +292,8 @@ export interface HarnessExperimentReleaseEvidence {
   trend: HarnessExperimentTrendPoint[];
   regressionAttribution: HarnessExperimentRegressionAttribution;
   promotionReady: boolean;
+  /** New qualification requires frozen corpus provenance; absent on historical receipts. */
+  corpusPolicyVersion?: 1;
   /** Historical receipts omit this and must not be used for a live-quality claim. */
   claimScope?:
     | "contract_only"

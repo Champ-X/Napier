@@ -13,6 +13,7 @@ import {
   validateHarnessExperiment,
   validateHarnessExperimentExecution,
   validateHarnessExperimentReleaseEvidence,
+  qualifyHarnessExperimentReleaseEvidence,
 } from "../src/harness-experiments.js";
 
 function experiment(
@@ -317,6 +318,8 @@ describe("pre-registered clustered Harness analysis", () => {
     const verified = validateHarnessExperimentReleaseEvidence(retained);
     expect(sha256(canonicalJson(verified))).toBe(before);
     expect(verified.claimScope).toBeUndefined();
+    expect(qualifyHarnessExperimentReleaseEvidence(verified)).toMatchObject({ promotionReady: false,
+      blockers: expect.arrayContaining(["corpus_provenance_missing", "evidence_does_not_support_live_quality"]) });
     expect(verified.experiment.modelRouteLock.servingModel.provider).toBe(
       "fixture",
     );

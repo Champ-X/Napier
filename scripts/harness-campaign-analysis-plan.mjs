@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { verifyHoldoutArtifacts } from "./harness-corpus-catalog.mjs";
 
 export const analysisDigest = (value) =>
   createHash("sha256")
@@ -16,6 +17,9 @@ async function evaluatorDigest() {
   const files = [
     "harness-campaign-analysis-plan.mjs",
     "harness-campaign-analysis.mjs",
+    "harness-corpus-catalog.mjs",
+    "../packages/harness-eval/dist/harness-corpus.js",
+    "../packages/harness-eval/dist/harness-corpus-baseline.js",
     "harness-campaign-evidence.mjs",
     "harness-sample-identity.mjs",
     "harness-grader-evidence.mjs",
@@ -46,7 +50,7 @@ export async function prepareCampaignAnalysis({
   jobs,
   profiles,
 }) {
-  const { createHarnessExperiment } = await engine();
+  const { createHarnessExperiment, createHarnessCorpusBinding, harnessCorpusTaskSha256 } = await engine();
   assert.ok(
     profiles.baseline && profiles.candidate,
     "Analysis requires explicit profiles for both arms",
@@ -98,15 +102,20 @@ export async function prepareCampaignAnalysis({
       partition: item.partition,
     })),
     seeds: [...new Set(jobs.map((job) => job.trial))],
+    corpus: createHarnessCorpusBinding(inputs.corpusCatalog, inputs.cases.map((item) => ({
+      caseId: item.id, inputSha256: item.inputSha256, familyId: item.taskFamily, partition: item.partition,
+      taskSha256: harnessCorpusTaskSha256(cases.find((entry) => entry.id === item.id)),
+    }))),
   });
   const content = {
     kind: "napier.harness-campaign-analysis-plan",
-    schemaVersion: 1,
+    schemaVersion: 2,
     experiment,
     evaluatorSha256: await evaluatorDigest(),
     cases,
     inputReceiptSha256: analysisDigest(inputs),
     schedule: jobs.map(({ caseId, trial, arm }) => ({ caseId, trial, arm })),
+    ...(inputs.corpusProvenanceRoot ? { corpusProvenanceRoot: inputs.corpusProvenanceRoot } : {}),
   };
   return validateCampaignAnalysisPlan({
     ...content,
@@ -117,7 +126,7 @@ export async function prepareCampaignAnalysis({
 export async function validateCampaignAnalysisPlan(plan) {
   const { validateHarnessExperiment } = await engine();
   assert.equal(plan.kind, "napier.harness-campaign-analysis-plan");
-  assert.equal(plan.schemaVersion, 1);
+  assert.ok([1, 2].includes(plan.schemaVersion), "Unknown campaign analysis schema");
   const { contentSha256, ...content } = plan;
   assert.equal(
     analysisDigest(content),
@@ -130,6 +139,8 @@ export async function validateCampaignAnalysisPlan(plan) {
     "Campaign evaluator changed after preregistration",
   );
   const experiment = validateHarnessExperiment(plan.experiment);
+  if (plan.schemaVersion === 2) assert.ok(experiment.corpus, "Campaign corpus binding is missing");
+  if (experiment.corpus) await verifyHoldoutArtifacts(experiment.corpus.catalog, plan.corpusProvenanceRoot);
   assert.ok(
     experiment.analysis,
     "Historical experiments cannot qualify a new campaign",
@@ -153,6 +164,7 @@ export async function validateCampaignAnalysisPlan(plan) {
       assert.match(item[field], /^[a-f0-9]{64}$/u);
     if (item.memorySeedSha256 !== null)
       assert.match(item.memorySeedSha256, /^[a-f0-9]{64}$/u);
+    if (experiment.corpus) assertCorpusCase(experiment.corpus, item);
   }
   const expected = experiment.cases
     .flatMap((item) =>
@@ -185,6 +197,16 @@ export async function validateCampaignAnalysisPlan(plan) {
   return plan;
 }
 
+function assertCorpusCase(corpus, item) {
+  const selected = corpus.selection.find((entry) => entry.caseId === item.id);
+  const task = corpus.catalog.tasks.find((entry) => entry.taskSha256 === selected?.taskSha256);
+  assert.ok(task, "Campaign case is missing from its corpus selection");
+  for (const field of ["fixtureSha256", "promptSha256", "memorySeedSha256"])
+    assert.equal(item[field] ?? null, task[field] ?? null, `Campaign source differs from corpus: ${field}`);
+  assert.ok(task.aliases.some((alias) => alias.caseId === item.id && alias.inputSha256 === item.inputSha256 &&
+    alias.outcomeSha256 === item.outcomeSha256), "Campaign grader differs from corpus definition");
+}
+
 export async function readCampaignAnalysisPlan(file, expectedHash) {
   const plan = await validateCampaignAnalysisPlan(
     JSON.parse(await readFile(file, "utf8")),
@@ -209,6 +231,7 @@ export function bindCampaignAnalysisJob({
   inputs,
 }) {
   assert.ok(Number.isSafeInteger(position) && position >= 0);
+  assert.ok(plan.schemaVersion === 2 && plan.experiment.corpus, "New dispatch requires catalog-bound campaign provenance");
   assert.deepEqual(
     plan.schedule[position],
     { caseId, trial, arm },
@@ -242,5 +265,7 @@ export function bindCampaignAnalysisJob({
     experimentSha256: definition.contentSha256,
     schedulePosition: position,
     caseInputSha256: item.inputSha256,
+    corpusBindingSha256: definition.corpus.contentSha256,
+    corpusCatalogSha256: definition.corpus.catalog.contentSha256,
   };
 }

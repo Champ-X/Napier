@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { taskInputIdentity } from "./harness-sample-identity.mjs";
+import { resolveHarnessCorpusCase } from "./harness-corpus-catalog.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 
@@ -32,7 +33,7 @@ export async function inventorySuiteTree(root, prefix = "") {
 
 /** Snapshot each complete case before any model execution. Reject aliases and
  * reused IDs; a renamed copy is not a new independent qualification case. */
-export async function prepareHarnessSuite(suitePath, output) {
+export async function prepareHarnessSuite(suitePath, output, { catalog, corpusProvenanceRoot } = {}) {
   const raw = await readFile(suitePath, "utf8"),
     suite = JSON.parse(raw);
   if (
@@ -51,7 +52,7 @@ export async function prepareHarnessSuite(suitePath, output) {
     cases = [];
   await mkdir(output, { recursive: false });
   for (const item of suite.cases) {
-    const metadata = suiteCaseMetadata(item, familyPartitions);
+    let metadata = suiteCaseMetadata(item, familyPartitions);
     if (
       !item ||
       typeof item.path !== "string" ||
@@ -98,6 +99,11 @@ export async function prepareHarnessSuite(suitePath, output) {
       path.join(source, manifest.fixturePath),
     );
     const inputSha256 = hash(JSON.stringify(inputs));
+    if (catalog) {
+      metadata = resolveHarnessCorpusCase({ catalog, suiteId: suite.id, suiteSha256: hash(raw), item,
+        caseId: manifest.id, inputSha256, inputs });
+      suiteCaseMetadata(metadata, familyPartitions);
+    }
     const taskIdentity = taskInputIdentity({
       fixtureSha256: hash(JSON.stringify(inputs.fixture)),
       promptSha256: inputs.promptPath,
@@ -133,6 +139,8 @@ export async function prepareHarnessSuite(suitePath, output) {
     id: suite.id,
     suiteSha256: hash(raw),
     cases,
+    ...(catalog ? { corpusCatalog: catalog } : {}),
+    ...(corpusProvenanceRoot ? { corpusProvenanceRoot } : {}),
   };
   await writeFile(
     path.join(output, "inputs.json"),

@@ -18,6 +18,7 @@ import {
 import { evaluateCampaignQuality } from "./harness-campaign-evidence.mjs";
 import { prepareCampaignAnalysis } from "./harness-campaign-analysis-plan.mjs";
 import { evaluateCampaignAnalysis } from "./harness-campaign-analysis.mjs";
+import { loadHarnessCorpusCatalog, freezeHoldoutArtifacts } from "./harness-corpus-catalog.mjs";
 import {
   pairedSuiteJobs,
   executePairedSuiteJobs,
@@ -55,6 +56,7 @@ const { values } = parseArgs({
     "grader-mode": { type: "string", default: "host" },
     "grader-runtimes": { type: "string", default: "node" },
     "analysis-protocol": { type: "string" },
+    "corpus-supplement": { type: "string" },
   },
 });
 const limitOverrides = campaignLimitOverrides(values);
@@ -146,9 +148,14 @@ const apiBudget = openApiRequestBudget(apiBudgetFile);
 const spendingBudget = values["spending-budget"]
   ? openSpendingBudget(path.resolve(values["spending-budget"]))
   : undefined;
+const corpusCatalog = values["analysis-protocol"] ? await loadHarnessCorpusCatalog(values["corpus-supplement"]) : undefined;
+const corpusProvenanceRoot = corpusCatalog ? await freezeHoldoutArtifacts(corpusCatalog,
+  values["corpus-supplement"] ? path.dirname(path.resolve(values["corpus-supplement"])) : undefined,
+  path.join(output, "corpus-provenance")) : undefined;
 const inputs = await prepareHarnessSuite(
   path.resolve(values.suite),
   path.join(output, "cases"),
+  { catalog: corpusCatalog, corpusProvenanceRoot },
 );
 const originalInventory = await inventorySuiteTree(path.join(output, "cases"));
 const campaign = fileURLToPath(

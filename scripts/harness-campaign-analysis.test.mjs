@@ -17,6 +17,9 @@ import { createModelHarnessExperimentProfile } from "../packages/harness-eval/di
 import { prepareHarnessSuite } from "./harness-suite.mjs";
 import { pairedSuiteJobs } from "./harness-paired-schedule.mjs";
 import { observation } from "./harness-campaign-test-fixture.mjs";
+import { syntheticCorpusForInputs } from "./harness-corpus-test-fixture.mjs";
+import { corpusDigest } from "./harness-corpus-inventory.mjs";
+import { loadHarnessCorpusCatalog } from "./harness-corpus-catalog.mjs";
 import { collectUsageEvidence } from "./harness-usage-evidence.mjs";
 import { evaluateCampaignQuality } from "./harness-campaign-evidence.mjs";
 import { evaluateCampaignAnalysis } from "./harness-campaign-analysis.mjs";
@@ -91,6 +94,10 @@ beforeAll(async () => {
     }),
   );
   inputs = await prepareHarnessSuite(suitePath, path.join(root, "inputs"));
+  const supplementPath = path.join(root, "corpus-supplement.json");
+  await writeFile(supplementPath, JSON.stringify(await syntheticCorpusForInputs(inputs, root)));
+  inputs.corpusCatalog = await loadHarnessCorpusCatalog(supplementPath);
+  inputs.corpusProvenanceRoot = root;
   jobs = pairedSuiteJobs(inputs.cases, path.join(root, "output"), 3);
   profiles = {};
   for (const [arm, maxActiveTools] of [
@@ -233,6 +240,26 @@ test("child rejects wrong position, profile, model or task before model executio
       }),
     /input differs/,
   );
+});
+
+test.each(["fixtureSha256", "promptSha256", "memorySeedSha256", "outcomeSha256"])("rejects rehashed plan %s that contradicts its sealed corpus task", async (field) => {
+  const changed = structuredClone(plan);
+  changed.cases.find((item) => item.id === "case_29")[field] = "f".repeat(64);
+  const { contentSha256: _old, ...content } = changed; changed.contentSha256 = analysisDigest(content);
+  const file = path.join(root, `changed-${field}.json`); await writeFile(file, JSON.stringify(changed));
+  await assert.rejects(readCampaignAnalysisPlan(file, changed.contentSha256), /differs from corpus/);
+});
+
+test("standalone plan loading rechecks real frozen provenance after every nested hash is recomputed", async () => {
+  const changed = structuredClone(plan), corpus = changed.experiment.corpus;
+  const evidence = corpus.catalog.evidence.find((item) => item.kind === "holdout_provenance");
+  evidence.path = "absent/declaration.json";
+  for (const item of [corpus.catalog, corpus, changed.experiment]) {
+    const { contentSha256: _old, ...content } = item; item.contentSha256 = corpusDigest(content);
+  }
+  const { contentSha256: _old, ...content } = changed; changed.contentSha256 = analysisDigest(content);
+  const file = path.join(root, "absent-frozen-provenance.json"); await writeFile(file, JSON.stringify(changed));
+  await assert.rejects(readCampaignAnalysisPlan(file, changed.contentSha256), { code: "ENOENT" });
 });
 
 test("sample gate and statistically improved fixtures still cannot promote live quality", async () => {
@@ -450,6 +477,8 @@ await writeFile(path.join(output,'result.json'),JSON.stringify(report),{flag:'wx
       profiles.candidate.path,
       "--analysis-protocol",
       protocolFile,
+      "--corpus-supplement",
+      path.join(root, "corpus-supplement.json"),
       "--max-api-requests",
       "1000",
       "--api-request-interval-ms",
@@ -457,7 +486,7 @@ await writeFile(path.join(output,'result.json'),JSON.stringify(report),{flag:'wx
     ],
     { encoding: "utf8", timeout: 30000, env: { PATH: process.env.PATH } },
   );
-  assert.equal(child.status, 0, child.stderr);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
   const schedule = JSON.parse(
     await readFile(path.join(output, "schedule.json"), "utf8"),
   );

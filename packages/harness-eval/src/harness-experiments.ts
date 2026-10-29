@@ -1,6 +1,7 @@
 export * from "./harness-experiment-definition.js";
 export * from "./harness-experiment-execution.js";
 export * from "./harness-experiment-release-evidence.js";
+export * from "./harness-corpus.js";
 export {
   applyModelHarnessExperimentProfile,
   createModelHarnessExperimentProfile,

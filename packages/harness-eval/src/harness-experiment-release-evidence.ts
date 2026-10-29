@@ -12,6 +12,7 @@ import type {
 import { canonicalJson, sha256 } from "@napier/runtime/harness-eval-support";
 import { validateHarnessExperiment } from "./harness-experiment-definition.js";
 import { validateHarnessExperimentExecution } from "./harness-experiment-execution.js";
+import { harnessCorpusQualificationBlockers } from "./harness-corpus.js";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const PRODUCT_VERSION = /^[0-9A-Za-z][0-9A-Za-z._-]{0,31}$/u;
@@ -24,12 +25,13 @@ export function createHarnessExperimentReleaseEvidence(input: {
   executions: HarnessExperimentExecution[];
   bindings: HarnessExperimentReleaseBinding[];
 }): HarnessExperimentReleaseEvidence {
-  return buildReleaseEvidence(input, false);
+  return buildReleaseEvidence(input, false, true);
 }
 
 function buildReleaseEvidence(
   input: Parameters<typeof createHarnessExperimentReleaseEvidence>[0],
   historical: boolean,
+  corpusPolicy: boolean,
 ): HarnessExperimentReleaseEvidence {
   const experiment = validateHarnessExperiment(input.experiment);
   assertReleaseIdentity(input.generatedAt, input.productVersion);
@@ -60,6 +62,7 @@ function buildReleaseEvidence(
           ? ("integration_only" as const)
           : ("contract_only" as const);
   if (!historical) {
+    if (corpusPolicy) blockers.push(...harnessCorpusQualificationBlockers(experiment.corpus, experiment.cases));
     if (!experiment.analysis) blockers.push("analysis_protocol_missing");
     if (claimScope === "contract_only" || claimScope === "integration_only")
       blockers.push("evidence_does_not_support_live_quality");
@@ -94,6 +97,7 @@ function buildReleaseEvidence(
     trend,
     regressionAttribution,
     promotionReady: blockers.length === 0,
+    ...(corpusPolicy ? { corpusPolicyVersion: 1 as const } : {}),
     ...(!historical ? { claimScope } : {}),
     blockers,
   };
@@ -124,11 +128,22 @@ export function validateHarnessExperimentReleaseEvidence(
       bindings: array(input["bindings"]) as HarnessExperimentReleaseBinding[],
     },
     input["claimScope"] === undefined,
+    input["corpusPolicyVersion"] === 1,
   );
   if (canonicalJson(rebuilt) !== canonicalJson(input)) {
     throw new Error("Harness experiment release evidence hash is invalid");
   }
   return rebuilt;
+}
+
+/** Verification preserves historical bytes; current qualification never trusts historical promotion flags. */
+export function qualifyHarnessExperimentReleaseEvidence(input: unknown): { promotionReady: boolean; blockers: string[] } {
+  const evidence = validateHarnessExperimentReleaseEvidence(input);
+  const blockers = [...evidence.blockers];
+  if (evidence.corpusPolicyVersion !== 1) blockers.push("corpus_provenance_missing");
+  if (evidence.claimScope !== "live_quality" && evidence.claimScope !== "production_quality")
+    blockers.push("evidence_does_not_support_live_quality");
+  return { promotionReady: evidence.promotionReady && blockers.length === 0, blockers: [...new Set(blockers)] };
 }
 
 function normalizeBindings(

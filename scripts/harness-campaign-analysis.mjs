@@ -13,6 +13,7 @@ export async function evaluateCampaignAnalysis({ plan, reports, statuses }) {
     await import("../packages/harness-eval/dist/harness-experiments.js");
   const quality = evaluateCampaignQuality(reports);
   const blockers = [...quality.blockers, ...quality.regressions];
+  if (!plan.experiment.corpus || plan.schemaVersion !== 2) blockers.push("corpus_provenance_missing");
   const positions = new Map(
     plan.schedule.map((job, index) => [campaignCell(job), index]),
   );
@@ -30,6 +31,8 @@ export async function evaluateCampaignAnalysis({ plan, reports, statuses }) {
       experimentSha256: plan.experiment.contentSha256,
       schedulePosition: position,
       caseInputSha256: item.inputSha256,
+      ...(plan.experiment.corpus ? { corpusBindingSha256: plan.experiment.corpus.contentSha256,
+        corpusCatalogSha256: plan.experiment.corpus.catalog.contentSha256 } : {}),
     };
     if (analysisDigest(report.analysisBinding) !== analysisDigest(binding))
       blockers.push(`${key}: analysis binding missing or changed`);

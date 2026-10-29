@@ -8,7 +8,7 @@ import {
   createAgentHarnessAcceptanceEvidence,
   validateAgentHarnessAcceptanceEvidence,
 } from "../packages/runtime/dist/agent-harness-acceptance.js";
-import { validateHarnessExperimentReleaseEvidence } from "../packages/harness-eval/dist/harness-experiments.js";
+import { validateHarnessExperimentReleaseEvidence, qualifyHarnessExperimentReleaseEvidence } from "../packages/harness-eval/dist/harness-experiments.js";
 import { collectCodeBridgeEvidence } from "./agent-harness-acceptance-bridge.mjs";
 import { collectRouteAndToolEvidence } from "./agent-harness-acceptance-route-tools.mjs";
 import { collectSubagentEvidence } from "./agent-harness-acceptance-subagents.mjs";
@@ -105,9 +105,10 @@ async function releaseBindings() {
   const harness = validateHarnessExperimentReleaseEvidence(
     JSON.parse(await readFile(harnessPath, "utf8")),
   );
-  if (!harness.promotionReady) {
+  const qualification = qualifyHarnessExperimentReleaseEvidence(harness);
+  if (!qualification.promotionReady) {
     throw new Error(
-      `Harness experiment evidence is blocked: ${harness.blockers.join(",")}`,
+      `Harness experiment evidence is blocked: ${qualification.blockers.join(",")}`,
     );
   }
   if (

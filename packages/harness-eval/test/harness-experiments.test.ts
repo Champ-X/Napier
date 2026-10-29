@@ -528,6 +528,22 @@ describe("Harness experiments", () => {
     );
   });
 
+  it("does not qualify live-labelled holdout cases without corpus provenance", () => {
+    const base = fixtureExperiment();
+    const experiment = createHarnessExperiment({ ...base, analysis: { ...base.analysis!, evidenceKind: "live_model" },
+      modelRouteLock: { ...base.modelRouteLock, servingModel: { provider: "declared-provider", id: "declared-model" } },
+      cases: base.cases.map((item) => ({ ...item, taskFamily: `family-${item.id}`, partition: "holdout" })) });
+    const executions = ["2026-10-28T00:00:00.000Z", "2026-10-29T00:00:00.000Z"]
+      .map((date) => execution(experiment, date, "non_inferior"));
+    const evidence = createHarnessExperimentReleaseEvidence({ generatedAt: "2026-10-30T00:00:00.000Z", productVersion: "0.2.0",
+      experiment, executions, bindings: executions.map((item) => ({ executionSha256: item.contentSha256,
+        sourceManifestSha256: "a".repeat(64), configurationSha256: "b".repeat(64), environmentSha256: "c".repeat(64),
+        graderSha256: "d".repeat(64), credentialClass: "workload_identity" })) });
+    expect(evidence.corpusPolicyVersion).toBe(1);
+    expect(evidence.blockers).toContain("corpus_provenance_missing");
+    expect(evidence.promotionReady).toBe(false);
+  });
+
   it("rejects a rehashed execution that ignored its predeclared AB/BA order", () => {
     const experiment = fixtureExperiment();
     const valid = execution(
@@ -552,7 +568,7 @@ describe("Harness experiments", () => {
   });
 });
 
-function fixtureInput() {
+function fixtureInput(): Parameters<typeof createHarnessExperiment>[0] {
   return {
     id: "route_safe_failover_v1",
     baselineProfile: createModelHarnessExperimentProfile({
@@ -570,8 +586,8 @@ function fixtureInput() {
       fallbackSamples: "separate_stratum" as const,
     },
     seeds: [11, 22, 33],
-    primaryMetrics: ["task_success", "repeated_call_rate"] as const,
-    guardrailMetrics: ["intervention_count"] as const,
+    primaryMetrics: ["task_success", "repeated_call_rate"],
+    guardrailMetrics: ["intervention_count"],
   };
 }
 
@@ -644,6 +660,8 @@ function execution(
           candidateToolSchemaTokens,
         ),
       ];
+      for (const result of pair) Object.assign(result, { servingModel: experiment.modelRouteLock.servingModel,
+        evidenceKind: experiment.analysis?.evidenceKind ?? "contract_fixture" });
       return (caseIndex * experiment.seeds.length + seedIndex) % 2
         ? pair.reverse()
         : pair;
@@ -667,6 +685,7 @@ function execution(
 }
 
 const fixtureScopeBlockers = [
+  "corpus_provenance_missing",
   "evidence_does_not_support_live_quality",
   "untuned_task_family_evidence_missing",
   "environment_or_grader_binding_missing",

@@ -15,6 +15,7 @@ import {
   createHarnessExperimentReleaseEvidence,
   executeHarnessExperiment,
   validateHarnessExperimentReleaseEvidence,
+  qualifyHarnessExperimentReleaseEvidence,
 } from "../packages/harness-eval/dist/harness-experiments.js";
 import { ModelRegistry } from "../packages/runtime/dist/models.js";
 import { LocalStore } from "../packages/runtime/dist/store.js";
@@ -23,7 +24,7 @@ import { createReleaseProductSourceManifest } from "./release-product-source-man
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const outputPath = path.join(
   repoRoot,
-  "docs/artifacts/harness-experiment-contract-evidence-0.1.4.json",
+  "docs/artifacts/harness-experiment-contract-evidence-0.1.5.json",
 );
 const caseInputs = new Map(
   Array.from({ length: 30 }, (_, index) => {
@@ -42,7 +43,7 @@ if (verifyIndex >= 0) {
     JSON.parse(await readFile(target, "utf8")),
   );
   process.stdout.write(
-    `${JSON.stringify({ valid: true, claimScope: evidence.claimScope ?? "historical_contract_only", promotionReady: ["live_quality", "production_quality"].includes(evidence.claimScope) && evidence.promotionReady, contentSha256: evidence.contentSha256 })}\n`,
+    `${JSON.stringify({ valid: true, claimScope: evidence.claimScope ?? "historical_contract_only", ...qualifyHarnessExperimentReleaseEvidence(evidence), contentSha256: evidence.contentSha256 })}\n`,
   );
 } else {
   const temporaryRoot = await mkdtemp(
@@ -119,7 +120,7 @@ if (verifyIndex >= 0) {
     await writeFile(
       outputPath,
       `${JSON.stringify(evidence, null, 2)}\n`,
-      "utf8",
+      { encoding: "utf8", flag: "wx" },
     );
     process.stdout.write(
       `${JSON.stringify({ outputPath: path.relative(repoRoot, outputPath), runCount: evidence.executions.reduce((sum, execution) => sum + execution.trials.length, 0), contentSha256: evidence.contentSha256 })}\n`,

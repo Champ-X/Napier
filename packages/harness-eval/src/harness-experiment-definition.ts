@@ -8,6 +8,7 @@ import type {
   HarnessExperimentProfile,
   HarnessExperimentTrial,
   ModelRouteLock,
+  HarnessCorpusBinding,
 } from "@napier/contracts/harness-experiments";
 
 import {
@@ -23,6 +24,7 @@ import {
   metricUnits,
 } from "./harness-experiment-analysis.js";
 import { familySummaries } from "./harness-experiment-family-summary.js";
+import { validateHarnessCorpusBinding } from "./harness-corpus.js";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const ID = /^[a-z][a-z0-9_.-]{2,79}$/u;
@@ -38,6 +40,7 @@ export function createHarnessExperiment(input: {
   primaryMetrics: HarnessExperimentMetric[];
   guardrailMetrics: HarnessExperimentMetric[];
   decisionRule?: Partial<ExperimentDecisionRule>;
+  corpus?: HarnessCorpusBinding;
   analysis?: Partial<Omit<HarnessAnalysisProtocol, "metrics">> & {
     metrics?: HarnessAnalysisProtocol["metrics"];
   };
@@ -50,6 +53,7 @@ function buildExperiment(
   historical: boolean,
 ): HarnessExperiment {
   const cases = normalizeCases(input.cases, historical);
+  const corpus = input.corpus ? validateHarnessCorpusBinding(input.corpus, cases) : undefined;
   const seeds = uniqueSeeds(input.seeds);
   const decisionRule: ExperimentDecisionRule = {
     minimumCases: input.decisionRule?.minimumCases ?? 30,
@@ -91,6 +95,7 @@ function buildExperiment(
     primaryMetrics,
     guardrailMetrics,
     decisionRule,
+    ...(corpus ? { corpus } : {}),
     ...(!historical
       ? {
           analysis: analysisProtocol(
@@ -127,6 +132,7 @@ export function validateHarnessExperiment(input: unknown): HarnessExperiment {
       ) as HarnessExperimentMetric[],
       decisionRule: input["decisionRule"] as ExperimentDecisionRule,
       analysis: input["analysis"] as HarnessAnalysisProtocol,
+      ...(input["corpus"] ? { corpus: input["corpus"] as HarnessCorpusBinding } : {}),
     },
     input["analysis"] === undefined,
   );

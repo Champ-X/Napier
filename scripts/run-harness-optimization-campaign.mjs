@@ -837,6 +837,7 @@ async function helperIdentity() {
         "harness-api-request-budget.mjs",
         "harness-campaign-profile.mjs",
         "harness-campaign-analysis-plan.mjs",
+        "harness-corpus-catalog.mjs",
         "harness-campaign-limits.mjs",
         "harness-spending-budget.mjs",
         "harness-spending-transport.mjs",
