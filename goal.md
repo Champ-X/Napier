@@ -445,6 +445,14 @@
 - 与已提交G01及G04精确冻结源码整合后，完整编译、Web类型和75项定向回归通过；原架构7/API4失败保留。便携证据：[shared-run-model-allowance.md](docs/shared-run-model-allowance.md)。零外部模型调用、未push，G03整体仍未完成。
 
 
+### 后续推进：G03 重复回执的同快照 revision（2026-10-30）
+
+- 本地源码 `bf3b1c7843811766c70b66625f59b872c8806b79` 固定2文件；duplicate reconcile 与 affirmative undispatched 从同一个原生 claim/snapshot 读取自身及父 accounting revision，避免识别新回执后返回旧 heap revision。canonical usage、事件和已持久化结果不因重复请求改变，无额外强制 heap reload。
+- 四个确定性交错反例由4失败→4通过；最终197唯一用例严格为原193及新增4。独立补充6项与root当前基线集成31项分别报告，不叠加计数。完整Runtime/CLI/Server编译及新增测试strict检查通过，原架构7/API4失败保留。
+- 受限网络重跑包含37进程/40个PID与threadId上下文、24个Unix与3个loopback连接，零非本地连接尝试；仅作为受控Node socket证据。原17文件历史归档默认便携核验仍通过，其workspace检查应使用 `1bf62ef299e9935dbc27f4d9caf46aa7f75f83d2`；新归档另外核验当前2文件。
+- 说明、前后失败与源码提交绑定见 [model-accounting-duplicate-revision.md](docs/model-accounting-duplicate-revision.md)。此修复限定为返回的revision一致性，不代表通用物理token/invoice硬上界或G03整体验收。
+
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
