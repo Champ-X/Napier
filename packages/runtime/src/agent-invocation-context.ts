@@ -15,6 +15,18 @@ import { taskMemoryQueryFromEvents } from "./task-memory-query.js";
 import { taskBranchHistorySources } from "./task-branch-history.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import { bindRunBudgetContext, runBudgetForContext } from "./run-budget-context.js";
+import { RunInvocationContextCursor } from "./run-invocation-context-cursor.js";
+import type { RunEventQueryPort } from "./run-event-query-port.js";
+
+/** The model lifecycle owns one preparation scope, including its optional native
+ * event reader. Each call still evaluates current policy, memory, files and budget. */
+export function createAgentInvocationContextPreparer(
+  owner: Pick<Parameters<typeof prepareAgentInvocationContext>[0], "store" | "run">,
+) {
+  const eventCursor = new RunInvocationContextCursor(owner.store, owner.run);
+  return (input: Omit<Parameters<typeof prepareAgentInvocationContext>[0], "store" | "run" | "eventCursor">) =>
+    prepareAgentInvocationContext({ ...input, ...owner, eventCursor });
+}
 
 /** One preparation boundary for invocation-scoped context. Prepare the state
  * projection before binding memory to the resulting Context identity. Neither
@@ -30,9 +42,10 @@ export async function prepareAgentInvocationContext(input: {
     listRunEvents(runId: string): Promise<RunEvent[]>;
     listMemories(options: { agentId: string }): MemoryFact[];
     appendEvent(event: AppendEventInput): Promise<unknown>;
-  };
+  } & Partial<Pick<RunEventQueryPort, "findLatestEvent" | "listEventsRange">>;
   policy?: HarnessPolicyProfile["context"] | undefined;
   budget?: RunBudgetTracker;
+  eventCursor?: RunInvocationContextCursor;
 }): Promise<Context> {
   const budgetEnabled = input.policy?.finalization === "request-aware-v2";
   if (budgetEnabled && !input.budget)
@@ -51,6 +64,11 @@ export async function prepareAgentInvocationContext(input: {
   const lineage = stateEnabled
     ? workingStateRunLineage(input.run, threadRuns)
     : [input.run.id];
+  const project = (events: RunEvent[]) => prepareFromEvents(input, {
+    events, threadRuns, lineage, budgetEnabled, stateEnabled, memoryEnabled,
+  });
+  if (memoryEnabled && input.eventCursor?.canRead(input.run, threadRuns))
+    return input.eventCursor.refresh(project);
   // Conversation queries include ordinary prior turns, not only recovery
   // ancestors. Branches already own copied local history up to their cutoff.
   // Working-state tool evidence remains restricted to the recovery lineage.
@@ -61,6 +79,15 @@ export async function prepareAgentInvocationContext(input: {
           await Promise.all(lineage.map((id) => input.store.listRunEvents(id)))
         ).flat()
       : [];
+  return project(events);
+}
+
+async function prepareFromEvents(
+  input: Parameters<typeof prepareAgentInvocationContext>[0],
+  scope: { events: RunEvent[]; threadRuns: RunRecord[]; lineage: string[];
+    budgetEnabled: boolean; stateEnabled: boolean; memoryEnabled: boolean },
+): Promise<Context> {
+  const { events, threadRuns, lineage, budgetEnabled, stateEnabled, memoryEnabled } = scope;
   const branchHistory = taskBranchHistorySources({
     threadId: input.run.threadId,
     runs: threadRuns,

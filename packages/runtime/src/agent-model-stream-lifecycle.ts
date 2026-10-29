@@ -41,7 +41,7 @@ import { recoverModelContextOverflow } from "./model-context-overflow-recovery.j
 import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
 import { RunContextCompactor } from "./run-context-compaction.js";
 import type { RunContextCompactionPort } from "./run-context-compaction-types.js";
-import { prepareAgentInvocationContext } from "./agent-invocation-context.js";
+import { createAgentInvocationContextPreparer } from "./agent-invocation-context.js";
 import { bindRunBudgetContext } from "./run-budget-context.js";
 import {
   prepareHarnessModelCallBudget,
@@ -110,6 +110,7 @@ export interface AgentModelStreamLifecycleInput {
 export function agentModelStreamLife(
   input: AgentModelStreamLifecycleInput,
 ): StreamFn {
+  const prepareInvocationContext = createAgentInvocationContextPreparer({ store: input.host.store, run: input.run });
   const runContextCompaction = new RunContextCompactor(
     input.host,
     input.run,
@@ -228,10 +229,8 @@ export function agentModelStreamLife(
             baseContext = preparedCall.context,
           ) => {
             baseContext = stripRuntimeContext(input.run, baseContext);
-            baseContext = await prepareAgentInvocationContext({
+            baseContext = await prepareInvocationContext({
               context: baseContext,
-              run: input.run,
-              store: input.host.store,
               policy: input.harnessExperimentProfile?.policies?.context,
               budget: input.budget,
             });
