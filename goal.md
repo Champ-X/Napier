@@ -444,7 +444,6 @@
 - 隔离原始193用例通过，受限Node网络重跑为同193而非新增193；独立探针5通过，另保留基线已有duplicate response revision旧值问题。后者已在独立源码提交 `bf3b1c7843811766c70b66625f59b872c8806b79` 修复，未改写原冻结证据。Host结算竞态只在账本revision变化时按已有有界CAS重试，稳定坏回执仍拒绝。
 - 与已提交G01及G04精确冻结源码整合后，完整编译、Web类型和75项定向回归通过；原架构7/API4失败保留。便携证据：[shared-run-model-allowance.md](docs/shared-run-model-allowance.md)。零外部模型调用、未push，G03整体仍未完成。
 
-
 ### 后续推进：G03 重复回执的同快照 revision（2026-10-30）
 
 - 本地源码 `bf3b1c7843811766c70b66625f59b872c8806b79` 固定2文件；duplicate reconcile 与 affirmative undispatched 从同一个原生 claim/snapshot 读取自身及父 accounting revision，避免识别新回执后返回旧 heap revision。canonical usage、事件和已持久化结果不因重复请求改变，无额外强制 heap reload。
@@ -452,6 +451,12 @@
 - 受限网络重跑包含37进程/40个PID与threadId上下文、24个Unix与3个loopback连接，零非本地连接尝试；仅作为受控Node socket证据。原17文件历史归档默认便携核验仍通过，其workspace检查应使用 `1bf62ef299e9935dbc27f4d9caf46aa7f75f83d2`；新归档另外核验当前2文件。
 - 说明、前后失败与源码提交绑定见 [model-accounting-duplicate-revision.md](docs/model-accounting-duplicate-revision.md)。此修复限定为返回的revision一致性，不代表通用物理token/invoice硬上界或G03整体验收。
 
+### 后续推进：G04 独立文件操作批量恢复（2026-10-30）
+
+- 本地源码 `bf6a34cdeede8e95e7932339de736f209954ecc5` 固定15文件。最多128操作/256路径/64MiB读取，整组已结算及未结算参与者共同锁定、核查、持久化authority fence，并在continuation前重新检查；保留既有纯patch版本链与原权限。
+- 真实两次native move完成后退出的反例，重启证据0→2、自动恢复false→true，单个completed continuation实际只读2次，rename维持2次，inode/mtime/字节不变。六个混合/移动故障进程场景保留实际cut，未伪造tool terminal或重放授权。
+- 最终133用例通过，独立四组探针验证全组锁、完整事务范围、跨线程seq和延期重检。原始emit使用noCheck与新增可达图strict检查分别报告；root跨G01/G03整合另外完成严格完整编译及75项定向检查，不将重跑数与133相加。
+- native写工具仍互斥，真实证据仅支持多个settled加最后一个unfinished；不声称同Run多个同时未决native写、目录move、远程副作用或任意工具自动重放。说明和完整失败证据：[workspace-operation-batch-recovery.md](docs/workspace-operation-batch-recovery.md)。G04及全部G01–G07保持active。
 
 ## 2. 保留的基础与实施原则
 
@@ -597,7 +602,7 @@
 
 - [ ] 基于现有 operation 记录区分：尚未执行、已确认完成、结果待对账、不可自动重放。
 - [x] 选择一种可验证的本地写工具做纵向切片：已结算操作继承证据，后续步骤继续运行。（apply_patch 终态或精确结算结果与私有绑定齐备时，重查后置条件并继续原有只读恢复；当前 26 场景进程故障证据已留存；有写前意图的未结算提交也可独立对账，精确捕获的未提交主 Agent apply_patch 已在显式 verified_patches 策略下继续；其他操作和统一恢复操作区仍待完成。）
-- [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。（有写前意图的 apply_patch 及单个原生普通文件 move 已实现文件身份/摘要对账；已识别原生move锁争用的周期失主重核已实现；混合/多操作和全 G04 分类恢复矩阵尚未完成。）
+- [ ] 对不确定操作增加 postcondition / reconciliation adapter，使用文件摘要、外部记录或稳定幂等键核对。（有写前意图的 apply_patch、原生普通文件 move、独立move／patch批量对账及锁争用后的周期失主重核已实现；原生写互斥下多个settled加最后一个unfinished已验证，目录move、外部副作用及全 G04 分类恢复矩阵尚未完成。）
 - [ ] 对环境漂移、权限变化、证据缺失和不可对账操作保留明确停止原因。
 - [ ] 将恢复建议与用户操作区接通，说明保留了什么、从哪里继续、哪些结果仍不确定。
 
