@@ -238,6 +238,12 @@
 - **视觉验收未完整通过**：`b-trust-320.png` 确认 Settings 与 Workspace evidence 双弹窗叠层透字，按钮仍可操作。列入 G06-B overlay 整合，不把功能隔离当作视觉无缺陷。早期脚本对生成时间的比较、对遮挡控件的直接操作已按真实 UI 状态修正，未作为生产隔离故障。
 - 本片只验证 Workflow approval 与 extension trust review，不扩称所有模型 review、崩溃恢复或 G05-B 全部通过。全局 Sandbox／浏览器资源协调、rotation 回收，以及 G01–G07 其余目标继续保持 active。
 
+### 后续推进：G05-B Sandbox 生命周期边界基线
+
+- 为后续全局进程容量明确计量边界，新增独立复现脚本，使用当前 Runtime dist 的真实 POSIX Guardian：目标进程返回 0 后，快速 detached 的子进程仍被独立观察为存活。随后按 fixture 发布的 PID、脚本、nonce 与出生身份校验，只清理该进程并确认消失，临时目录删除。不是新增生产回归，也未实现全局进程池。
+- 最终 [sandbox-execution-lifetime-final-2026-10-29.json](docs/artifacts/sandbox-execution-lifetime-final-2026-10-29.json) 的 7 项源码／构建绑定已复核；保留清理加固前的初始收据。额外注入断言失败和输出 EEXIST，两种路径均确认清理。零网络／模型请求；单次进程观测不是性能统计。
+- 下一片 Sandbox execution-slot 必须区分句柄生命周期和所有 OS 后代；启动前失败与清理未知需类型化证据，跨进程资源恢复需持久目标／容器身份与清理凭证。不能照搬模型 owner 死亡后释放容量，也不能用 child.exit 成功证明全部后代结束。此边界仍属 G05-B 未完成部分，其余 G01–G07 目标不变。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：

@@ -130,3 +130,27 @@ race: Run completion preceded the scheduler's persisted `lastRunId`. The fixture
 now waits for both durable outcomes; production scheduling was unchanged. The
 [failed capture record](artifacts/workspace-resource-coordination-capture-failure-2026-10-29.json)
 preserves the assertion and source bindings, and points to retained raw diagnostics.
+
+## Sandbox lifetime baseline for the next capacity slice
+
+`node scripts/check-sandbox-execution-lifetime.mjs <new-output-path>` captures an
+existing POSIX Guardian boundary. The direct target exits with code zero while
+its quickly detached child remains alive. The fixture subsequently verifies the
+owned child's exact script/nonce/birth identity, kills only that PID and confirms
+its absence, then removes the temporary directory. The final
+[source/build-bound receipt](artifacts/sandbox-execution-lifetime-final-2026-10-29.json)
+records that counterexample and completed cleanup. The initial
+[baseline receipt](artifacts/sandbox-execution-lifetime-baseline-2026-10-29.json)
+is preserved before the verifier's exceptional cleanup was strengthened. The
+final verifier was also checked with an injected post-observation assertion
+failure and an existing output path; both cleaned up the owned descendant.
+
+This is evidence about existing direct Guardian behavior, not a new regression
+or an implementation of global process admission. A future Sandbox execution-slot
+pool must distinguish returned handle lifetime from all descendant processes.
+Launch failures need typed no-start/cleanup evidence; unknown cleanup cannot
+release physical capacity merely because an owner PID died. Cross-process
+capacity recovery also needs durable target/container identities and cleanup
+receipts, which generic `SandboxedProcess` does not currently expose. Browser,
+container and OS containment were not exercised by this baseline; network/model
+requests were zero.
