@@ -18,6 +18,7 @@ import {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { nowIso } from "./ids.js";
 import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
 import type { ModelRegistry } from "./models.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 
@@ -278,11 +279,19 @@ async function completeSubagentOutcomeReview(
     tools: requestContext.tools,
   });
   try {
-    const response = await models.models.completeSimple(model, requestContext, {
-      maxTokens: 1_000,
-      temperature: 0,
-      timeoutMs: 30_000,
-      maxRetries: 0,
+    const accounting = models.accountingForOperation("subagent_outcome_review");
+    const response = await completeModelInvocation({
+      models: models.models,
+      model,
+      context: requestContext,
+      phase: "subagent_outcome_review",
+      options: {
+        maxTokens: 1_000,
+        temperature: 0,
+        timeoutMs: 30_000,
+        maxRetries: 0,
+      },
+      ...(accounting ? { accounting } : {}),
     });
     responseText = contentText(response.content);
     usage = normalizeUsage(response.usage);

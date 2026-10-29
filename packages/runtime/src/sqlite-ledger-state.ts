@@ -1,7 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 
 import { listRunLeases } from "./sqlite-run-leases.js";
-import type { LedgerSnapshot } from "./sqlite-ledger-model.js";
+import type { LedgerSchemaReport, LedgerSnapshot } from "./sqlite-ledger-model.js";
 
 export function readLedgerSnapshot(
   database: DatabaseSync,
@@ -36,3 +36,32 @@ export function rollbackSqliteTransaction(database: DatabaseSync): void {
     // The original transaction error is more useful than a redundant rollback.
   }
 }
+
+export function readLedgerSchemaReport(database: DatabaseSync): LedgerSchemaReport {
+    const versionRow = database.prepare("PRAGMA user_version").get() as {
+      user_version: number;
+    };
+    const integrity = database.prepare("PRAGMA quick_check").get() as
+      | { quick_check: string }
+      | undefined;
+    const rows = database
+      .prepare(
+        `SELECT version, name, applied_at
+         FROM ledger_schema_migrations
+         ORDER BY version ASC`,
+      )
+      .all() as Array<{
+      version: number;
+      name: string;
+      applied_at: string;
+    }>;
+    return {
+      schemaVersion: versionRow.user_version,
+      quickCheck: integrity?.quick_check ?? "missing",
+      migrations: rows.map((row) => ({
+        version: row.version,
+        name: row.name,
+        appliedAt: row.applied_at,
+      })),
+    };
+  }

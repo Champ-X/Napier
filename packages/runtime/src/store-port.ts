@@ -38,6 +38,8 @@ export interface StoreCreateRunInput {
 export interface RuntimeStorePort extends RunEventQueryPort {
   appendEvent(input: StoreAppendEventInput): Promise<RunEvent>;
   createRun(input: StoreCreateRunInput): Promise<RunRecord>;
+  createLeasedRun(input: StoreCreateRunInput, lease: { ownerId: string; ttlMs: number }): Promise<{ run: RunRecord; token: string }>;
+  renewRunLease(runId: string, token: string, ttlMs: number): Promise<RunRecord>;
   finishRun(
     runId: string,
     status: TerminalRunStatus,
@@ -45,6 +47,7 @@ export interface RuntimeStorePort extends RunEventQueryPort {
       error?: string;
       outcome?: NonNullable<RunRecord["outcome"]>;
       usage?: RunRecord["usage"];
+      leaseToken?: string;
     },
   ): Promise<RunRecord>;
   getAgent(agentId: string): AgentProfile;
@@ -134,6 +137,8 @@ type RunEvaluationStoreMethod =
   | ReplayStoreMethod
   | "appendEvent"
   | "createRun"
+  | "createLeasedRun"
+  | "renewRunLease"
   | "finishRun"
   | "getAgent"
   | "saveRunEvaluation";
@@ -175,7 +180,11 @@ export type PlanArchiveStorePort = Pick<
   "getPlan" | "getThread" | "listEvents"
 >;
 
-export type ReplayStorePort = Pick<RuntimeStorePort, ReplayStoreMethod>;
+export type ReplayStorePort = Pick<RuntimeStorePort, ReplayStoreMethod> & {
+  readRunReplayView?(threadId: string, runId: string): {
+    run: RunRecord; events: RunEvent[]; subagents: SubagentTask[]; workspaceRevision: number;
+  };
+};
 
 export type WorkflowBlueprintStorePort = Pick<
   RuntimeStorePort,

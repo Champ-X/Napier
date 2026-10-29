@@ -8,6 +8,8 @@ import type { AgentProfile, RunEvent, RunLimits, SubagentRequest } from "@napier
 
 import { InProcessSubagentProvider } from "../src/in-process-subagent-provider.js";
 import { ModelRouter } from "../src/model-route.js";
+import { ModelUsageReceiptSpool } from "../src/model-usage-source.js";
+import { createLocalModelCallAdmission } from "../src/model-call-local-admission.js";
 import { ModelRegistry } from "../src/models.js";
 import type { ModelCallAdmission } from "../src/model-call-admission.js";
 import { LocalStore } from "../src/store.js";
@@ -15,9 +17,11 @@ import { SubagentSupervisor } from "../src/subagent-supervisor.js";
 import { ToolConcurrencyGate } from "../src/tool-concurrency-gate.js";
 
 const roots: string[] = [];
+const accountingClosers: Array<() => Promise<void>> = [];
 export const SYNTHETIC_ROUTE_KEY = "subagent-session-fixture-not-a-secret";
 
 export async function cleanupModelSessionFixtures(): Promise<void> {
+  await Promise.all(accountingClosers.splice(0).map((close) => close()));
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 }
 
@@ -27,6 +31,7 @@ export async function createModelSessionFixture(options: {
   maxTurns?: number;
   timeoutMs?: number;
   admission?: ModelCallAdmission;
+  nativeAccounting?: boolean;
   runLimits?: Partial<RunLimits>;
   createInheritedTools?: () => AgentTool[];
 } = {}) {
@@ -43,7 +48,13 @@ export async function createModelSessionFixture(options: {
     api: "openai-responses",
     tokensPerSecond: 1_000_000,
   });
-  const registry = new ModelRegistry(undefined, options.admission);
+  const source = options.nativeAccounting ? await ModelUsageReceiptSpool.open(path.join(root, "usage.sqlite")) : undefined;
+  if (source) {
+    store.modelAccountingRepository.configureSource({ source });
+    accountingClosers.push(async () => { await store.shutdown(); source.close(); });
+  }
+  const registry = new ModelRegistry(undefined, source ? createLocalModelCallAdmission(source, options.admission) : options.admission,
+    source ? store.modelAccountingRepository : undefined);
   registry.registerProvider(faux.provider);
   const model = registry.resolve({ provider: faux.provider.id, id: "faux-1" })!;
   let profile: AgentProfile = agent;
@@ -107,7 +118,7 @@ export async function createModelSessionFixture(options: {
     prompt: "Return the requested JSON result.",
     ...overrides,
   });
-  return { store, thread, run, faux, registry, model, provider, parent, request, supervisor: new SubagentSupervisor(provider) };
+  return { store, source, thread, run, faux, registry, model, provider, parent, request, supervisor: new SubagentSupervisor(provider) };
 }
 
 export function awaitedEventBarrier(matches: (event: RunEvent) => boolean) {

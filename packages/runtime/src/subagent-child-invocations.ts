@@ -3,6 +3,9 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import type { SubagentChildRunHost } from "./subagent-child-run-host.js";
 import { assertChildRunFence, childRunState } from "./subagent-child-run-fence.js";
 import { bindChildInvocationCapture } from "./subagent-child-invocation-capture.js";
+import { refreshRunAccounting } from "./model-accounting-projection.js";
+import { readModelAccountingEvidence } from "./model-accounting-fold.js";
+export { assertChildLogicalInvocationsSettled } from "./model-accounting-fold.js";
 import type { ReserveSubagentChildInvocationInput, SettleSubagentChildInvocationInput,
   SubagentChildInvocationReservation, SubagentChildRunState } from "./subagent-child-run-types.js";
 
@@ -40,6 +43,7 @@ export async function reserveChildInvocation(host: SubagentChildRunHost,
         invocationIndex, phase: input.phase, requestId: input.requestId,
       },
     }]);
+    refreshRunAccounting(host, run.id, events);
     await host.persistState(events);
     return { invocationId, invocationIndex, executionRevision: run.subagent!.executionRevision, events };
   });
@@ -74,7 +78,18 @@ export async function settleChildInvocation(host: SubagentChildRunHost,
       return childRunState(current.run, current.task);
     }
     assertChildRunFence(host, input, { requireParentActive: false });
-    if (usage) {
+    const accounting = readModelAccountingEvidence(events);
+    const attributed = [...accounting.attributions.values()].find((value) => value.owner.kind === "child" &&
+      value.owner.childInvocationId === input.invocationId);
+    if (attributed && (payload["physicalId"] !== attributed.physicalId ||
+      payload["attributionSha256"] !== attributed.contentSha256 || payload["accountingMode"] !== "physical_receipt_v1"))
+      throw new Error("Child logical response lacks its physical accounting reference");
+    if (attributed && (!input.capture || canonicalJson(input.capture.envelope) !== canonicalJson(attributed.capture.envelope) ||
+      canonicalJson(input.capture.adapter ?? null) !== canonicalJson(attributed.capture.adapter)))
+      throw new Error("Child logical response capture differs from its physical attribution");
+    if (run.accounting && !attributed && !accounting.childClosed.has(input.invocationId) && usage)
+      throw new Error("Accounting child response cannot introduce unattributed usage");
+    if (usage && !attributed && !accounting.childClosed.has(input.invocationId)) {
       run.usage = addUsage(run.usage, usage);
       task.usage = structuredClone(run.usage);
     }
@@ -92,6 +107,7 @@ export async function settleChildInvocation(host: SubagentChildRunHost,
     run.usageStatus = allEvents.some((event) => event.type === "subagent.child.invocation_reserved" &&
       !known.has(record(event.payload)?.["invocationId"])) ? "incomplete" : "complete";
     task.usageStatus = run.usageStatus;
+    refreshRunAccounting(host, run.id, appended);
     await host.persistState(appended);
     return { ...childRunState(run, task), events: appended };
   });

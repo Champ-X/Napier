@@ -13,6 +13,7 @@ import type { EventSink } from "./event-sink.js";
 import { nowIso } from "./ids.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import { isSubagentChildRun } from "./primary-run-selection.js";
+import { refreshRunAccounting } from "./model-accounting-projection.js";
 import { reconcileInterruptedRuns } from "./run-interruption-recovery.js";
 import {
   cancelPendingOperatorDecisions,
@@ -97,9 +98,11 @@ export class RunLifecycleRepository {
           options.waitForOperatorDecisionId,
           waitingDecision,
         );
-        if (this.host.state.subagents.some((task) => task.runId === run.id && task.childRunId &&
+        refreshRunAccounting(this.host, run.id);
+        const canonicalAccounting = !!run.accounting;
+        if (!canonicalAccounting && this.host.state.subagents.some((task) => task.runId === run.id && task.childRunId &&
           task.usageStatus === "incomplete")) run.usageStatus = "incomplete";
-        settleRunRecord(run, status, options);
+        settleRunRecord(run, status, canonicalAccounting ? { ...options, usage: run.usage } : options);
         thread.updatedAt = run.finishedAt!;
         const remainingActiveRuns = activeRunsAfter(
           this.host.state,

@@ -18,6 +18,10 @@ import type {
 } from "@napier/contracts";
 
 import { sha256 } from "./ed25519.js";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
+import { modelAccountingLinkage } from "./model-call-attribution.js";
+import { createModelCallCaptureBinding } from "./model-call-capture.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
 import {
   buildRunEvaluationMessages,
   createRunEvaluationGovernanceBinding,
@@ -73,21 +77,29 @@ export class RunEvaluationService {
       comparison.contextCoverageDelta,
       comparison.traceSummaryBoundaryDelta,
     );
-    const evaluationRun = await this.store.createRun({
+    const leased = await this.store.createLeasedRun({
       threadId,
       agentId: agent.id,
       model: evaluatorModel,
-    });
+    }, { ownerId: `evaluation:${process.pid}:${createId("worker")}`, ttlMs: 60_000 });
+    const evaluationRun = leased.run, controller = new AbortController();
+    const heartbeat = setInterval(() => {
+      void this.store.renewRunLease(evaluationRun.id, leased.token, 60_000)
+        .catch((error: unknown) => controller.abort(error));
+    }, 20_000);
+    heartbeat.unref();
     let observedUsage: Usage | undefined;
     try {
+      this.models.bindRunAccounting(evaluationRun.id, leased.token);
       const result = await this.judgeSnapshots(
         comparison.left,
         comparison.right,
         rubric,
         evaluatorModel,
         { ...comparison, comparisonGovernance },
-        { run: evaluationRun },
+        { run: evaluationRun, signal: controller.signal },
       );
+      controller.signal.throwIfAborted();
       observedUsage = result.usage;
       const record: RunEvaluationRecord = {
         id: createId("evaluation"),
@@ -138,15 +150,22 @@ export class RunEvaluationService {
         },
       });
       await this.store.finishRun(evaluationRun.id, "completed", {
+        leaseToken: leased.token,
+        ...(this.models.accountingRepository ? { terminalEvent: { payload: { status: "completed", purpose: "evaluation_judgment" } } } : {}),
         ...(observedUsage ? { usage: observedUsage } : {}),
       });
       return saved;
     } catch (error) {
       await this.store.finishRun(evaluationRun.id, "failed", {
+        leaseToken: leased.token,
+        ...(this.models.accountingRepository ? { terminalEvent: { payload: { status: "failed", purpose: "evaluation_judgment" } } } : {}),
         error: safeErrorMessage(error),
         ...(observedUsage ? { usage: observedUsage } : {}),
       });
       throw error;
+    } finally {
+      clearInterval(heartbeat);
+      this.models.releaseRunAccounting(evaluationRun.id);
     }
   }
 
@@ -221,15 +240,13 @@ export class RunEvaluationService {
       messages,
       tools: [],
     };
-    const envelope =
-      trace &&
-      createModelContextEnvelopeReceipt({
-        turnIndex: trace.turnIndex ?? 0,
+    const envelope = createModelContextEnvelopeReceipt({
+        turnIndex: trace?.turnIndex ?? 0,
         systemPrompt: requestContext.systemPrompt,
         messages: requestContext.messages,
         tools: requestContext.tools,
       });
-    if (trace && envelope) {
+    if (trace) {
       await this.store.appendEvent({
         threadId: trace.run.threadId,
         runId: trace.run.id,
@@ -239,13 +256,15 @@ export class RunEvaluationService {
         payload: structuredClone(envelope) as unknown as JsonObject,
       });
     }
+    const accounting = trace ? this.models.accountingForRun(trace.run.id) : this.models.accountingForOperation("evaluation_judgment");
+    const options = { maxTokens: 1_500, temperature: 0, ...(trace?.signal ? { signal: trace.signal } : {}) };
+    let attribution: ModelCallAttributionV1 | undefined;
     let response: AssistantMessage;
     try {
-      response = await this.models.models.completeSimple(
-        model,
-        requestContext,
-        { maxTokens: 1_500, temperature: 0 },
-      );
+      response = await completeModelInvocation({ models: this.models.models, model, context: requestContext,
+        options, phase: "evaluation_judgment", ...(accounting ? { accounting } : {}),
+        capture: createModelCallCaptureBinding({ model, context: requestContext, options, envelope }),
+        onAttribution: (value) => { attribution = value; } });
     } catch (error) {
       const usage = zeroUsage();
       if (trace && envelope && evaluatorModel) {
@@ -253,8 +272,13 @@ export class RunEvaluationService {
           envelope,
           error: safeErrorMessage(error),
           usage,
+          ...(attribution ? { attribution } : {}),
+          omitUsage: Boolean(accounting && !attribution),
         });
       }
+      // Native dispatch and receipt failures remain failures of this operation.
+      // An accounting retry may later debit usage, but cannot publish a judgment.
+      if (accounting) throw error;
       return {
         verdict: "inconclusive",
         reason: `Evaluator failed closed: ${safeErrorMessage(error)}`,
@@ -270,6 +294,7 @@ export class RunEvaluationService {
         envelope,
         text,
         usage,
+        ...(attribution ? { attribution } : {}),
         ...(response.stopReason ? { stopReason: response.stopReason } : {}),
       });
     }
@@ -321,8 +346,8 @@ export class RunEvaluationService {
         modelContextMessageSetSha256: input.envelope.messageSetSha256,
         modelContextToolDefinitionSetSha256:
           input.envelope.toolDefinitionSetSha256,
-        usage: input.usage,
-        usageAccounting,
+        ...(input.attribution ? modelAccountingLinkage(input.attribution) : {}),
+        ...(!input.omitUsage ? { usage: input.usage, usageAccounting } : {}),
       },
     });
   }
@@ -331,6 +356,7 @@ export class RunEvaluationService {
 export interface RunEvaluationTraceOptions {
   run: RunRecord;
   turnIndex?: number;
+  signal?: AbortSignal;
 }
 
 interface EvaluationModelResponseInput {
@@ -339,6 +365,8 @@ interface EvaluationModelResponseInput {
   error?: string;
   stopReason?: string;
   usage: Usage;
+  attribution?: ModelCallAttributionV1;
+  omitUsage?: boolean;
 }
 
 function mapEvaluationUsage(usage: PiUsage): Usage {

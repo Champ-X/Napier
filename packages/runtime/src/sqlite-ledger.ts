@@ -31,9 +31,13 @@ import {
 import type { TerminalRunStatus } from "./run-event-admission.js";
 import { SqliteLedgerQuery } from "./sqlite-ledger-query.js";
 import { SqliteLedgerReadWorker } from "./sqlite-ledger-read-worker.js";
+import { applyModelAccountingMutation, childInvocationIsClosed, listModelAttributions,
+  readModelAccountingIdentity, readModelAttribution, readModelUsageClaim,
+  type LedgerModelAccountingMutation } from "./sqlite-model-accounting.js";
 import { SqliteToolConcurrencyLeaseBackend } from "./sqlite-tool-concurrency-leases.js";
 import { createLazyToolConcurrencyLeaseBackend } from "./tool-concurrency-store-backend.js";
 import {
+  readLedgerSchemaReport,
   readLedgerSnapshot,
   rollbackSqliteTransaction,
 } from "./sqlite-ledger-state.js";
@@ -122,43 +126,25 @@ export class SqliteLedger {
   }
 
   schemaReport(): LedgerSchemaReport {
-    const database = this.requireDatabase();
-    const versionRow = database.prepare("PRAGMA user_version").get() as {
-      user_version: number;
-    };
-    const integrity = database.prepare("PRAGMA quick_check").get() as
-      | { quick_check: string }
-      | undefined;
-    const rows = database
-      .prepare(
-        `SELECT version, name, applied_at
-         FROM ledger_schema_migrations
-         ORDER BY version ASC`,
-      )
-      .all() as Array<{
-      version: number;
-      name: string;
-      applied_at: string;
-    }>;
-    return {
-      schemaVersion: versionRow.user_version,
-      quickCheck: integrity?.quick_check ?? "missing",
-      migrations: rows.map((row) => ({
-        version: row.version,
-        name: row.name,
-        appliedAt: row.applied_at,
-      })),
-    };
+    return readLedgerSchemaReport(this.requireDatabase());
   }
 
   readSnapshot(): LedgerSnapshot | undefined {
+    return this.readTransaction(() => readLedgerSnapshot(this.requireDatabase()));
+  }
+
+  /** All synchronous projection reads in the callback share the same WAL snapshot. */
+  readTransaction<T>(read: () => T & (T extends PromiseLike<unknown> ? never : unknown)): T {
     const database = this.requireDatabase();
     const ownsTransaction = !database.isTransaction;
     if (ownsTransaction) database.exec("BEGIN");
     try {
-      const snapshot = readLedgerSnapshot(database);
+      const result = read();
+      if (result && typeof (result as { then?: unknown }).then === "function") {
+        throw new Error("SQLite ledger read transaction callback must be synchronous");
+      }
       if (ownsTransaction) database.exec("COMMIT");
-      return snapshot;
+      return result;
     } catch (error) {
       if (ownsTransaction) rollbackSqliteTransaction(database);
       throw error;
@@ -204,6 +190,7 @@ export class SqliteLedger {
     expectedRevision: number,
     stateJson: string,
     eventOrEvents?: RunEvent | RunEvent[],
+    accountingMutation?: LedgerModelAccountingMutation,
   ): number {
     const database = this.requireDatabase();
     database.exec("BEGIN IMMEDIATE");
@@ -223,6 +210,7 @@ export class SqliteLedger {
         for (const event of events) this.insertEvent(insertEvent, event);
       }
       assertTerminalCommit(database, current?.stateJson, stateJson, events);
+      if (accountingMutation) applyModelAccountingMutation(database, accountingMutation);
       const nextRevision = actualRevision + 1;
       if (actualRevision === 0) {
         database
@@ -260,6 +248,17 @@ export class SqliteLedger {
       rollbackSqliteTransaction(database);
       throw error;
     }
+  }
+
+  modelAccountingIdentity(): string { return readModelAccountingIdentity(this.requireDatabase()); }
+  modelAttribution(physicalId: string) { return readModelAttribution(this.requireDatabase(), physicalId); }
+  modelAttributions(runId: string) { return listModelAttributions(this.requireDatabase(), runId); }
+  modelUsageClaim(physicalId: string) { return readModelUsageClaim(this.requireDatabase(), physicalId); }
+  modelChildInvocationClosed(invocationId: string): boolean { return childInvocationIsClosed(this.requireDatabase(), invocationId); }
+
+  /** One SQLite read snapshot for current Run/Task state and accounting evidence. */
+  readRunAccountingView(runId: string) {
+    return this.readTransaction(() => ({ snapshot: this.readSnapshot(), events: this.listRunEvents(runId) }));
   }
 
   commitEvents(

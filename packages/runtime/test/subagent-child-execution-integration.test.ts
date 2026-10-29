@@ -27,7 +27,12 @@ async function fixture() {
     status: 200, headers: { "content-type": "text/plain" }, body: Buffer.from("Child-only immutable source\n"),
     finalUrl: "https://example.com/child.txt", redirectCount: 0,
   })) };
-  const services = await createLocalAgentRuntime({ workspaceRoot, dataRoot: path.join(root, "data"), env: {}, webFetchHttp: http });
+  const services = await createLocalAgentRuntime({ workspaceRoot, dataRoot: path.join(root, "data"), env: {}, webFetchHttp: http,
+    // Faux reports real token counts and zero cost. Declare that fixture policy
+    // explicitly; a live zero-valued price table alone is not known-free usage.
+    modelCallAdmission: { isDeclaredZeroCost: (model) => model.provider === "child-execution-integration" && model.id === "faux-1",
+      reserve: () => ({ settle: () => undefined }) },
+  });
   fixtures.push({ root, services });
   const agent = await services.store.updateAgent(services.store.listAgents()[0]!.id, {
     enabledTools: ["web_fetch"], enabledSubagents: ["researcher"], toolPolicy: "workspace",
@@ -56,7 +61,7 @@ describe("actual child Run execution integration", () => {
     expect(f.http.request).toHaveBeenCalledTimes(1);
     const task = f.store.listSubagentTasks(f.thread.id, parent.id)[0]!;
     const child = f.store.listRuns(f.thread.id).find((run) => run.id === task.childRunId);
-    expect(child, "A task must own an actual durable child Run").toMatchObject({ source: "subagent", parentRunId: parent.id, status: "completed" });
+    expect(child, `A task must own an actual durable child Run: ${task.error ?? "no task error"}`).toMatchObject({ source: "subagent", parentRunId: parent.id, status: "completed" });
     expect(child!.id).not.toBe(parent.id);
     const events = await f.store.listEvents(f.thread.id);
     const fetches = events.filter((event) => event.type === "tool.completed" && (event.payload as Record<string, unknown>)["toolName"] === "web_fetch");
@@ -70,6 +75,9 @@ describe("actual child Run execution integration", () => {
     const childResponses = events.filter((event) => event.runId === child!.id && event.type === "model.response");
     expect(childResponses).toHaveLength(2);
     expect(child!.usage).toEqual(task.usage);
+    expect(child!.usageStatus).toBe("complete");
+    expect(child!.accounting).toMatchObject({ budgetCostUsd: 0, knownBudgetCostUsd: 0 });
+    expect(events.filter((event) => event.runId === child!.id && event.type === "model.usage.reconciled")).toHaveLength(2);
     expect(await f.store.aggregateRunUsage(child!.id)).toEqual(task.usage);
     expect(cleanup).toHaveBeenCalledWith({ threadId: f.thread.id, runId: child!.id });
     expect(cleanup).toHaveBeenCalledWith({ threadId: f.thread.id, runId: parent.id });

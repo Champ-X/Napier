@@ -1,3 +1,4 @@
+import { accountedReviewRegistry } from "./model-usage-review-fixture.js";
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { emptyUsage, type SubagentTask } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
@@ -77,7 +78,8 @@ describe("Subagent outcome review", () => {
         );
       },
     ]);
-    const registry = new ModelRegistry();
+    const accounting = await accountedReviewRegistry();
+    const registry = accounting.models;
     registry.registerProvider(faux.provider);
 
     const review = await reviewSubagentOutcome(registry, task, {
@@ -85,6 +87,7 @@ describe("Subagent outcome review", () => {
       id: "faux-1",
     });
 
+    accounting.assertOperationReceipt("subagent_outcome_review");
     expect(review).toEqual(
       expect.objectContaining({
         kind: "napier.subagent-outcome-review",

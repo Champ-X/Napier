@@ -84,6 +84,7 @@ export class ContextCompactionWorkbenchService {
     const heartbeat = this.startHeartbeat(leased.run.id, leased.token);
     let usage: Usage | undefined;
     try {
+      this.models.bindRunAccounting(leased.run.id, leased.token);
       await this.assertSourceSnapshot(
         sourceThreadId,
         sourceEvents.length,
@@ -193,6 +194,7 @@ export class ContextCompactionWorkbenchService {
       throw error;
     } finally {
       clearInterval(heartbeat);
+      this.models.releaseRunAccounting(leased.run.id);
     }
   }
 

@@ -1,4 +1,5 @@
 import type { SubagentContinuationReceipt } from "./subagent-continuation.js";
+import type { ModelAccountingSummaryV1 } from "./model-accounting.js";
 import type {
   AutomaticRecoveryPolicy,
   LegacyModelAdvisorPolicy,
@@ -220,6 +221,8 @@ export interface RunRecord {
   usage: Usage;
   /** Known subtotal only when an invocation has no attributable physical result. */
   usageStatus?: "complete" | "incomplete";
+  /** Accounting revision is independent of execution and lease authority. */
+  accounting?: ModelAccountingSummaryV1;
   agentRevision?: number;
   limits?: RunLimits;
   configuration?: RunConfigurationFingerprint;

@@ -11,6 +11,7 @@ import type {
   RunEvent,
   ThreadRecord,
 } from "@napier/contracts";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
 import {
   validateCreateModelInvocationExperimentRequest,
   validateModelInvocationExperimentResult,
@@ -33,6 +34,7 @@ import {
   type ModelInvocationExperimentSource,
 } from "./model-invocation-experiment-source.js";
 import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
 import type { ModelRegistry } from "./models.js";
 import type { LocalStore } from "./store.js";
 import { createUsageAccounting } from "./token-accounting.js";
@@ -149,6 +151,7 @@ export class ModelInvocationExperimentRuntime {
         });
     }, RUN_LEASE_HEARTBEAT_MS);
     try {
+      this.models.bindRunAccounting(leased.run.id, leased.token);
       await this.append(
         {
           threadId: input.targetThread.id,
@@ -211,12 +214,17 @@ export class ModelInvocationExperimentRuntime {
         input.onEvent,
       );
       const startedAtMs = Date.now();
+      let attribution: ModelCallAttributionV1 | undefined;
       const message = await completeOnce(
         this.models,
         input.targetModel,
         input.source.capsule.context,
         input.source.capsule.options,
         controller.signal,
+        leased.run.id,
+        (binding) => {
+          attribution = binding;
+        },
       );
       const finishedAtMs = Date.now();
       if (leaseLost) {
@@ -239,6 +247,13 @@ export class ModelInvocationExperimentRuntime {
           visibility: "debug",
           payload: {
             ...candidate.responsePayload,
+            ...(attribution
+              ? {
+                  physicalId: attribution.physicalId,
+                  attributionSha256: attribution.contentSha256,
+                  accountingMode: "physical_receipt_v1",
+                }
+              : {}),
             modelCallPurpose: "model_invocation_experiment",
             modelContextEnvelopeSha256: targetEnvelope.contentSha256,
             modelContextEnvelopeTurnIndex: targetEnvelope.turnIndex,
@@ -335,6 +350,7 @@ export class ModelInvocationExperimentRuntime {
       throw error;
     } finally {
       clearInterval(heartbeat);
+      this.models.releaseRunAccounting(leased.run.id);
       input.signal?.removeEventListener("abort", forwardAbort);
     }
   }
@@ -404,22 +420,32 @@ async function completeOnce(
   context: ModelInvocationExperimentSource["capsule"]["context"],
   options: ModelInvocationExperimentSource["capsule"]["options"],
   signal: AbortSignal,
+  runId: string,
+  onAttribution: (attribution: ModelCallAttributionV1) => void,
 ): Promise<AssistantMessage> {
   try {
-    return await models.models.completeSimple(model, context, {
-      signal,
-      ...(options.reasoning !== undefined
-        ? { reasoning: options.reasoning }
-        : {}),
-      ...(options.maxTokens !== undefined
-        ? { maxTokens: options.maxTokens }
-        : {}),
-      ...(options.temperature !== undefined
-        ? { temperature: options.temperature }
-        : {}),
-      ...(options.cacheRetention !== undefined
-        ? { cacheRetention: options.cacheRetention }
-        : {}),
+    return await completeModelInvocation({
+      models: models.models,
+      model,
+      context,
+      phase: "model_experiment",
+      accounting: models.accountingForRun(runId),
+      onAttribution,
+      options: {
+        signal,
+        ...(options.reasoning !== undefined
+          ? { reasoning: options.reasoning }
+          : {}),
+        ...(options.maxTokens !== undefined
+          ? { maxTokens: options.maxTokens }
+          : {}),
+        ...(options.temperature !== undefined
+          ? { temperature: options.temperature }
+          : {}),
+        ...(options.cacheRetention !== undefined
+          ? { cacheRetention: options.cacheRetention }
+          : {}),
+      },
     });
   } catch (error) {
     return failedAssistantMessage(

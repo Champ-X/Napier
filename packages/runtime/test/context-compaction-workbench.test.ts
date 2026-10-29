@@ -14,6 +14,7 @@ import {
 import { ModelInvocationCapsuleStore } from "../src/model-invocation-capsule-store.js";
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
+import { accountedTestRegistry } from "./model-usage-registry-fixture.js";
 
 const roots: string[] = [];
 const stores: LocalStore[] = [];
@@ -27,7 +28,10 @@ afterEach(async () => {
 
 describe("ContextCompactionWorkbenchService", () => {
   it("captures an auditable preview and applies it only to a new fork", async () => {
-    const fixture = await createFixture();
+    const fixture = await createFixture(true);
+    const sourceRunBefore = fixture.store
+      .listRuns(fixture.threadId)
+      .find((run) => run.id === fixture.sourceRunId);
     fixture.provider.setResponses([
       fauxAssistantMessage(
         JSON.stringify({
@@ -69,6 +73,39 @@ describe("ContextCompactionWorkbenchService", () => {
       modelCallPurpose: "context_compaction",
     });
     expect(JSON.stringify(response?.payload)).not.toContain(preview.summary);
+    const receipts = fixture.accounting!.receipts();
+    expect(receipts).toHaveLength(1);
+    const receipt = receipts[0]!;
+    expect(receipt.attribution.owner).toEqual({
+      kind: "run",
+      threadId: fixture.threadId,
+      runId: preview.previewRunId,
+    });
+    expect(receipt.attribution.phase).toBe("context_compaction_preview");
+    expect(receipt.observation.usageStatus).toBe("partial");
+    expect(receipt.observation.usage.input).toBeGreaterThan(0);
+    expect(receipt.observation.usage.output).toBeGreaterThan(0);
+    expect(
+      fixture.store
+        .listRuns(fixture.threadId)
+        .find((run) => run.id === preview.previewRunId)?.usage,
+    ).toMatchObject({
+      inputTokens: receipt.observation.usage.input,
+      outputTokens: receipt.observation.usage.output,
+      costUsd: 0,
+    });
+    expect(response?.payload).toMatchObject({
+      physicalId: receipt.attribution.physicalId,
+      attributionSha256: receipt.attribution.contentSha256,
+      accountingMode: "physical_receipt_v1",
+    });
+    expect(receipt.acknowledgedAt).not.toBeNull();
+    expect(fixture.accounting!.source.pending()).toEqual([]);
+    expect(
+      fixture.store
+        .listRuns(fixture.threadId)
+        .find((run) => run.id === fixture.sourceRunId),
+    ).toEqual(sourceRunBefore);
 
     const result = await fixture.service.applyFork(fixture.threadId, {
       expectedPreviewSha256: preview.previewSha256,
@@ -151,7 +188,7 @@ describe("ContextCompactionWorkbenchService", () => {
   });
 });
 
-async function createFixture() {
+async function createFixture(accounted = false) {
   const root = await mkdtemp(path.join(tmpdir(), "napier-context-compaction-"));
   roots.push(root);
   const workspaceRoot = path.join(root, "workspace");
@@ -174,13 +211,17 @@ async function createFixture() {
     await store.appendEvent({
       threadId: thread.id,
       runId: sourceRun.id,
-      type: user ? "message.user" : "message.assistant",
       category: "message",
       visibility: "user",
-      payload: {
-        role: user ? "user" : "assistant",
-        text: `Evidence ${index + 1}`,
-      },
+      ...(user
+        ? ({
+            type: "message.user",
+            payload: { role: "user", text: `Evidence ${index + 1}` },
+          } as const)
+        : ({
+            type: "message.assistant",
+            payload: { role: "assistant", text: `Evidence ${index + 1}` },
+          } as const)),
     });
   }
   await store.finishRun(sourceRun.id, "completed");
@@ -188,7 +229,10 @@ async function createFixture() {
     provider: "faux-context-compaction",
     tokensPerSecond: 100_000,
   });
-  const models = new ModelRegistry();
+  const accounting = accounted
+    ? await accountedTestRegistry(store, path.join(root, "usage.sqlite"))
+    : undefined;
+  const models = accounting?.models ?? new ModelRegistry();
   models.registerProvider(provider.provider);
   const capsules = new ModelInvocationCapsuleStore(dataRoot);
   return {
@@ -196,6 +240,8 @@ async function createFixture() {
     provider,
     models,
     capsules,
+    accounting,
+    sourceRunId: sourceRun.id,
     service: new ContextCompactionWorkbenchService(store, models, capsules),
     threadId: thread.id,
     model: { provider: "faux-context-compaction", id: "faux-1" },

@@ -1,3 +1,4 @@
+import { accountedReviewRegistry } from "./model-usage-review-fixture.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -180,7 +181,8 @@ describe("blueprint outcome model review", () => {
         }),
       ),
     ]);
-    const models = new ModelRegistry();
+    const accounting = await accountedReviewRegistry();
+    const models = accounting.models;
     models.registerProvider(provider.provider);
 
     const review = await reviewExecutionPlanBlueprintRecordOutcomes(
@@ -192,6 +194,7 @@ describe("blueprint outcome model review", () => {
       },
     );
 
+    accounting.assertOperationReceipt("blueprint_outcome_review");
     expect(review).toEqual(
       expect.objectContaining({
         kind: "napier.execution-plan-blueprint-outcome-review",

@@ -21,6 +21,7 @@ import { compareRunHarnessEffects } from "./run-harness-comparison.js";
 import { projectRunHarnessEffectMetrics } from "./run-harness-effect-metrics.js";
 import { compareRunConfigurations } from "./run-config.js";
 import type { ReplayStorePort } from "./store-port.js";
+import { foldModelAccounting, hasModelAccounting, MODEL_ACCOUNTING_EVENT_TYPES } from "./model-accounting-fold.js";
 
 const METRIC_KEYS: Array<keyof RunMetricDelta> = [
   "durationMs",
@@ -49,12 +50,13 @@ export async function createRunReplaySnapshot(
   runId: string,
 ): Promise<RunReplaySnapshot> {
   store.getThread(threadId);
-  const run = store
+  const view = store.readRunReplayView?.(threadId, runId);
+  const run = view?.run ?? store
     .listRuns(threadId)
     .find((candidate) => candidate.id === runId);
   if (!run) throw new Error(`Run not found in thread: ${runId}`);
-  const events = await store.listRunEvents(runId);
-  const subagents = store.listSubagentTasks(threadId, runId);
+  const events = view?.events ?? await store.listRunEvents(runId);
+  const subagents = view?.subagents ?? store.listSubagentTasks(threadId, runId);
   const content: Omit<RunReplaySnapshot, "generatedAt" | "contentSha256"> = {
     schemaVersion: 1,
     threadId,
@@ -161,12 +163,15 @@ export const RUN_USAGE_EVENT_TYPES: readonly string[] = Object.freeze([
   "model.response",
   "message.assistant",
   ...AUXILIARY_USAGE_EVENT_TYPES,
+  ...MODEL_ACCOUNTING_EVENT_TYPES,
+  "subagent.child.invocation_reserved",
 ]);
 
 export function aggregateRunUsage(
   events: RunEvent[],
   subagents: SubagentTask[],
 ): Usage {
+  if (hasModelAccounting(events, subagents)) return foldModelAccounting(events, subagents).usage;
   const modelResponses = events.filter(
     (event) => event.type === "model.response",
   );

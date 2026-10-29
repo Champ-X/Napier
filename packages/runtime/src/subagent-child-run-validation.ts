@@ -40,7 +40,8 @@ function validateChildIdentity(run: RunRecord, parent: RunRecord, task: Subagent
 
 function validateChildUsage(run: RunRecord, task: SubagentTask): void {
   if ((run.usageStatus !== "complete" && run.usageStatus !== "incomplete") ||
-      task.usageStatus !== run.usageStatus || canonicalJson(task.usage) !== canonicalJson(run.usage))
+      task.usageStatus !== run.usageStatus || canonicalJson(task.usage) !== canonicalJson(run.usage) ||
+      canonicalJson(task.accounting ?? null) !== canonicalJson(run.accounting ?? null))
     throw new Error(`Subagent child usage completeness is invalid: ${run.id}`);
 }
 

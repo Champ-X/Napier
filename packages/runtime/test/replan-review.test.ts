@@ -1,3 +1,4 @@
+import { accountedReviewRegistry } from "./model-usage-review-fixture.js";
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { describe, expect, it } from "vitest";
 
@@ -76,7 +77,8 @@ describe("replan draft model review", () => {
         }),
       ),
     ]);
-    const models = new ModelRegistry();
+    const accounting = await accountedReviewRegistry();
+    const models = accounting.models;
     models.registerProvider(provider.provider);
 
     const review = await reviewExecutionPlanReplanDraft(models, plan, {
@@ -84,6 +86,7 @@ describe("replan draft model review", () => {
       id: "faux-1",
     });
 
+    accounting.assertOperationReceipt("replan_review");
     expect(review).toEqual(
       expect.objectContaining({
         kind: "napier.execution-plan-replan-draft-review",

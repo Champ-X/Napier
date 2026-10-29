@@ -2,6 +2,7 @@ import type { RunEvent, RunRecord, SubagentTask } from "@napier/contracts";
 import { assertModelRequestEvidenceBindings } from "./model-prompt-evidence-bindings.js";
 import { validateChildCheckpointEvents } from "./subagent-checkpoint-validation.js";
 import { assertChildModelEvidence } from "./subagent-child-evidence-validation.js";
+import { assertAccountingProjection } from "./model-accounting-projection.js";
 import { validateSubagentChildRunState } from "./subagent-child-run-validation.js";
 import { SUBAGENT_WORKTREE_POLICY } from "./subagent-worktree-policy.js";
 import { assertSubagentFailureContext } from "./subagent-failure-context.js";
@@ -122,6 +123,7 @@ export function assertReplaySubagentBindings(runs: readonly RunRecord[], tasks: 
     knownRunIds: new Set(runs.map((run) => run.id)), label: "Thread replay bundle",
   });
   for (const run of runs) {
+    assertAccountingProjection(run, tasks.filter((task) => task.runId === run.id), events.filter((event) => event.runId === run.id));
     if (childIds.has(run.id)) {
       const childEvents = events.filter((event) => event.runId === run.id);
       assertChildModelEvidence(run, childEvents);

@@ -20,7 +20,6 @@ import { ModelInvocationExperimentRuntime } from "./model-invocation-experiments
 import { ProviderSetupService } from "./provider-setup.js";
 import { ToolInvocationExperimentRuntime } from "./tool-invocation-experiments.js";
 import type { BrowserSourceCaptureProvider } from "./research-sources.js";
-import type { OsSandboxAdapter } from "./sandbox.js";
 import {
   createConfiguredSandboxAdapter,
   createInvalidSandboxInstallationAdapter,
@@ -45,6 +44,7 @@ import { WorkspaceProcessManager } from "./workspace-processes.js";
 import { ExecutionPlanWorkflowExperimentRuntime } from "./workflow-experiments.js";
 import { ExecutionPlanWorkflowRuntime } from "./workflow-runtime.js";
 import { createPersistedAgentKernel } from "./kernel-plugin-runtime.js";
+import { initializeModelAccountingRuntime } from "./model-accounting-runtime.js";
 
 export interface LocalAgentRuntimeOptions {
   kernelProfile?: import("./kernel-profile.js").KernelProfileId;
@@ -54,7 +54,7 @@ export interface LocalAgentRuntimeOptions {
   keychain?: KeychainSecretStore;
   modelCallAdmission?: ConstructorParameters<typeof ModelRegistry>[1];
   resourceAdmission?: ConstructorParameters<typeof SwitchableSandboxAdapter>[1];
-  sandbox?: OsSandboxAdapter;
+  sandbox?: ConstructorParameters<typeof SwitchableSandboxAdapter>[0];
   sandboxSetup?: SandboxSetupServiceDependencies;
   browserSessions?: RunBrowserSessionManager;
   browserInteractionConfirmation?: {
@@ -74,7 +74,7 @@ export interface LocalAgentRuntimeServices {
   credentials: CredentialReferenceStore;
   models: ModelRegistry;
   extensions: McpExtensionManager;
-  sandbox: OsSandboxAdapter;
+  sandbox: ConstructorParameters<typeof SwitchableSandboxAdapter>[0];
   workspaceProcesses: WorkspaceProcessManager;
   workspaceFileMutations: WorkspaceFileMutationManager;
   browserInteractionConfirmations: BrowserInteractionConfirmationManager;
@@ -111,14 +111,16 @@ export async function createLocalAgentRuntime(
   let extensions: McpExtensionManager | undefined;
   let workspaceProcesses: WorkspaceProcessManager | undefined;
   let initializedKernel: AgentKernel | undefined;
+  let modelAccounting: Awaited<ReturnType<typeof initializeModelAccountingRuntime>> | undefined;
   try {
     await store.initialize(true);
+    modelAccounting = await initializeModelAccountingRuntime(store, options.modelCallAdmission);
     const credentials = new CredentialReferenceStore({
       store,
       ...(options.env ? { env: options.env } : {}),
       ...(options.keychain ? { keychain: options.keychain } : {}),
     });
-    const models = new ModelRegistry(credentials, options.modelCallAdmission);
+    const models = new ModelRegistry(credentials, modelAccounting.admission, store.modelAccountingRepository);
     const fallbackSandbox =
       options.sandbox ??
       createSandboxFallbackAdapter({
@@ -308,12 +310,15 @@ export async function createLocalAgentRuntime(
             catch (projection) { throw new AggregateError([cleanup, projection], "Resource cleanup and compatibility projection failed"); }
             throw cleanup;
           }
+          await modelAccounting!.drain(models.models);
           await store.shutdown();
+          modelAccounting?.close();
         })();
         return shutdown;
       },
     };
   } catch (error) {
+    modelAccounting?.close();
     try {
       await settleShutdownSteps([
         () => initializedKernel?.shutdown(),

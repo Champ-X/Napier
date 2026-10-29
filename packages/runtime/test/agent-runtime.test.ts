@@ -20,6 +20,7 @@ import {
   processReadyAgentRuntime as processReadyRuntime,
   processReadySandbox,
 } from "./process-run-readiness-test-fixture.js";
+import { assertDelegatedChildLifecycle } from "./agent-runtime-child-lifecycle-test-support.js";
 import { hasLedgerEventUsage, ledgerEventUsage } from "./agent-runtime-event-usage-test-support.js";
 
 const temporaryRoots: string[] = [];
@@ -2248,13 +2249,12 @@ describe("AgentRuntime demo path", () => {
         stepCount: 1,
       }),
     ]);
-    expect(detail.events.filter((event) => event.category === "subagent").map((event) => event.type)).toEqual([
-      "subagent.queued",
-      "subagent.started",
-      "subagent.step",
-      "subagent.outcome.accepted",
-      "subagent.completed",
+    expect(detail.events.filter((event) => event.category === "subagent" && event.runId === run.id &&
+      !event.type.startsWith("subagent.model.")).map((event) => event.type)).toEqual([
+      "subagent.queued", "subagent.started",
+      "subagent.step", "subagent.outcome.accepted", "subagent.completed",
     ]);
+    assertDelegatedChildLifecycle(detail, run.id);
     expect(detail.events.filter((event) => event.type === "message.assistant")).toEqual([
       expect.objectContaining({
         payload: expect.objectContaining({

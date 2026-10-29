@@ -15,6 +15,20 @@ beforeEach(() => { vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Externa
 afterEach(async () => { vi.restoreAllMocks(); vi.unstubAllGlobals(); await cleanupModelSessionFixtures(); });
 
 describe("child Run context compaction", () => {
+  it("accounts native child compaction through the same physical boundary as normal turns", async () => {
+    const fixture = await controlledTranscript({ nativeAccounting: true });
+    const result = await fixture.execute();
+    expect(result.status, result.task.error).toBe("completed");
+    const events = await fixture.store.listRunEvents(result.task.childRunId!);
+    const prepared = events.filter((event) => event.type === "model.accounting.prepared");
+    expect(prepared).toHaveLength(4);
+    expect(prepared.filter((event) => (event.payload as any).attribution.phase === "context_compaction")).toHaveLength(1);
+    expect(events.filter((event) => event.type === "model.usage.reconciled")).toHaveLength(4);
+    expect(result.task.usage).toEqual({ inputTokens: 6_000, outputTokens: 600, cacheReadTokens: 0, cacheWriteTokens: 0, costUsd: 0.006 });
+    expect((await fixture.store.modelAccountingRepository.readRunAccounting(fixture.run.id)).usage).toEqual(result.task.usage);
+    expect(fixture.source!.pending()).toHaveLength(0);
+  });
+
   it("compacts a long real tool transcript, continues from its checkpoint, and preserves raw messages", async () => {
     const fixture = await createModelSessionFixture({ timeoutMs: 15_000 });
     Object.assign(fixture.model, { contextWindow: 10_000, maxTokens: 1_200, reasoning: false });
@@ -149,6 +163,7 @@ describe("child Run context compaction", () => {
 });
 
 async function controlledTranscript(options: {
+  nativeAccounting?: boolean;
   maxTotalTokens?: number;
   auxiliaryResult?: "malformed" | "transport error";
   abortAfterAuxiliary?: boolean;
@@ -156,6 +171,7 @@ async function controlledTranscript(options: {
 } = {}) {
   let abort = () => {};
   const fixture = await createModelSessionFixture({ timeoutMs: 15_000, maxTurns: 3, routeCredential: true,
+    ...(options.nativeAccounting ? { nativeAccounting: true } : {}),
     ...(options.maxTotalTokens === undefined ? {} : { runLimits: { maxTotalTokens: options.maxTotalTokens } }),
     onEvent: (event) => {
       if (options.abortAfterAuxiliary && event.type === "model.response" &&
@@ -173,7 +189,7 @@ async function controlledTranscript(options: {
   await writeFile(path.join(fixture.store.workspaceRoot, "second.txt"), "second source evidence ".repeat(400));
   const calls: Array<{ auxiliary: boolean; context: Context; options: SimpleStreamOptions | undefined; model: string; contextWindow: number }> = [];
   let normal = 0;
-  vi.spyOn(fixture.registry.models, "streamSimple").mockImplementation((model, context, requestOptions) => {
+  const dispatch: typeof fixture.registry.models.streamSimple = (model, context, requestOptions) => {
     const auxiliary = context.systemPrompt?.includes("checkpoint inside an unfinished Run") ?? false;
     calls.push({ auxiliary, context: structuredClone(context), options: requestOptions, model: model.id, contextWindow: model.contextWindow });
     if (!auxiliary) normal += 1;
@@ -194,7 +210,9 @@ async function controlledTranscript(options: {
     if (response.stopReason === "error" || response.stopReason === "aborted") stream.push({ type: "error", reason: response.stopReason, error: response });
     else stream.push({ type: "done", reason: response.stopReason, message: response });
     return stream;
-  });
+  };
+  if (options.nativeAccounting) fixture.registry.registerProvider({ ...fixture.faux.provider, stream: dispatch, streamSimple: dispatch });
+  else vi.spyOn(fixture.registry.models, "streamSimple").mockImplementation(dispatch);
   return { ...fixture, calls, execute: async () => fixture.supervisor.collect(await fixture.supervisor.start(fixture.request({ outputSchema: {
     type: "object", properties: { answer: { type: "string" } }, required: ["answer"], additionalProperties: false,
   }, ...(options.fallback ? { modelRoute: { fallbackModels: [{ provider: fixture.model.provider, id: "bounded-route-compaction" }] } } : {}) }))) };

@@ -20,6 +20,7 @@ import {
   walkEmbeddedModelContextEnvelopes,
 } from "./run-replay.js";
 import { assertOutcome } from "./run-outcomes.js";
+import { assertAccountingProjection } from "./model-accounting-projection.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { createThreadReplayBundle as buildThreadReplayBundle } from "./thread-bundles.js";
 
@@ -212,6 +213,7 @@ function validateRunReplaySnapshot(input: unknown): RunReplaySnapshot {
     throw new Error("Run replay snapshot configuration hash is invalid");
   }
   const metrics = recordField(record, "metrics") as unknown as RunMetrics;
+  assertAccountingProjection(run as unknown as import("@napier/contracts").RunRecord, subagents, events);
   const expectedMetrics = deriveRunMetrics(
     startedAt,
     typeof finishedAt === "string" ? finishedAt : undefined,

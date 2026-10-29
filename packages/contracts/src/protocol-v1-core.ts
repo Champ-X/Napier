@@ -169,6 +169,10 @@ export interface IndependentModelAdvisorReview {
   usage: Usage;
   modelContextEnvelope?: ModelContextEnvelopeReceipt;
   contentSha256: string;
+  physicalId?: string;
+  attributionSha256?: string;
+  accountingMode?: "physical_receipt_v1";
+  modelCallDisposition?: "not_dispatched";
 }
 
 export interface ModelAdvisorDiagnostic {

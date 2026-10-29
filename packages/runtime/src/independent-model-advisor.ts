@@ -2,7 +2,6 @@ import {
   contentText,
   type Api,
   type Model,
-  type Usage as PiUsage,
 } from "@earendil-works/pi-ai";
 import {
   emptyUsage,
@@ -19,6 +18,11 @@ import {
   type Usage,
 } from "@napier/contracts";
 
+import { parseModelCallDisplayLinkage, normalizeUsage, normalizeModel } from "./independent-model-advisor-value.js";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
+import type { ModelInvocationAccounting } from "./model-call-accounting-driver.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
+import { modelAccountingLinkage } from "./model-call-attribution.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   createModelContextEnvelopeReceipt,
@@ -33,7 +37,6 @@ export const INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT =
 const REVIEW_POLICY_ID = "napier.independent-model-advisor.v1";
 const MAX_REVIEW_RESPONSE_BYTES = 32 * 1024;
 const SHA256 = /^[a-f0-9]{64}$/u;
-const PROVIDER_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const ISSUE_CODES = new Set<IndependentModelAdvisorIssueCode>([
   "instruction_following",
   "correctness",
@@ -146,6 +149,7 @@ export async function reviewIndependentModelAdvisorCandidate(
     reviewerModel: ModelRef;
     runEvents: RunEvent[];
     signal?: AbortSignal;
+    accounting?: ModelInvocationAccounting | undefined;
   },
 ): Promise<IndependentModelAdvisorReviewResult> {
   const candidateModel = normalizeModel(input.candidateModel);
@@ -190,6 +194,7 @@ export async function reviewIndependentModelAdvisorCandidate(
     reviewerModel,
     prompt,
     ...(input.signal ? { signal: input.signal } : {}),
+    accounting: input.accounting,
   });
 }
 
@@ -341,8 +346,10 @@ async function completeIndependentReview(
     reviewerModel: ModelRef;
     prompt: IndependentModelAdvisorPrompt;
     signal?: AbortSignal;
+    accounting?: ModelInvocationAccounting | undefined;
   },
 ): Promise<IndependentModelAdvisorReviewResult> {
+  let attribution: ModelCallAttributionV1 | undefined;
   let responseText = "";
   let usage = emptyUsage();
   const requestContext = {
@@ -363,13 +370,16 @@ async function completeIndependentReview(
     tools: requestContext.tools,
   });
   try {
-    const response = await models.models.completeSimple(model, requestContext, {
+    const response = await completeModelInvocation({
+      models: models.models, model, context: requestContext,
+      phase: "independent_model_advisor", accounting: input.accounting,
+      onAttribution: (value) => { attribution = value; }, options: {
       ...(input.signal ? { signal: input.signal } : {}),
       maxTokens: 900,
       temperature: 0,
       timeoutMs: 30_000,
       maxRetries: 0,
-    });
+    } });
     responseText = contentText(response.content);
     usage = normalizeUsage(response.usage);
     const parsed = parseIndependentModelAdvisorResponse(responseText);
@@ -383,6 +393,7 @@ async function completeIndependentReview(
       usage,
       diagnosticCodes: [],
       modelContextEnvelope,
+      ...(attribution ? { attribution } : {}),
     });
   } catch (error) {
     if (input.signal?.aborted) throw error;
@@ -401,7 +412,9 @@ async function completeIndependentReview(
       responseSha256: sha256(responseText || message),
       usage,
       diagnosticCodes: ["review_failed_closed"],
+      notDispatched: !!input.accounting && !attribution,
       modelContextEnvelope,
+      ...(attribution ? { attribution } : {}),
     });
   }
 }
@@ -424,6 +437,7 @@ function failedReview(input: {
     responseSha256: sha256(input.diagnosticCode),
     usage: emptyUsage(),
     diagnosticCodes: [input.diagnosticCode],
+    notDispatched: true,
   });
 }
 
@@ -437,6 +451,8 @@ function createReviewResult(input: {
   usage: Usage;
   diagnosticCodes: string[];
   modelContextEnvelope?: ModelContextEnvelopeReceipt;
+  attribution?: ModelCallAttributionV1;
+  notDispatched?: boolean;
 }): IndependentModelAdvisorReviewResult {
   const issues: IndependentModelAdvisorIssue[] = input.parsed.guidance.map(
     (issue) => ({
@@ -470,6 +486,8 @@ function createReviewResult(input: {
     reviewSchemaSha256: input.prompt.reviewSchemaSha256,
     issueSetSha256,
     usage: input.usage,
+    ...(input.attribution ? modelAccountingLinkage(input.attribution) : {}),
+    ...(input.notDispatched ? { modelCallDisposition: "not_dispatched" as const } : {}),
     ...(input.modelContextEnvelope
       ? { modelContextEnvelope: input.modelContextEnvelope }
       : {}),
@@ -692,7 +710,7 @@ function parseReviewPayload(
     "usage",
     "contentSha256",
   ];
-  const optionalKeys = ["evidenceSummary", "modelContextEnvelope"];
+  const optionalKeys = ["evidenceSummary", "modelContextEnvelope", "physicalId", "attributionSha256", "accountingMode", "modelCallDisposition"];
   const keys = Object.keys(input);
   if (
     requiredKeys.some((key) => !(key in input)) ||
@@ -706,6 +724,7 @@ function parseReviewPayload(
     return undefined;
   }
   try {
+    const linkage = parseModelCallDisplayLinkage(input, parseUsage(input["usage"]));
     const candidateModel = normalizeModel(input["candidateModel"] as ModelRef);
     const reviewerModel = normalizeModel(input["reviewerModel"] as ModelRef);
     const verdict = input["verdict"];
@@ -796,6 +815,7 @@ function parseReviewPayload(
       reviewSchemaSha256: String(input["reviewSchemaSha256"]),
       issueSetSha256: String(input["issueSetSha256"]),
       usage,
+      ...linkage,
       ...(modelContextEnvelope ? { modelContextEnvelope } : {}),
     };
     return sha256(canonicalJson(content)) === input["contentSha256"]
@@ -1144,36 +1164,6 @@ function parseUsage(value: unknown): Usage {
     cacheWriteTokens: Number(usage["cacheWriteTokens"]),
     costUsd: Number(usage["costUsd"]),
   };
-}
-
-function normalizeUsage(input: PiUsage): Usage {
-  return {
-    inputTokens: input.input,
-    outputTokens: input.output,
-    cacheReadTokens: input.cacheRead,
-    cacheWriteTokens: input.cacheWrite,
-    costUsd: input.cost.total,
-  };
-}
-
-function normalizeModel(value: ModelRef): ModelRef {
-  if (!value || typeof value !== "object") {
-    throw new Error("Independent Model Advisor model is invalid");
-  }
-  const provider =
-    typeof value.provider === "string"
-      ? value.provider.trim().toLowerCase()
-      : "";
-  const id = typeof value.id === "string" ? value.id.trim() : "";
-  if (
-    !PROVIDER_ID.test(provider) ||
-    !id ||
-    id.length > 200 ||
-    /[\u0000-\u001f\u007f<>\s]/u.test(id)
-  ) {
-    throw new Error("Independent Model Advisor model is invalid");
-  }
-  return { provider, id };
 }
 
 function sameModel(left: ModelRef, right: ModelRef): boolean {

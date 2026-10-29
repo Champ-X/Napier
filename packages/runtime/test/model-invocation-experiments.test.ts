@@ -32,6 +32,7 @@ import { ModelInvocationExperimentRuntime } from "../src/model-invocation-experi
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
+import { accountedTestRegistry } from "./model-usage-registry-fixture.js";
 
 const temporaryRoots: string[] = [];
 const openStores: LocalStore[] = [];
@@ -47,7 +48,7 @@ afterEach(async () => {
 
 describe("Model invocation checkpoint experiments", () => {
   it("replays one exact provider context without executing returned tools", async () => {
-    const fixture = await createFixture();
+    const fixture = await createFixture(true);
     const database = new DatabaseSync(
       path.join(fixture.workspaceRoot, "evidence.db"),
     );
@@ -91,14 +92,14 @@ describe("Model invocation checkpoint experiments", () => {
     expect(
       sourceEvents
         .filter((event) => event.type === "context.model_invocation")
-        .map((event) => event.payload["turnIndex"]),
+        .map((event) => eventPayload(event)["turnIndex"]),
     ).toEqual([0, 1, 2, 3]);
     const capsuleReceipt = sourceEvents.find(
       (event) =>
         event.type === "context.model_invocation" &&
-        event.payload["turnIndex"] === 2,
+        eventPayload(event)["turnIndex"] === 2,
     )!;
-    const capsuleSha256 = String(capsuleReceipt.payload["capsuleSha256"]);
+    const capsuleSha256 = String(eventPayload(capsuleReceipt)["capsuleSha256"]);
     const capsulePath = path.join(
       fixture.runtime.modelInvocationCapsules.rootPath,
       `${capsuleSha256}.json`,
@@ -128,6 +129,9 @@ describe("Model invocation checkpoint experiments", () => {
       },
     ]);
     const request = { sourceRunId: source.id, sourceTurnIndex: 2 };
+    const sourceBefore = fixture.store
+      .listRuns(fixture.sourceThreadId)
+      .find((run) => run.id === source.id);
     const preview = await fixture.experiments.preview(
       fixture.sourceThreadId,
       request,
@@ -163,6 +167,42 @@ describe("Model invocation checkpoint experiments", () => {
       }),
     );
     const targetEvents = await fixture.store.listEvents(result.targetThreadId);
+    const receipts = fixture
+      .accounting!.receipts()
+      .filter((receipt) => receipt.attribution.phase === "model_experiment");
+    expect(receipts).toHaveLength(1);
+    const receipt = receipts[0]!;
+    expect(receipt.attribution.owner).toEqual({
+      kind: "run",
+      threadId: result.targetThreadId,
+      runId: result.targetRunId,
+    });
+    expect(receipt.observation.usageStatus).toBe("partial");
+    expect(receipt.observation.usage.input).toBeGreaterThan(0);
+    expect(receipt.observation.usage.output).toBeGreaterThan(0);
+    expect(
+      fixture.store
+        .listRuns(result.targetThreadId)
+        .find((run) => run.id === result.targetRunId)?.usage,
+    ).toMatchObject({
+      inputTokens: receipt.observation.usage.input,
+      outputTokens: receipt.observation.usage.output,
+      costUsd: 0,
+    });
+    expect(
+      targetEvents.find((event) => event.type === "model.response")?.payload,
+    ).toMatchObject({
+      physicalId: receipt.attribution.physicalId,
+      attributionSha256: receipt.attribution.contentSha256,
+      accountingMode: "physical_receipt_v1",
+    });
+    expect(receipt.acknowledgedAt).not.toBeNull();
+    expect(fixture.accounting!.source.pending()).toEqual([]);
+    expect(
+      fixture.store
+        .listRuns(fixture.sourceThreadId)
+        .find((run) => run.id === source.id),
+    ).toEqual(sourceBefore);
     expect(targetEvents.some((event) => event.type === "tool.started")).toBe(
       false,
     );
@@ -245,7 +285,9 @@ describe("Model invocation checkpoint experiments", () => {
       fixture.store.createRun({
         threadId: forged.id,
         agentId: fixture.agentId,
-        agentRevision: source.agentRevision,
+        ...(source.agentRevision === undefined
+          ? {}
+          : { agentRevision: source.agentRevision }),
         model: fixture.model,
         source: "model_experiment",
         executionMode: "model_experiment_single_call",
@@ -256,11 +298,11 @@ describe("Model invocation checkpoint experiments", () => {
     const receipt = sourceEvents.find(
       (event) =>
         event.type === "context.model_invocation" &&
-        event.payload["turnIndex"] === 0,
+        eventPayload(event)["turnIndex"] === 0,
     )!;
     const capsulePath = path.join(
       fixture.runtime.modelInvocationCapsules.rootPath,
-      `${String(receipt.payload["capsuleSha256"])}.json`,
+      `${String(eventPayload(receipt)["capsuleSha256"])}.json`,
     );
     await writeFile(capsulePath, '{"tampered":true}', "utf8");
     const threadCount = fixture.store.listThreads().length;
@@ -284,35 +326,32 @@ describe("Model invocation checkpoint experiments", () => {
       maxObjects,
     );
     const results = await Promise.allSettled(
-      Array.from(
-        { length: maxObjects + 8 },
-        async (_, turnIndex) => {
-          const context = {
-            messages: [
-              {
-                role: "user" as const,
-                content: `Concurrent capsule ${String(turnIndex)}`,
-                timestamp: turnIndex,
-              },
-            ],
-          };
-          const envelope = createModelContextEnvelopeReceipt({
-            turnIndex,
-            systemPrompt: "",
-            messages: context.messages,
-            tools: [],
-          });
-          return capsules.put({
-            sourceThreadId: fixture.sourceThreadId,
-            sourceRunId: "run_capacitytest",
-            turnIndex,
-            purpose: "agent_turn",
-            model: fixture.model,
-            contextEnvelopeSha256: envelope.contentSha256,
-            context,
-          });
-        },
-      ),
+      Array.from({ length: maxObjects + 8 }, async (_, turnIndex) => {
+        const context = {
+          messages: [
+            {
+              role: "user" as const,
+              content: `Concurrent capsule ${String(turnIndex)}`,
+              timestamp: turnIndex,
+            },
+          ],
+        };
+        const envelope = createModelContextEnvelopeReceipt({
+          turnIndex,
+          systemPrompt: "",
+          messages: context.messages,
+          tools: [],
+        });
+        return capsules.put({
+          sourceThreadId: fixture.sourceThreadId,
+          sourceRunId: "run_capacitytest",
+          turnIndex,
+          purpose: "agent_turn",
+          model: fixture.model,
+          contextEnvelopeSha256: envelope.contentSha256,
+          context,
+        });
+      }),
     );
     const entries = await readdir(capsules.rootPath);
     const capsuleFiles = entries.filter((name) =>
@@ -328,9 +367,9 @@ describe("Model invocation checkpoint experiments", () => {
 
   it("keeps the production object limit above sustained product use", () => {
     expect(MAX_MODEL_INVOCATION_CAPSULES).toBeGreaterThanOrEqual(4_096);
-    expect(
-      () => new ModelInvocationCapsuleStore("ignored", 0),
-    ).toThrow("object limit is invalid");
+    expect(() => new ModelInvocationCapsuleStore("ignored", 0)).toThrow(
+      "object limit is invalid",
+    );
     expect(
       () =>
         new ModelInvocationCapsuleStore(
@@ -439,6 +478,7 @@ describe("Model invocation checkpoint experiments", () => {
 });
 
 interface Fixture {
+  accounting: Awaited<ReturnType<typeof accountedTestRegistry>> | undefined;
   workspaceRoot: string;
   store: LocalStore;
   runtime: AgentRuntime;
@@ -449,7 +489,7 @@ interface Fixture {
   model: { provider: string; id: string };
 }
 
-async function createFixture(): Promise<Fixture> {
+async function createFixture(accounted = false): Promise<Fixture> {
   const root = await mkdtemp(
     path.join(tmpdir(), "napier-model-invocation-experiment-"),
   );
@@ -471,11 +511,15 @@ async function createFixture(): Promise<Fixture> {
     provider: "faux-model-experiment",
     tokensPerSecond: 100_000,
   });
-  const models = new ModelRegistry();
+  const accounting = accounted
+    ? await accountedTestRegistry(store, path.join(root, "usage.sqlite"))
+    : undefined;
+  const models = accounting?.models ?? new ModelRegistry();
   models.registerProvider(provider.provider);
   const runtime = new AgentRuntime(store, models);
   return {
     workspaceRoot,
+    accounting,
     store,
     runtime,
     experiments: new ModelInvocationExperimentRuntime(
@@ -500,4 +544,14 @@ async function sourceRun(fixture: Fixture): Promise<RunRecord> {
     text: "Create a captured source model call.",
     model: fixture.model,
   });
+}
+
+function eventPayload(event: { payload: unknown }): Record<string, unknown> {
+  if (
+    !event.payload ||
+    typeof event.payload !== "object" ||
+    Array.isArray(event.payload)
+  )
+    throw new Error("Expected object event payload");
+  return event.payload as Record<string, unknown>;
 }

@@ -8,6 +8,12 @@ import {
   type MutableModels,
   type StreamOptions,
 } from "@earendil-works/pi-ai";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
+import { bindModelCallRegistry, bindModelResultAttribution, consumeModelCallAttribution,
+  enterRawModelCall, modelCallRegistryIdentity, readEnteredModelCall, type EnteredModelCall } from "./model-call-attribution.js";
+import { modelAdmittedRequestDigests } from "./model-call-capture.js";
+import { projectPendingModelUsage, type ModelUsageProjectionPort } from "./model-usage-projection.js";
+import type { ModelUsageSource } from "./model-usage-source.js";
 
 export type ModelCallMethod = "stream" | "streamSimple" | "complete" | "completeSimple";
 export type ModelCallAdmissionCode = "capacity" | "budget" | "accounting" | "closed";
@@ -19,6 +25,9 @@ export interface ModelCallLease {
 }
 
 export interface ModelCallAdmission {
+  readonly usageSource?: ModelUsageSource;
+  readonly hostWorkspaceId?: string;
+  isDeclaredZeroCost?(model: { provider: string; id: string }): boolean;
   /** Classify host-owned reserve errors without sharing an error implementation. */
   errorCode?(error: unknown): ModelCallAdmissionCode | undefined;
   /** Synchronous backpressure: never hold a Run or wait for a child here. */
@@ -26,6 +35,7 @@ export interface ModelCallAdmission {
     method: ModelCallMethod;
     model: Model<Api>;
     options?: StreamOptions;
+    attribution?: ModelCallAttributionV1;
   }): ModelCallLease;
 }
 
@@ -68,8 +78,7 @@ export function createAdmittedModels(
   models: MutableModels,
   admission?: ModelCallAdmission,
 ): MutableModels {
-  if (!admission) return models;
-  return new Proxy(models, {
+  const admitted = new Proxy(models, {
     get(target, property) {
       if (property === "stream" || property === "streamSimple") {
         return (model: Model<Api>, context: Context, options?: StreamOptions) =>
@@ -83,21 +92,37 @@ export function createAdmittedModels(
       return typeof value === "function" ? value.bind(target) : value;
     },
   });
+  bindModelCallRegistry(admitted, models);
+  return admitted;
 }
 
 function reserve(
-  admission: ModelCallAdmission,
+  registry: MutableModels,
+  admission: ModelCallAdmission | undefined,
   method: ModelCallMethod,
   model: Model<Api>,
+  context: Context,
   options: StreamOptions | undefined,
-): (message?: AssistantMessage) => void {
+): { call?: EnteredModelCall; attribution?: ModelCallAttributionV1; settle(message?: AssistantMessage): Promise<void> } {
+  const active = consumeModelCallAttribution(registry);
+  if (accountingState(registry).closing) throw new ModelCallAdmissionError("closed");
   options?.signal?.throwIfAborted();
+  if (active) {
+    if (!admission?.usageSource || admission.usageSource.sourceId !== active.attribution.receiptSourceId)
+      throw new ModelCallAdmissionError("accounting", { cause: new Error("Model invocation has no matching durable source") });
+    const digests = modelAdmittedRequestDigests({ model, context, ...(options ? { options } : {}) });
+    if (active.attribution.method !== method || Object.entries(digests).some(([key, value]) =>
+      active.attribution.capture[key as keyof typeof digests] !== value))
+      throw new ModelCallAdmissionError("accounting", { cause: new Error("Model invocation differs from prepared capture") });
+  }
+  if (!admission) return { settle: async () => undefined };
   let lease: ModelCallLease;
   try {
     lease = admission.reserve(Object.freeze({
       method,
       model: freezeModel(structuredClone(model)),
       ...(options ? { options: Object.freeze({ ...options }) } : {}),
+      ...(active ? { attribution: active.attribution } : {}),
     }));
   }
   catch (cause) {
@@ -109,13 +134,27 @@ function reserve(
       ? code : "accounting";
     throw new ModelCallAdmissionError(classified, { cause });
   }
-  let attempted = false;
-  return (message) => {
-    if (attempted) return;
-    attempted = true;
-    try { lease.settle(message); }
-    catch (cause) { throw new ModelCallAdmissionError("accounting", { cause }); }
-  };
+  let settled = false;
+  let observation: Promise<void> | undefined;
+  return { ...(active ? { call: active.call, attribution: active.attribution } : {}), settle(message) {
+    if (observation) return observation;
+    const attempt = async () => {
+      try {
+        // The lease immediately normalizes bounded usage fields. Cloning an
+        // arbitrary provider response here could fail before usage is recorded.
+        if (!settled) { lease.settle(message); settled = true; }
+        if (active) await projectPendingModelUsage(admission.usageSource!,
+          readEnteredModelCall(active.call).repository as ModelUsageProjectionPort,
+          { physicalId: active.attribution.physicalId });
+        accountingState(registry).failed.delete(attempt);
+      } catch (cause) {
+        accountingState(registry).failed.add(attempt);
+        throw cause instanceof ModelCallAdmissionError ? cause : new ModelCallAdmissionError("accounting", { cause });
+      }
+    };
+    observation = attempt();
+    return observation;
+  } };
 }
 
 /** Model catalog data is a detached snapshot; provider mutation cannot change
@@ -129,38 +168,59 @@ function freezeModel<T>(value: T, seen = new Set<object>()): T {
 
 async function invokeComplete(
   models: MutableModels,
-  admission: ModelCallAdmission,
+  admission: ModelCallAdmission | undefined,
   method: "complete" | "completeSimple",
   model: Model<Api>,
   context: Context,
   options?: StreamOptions,
 ): Promise<AssistantMessage> {
-  const settle = reserve(admission, method, model, options);
+  const reservation = reserve(models, admission, method, model, context, options);
   let message: AssistantMessage;
-  try { message = await Reflect.apply(models[method], models, [model, context, options]); }
-  catch (error) { settle(); throw error; }
-  settle(message);
-  return message;
+  const result = (async () => {
+    if (reservation.call) options?.signal?.throwIfAborted();
+    try { message = await enterRawModelCall(reservation.call, () => Reflect.apply(models[method], models, [model, context, options])); }
+    catch (error) { await reservation.settle(); throw error; }
+    await reservation.settle(message);
+    const output = reservation.attribution ? structuredClone(message) : message;
+    return reservation.attribution ? bindModelResultAttribution(output, reservation.attribution) : output;
+  })();
+  trackPhysicalResult(models, result);
+  return result;
 }
 
 function invokeStream(
   models: MutableModels,
-  admission: ModelCallAdmission,
+  admission: ModelCallAdmission | undefined,
   method: "stream" | "streamSimple",
   model: Model<Api>,
   context: Context,
   options?: StreamOptions,
 ): AssistantMessageEventStream {
-  const settle = reserve(admission, method, model, options);
+  const reservation = reserve(models, admission, method, model, context, options);
+  if (reservation.call) options?.signal?.throwIfAborted();
   let source: AssistantMessageEventStream;
-  try { source = Reflect.apply(models[method], models, [model, context, options]); }
-  catch (error) { settle(); throw error; }
+  try { source = enterRawModelCall(reservation.call, () => Reflect.apply(models[method], models, [model, context, options])); }
+  catch (error) {
+    const failure = reservation.settle().then(() => { throw error; });
+    trackPhysicalResult(models, failure);
+    if (!reservation.attribution) throw error;
+    const output = createAssistantMessageEventStream();
+    output.result = () => failure;
+    output[Symbol.asyncIterator] = async function* () { await failure; };
+    if (reservation.attribution) bindModelResultAttribution(output, reservation.attribution);
+    return output;
+  }
   // Observe the physical result independently of consumer iteration/abort.
   // A provider ignoring cancellation continues to own its admission lease.
   const result = Promise.resolve().then(() => source.result()).then(
-    (message) => { settle(message); return message; },
-    (error: unknown) => { settle(); throw error; },
+    async (message) => {
+      await reservation.settle(message);
+      const output = reservation.attribution ? structuredClone(message) : message;
+      return reservation.attribution ? bindModelResultAttribution(output, reservation.attribution) : output;
+    },
+    async (error: unknown) => { await reservation.settle(); throw error; },
   );
+  trackPhysicalResult(models, result);
   // Iteration-only consumers still receive failures through the generator.
   void result.catch(() => undefined);
   const failure = result.then(
@@ -169,6 +229,7 @@ function invokeStream(
   );
   void failure.catch(() => undefined);
   const output = createAssistantMessageEventStream();
+  if (reservation.attribution) bindModelResultAttribution(output, reservation.attribution);
   output.result = () => result;
   output[Symbol.asyncIterator] = async function* () {
     const iterator = source[Symbol.asyncIterator]();
@@ -176,8 +237,10 @@ function invokeStream(
       for (;;) {
         const step = await Promise.race([iterator.next(), failure]);
         if (step.done) { await result; return; }
-        if (step.value.type === "done" || step.value.type === "error") await result;
-        yield step.value;
+        if (step.value.type === "done" || step.value.type === "error") {
+          const final = await result;
+          yield step.value.type === "done" ? { ...step.value, message: final } : { ...step.value, error: final };
+        } else yield step.value;
       }
     } finally {
       // A broken provider may leave next() pending even after result rejects.
@@ -187,4 +250,28 @@ function invokeStream(
     }
   };
   return output;
+}
+
+interface AccountingState { closing: boolean; pending: Set<Promise<unknown>>; failed: Set<() => Promise<void>> }
+const accountingStates = new WeakMap<object, AccountingState>();
+function accountingState(registry: object): AccountingState {
+  const key = modelCallRegistryIdentity(registry);
+  let state = accountingStates.get(key);
+  if (!state) { state = { closing: false, pending: new Set(), failed: new Set() }; accountingStates.set(key, state); }
+  return state;
+}
+function trackPhysicalResult(registry: object, result: Promise<unknown>): void {
+  const state = accountingState(registry);
+  state.pending.add(result);
+  void result.then(() => state.pending.delete(result), () => state.pending.delete(result));
+}
+
+/** Stop dispatch first; failed persistence retries the same observation, never the provider. */
+export async function drainModelCallAccounting(registry: object): Promise<void> {
+  const state = accountingState(registry);
+  state.closing = true;
+  while (state.pending.size) await Promise.allSettled([...state.pending]);
+  const retried = await Promise.allSettled([...state.failed].map((retry) => retry()));
+  const failures = retried.filter((entry) => entry.status === "rejected");
+  if (failures.length) throw new AggregateError(failures.map((entry) => entry.reason), "Model observation accounting did not drain");
 }

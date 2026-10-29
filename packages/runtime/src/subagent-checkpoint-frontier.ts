@@ -4,11 +4,13 @@ import { assertChildModelEvidence } from "./subagent-child-evidence-validation.j
 import { liveToolEffectAuthoritiesFromEvents } from "./sqlite-tool-effect-authority.js";
 import { toolOperationLedgerState } from "./tool-operation-ledger-support.js";
 import type { SubagentCheckpointFrontier } from "./subagent-working-set-types.js";
+import { assertChildLogicalInvocationsSettled } from "./model-accounting-fold.js";
 
 /** A durable context boundary never asserts completion of unresolved physical work. */
 export function subagentCheckpointFrontier(run: RunRecord, task: SubagentTask,
   events: readonly RunEvent[]): SubagentCheckpointFrontier {
   if (run.usageStatus !== "complete") throw new Error("Child checkpoint has unresolved model usage");
+  assertChildLogicalInvocationsSettled(events);
   assertChildModelEvidence(run, events);
   assertSettledToolFrontier(events);
   return { threadId: run.threadId, runId: run.id, taskId: task.id, executionId: task.executionId!,

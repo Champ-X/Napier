@@ -14,6 +14,7 @@ import {
 import { createId } from "./ids.js";
 import { refreshPlanProjection } from "./plans.js";
 import type { StorePersistedRunRecord } from "./store-repository-host.js";
+import { allocateImportedModelAccountingIds } from "./model-accounting-import.js";
 
 export interface ThreadReplayImportIds {
   agentId: string;
@@ -96,6 +97,7 @@ export function createThreadReplayImportIds(
     ...taskIds,
     ...eventIds,
   ]);
+  allocateImportedModelAccountingIds(bundle.events, idMap);
   for (const attempt of bundle.automaticRecoveryAttempts ?? []) {
     idMap.set(
       attempt.triggerId,

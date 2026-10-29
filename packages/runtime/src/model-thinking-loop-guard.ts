@@ -1,3 +1,5 @@
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
+import { bindModelResultAttribution, markModelLogicalUndispatched } from "./model-call-attribution.js";
 import {
   createAssistantMessageEventStream,
   getSupportedThinkingLevels,
@@ -31,6 +33,8 @@ export interface ModelThinkingLoopGuardInput {
   context: Context;
   options: SimpleStreamOptions;
   rootSignal: AbortSignal;
+  nativeAccounting?: boolean;
+  attribution?(): ModelCallAttributionV1 | undefined;
   createSource(input: {
     attempt: 1 | 2;
     context: Context;
@@ -68,6 +72,9 @@ export function guardModelThinkingLoop(
   const settle = (message: AssistantMessage): void => {
     if (settled) return;
     settled = true;
+    const attribution = input.attribution?.();
+    if (attribution) bindModelResultAttribution(message, attribution);
+    else if (input.nativeAccounting) markModelLogicalUndispatched(message);
     resolveTerminal(message);
   };
 

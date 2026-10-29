@@ -11,6 +11,7 @@ import {
   usageBudgetCostUsd,
   usageBudgetTokens,
 } from "./token-accounting.js";
+import type { RunAccountingBudgetSnapshot } from "./model-accounting-registry.js";
 
 export type RunBudgetReason = "turns" | "tokens" | "cost" | "timeout";
 export type RunFinalizationReserveReason = "turns" | "tokens" | "timeout";
@@ -73,6 +74,30 @@ export class RunBudgetTracker {
   private inFlightPrimaryTurns = 0;
   private readonly recentPrimaryTokens: number[] = [];
   private exhausted?: RunBudgetExhaustion;
+  private accountingRevision = -1;
+  private physicalAccounting = false;
+  private readAccounting?: () => Promise<RunAccountingBudgetSnapshot>;
+
+  bindAccounting(read: () => Promise<RunAccountingBudgetSnapshot>): void {
+    this.readAccounting = read;
+    this.physicalAccounting = true;
+  }
+
+  async refreshAccounting(nowMs = Date.now()): Promise<void> {
+    if (!this.readAccounting) return;
+    this.adoptAccounting(await this.readAccounting(), nowMs);
+  }
+
+  adoptAccounting(snapshot: RunAccountingBudgetSnapshot, nowMs = Date.now()): void {
+    this.physicalAccounting = true;
+    if (snapshot.accountingRevision < this.accountingRevision) return;
+    this.accountingRevision = snapshot.accountingRevision;
+    this.usage = structuredClone(snapshot.usage);
+    this.budgetTokens = snapshot.summary.budgetTokens;
+    // An unresolved aggregate must not erase a previously observed debit.
+    this.budgetCostUsd = snapshot.knownBudgetCostUsd ?? snapshot.summary.budgetCostUsd ?? Math.max(this.budgetCostUsd, snapshot.usage.costUsd);
+    this.checkOverage(nowMs);
+  }
 
   constructor(limits: RunLimits, startedAt: string | number = Date.now()) {
     this.limits = structuredClone(limits);
@@ -104,6 +129,7 @@ export class RunBudgetTracker {
     if (this.recentPrimaryTokens.length > 3) this.recentPrimaryTokens.shift();
     if (this.inFlightPrimaryTurns > 0) this.inFlightPrimaryTurns -= 1;
     else this.primaryTurns += 1;
+    if (this.physicalAccounting) return;
     this.usage = addUsage(this.usage, usage);
     this.budgetTokens += usageBudgetTokens(usage, accounting);
     this.budgetCostUsd += usageBudgetCostUsd(usage, accounting);
@@ -115,6 +141,7 @@ export class RunBudgetTracker {
     nowMs = Date.now(),
     accounting?: UsageAccounting,
   ): void {
+    if (this.physicalAccounting) return;
     this.usage = addUsage(this.usage, usage);
     this.budgetTokens += usageBudgetTokens(usage, accounting);
     this.budgetCostUsd += usageBudgetCostUsd(usage, accounting);
@@ -122,6 +149,7 @@ export class RunBudgetTracker {
   }
 
   syncSubagentUsage(tasks: SubagentTask[], nowMs = Date.now()): void {
+    if (this.physicalAccounting) return;
     for (const task of tasks) {
       const previous = this.subagentUsage.get(task.id) ?? emptyUsage();
       const delta = positiveUsageDelta(task.usage, previous);

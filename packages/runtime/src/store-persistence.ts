@@ -6,6 +6,8 @@ import type {
 } from "./event-idempotency.js";
 import type { LedgerRunLease } from "./sqlite-run-leases.js";
 import type { SqliteLedger } from "./sqlite-ledger.js";
+import type { LedgerModelAccountingMutation } from "./sqlite-model-accounting.js";
+import { assertModelAccountingEventAppend } from "./model-accounting-event-admission.js";
 import type { StoreCompatibilityProjectionWriter } from "./store-compatibility-projections.js";
 import {
   monotonicNow,
@@ -22,6 +24,7 @@ export async function persistStoreMutation(input: {
   compatibility: StoreCompatibilityProjectionWriter;
   onCommitFailure(): void;
   eventIdempotency?: EventIdempotencyKey;
+  modelAccountingMutation?: LedgerModelAccountingMutation;
   /** Lifecycle admission for an idempotent event without a Run-head cursor. */
   eventAdmission?: RunEventAdmissionPolicyV1;
   runHeadCondition?: {
@@ -46,6 +49,7 @@ export async function persistStoreMutation(input: {
   let persistedEvent: RunEvent | undefined;
   let appended = true;
   try {
+    assertModelAccountingEventAppend(input.ledger, input.events);
     if (input.eventIdempotency) {
       const [event] = input.events;
       if (input.events.length !== 1 || !event) {
@@ -92,7 +96,7 @@ export async function persistStoreMutation(input: {
       revision = stateJson
         ? input.ledger.commit(input.expectedRevision, stateJson, [
             ...input.events,
-          ])
+          ], input.modelAccountingMutation)
         : input.ledger.commitEvents(input.expectedRevision, [...input.events]);
     }
   } catch (error) {

@@ -1,5 +1,6 @@
 import type { Api, Context, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
 import type { ModelContextEnvelopeReceipt, ModelInvocationPurpose, RunRecord } from "@napier/contracts";
+import type { ModelCallCaptureBinding } from "@napier/contracts/model-accounting";
 
 import type { EventSink } from "./event-sink.js";
 import {
@@ -36,7 +37,7 @@ export async function captureCompiledModelInvocation(input: {
   cacheScope?: object;
   phase?: string;
   onEvent?: EventSink;
-}): Promise<{ context: Context; envelope: ModelContextEnvelopeReceipt }> {
+}): Promise<{ context: Context; envelope: ModelContextEnvelopeReceipt; accountingCapture: ModelCallCaptureBinding }> {
   const record = async (
     type: (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES] | typeof COMPILED_PROMPT_PACKAGE_EVENT,
     payload: object,

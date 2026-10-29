@@ -10,6 +10,7 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { nowIso } from "./ids.js";
 import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
 import type { ModelRegistry } from "./models.js";
 
 const REPLAN_DRAFT_REVIEW_POLICY_ID = "napier.replan-draft-model-review.v1";
@@ -97,9 +98,14 @@ async function completeReview(
     tools: requestContext.tools,
   });
   try {
-    const response = await models.models.completeSimple(model, requestContext, {
-      maxTokens: 1_000,
-      temperature: 0,
+    const accounting = models.accountingForOperation("replan_review");
+    const response = await completeModelInvocation({
+      models: models.models,
+      model,
+      context: requestContext,
+      phase: "replan_review",
+      options: { maxTokens: 1_000, temperature: 0 },
+      ...(accounting ? { accounting } : {}),
     });
     const text = contentText(response.content);
     return {

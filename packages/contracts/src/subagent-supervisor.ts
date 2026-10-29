@@ -8,6 +8,7 @@ import type { WorkflowValueSchema } from "./execution-workflows.js";
 import type { ModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import type { ModelRouteRequest } from "./model-route.js";
 import type { SubagentCompletionReceipt, SubagentCompletionReservation } from "./subagent-completion.js";
+import type { ModelAccountingSummaryV1 } from "./model-accounting.js";
 export type { SubagentCompletionCandidate, SubagentCompletionReceipt, SubagentCompletionReservation } from "./subagent-completion.js";
 export type * from "./subagent-continuation.js";
 
@@ -310,6 +311,7 @@ export interface SubagentTask {
   turnCount: number;
   usage: Usage;
   usageStatus?: "complete" | "incomplete";
+  accounting?: ModelAccountingSummaryV1;
   mailboxConsumedCount?: number;
   mailboxConsumedThroughSeq?: number;
   createdAt: string;

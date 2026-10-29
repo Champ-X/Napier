@@ -26,6 +26,7 @@ import { subagentModelTurnDeniedStream } from "./subagent-model-turn-denial.js";
 import { addSubagentUsage, subagentJsonValue } from "./subagent-task-evidence.js";
 import type { SubagentChildExecution, SubagentProgress } from "./subagent-child-execution.js";
 import { createUsageAccounting } from "./token-accounting.js";
+import { modelAccountingLinkage, modelResultAttribution } from "./model-call-attribution.js";
 
 export type SubagentModelPhase = "subagent_turn" | "typed_repair" | "outcome_repair" | "context_compaction";
 
@@ -137,6 +138,7 @@ export function createSubagentModelSession(input: {
         let adapter: JsonObject | undefined;
         const opened = await session.open({
           phase,
+          ...(input.child && reservation ? { accounting: input.child.accountingForInvocation(reservation) } : {}),
           model: candidate,
           context: activeContext,
           options: phase === "subagent_turn" ? routedOptions : { ...routedOptions, maxRetries: 0 },
@@ -186,10 +188,12 @@ export function createSubagentModelSession(input: {
           },
         });
         return observeResponse(opened.source, async (message) => {
+          const attribution = modelResultAttribution(message);
           const usage = hostModelAbortProvenance(message) ? undefined : addSubagentUsage(emptyUsage(), message.usage);
           if (input.child && reservation) {
             const payload = subagentJsonValue({
               ...hooks?.responseEvidence?.(message),
+              ...(attribution ? modelAccountingLinkage(attribution) : {}),
               model: `${message.provider}/${message.model}`, stopReason: message.stopReason,
               responseSha256: sha256(canonicalJson(message)),
               ...(envelope ? {
@@ -208,6 +212,7 @@ export function createSubagentModelSession(input: {
               envelope ? { envelope, ...(adapter ? { adapter } : {}) } : undefined);
           }
           await append("subagent.model.response", {
+            ...(attribution ? modelAccountingLinkage(attribution) : {}),
             kind: "napier.subagent-model-response", phase, invocationIndex,
             contextEnvelopeSha256, model: { provider: message.provider, id: message.model },
             responseSha256: sha256(canonicalJson(message)), stopReason: message.stopReason,

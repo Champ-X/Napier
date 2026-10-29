@@ -2,6 +2,7 @@ import { emptyUsage, type JsonObject, type RunEvent, type RunRecord, type Usage 
 import { canonicalJson } from "./ed25519.js";
 import { bindChildInvocationCapture } from "./subagent-child-invocation-capture.js";
 import { validateModelContextEnvelopeReceipt } from "./model-context-envelope.js";
+import { foldModelAccounting, hasModelAccounting } from "./model-accounting-fold.js";
 
 const PHASES = new Set(["subagent_turn", "typed_repair", "outcome_repair", "context_compaction"]);
 const USAGE_KEYS = Object.keys(emptyUsage()) as Array<keyof Usage>;
@@ -32,8 +33,10 @@ export function assertChildModelEvidence(run: RunRecord, events: readonly RunEve
     assertResponseCapture(events, index, payload, Number(reserved.payload["invocationIndex"]), reserved.event.seq);
     if (addResponseUsage(total, payload)) knownCount += 1;
   }
-  const status = knownCount === reservations.size ? "complete" : "incomplete";
-  if (run.usageStatus !== status || canonicalJson(run.usage) !== canonicalJson(total))
+  const accounting = hasModelAccounting(events) ? foldModelAccounting(events, [], run.accounting) : undefined;
+  const status = accounting?.summary.usageStatus ?? (knownCount === reservations.size ? "complete" : "incomplete");
+  if (run.usageStatus !== status || canonicalJson(run.usage) !== canonicalJson(accounting?.usage ?? total) ||
+    (accounting && canonicalJson(run.accounting) !== canonicalJson(accounting.summary)))
     invalid("usage does not match reserved invocation receipts");
 }
 

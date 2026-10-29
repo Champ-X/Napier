@@ -5,6 +5,7 @@ import {
   type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import type { RunEvent, RunRecord, Usage } from "@napier/contracts";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
 
 import { modelRefFromModel, mapModelUsage } from "./agent-model-projection.js";
 import { compileAuxiliaryPrompt } from "./agent-prompt-layers.js";
@@ -14,8 +15,9 @@ import {
 } from "./compaction.js";
 import { sha256 } from "./ed25519.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
-import { modelAdapterReceipt } from "./model-adapters.js";
+import { modelAdapterReceipt } from "./model-adapter-receipt.js";
 import type { ModelRegistry } from "./models.js";
 import type { LocalStore } from "./store.js";
 import { createUsageAccounting } from "./token-accounting.js";
@@ -64,12 +66,20 @@ export async function invokeContextCompactionPreviewModel(input: {
     }),
   });
   let response;
+  let attribution: ModelCallAttributionV1 | undefined;
   try {
-    response = await input.models.models.completeSimple(
-      input.model,
-      captured.context,
+    response = await completeModelInvocation({
+      models: input.models.models,
+      model: input.model,
+      context: captured.context,
       options,
-    );
+      phase: "context_compaction_preview",
+      capture: captured.accountingCapture,
+      accounting: input.models.accountingForRun(input.run.id),
+      onAttribution: (binding) => {
+        attribution = binding;
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await input.store.appendEvent({
@@ -79,6 +89,13 @@ export async function invokeContextCompactionPreviewModel(input: {
       category: "model",
       visibility: "debug",
       payload: {
+        ...(attribution
+          ? {
+              physicalId: attribution.physicalId,
+              attributionSha256: attribution.contentSha256,
+              accountingMode: "physical_receipt_v1",
+            }
+          : {}),
         modelCallPurpose: "context_compaction",
         errorSha256: sha256(message),
         errorBytes: Buffer.byteLength(message, "utf8"),
@@ -104,6 +121,13 @@ export async function invokeContextCompactionPreviewModel(input: {
     category: "model",
     visibility: "debug",
     payload: {
+      ...(attribution
+        ? {
+            physicalId: attribution.physicalId,
+            attributionSha256: attribution.contentSha256,
+            accountingMode: "physical_receipt_v1",
+          }
+        : {}),
       modelCallPurpose: "context_compaction",
       textSha256: sha256(responseText),
       textBytes: Buffer.byteLength(responseText, "utf8"),

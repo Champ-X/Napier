@@ -4,6 +4,8 @@ import type {
   RunEvent,
   RunRecord,
 } from "@napier/contracts";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
+import { modelResultAttribution, modelAccountingLinkage } from "./model-call-attribution.js";
 import type { EventSink } from "./event-sink.js";
 import type { AppendEventInput } from "./run-event-registry.js";
 import type { RunBudgetTracker } from "./run-budget.js";
@@ -32,12 +34,14 @@ export async function recordContextOverflow(
   error: AssistantMessage,
   envelope: ModelContextEnvelopeReceipt,
 ): Promise<"retry" | "budget_exhausted"> {
+  const attribution = modelResultAttribution(error);
   const usage = mapModelUsage(error.usage);
   const usageAccounting = createUsageAccounting(
     { provider: model.provider, id: model.id },
     usage,
   );
   input.budget.observeAuxiliaryUsage(usage, Date.now(), usageAccounting);
+  await input.budget.refreshAccounting();
   const action = input.budget.exhaustion
     ? ("budget_exhausted" as const)
     : ("retry" as const);
@@ -49,6 +53,7 @@ export async function recordContextOverflow(
     model: model.id,
     diagnosticSha256: sha256(error.errorMessage ?? ""),
     usage,
+    ...(attribution ? modelAccountingLinkage(attribution) : {}),
     usageAccounting,
     modelContextEnvelopeSha256: envelope.contentSha256,
     modelContextEnvelopeTurnIndex: envelope.turnIndex,
@@ -81,7 +86,9 @@ export async function recordDetection(
   envelope: ModelContextEnvelopeReceipt | undefined,
   terminalMessage?: AssistantMessage,
   trace?: ModelThinkingTraceSnapshot,
+  invocationAttribution?: ModelCallAttributionV1,
 ): Promise<"retry" | "finalize" | "budget_exhausted"> {
+  const attribution = modelResultAttribution(terminalMessage) ?? invocationAttribution;
   const usage = terminalMessage
     ? mapModelUsage(terminalMessage.usage)
     : {
@@ -96,6 +103,7 @@ export async function recordDetection(
     usage,
   );
   input.budget.observeAuxiliaryUsage(usage, Date.now(), usageAccounting);
+  await input.budget.refreshAccounting();
   const effectiveAction = input.budget.exhaustion
     ? ("budget_exhausted" as const)
     : action;
@@ -116,6 +124,7 @@ export async function recordDetection(
     model: model.id,
     ...evidence,
     usage,
+    ...(attribution ? modelAccountingLinkage(attribution) : {}),
     usageSource: terminalMessage
       ? "provider_terminal"
       : "reasoning_bytes_estimate",

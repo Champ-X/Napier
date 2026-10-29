@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./model-accounting": {
+      "types": "./dist/model-accounting.d.ts",
+      "import": "./dist/model-accounting.js"
+    },
     "./file-preview": {
       "types": "./dist/file-preview.d.ts",
       "import": "./dist/file-preview.js"

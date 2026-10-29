@@ -7,8 +7,9 @@ import {
 } from "./sqlite-run-leases.js";
 import { createToolConcurrencyLeaseSchema } from "./sqlite-tool-concurrency-schema.js";
 import { createWorkflowExecutionLockSchema } from "./workflow-execution-lock.js";
+import { createModelAccountingSchema } from "./sqlite-model-accounting.js";
 
-export const LEDGER_SCHEMA_VERSION = 8;
+export const LEDGER_SCHEMA_VERSION = 9;
 
 export function migrateLedgerSchema(
   database: DatabaseSync,
@@ -36,6 +37,8 @@ export function migrateLedgerSchema(
         new Date().toISOString(),
       );
     }
+    createModelAccountingSchema(database);
+    if (currentVersion < 9) recordMigration(database, 9, "model_invocation_accounting", new Date().toISOString());
     database.exec(`PRAGMA user_version = ${LEDGER_SCHEMA_VERSION}`);
     database.exec("COMMIT");
   } catch (error) {

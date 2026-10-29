@@ -1,14 +1,9 @@
 import {
-  createModels,
   type Api,
-  type Credential,
-  type AuthContext,
-  type CredentialStore,
   type Model,
   type MutableModels,
   type Provider,
 } from "@earendil-works/pi-ai";
-import { builtinProviders } from "@earendil-works/pi-ai/providers/all";
 import type {
   AgentProfile,
   AgentProfileRevision,
@@ -18,41 +13,12 @@ import type {
 } from "@napier/contracts";
 import { recommendedDefaultRunModel } from "@napier/contracts/default-run-model";
 
-import { withDeepSeekVisionModel } from "./deepseek-vision-provider.js";
-import { createModelAdapterModels } from "./model-adapters.js";
-import type { ModelTurnDeadlinePolicy } from "./model-turn-deadline.js";
-import type { ToolDeadlinePolicy } from "./tool-deadline-policy.js";
+import { ModelRegistryRuntime } from "./model-registry-runtime.js";
 
 export const MAX_MODELS_PER_PROVIDER = 18;
 export const MAX_PROJECTED_LIVE_MODELS = 512;
 
-export class ModelRegistry {
-  readonly models: MutableModels;
-  readonly credentialReferences?: {
-    readReference(referenceId: string): Promise<Credential | undefined>;
-  };
-  modelTurnDeadlinePolicy?: Partial<ModelTurnDeadlinePolicy>;
-  toolDeadlinePolicy?: Partial<ToolDeadlinePolicy>;
-
-  constructor(credentials?: CredentialStore, admission?: Parameters<typeof createModelAdapterModels>[1]) {
-    if (credentials && "readReference" in credentials) {
-      this.credentialReferences = credentials as CredentialStore & {
-        readReference(referenceId: string): Promise<Credential | undefined>;
-      };
-    }
-    const models = createModelAdapterModels(
-      createModels({
-        ...(credentials ? { credentials } : {}),
-        authContext: explicitCredentialAuthContext(),
-      }),
-      admission,
-    );
-    for (const provider of builtinProviders()) {
-      models.setProvider(withDeepSeekVisionModel(provider));
-    }
-    this.models = models;
-  }
-
+export class ModelRegistry extends ModelRegistryRuntime {
   registerProvider(provider: Provider<Api>): void {
     this.models.setProvider(provider);
   }
@@ -161,13 +127,6 @@ function modelSelectionPriority(
   return model.provider === "deepseek" && model.id === "deepseek-v4-flash"
     ? -1
     : 0;
-}
-
-function explicitCredentialAuthContext(): AuthContext {
-  return {
-    env: async () => undefined,
-    fileExists: async () => false,
-  };
 }
 
 function projectedProviderModels(

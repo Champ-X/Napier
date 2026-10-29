@@ -4,6 +4,7 @@ import type { PatchInterruptionReconciliation } from "./workspace-patch-interrup
 export { RUN_EFFECT_INDETERMINATE_REASON } from "./run-lost-owner-recovery.js";
 import { recoverLostRuns } from "./run-lost-owner-recovery.js";
 import { nowIso } from "./ids.js";
+import { refreshRunAccounting } from "./model-accounting-projection.js";
 import { interruptPlanRun } from "./plans.js";
 import type { TerminalRunStatus } from "./run-event-admission.js";
 import { runPlanProgressEventPayload } from "./run-progress-plan-state.js";
@@ -121,6 +122,9 @@ async function reconcileInterruptedState(
     orphanInterruptedSubagents(host.state, restartedRunIds, timestamp) ||
     changed;
   changed = markTerminalParentsWithIncompleteChildUsage(host.state) || changed;
+  for (const run of [...host.state.runs].sort((left, right) => Number(!!right.subagent) - Number(!!left.subagent))) {
+    if (run.accounting) changed = refreshRunAccounting(host, run.id, [...recovery.terminalEvents, ...cancellationEvents]) || changed;
+  }
   const interruptedPlans = interruptActivePlanSteps(
     host.state,
     restartedRunIds,

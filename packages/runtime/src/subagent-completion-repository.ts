@@ -12,6 +12,7 @@ import type { FinishSubagentTaskInput } from "./subagent-completion-types.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { subagentOutputSchemaSha256 } from "./subagent-output-schema.js";
 import { assertWorkflowValue } from "./workflow-schemas.js";
+import { assertChildLogicalInvocationsSettled } from "./model-accounting-fold.js";
 
 export class SubagentCompletionRepository {
   constructor(private readonly host: SubagentChildRunHost) {}
@@ -22,6 +23,7 @@ export class SubagentCompletionRepository {
     const state = await this.host.stateQueue.run(async () => {
       input.assertActive?.();
       const { run, task } = assertChildRunFence(this.host, input, { checkRevision: false });
+      assertChildLogicalInvocationsSettled(this.host.requireLedger().listRunEvents(run.id));
       if (run.usageStatus === "incomplete") throw new Error("Child completion has unresolved model invocations");
       if (input.finish.usage && canonicalJson(input.finish.usage) !== canonicalJson(run.usage))
         throw new Error("Child completion usage conflicts with settled invocation usage");

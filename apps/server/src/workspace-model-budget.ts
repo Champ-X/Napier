@@ -1,4 +1,5 @@
 import { calculateCost, type Api, type AssistantMessage, type Model, type StreamOptions } from "@earendil-works/pi-ai";
+import type { ModelPhysicalObservationV1 } from "@napier/contracts/model-accounting";
 
 export interface WorkspaceModelBudgetOptions {
   epoch?: string;
@@ -81,17 +82,37 @@ export function modelCallAllowance(model: Model<Api>, options: StreamOptions | u
 
 export type ModelCallAllowance = ReturnType<typeof modelCallAllowance>;
 
-export function modelCallAccounting(message: AssistantMessage | undefined, allowance: ModelCallAllowance) {
+type ModelUsageInput = {
+  stopReason?: string;
+  usage?: Omit<Partial<AssistantMessage["usage"]>, "cost"> & { cost?: Partial<AssistantMessage["usage"]["cost"]> };
+};
+
+export function modelCallAccounting(message: ModelUsageInput | undefined, allowance: ModelCallAllowance) {
   const usage = message?.usage;
   const observed = tokenObservation(usage);
   const price = costObservation(usage, allowance, observed);
-  const completed = Boolean(message && ["stop", "length", "toolUse"].includes(message.stopReason));
+  const completed = Boolean(message && ["stop", "length", "toolUse"].includes(message.stopReason ?? ""));
   return { tokens: observed.tokens, costNanos: price.costNanos, known: completed && observed.consistent && price.known };
+}
+
+/** Host policy uses the validated immutable observation, never a second read of
+ * provider-owned fields and never the Run's potentially different tariff. */
+export function modelPhysicalAccounting(observation: ModelPhysicalObservationV1, allowance: ModelCallAllowance) {
+  if (observation.usageStatus === "known_zero_undispatched") return { tokens: 0, costNanos: 0, known: true };
+  const { cost, ...counters } = observation.usage;
+  const observed = modelCallAccounting({
+    stopReason: observation.stopReason ?? "",
+    usage: {
+      ...Object.fromEntries(Object.entries(counters).filter(([, value]) => value !== null)),
+      cost: Object.fromEntries(Object.entries(cost).filter(([, value]) => value !== null)),
+    },
+  }, allowance);
+  return { ...observed, known: observation.usageStatus === "known" && observed.known };
 }
 
 /** Inconsistent counters cannot refund a reservation, but their higher partial
  * observation must still become debt rather than disappearing from accounting. */
-function tokenObservation(usage: AssistantMessage["usage"] | undefined) {
+function tokenObservation(usage: ModelUsageInput["usage"]) {
   const raw = [usage?.input, usage?.output, usage?.cacheRead, usage?.cacheWrite];
   const validParts = raw.every(validCounter);
   const longCacheWrite = validCounter(usage?.cacheWrite1h) ? usage.cacheWrite1h : 0;
@@ -104,10 +125,11 @@ function tokenObservation(usage: AssistantMessage["usage"] | undefined) {
   };
   const sum = Object.values(counts).reduce((total, value) => total + value, 0);
   if (!Number.isSafeInteger(sum)) throw new Error("Model usage exceeds safe accounting precision");
-  const validTotal = validCounter(usage?.totalTokens);
-  const tokens = Math.max(sum, validTotal ? usage.totalTokens : 0) || null;
+  const total = usage?.totalTokens;
+  const validTotal = validCounter(total);
+  const tokens = Math.max(sum, validTotal ? total : 0) || null;
   const subsetsValid = optionalSubset(usage?.cacheWrite1h, usage?.cacheWrite) && optionalSubset(usage?.reasoning, usage?.output);
-  return { sum, counts, longCacheWrite, tokens, consistent: validParts && validTotal && subsetsValid && sum > 0 && sum === usage.totalTokens };
+  return { sum, counts, longCacheWrite, tokens, consistent: validParts && validTotal && subsetsValid && sum > 0 && sum === total };
 }
 
 function validCounter(value: unknown): value is number {
@@ -118,7 +140,7 @@ function optionalSubset(value: unknown, total: unknown): boolean {
   return value === undefined || (validCounter(value) && validCounter(total) && value <= total);
 }
 
-function costObservation(usage: AssistantMessage["usage"] | undefined, allowance: ModelCallAllowance, observed: ReturnType<typeof tokenObservation>) {
+function costObservation(usage: ModelUsageInput["usage"], allowance: ModelCallAllowance, observed: ReturnType<typeof tokenObservation>) {
   const reported = reportedCostObservation(usage?.cost);
   let costNanos: number | null = reported.usd > 0 ? money(reported.usd) : null;
   if (observed.tokens !== null && allowance.priceTable && (allowance.costNanos !== null || costNanos !== null)) {
@@ -137,7 +159,7 @@ function costObservation(usage: AssistantMessage["usage"] | undefined, allowance
   return { costNanos, known: reported.consistent && costNanos !== null };
 }
 
-function reportedCostObservation(cost: AssistantMessage["usage"]["cost"] | undefined) {
+function reportedCostObservation(cost: Partial<AssistantMessage["usage"]["cost"]> | undefined) {
   const valid = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
   const raw = [cost?.input, cost?.output, cost?.cacheRead, cost?.cacheWrite];
   const sum = raw.reduce<number>((total, value) => total + (valid(value) ? value : 0), 0);

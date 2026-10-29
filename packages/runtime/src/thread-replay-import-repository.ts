@@ -44,6 +44,7 @@ import {
   createThreadReplayImportIds,
 } from "./thread-replay-import-context.js";
 import { createImportedEvaluationRecords } from "./thread-replay-import-evaluations.js";
+import { projectImportedModelAccounting } from "./model-accounting-import.js";
 
 const THREAD_IMPORTED_EVENT = "thread.imported";
 
@@ -391,6 +392,7 @@ export class ThreadReplayImportRepository {
         );
       }
       rebindImportedRunContextCompaction(events);
+      projectImportedModelAccounting(runs, subagents, events);
       const importedStatus: ThreadStatus =
         activeRunIds.size > 0 || bundle.thread.status === "waiting"
           ? "waiting"

@@ -19,6 +19,7 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { nowIso } from "./ids.js";
 import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
 import type { ModelRegistry } from "./models.js";
 export { DEFAULT_BLUEPRINT_OUTCOME_REVIEW_CRITERIA } from "./blueprint-outcome-review-criteria.js";
 
@@ -173,9 +174,16 @@ async function completeBlueprintOutcomeReview(
     tools: requestContext.tools,
   });
   try {
-    const response = await models.models.completeSimple(model, requestContext, {
-      maxTokens: 1_200,
-      temperature: 0,
+    const accounting = models.accountingForOperation(
+      "blueprint_outcome_review",
+    );
+    const response = await completeModelInvocation({
+      models: models.models,
+      model,
+      context: requestContext,
+      phase: "blueprint_outcome_review",
+      options: { maxTokens: 1_200, temperature: 0 },
+      ...(accounting ? { accounting } : {}),
     });
     const text = contentText(response.content);
     return {

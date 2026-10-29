@@ -224,7 +224,6 @@ import type {
   UpgradeRecommendedCapabilitiesRequestV1,
 } from "@napier/contracts/agent-capability-contract";
 import { recordCompatibilityHit } from "./compatibility-telemetry.js";
-import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import { replayThreadSummaryTails } from "./store-thread-summary-projection.js";
 import { loadThreadDetail } from "./thread-detail.js";
 import {
@@ -272,7 +271,6 @@ import { AutomaticRecoveryRepository } from "./automatic-recovery-repository.js"
 import { AutomationScheduleRepository } from "./automation-schedule-repository.js";
 import { CredentialReferenceRepository } from "./credential-reference-repository.js";
 import { EvaluationCasebookRepository } from "./evaluation-casebook-repository.js";
-import { assertRunEvaluationCompletedEventBindings } from "./evaluation-governance.js";
 import { EvaluationReviewRepository } from "./evaluation-review-repository.js";
 import { EvaluationSuiteRepository } from "./evaluation-suite-repository.js";
 import { ExtensionDistributionRepository } from "./extension-distribution-repository.js";
@@ -295,7 +293,6 @@ import { type ExecutionPlanBlueprintPortfolioCalibrationEntry } from "./plan-blu
 import { PlanBlueprintRepository } from "./plan-blueprint-repository.js";
 import { PlanLifecycleRepository } from "./plan-lifecycle-repository.js";
 import {
-  assertPlanArtifactEventBindings,
   type InternalPlanStepRequest,
 } from "./plans.js";
 import { ReceiptTrustActivationRepository } from "./receipt-trust-activation-repository.js";
@@ -343,7 +340,8 @@ import {
   type FinishRunOptions,
   RunLifecycleRepository,
 } from "./run-lifecycle-repository.js";
-import { aggregateRunUsage, RUN_USAGE_EVENT_TYPES } from "./run-replay.js";
+import { aggregateLedgerRunUsage, assertLedgerEvidenceProjection, modelAccountingRepositoryForStore,
+  readConsistentThreadDetail, readLedgerRunReplayView, type ModelAccountingRepository } from "./model-accounting-query.js";
 import { initialRunStatus } from "./run-state-machine.js";
 import { SerialQueue } from "./serial-queue.js";
 import { SignedPackageRepository } from "./signed-package-repository.js";
@@ -380,7 +378,6 @@ import {
   type StartSubagentChildRunInput, type SubagentChildRunFence, type ReserveSubagentChildInvocationInput,
   type SettleSubagentChildInvocationInput, type FinishSubagentChildRunInput, type SubagentChildProgressInput, type BindSubagentChildRouteInput,
 } from "./subagent-repository.js";
-import { validateThreadImportProvenanceLedgerReceipt } from "./thread-import-provenance-validation.js";
 import type {
   AgentMilestoneMutation,
   OperatorDecisionMutation,
@@ -524,6 +521,7 @@ export class LocalStore {
   private initialized = false;
   readonly subagentRepository: SubagentRepository;
   readonly subagentChildRunRepository: SubagentChildRunRepository;
+  readonly modelAccountingRepository: ModelAccountingRepository;
   readonly threadInteractionRepository: ThreadInteractionRepository;
   readonly runControlRepository: RunControlRepository;
   readonly runLifecycleRepository: RunLifecycleRepository;
@@ -668,6 +666,8 @@ export class LocalStore {
     this.runControlRepository = new RunControlRepository(repositoryHost);
     this.runLifecycleRepository = new RunLifecycleRepository(repositoryHost);
     this.subagentChildRunRepository = new SubagentChildRunRepository(repositoryHost);
+    this.modelAccountingRepository = modelAccountingRepositoryForStore(this,
+      (events, mutation) => this.eventService.persist(events, "snapshot", mutation));
     this.compatibilityProjections = new StoreCompatibilityProjectionWriter(
       this.statePath,
       this.eventsRoot,
@@ -697,7 +697,7 @@ export class LocalStore {
     });
   }
 
-  async initialize(interruptActiveRuns = false): Promise<void> {
+  async initialize(interruptActiveRuns = false, options: { accountingOnly?: boolean } = {}): Promise<void> {
     if (this.initialized) return;
     await mkdir(this.eventsRoot, { recursive: true });
     const ledger = new SqliteLedger(this.databasePath);
@@ -706,11 +706,16 @@ export class LocalStore {
     let restored = false;
     let requiresStateMigration = false;
     try {
-      const snapshot = ledger.readSnapshot();
-      if (snapshot) {
+      const restore = () => ledger.readTransaction(() => {
+        const snapshot = ledger.readSnapshot();
+        if (!snapshot) return false;
         requiresStateMigration = this.restoreSnapshot(snapshot);
-        restored = true;
-      } else {
+        assertLedgerEvidenceProjection(this.state, ledger);
+        return true;
+      });
+      restored = restore();
+      if (!restored) {
+        if (options.accountingOnly) throw new Error("Accounting projection requires an existing native workspace ledger");
         try {
           const parsed = JSON.parse(
             await readFile(this.statePath, "utf8"),
@@ -719,7 +724,7 @@ export class LocalStore {
           const events = await readLegacyEvents(this.state, this.eventsRoot);
           this.state = this.validateState(this.state, events);
           const imported = ledger.bootstrap(JSON.stringify(this.state), events);
-          this.restoreSnapshot(imported);
+          restore();
           recordCompatibilityHit("compat.store.legacy_json_read");
           restored = true;
           await this.compatibilityProjections.writeAll(
@@ -730,24 +735,27 @@ export class LocalStore {
           if (!isMissingFileError(error)) throw error;
           this.state = structuredClone(EMPTY_STATE);
           await this.seedWorkspace();
+          restore();
         }
       }
-      this.validateLedgerConsistency();
-      requiresStateMigration ||= migrateDefaultThreadTitles(
+      if (!options.accountingOnly) requiresStateMigration ||= migrateDefaultThreadTitles(
         this.state.threads,
         (threadId) => this.requireLedger().listEvents(threadId),
       );
-      if (requiresStateMigration) {
+      if (requiresStateMigration && !options.accountingOnly) {
         await this.stateQueue.run(() => this.persistState());
       }
       this.initialized = true;
-      if (restored) await this.reconcileInterruptedRuns(interruptActiveRuns);
+      if (restored && !options.accountingOnly) await this.reconcileInterruptedRuns(interruptActiveRuns);
     } catch (error) {
       ledger.close();
       this.ledger = undefined;
       throw error;
     }
   }
+
+  /** Delivery-only reopen never recovers execution, seeds a workspace, or changes lifecycle. */
+  async initializeAccounting(): Promise<void> { await this.initialize(false, { accountingOnly: true }); }
 
   close(): void {
     this.ledger?.close();
@@ -2771,7 +2779,8 @@ export class LocalStore {
     threadId: string,
     options?: { kernelProjections?: boolean },
   ): Promise<ThreadDetail> {
-    return loadThreadDetail(this, threadId, options);
+    return readConsistentThreadDetail(() => this.requireLedger().readSnapshot()?.revision ?? 0,
+      () => loadThreadDetail(this, threadId, options));
   }
 
   async listRunControlMessages(
@@ -2856,13 +2865,13 @@ export class LocalStore {
   }
 
   async aggregateRunUsage(runId: string) {
-    const run = this.assertRunQuery(runId);
-    return aggregateRunUsage(
-      await this.requireLedger()
-        .eventReader()
-        .listRunEvents(runId, 0, [...RUN_USAGE_EVENT_TYPES]),
-      this.listSubagentTasks(run.threadId, runId),
-    );
+    this.assertRunQuery(runId);
+    return aggregateLedgerRunUsage(this.requireLedger(), runId);
+  }
+
+  readRunReplayView(threadId: string, runId: string) {
+    this.assertInitialized();
+    return readLedgerRunReplayView(this.requireLedger(), runId, threadId);
   }
 
   async createThread(input: {
@@ -3559,6 +3568,7 @@ export class LocalStore {
     await this.eventService.persist(eventOrEvents, mode);
   }
 
+
   private assertInitialized(): void {
     if (!this.initialized && this.state.agents.length === 0) {
       throw new Error("LocalStore.initialize() must be called first");
@@ -3585,13 +3595,15 @@ export class LocalStore {
   }
 
   private refreshStateFromLedger(force = false): void {
-    const snapshot = this.ledger?.readSnapshot();
-    if (!snapshot) return;
-    if (!force && snapshot.revision === this.stateRevision) {
-      applyNormalizedRunLeases(this.state.runs, snapshot.runLeases);
-      return;
-    }
-    this.restoreSnapshot(snapshot);
+    this.ledger?.readTransaction(() => {
+      const snapshot = this.requireLedger().readSnapshot();
+      if (!snapshot) return;
+      if (!force && snapshot.revision === this.stateRevision) {
+        applyNormalizedRunLeases(this.state.runs, snapshot.runLeases);
+        return;
+      }
+      this.restoreSnapshot(snapshot);
+    });
   }
 
   private restoreSnapshot(snapshot: {
@@ -3707,49 +3719,4 @@ export class LocalStore {
     );
   }
 
-  private validateLedgerConsistency(): void {
-    const stats = new Map(
-      this.requireLedger()
-        .listEventStats()
-        .map((item) => [item.threadId, item]),
-    );
-    for (const thread of this.state.threads) {
-      const threadEvents = this.requireLedger().listEvents(thread.id);
-      const eventStats = stats.get(thread.id);
-      const count = eventStats?.count ?? 0;
-      const maxSeq = eventStats?.maxSeq ?? 0;
-      if (count !== thread.eventCount || maxSeq !== thread.eventCount) {
-        throw new Error(
-          `SQLite ledger projection mismatch for ${thread.id}: state=${thread.eventCount}, events=${count}, maxSeq=${maxSeq}`,
-        );
-      }
-      if (thread.importProvenance) {
-        validateThreadImportProvenanceLedgerReceipt(thread, threadEvents);
-      }
-      for (const [index, event] of threadEvents.entries()) {
-        assertArtifactReceiptEventBoundary(
-          event,
-          `Persisted Thread ${thread.id} events[${index}]`,
-        );
-      }
-      assertRunEvaluationCompletedEventBindings({
-        evaluations: this.state.evaluations.filter(
-          (evaluation) => evaluation.threadId === thread.id,
-        ),
-        events: threadEvents,
-        label: `Persisted Thread ${thread.id}`,
-      });
-      assertPlanArtifactEventBindings({
-        plans: this.state.plans.filter((plan) => plan.threadId === thread.id),
-        events: threadEvents,
-        label: `Persisted Thread ${thread.id}`,
-      });
-      stats.delete(thread.id);
-    }
-    if (stats.size > 0) {
-      throw new Error(
-        `SQLite ledger contains events for unknown thread ${stats.keys().next().value}`,
-      );
-    }
-  }
 }

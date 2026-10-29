@@ -4,6 +4,7 @@ import type {
   ModelInvocationCapsuleReceipt,
   ModelInvocationPurpose,
 } from "@napier/contracts";
+import type { ModelCallCaptureBinding } from "@napier/contracts/model-accounting";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { PromptCacheProjection } from "./prompt-cache-projection.js";
@@ -16,6 +17,7 @@ import {
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import { snapshotModelInvocation } from "./model-invocation-snapshot.js";
 import type { ToolSurfaceRevisionScope } from "./tool-surface-projection.js";
+import { createModelCallCaptureBinding } from "./model-call-capture.js";
 
 export interface ModelInvocationCaptureUnavailable {
   schemaVersion: 1;
@@ -59,7 +61,7 @@ const cacheProjections = new WeakMap<object, Map<string, PromptCacheProjection>>
  * compiled-prompt receipt stay with the caller, including capture-failure events. */
 export async function captureExactModelInvocation(
   original: ExactModelInvocationCaptureInput,
-): Promise<{ context: Context; envelope: ModelContextEnvelopeReceipt }> {
+): Promise<{ context: Context; envelope: ModelContextEnvelopeReceipt; accountingCapture: ModelCallCaptureBinding }> {
   const input = { ...original, source: { ...original.source }, ...snapshotModelInvocation(original) };
   const { context } = input;
   const envelope = createModelContextEnvelopeReceipt({
@@ -68,8 +70,9 @@ export async function captureExactModelInvocation(
     messages: context.messages,
     tools: context.tools ?? [],
   });
+  const adapter = modelAdapterReceipt(input.model, input.options);
   await input.emit({ kind: "envelope", payload: envelope });
-  await capturePrivateInvocation(input, envelope);
+  const privateCapsule = await capturePrivateInvocation(input, envelope, adapter);
   await input.emit({
     kind: "cache_projection",
     payload: cacheProjection(input.cacheScope, input.phase ?? input.purpose, input.cacheScopeKind).observe({
@@ -82,16 +85,18 @@ export async function captureExactModelInvocation(
       })),
     }),
   });
-  return { context, envelope };
+  return { context, envelope, accountingCapture: createModelCallCaptureBinding({
+    model: input.model, context, ...(input.options ? { options: input.options } : {}), envelope, privateCapsule,
+  }) };
 }
 
 async function capturePrivateInvocation(
   input: ExactModelInvocationCaptureInput,
   envelope: ModelContextEnvelopeReceipt,
-): Promise<void> {
+  adapter: ModelAdapterReceiptV2,
+): Promise<ModelCallCaptureBinding["privateCapsule"]> {
   try {
     const adaptedOptions = applyModelAdapterOptions(input.model, input.options);
-    const adapter = modelAdapterReceipt(input.model, input.options);
     await input.emit({ kind: "adapter", payload: adapter });
     await input.afterAdapter?.({ envelope, adapter });
     const receipt = await input.capsules.put({
@@ -105,6 +110,7 @@ async function capturePrivateInvocation(
       ...(adaptedOptions ? { options: adaptedOptions } : {}),
     });
     await input.emit({ kind: "invocation", payload: receipt });
+    return { status: "available", receiptSha256: receipt.contentSha256, capsuleSha256: receipt.capsuleSha256 };
   } catch (error) {
     await input.emit({
       kind: "unavailable",
@@ -118,6 +124,7 @@ async function capturePrivateInvocation(
         diagnosticSha256: sha256(errorMessage(error)),
       },
     });
+    return { status: "unavailable", reason: captureFailureReason(error) };
   }
 }
 

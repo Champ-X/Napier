@@ -1,3 +1,5 @@
+import { modelResultAttribution } from "./model-call-attribution.js";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
 import type { StreamFn } from "@earendil-works/pi-agent-core";
 import type {
   Api,
@@ -137,10 +139,13 @@ export function agentModelStreamLife(
   let modelCallIndex = 0;
   return (model, context, options) => {
     const callIndex = ++modelCallIndex;
+    let currentAttribution: ModelCallAttributionV1 | undefined;
     let currentEnvelope: ModelContextEnvelopeReceipt | undefined;
     let currentServingModel = model;
     const rootSignal = options?.signal ?? new AbortController().signal;
     return guardModelThinkingLoop({
+      nativeAccounting: !!input.host.modelRegistry.accountingRepository,
+      attribution: () => currentAttribution,
       model,
       context,
       options: options ?? {},
@@ -262,8 +267,13 @@ export function agentModelStreamLife(
               finalizedCall.options,
               modelCallPolicy,
             );
+            currentAttribution = undefined;
+            await input.budget.refreshAccounting();
+            const accounting = input.host.modelRegistry.accountingForRun(input.run.id);
             const opened = await session.open({
               phase: "agent_turn",
+              onAttribution: (value) => { currentAttribution = value; },
+              ...(accounting ? { accounting } : {}),
               model: candidate,
               context: finalizedCall.context,
               options: finalizedCall.options,
@@ -300,6 +310,7 @@ export function agentModelStreamLife(
                 return input.invokeCall ? input.invokeCall(call, next) : next();
               },
             });
+            currentAttribution = modelResultAttribution(opened.source);
             return { ...opened, options: opened.options ?? {} };
           };
           const first = await createInvocation(0);
@@ -351,6 +362,7 @@ export function agentModelStreamLife(
           currentEnvelope,
           terminalMessage,
           trace,
+          currentAttribution,
         );
         if (result === "retry") {
           shortReasoningThroughCall.set(

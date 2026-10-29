@@ -39,7 +39,7 @@ describe("SQLite ledger schema migration", () => {
     database.close();
     const migrated = await openStore(options);
     expect(await migrated.listEvents(thread.id)).toEqual(events);
-    expect(migrated.getLedgerSchemaReport().schemaVersion).toBe(8);
+    expect(migrated.getLedgerSchemaReport().schemaVersion).toBe(LEDGER_SCHEMA_VERSION);
     const inspect = new DatabaseSync(
       path.join(options.dataRoot, LEDGER_DATABASE_FILENAME),
     );
@@ -116,6 +116,7 @@ function migrationHistory(initialName: string) {
       name: "durable_tool_concurrency_leases",
     }),
     expect.objectContaining({ version: 8, name: "workflow_execution_locks" }),
+    expect.objectContaining({ version: 9, name: "model_invocation_accounting" }),
   ];
 }
 

@@ -1,5 +1,6 @@
 import type { JsonValue, RunEvent } from "@napier/contracts";
 import { rebindImportedHarnessPolicy } from "./harness-run-policy.js";
+import { rebindImportedModelAccountingEvent } from "./model-accounting-import.js";
 
 import { isWebFetchStateToolName } from "./web-fetch-state-tool.js";
 import { WORKFLOW_NODE_INPUT_REPLACEMENT_REQUESTED_EVENT } from "./workflow-input-override.js";
@@ -9,6 +10,7 @@ export function dropPrivateImportedEvent(event: RunEvent): boolean {
   return (
     event.type !== "context.research_sources" &&
     event.type !== "context.web_fetch_sources" &&
+    event.type !== "thread.imported" &&
     event.type !== "subagent.candidate.legacy_migrated"
   );
 }
@@ -16,8 +18,10 @@ export function dropPrivateImportedEvent(event: RunEvent): boolean {
 export function remapImportedEventPayload(
   type: string,
   payload: JsonValue,
-  idMap: ReadonlyMap<string, string>,
+  idMap: Map<string, string>,
 ): JsonValue {
+  const accounting = rebindImportedModelAccountingEvent(type, payload, idMap);
+  if (accounting !== undefined) return accounting;
   if (type === "harness.policy.bound")
     return rebindImportedHarnessPolicy(payload, idMap);
   if (type === "run.started" && record(payload)) {

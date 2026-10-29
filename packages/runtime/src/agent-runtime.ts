@@ -53,7 +53,6 @@ import {
   AgentCapabilityRuntime,
   type AgentNetworkCapabilities,
 } from "./agent-capability-runtime.js";
-import { compileAuxiliaryPrompt } from "./agent-prompt-layers.js";
 import {
   controlMessageEventKey,
   createRunProgressMessageEvent,
@@ -155,7 +154,6 @@ import {
   isDefaultThreadTitle,
   parseThreadTitleResponse,
 } from "./thread-title.js";
-import { modelAdapterReceipt } from "./model-adapters.js";
 import { ModelDeltaBatcher } from "./model-delta-batcher.js";
 import { AgentModelCallPipelineHost } from "./agent-model-call-pipeline-host.js";
 import { AgentLifecyclePipelineAttachmentHost } from "./agent-lifecycle-pipeline-host.js";
@@ -172,7 +170,10 @@ import {
 import { AgentTurnPipelineHost } from "./agent-turn-pipeline-host.js";
 import { modelFailureError } from "./model-turn-deadline.js";
 import { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
-import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
+import { requestRunAuxiliaryModel } from "./agent-auxiliary-model-invocation.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
+import { modelAccountingLinkage, modelResultAttribution, modelResultAccountingLinkage } from "./model-call-attribution.js";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
 import { McpExtensionManager } from "./mcp.js";
 import {
   CombinedModelAdvisorBlockedError,
@@ -525,6 +526,7 @@ export class AgentRuntime {
     let unregisterSubagentHub: (() => void) | undefined;
     const nextModelContextEnvelopeTurnIndex = (): number => modelContextEnvelopeTurnIndex++;
     try {
+      this.modelRegistry.bindRunAccounting(run.id, leasedRun.token, budget);
       await recordRunHarnessPolicy(run, options.harnessExperimentProfile, (event) => this.record(event, options.onEvent));
       await options.onRunCreated?.(run);
       await recordAgentRunStarted({
@@ -772,6 +774,7 @@ export class AgentRuntime {
       };
       let assistantText = await runTurn(prompt, invocationSource);
       toolResultReplay?.assertComplete();
+      await budget.refreshAccounting();
       budget.throwIfExhausted();
       let goal = !mayUpdateRunGoal(!workflowInvocation, options.recovery?.inspection)
         ? undefined
@@ -847,6 +850,7 @@ export class AgentRuntime {
         workflowInvocation,
         signal: abortController.signal,
       });
+      await budget.refreshAccounting();
       budget.throwIfExhausted();
       await recordActiveSkillLifecycles(
         this.store,
@@ -943,6 +947,7 @@ export class AgentRuntime {
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       });
     } finally {
+      this.modelRegistry.releaseRunAccounting(run.id);
       unregisterSubagentHub?.();
       clearTimeout(budgetTimeout);
       clearInterval(heartbeat);
@@ -992,6 +997,7 @@ export class AgentRuntime {
     budget: RunBudgetTracker,
     onEvent?: EventSink,
   ): Promise<string> {
+    await budget.refreshAccounting();
     budget.beginPrimaryTurn();
     if (source !== "advisor_correction") {
       const promptEvent = turnPromptEvent(source);
@@ -1113,6 +1119,7 @@ export class AgentRuntime {
       },
       onEvent,
     );
+    await budget.refreshAccounting();
     budget.throwIfExhausted();
     return response;
   }
@@ -1724,6 +1731,7 @@ export class AgentRuntime {
         },
         shouldStopAfterTurn: async ({ toolResults }) => {
           if (toolResultLifecycle.shouldStopAfterTurn()) return true;
+          await budget.refreshAccounting();
           budget.syncSubagentUsage(
             this.store.listSubagentTasks(run.threadId, run.id),
           );
@@ -1767,6 +1775,7 @@ export class AgentRuntime {
     if (signal.aborted && !budget.exhaustion) {
       throw new Error("Run was cancelled");
     }
+    await budget.refreshAccounting();
     budget.throwIfExhausted();
     toolResultLifecycle.deadlines.throwIfTriggered();
     finalization.assertDelivered(finalText);
@@ -1811,7 +1820,7 @@ export class AgentRuntime {
     }
     await deltaBatcher.flush();
     if (event.type === "turn_start" || event.type === "turn_end") {
-      if (event.type === "turn_start") budget.beginPrimaryTurn();
+      if (event.type === "turn_start") { await budget.refreshAccounting(); budget.beginPrimaryTurn(); }
       await captureConversationSurfaceTurn({ host: this, run, event, envelope: modelContextEnvelope, ...(onEvent ? { onEvent } : {}) });
       await this.record(
         {
@@ -1923,6 +1932,7 @@ export class AgentRuntime {
                       modelContextEnvelope.toolDefinitionSetSha256,
                   }
                 : {}),
+              ...modelResultAccountingLinkage(event.message),
               usage,
               usageAccounting,
               toolCalls: toJsonValue(toolCalls),
@@ -1956,6 +1966,7 @@ export class AgentRuntime {
         }
         await calibrateResponse(this, run, responseEvent, event.message, onEvent);
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
+        await budget.refreshAccounting();
         if (modelFailure)
           throw modelFailureError(
             event.message.stopReason === "aborted" ? "aborted" : "error",
@@ -2006,6 +2017,7 @@ export class AgentRuntime {
               text,
               ...privateSourceContent.reasoningProjection(reasoning),
               model: `${event.message.provider}/${event.message.model}`,
+              ...modelResultAccountingLinkage(event.message),
               usage,
               usageAccounting,
             },
@@ -2077,6 +2089,7 @@ export class AgentRuntime {
       modelAdvisorPolicy.mode !== "off" &&
       modelAdvisorPolicy.reviewModel
     ) {
+      await budget.refreshAccounting();
       budget.assertCanStartAuxiliaryCall();
       independentReview = await reviewIndependentModelAdvisorCandidate(
         this.modelRegistry,
@@ -2086,6 +2099,7 @@ export class AgentRuntime {
           candidateText: assistantText,
           candidateModel,
           reviewerModel: modelAdvisorPolicy.reviewModel,
+          accounting: this.modelRegistry.accountingForRun(run.id),
           runEvents,
           signal,
         },
@@ -2222,8 +2236,10 @@ export class AgentRuntime {
         },
         onEvent,
       );
+      let compactorAttribution: ModelCallAttributionV1 | undefined;
       let compactorUsage: Usage | undefined;
       let compactorUsageAccounting: UsageAccounting | undefined;
+      await budget.refreshAccounting();
       budget.assertCanStartAuxiliaryCall();
       try {
         const prompt = buildContextCompactionMessages(
@@ -2236,96 +2252,13 @@ export class AgentRuntime {
           maxTokens: 1_200,
           temperature: 0,
         } satisfies SimpleStreamOptions;
-        const rawRequestContext = {
-          systemPrompt: prompt.system,
-          messages: [
-            {
-              role: "user" as const,
-              content: prompt.user,
-              timestamp: Date.now(),
-            },
-          ],
-          tools: [],
-        };
-        const prepared = await captureCompiledModelInvocation({
-          store: this.store,
-          capsules: this.modelInvocationCapsules,
-          run,
-          model,
-          context: rawRequestContext,
-          options: modelOptions,
-          turnIndex: nextModelContextEnvelopeTurnIndex(),
-          purpose: "context_compaction",
-          compiledPrompt: compileAuxiliaryPrompt({
-            purpose: "context_compaction",
-            sourceId: "task.context_compaction",
-            systemPrompt: prompt.system,
-            adapter: modelAdapterReceipt(model, modelOptions),
-          }),
-          ...(onEvent ? { onEvent } : {}),
+        const response = await requestRunAuxiliaryModel({
+          store: this.store, models: this.modelRegistry, capsules: this.modelInvocationCapsules,
+          run, model, prompt, options: modelOptions, phase: "context_compaction",
+          turnIndex: nextModelContextEnvelopeTurnIndex(), onEvent,
+          onAttribution: (value) => { compactorAttribution = value; },
         });
-        const { context: requestContext, envelope } = prepared;
-        let response: AssistantMessage;
-        try {
-          response = await this.modelRegistry.models.completeSimple(
-            model,
-            requestContext,
-            modelOptions,
-          );
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : String(error);
-          await this.record(
-            {
-              threadId: run.threadId,
-              runId: run.id,
-              type: "model.response",
-              category: "model",
-              visibility: "debug",
-              payload: {
-                modelCallPurpose: "context_compaction",
-                errorSha256: sha256Text(message),
-                errorBytes: Buffer.byteLength(message, "utf8"),
-                contentRedacted: true,
-                model: `${model.provider}/${model.id}`,
-                stopReason: "error",
-                modelContextEnvelopeSha256: envelope.contentSha256,
-                modelContextEnvelopeTurnIndex: envelope.turnIndex,
-                modelContextMessageSetSha256: envelope.messageSetSha256,
-                modelContextToolDefinitionSetSha256:
-                  envelope.toolDefinitionSetSha256,
-              },
-            },
-            onEvent,
-          );
-          throw error;
-        }
         const responseText = contentText(response.content);
-        await this.record(
-          {
-            threadId: run.threadId,
-            runId: run.id,
-            type: "model.response",
-            category: "model",
-            visibility: "debug",
-            payload: {
-              modelCallPurpose: "context_compaction",
-              textSha256: sha256Text(responseText),
-              textBytes: Buffer.byteLength(responseText, "utf8"),
-              contentRedacted: true,
-              model: `${model.provider}/${model.id}`,
-              ...(response.stopReason
-                ? { stopReason: response.stopReason }
-                : {}),
-              modelContextEnvelopeSha256: envelope.contentSha256,
-              modelContextEnvelopeTurnIndex: envelope.turnIndex,
-              modelContextMessageSetSha256: envelope.messageSetSha256,
-              modelContextToolDefinitionSetSha256:
-                envelope.toolDefinitionSetSha256,
-            },
-          },
-          onEvent,
-        );
         compactorUsage = mapModelUsage(response.usage);
         compactorUsageAccounting = createUsageAccounting(
           modelRefFromModel(model),
@@ -2353,6 +2286,7 @@ export class AgentRuntime {
             visibility: "user",
             payload: toJsonValue({
               ...checkpoint,
+              ...(compactorAttribution ? modelAccountingLinkage(compactorAttribution) : {}),
               usage: compactorUsage,
               usageAccounting: compactorUsageAccounting,
             }),
@@ -2385,6 +2319,7 @@ export class AgentRuntime {
               fallbackMessageCount: projectedEvents.length,
               omittedMessageCount,
               message: error instanceof Error ? error.message : String(error),
+              ...(compactorAttribution ? modelAccountingLinkage(compactorAttribution) : {}),
               ...(compactorUsage ? { usage: compactorUsage } : {}),
               ...(compactorUsageAccounting
                 ? { usageAccounting: compactorUsageAccounting }
@@ -2395,6 +2330,7 @@ export class AgentRuntime {
         );
         checkpoint = priorCheckpoint;
       }
+      await budget.refreshAccounting();
       budget.throwIfExhausted();
     }
     const surface = await projectConversationSurface({
@@ -2451,8 +2387,10 @@ export class AgentRuntime {
     );
 
     let evaluation: GoalEvaluation;
+    let evaluationAttribution: ModelCallAttributionV1 | undefined;
     let evaluationUsage: Usage | undefined;
     let evaluationUsageAccounting: UsageAccounting | undefined;
+    await budget.refreshAccounting();
     if (model) budget.assertCanStartAuxiliaryCall();
     try {
       if (model) {
@@ -2465,6 +2403,7 @@ export class AgentRuntime {
           nextModelContextEnvelopeTurnIndex,
           onEvent,
         );
+        evaluationAttribution = modelResultAttribution(response);
         evaluationUsage = mapModelUsage(response.usage);
         evaluationUsageAccounting = createUsageAccounting(
           modelRefFromModel(model),
@@ -2503,6 +2442,7 @@ export class AgentRuntime {
           visibility: "debug",
           payload: {
             message,
+            ...(evaluationAttribution ? modelAccountingLinkage(evaluationAttribution) : {}),
             ...(evaluationUsage ? { usage: evaluationUsage } : {}),
             ...(evaluationUsageAccounting
               ? { usageAccounting: evaluationUsageAccounting }
@@ -2535,6 +2475,7 @@ export class AgentRuntime {
           satisfied: evaluation.satisfied,
           continuationCount: goal.continuationCount,
           noProgressCount: goal.noProgressCount,
+          ...(evaluationAttribution ? modelAccountingLinkage(evaluationAttribution) : {}),
           ...(evaluationUsage ? { usage: evaluationUsage } : {}),
           ...(evaluationUsageAccounting
             ? { usageAccounting: evaluationUsageAccounting }
@@ -2543,6 +2484,7 @@ export class AgentRuntime {
       },
       onEvent,
     );
+    await budget.refreshAccounting();
     budget.throwIfExhausted();
     return goal;
   }
@@ -2563,93 +2505,11 @@ export class AgentRuntime {
       maxTokens: 512,
       temperature: 0,
     } satisfies SimpleStreamOptions;
-    const rawRequestContext = {
-      systemPrompt: prompt.system,
-      messages: [
-        {
-          role: "user" as const,
-          content: prompt.user,
-          timestamp: Date.now(),
-        },
-      ],
-      tools: [],
-    };
-    const prepared = await captureCompiledModelInvocation({
-      store: this.store,
-      capsules: this.modelInvocationCapsules,
-      run: this.requireRun(threadId, runId),
-      model,
-      context: rawRequestContext,
-      options: modelOptions,
-      turnIndex: nextModelContextEnvelopeTurnIndex(),
-      purpose: "goal_evaluation",
-      compiledPrompt: compileAuxiliaryPrompt({
-        purpose: "goal_evaluation",
-        sourceId: "task.goal_evaluation",
-        systemPrompt: prompt.system,
-        adapter: modelAdapterReceipt(model, modelOptions),
-      }),
-      ...(onEvent ? { onEvent } : {}),
+    return requestRunAuxiliaryModel({
+      store: this.store, models: this.modelRegistry, capsules: this.modelInvocationCapsules,
+      run: this.requireRun(threadId, runId), model, prompt, options: modelOptions,
+      phase: "goal_evaluation", turnIndex: nextModelContextEnvelopeTurnIndex(), onEvent,
     });
-    const { context: requestContext, envelope } = prepared;
-    try {
-      const response = await this.modelRegistry.models.completeSimple(
-        model,
-        requestContext,
-        modelOptions,
-      );
-      const text = contentText(response.content);
-      await this.record(
-        {
-          threadId,
-          runId,
-          type: "model.response",
-          category: "model",
-          visibility: "debug",
-          payload: {
-            modelCallPurpose: "goal_evaluation",
-            textSha256: sha256Text(text),
-            textBytes: Buffer.byteLength(text, "utf8"),
-            contentRedacted: true,
-            model: `${model.provider}/${model.id}`,
-            ...(response.stopReason ? { stopReason: response.stopReason } : {}),
-            modelContextEnvelopeSha256: envelope.contentSha256,
-            modelContextEnvelopeTurnIndex: envelope.turnIndex,
-            modelContextMessageSetSha256: envelope.messageSetSha256,
-            modelContextToolDefinitionSetSha256:
-              envelope.toolDefinitionSetSha256,
-          },
-        },
-        onEvent,
-      );
-      return response;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      await this.record(
-        {
-          threadId,
-          runId,
-          type: "model.response",
-          category: "model",
-          visibility: "debug",
-          payload: {
-            modelCallPurpose: "goal_evaluation",
-            errorSha256: sha256Text(message),
-            errorBytes: Buffer.byteLength(message, "utf8"),
-            contentRedacted: true,
-            model: `${model.provider}/${model.id}`,
-            stopReason: "error",
-            modelContextEnvelopeSha256: envelope.contentSha256,
-            modelContextEnvelopeTurnIndex: envelope.turnIndex,
-            modelContextMessageSetSha256: envelope.messageSetSha256,
-            modelContextToolDefinitionSetSha256:
-              envelope.toolDefinitionSetSha256,
-          },
-        },
-        onEvent,
-      );
-      throw error;
-    }
   }
 
   private async maybeGenerateThreadTitle(options: {
@@ -2672,17 +2532,14 @@ export class AgentRuntime {
     if (!isDemo) {
       try {
         const prompt = buildThreadTitleMessages(firstUserText);
-        const response = await this.modelRegistry.models.completeSimple(
-          model,
-          {
+        const response = await completeModelInvocation({
+          models: this.modelRegistry.models, model,
+          context: {
             systemPrompt: prompt.system,
-            messages: [
-              { role: "user", content: prompt.user, timestamp: Date.now() },
-            ],
-            tools: [],
-          },
-          { signal, maxTokens: 40, temperature: 0.2 },
-        );
+            messages: [{ role: "user", content: prompt.user, timestamp: Date.now() }], tools: [],
+          }, options: { signal, maxTokens: 40, temperature: 0.2 }, phase: "thread_title",
+          accounting: this.modelRegistry.accountingForRun(options.runId),
+        });
         title = parseThreadTitleResponse(contentText(response.content));
       } catch {
         // Titling is best-effort; fall back to prompt derivation below.
@@ -2722,6 +2579,7 @@ export class AgentRuntime {
     const runEvents = await this.store.listRunEvents(runId);
     const conversation = buildMemoryRunConversation(runEvents);
     if (!conversation) return;
+    await budget.refreshAccounting();
     if (!budget.canStartOptionalAuxiliaryCall()) {
       await this.record(
         {
@@ -2775,6 +2633,7 @@ export class AgentRuntime {
       },
       onEvent,
     );
+    let extractionAttribution: ModelCallAttributionV1 | undefined;
     let extractionUsage: Usage | undefined;
     let extractionUsageAccounting: UsageAccounting | undefined;
     try {
@@ -2783,93 +2642,13 @@ export class AgentRuntime {
         maxTokens: 700,
         temperature: 0,
       } satisfies SimpleStreamOptions;
-      const rawRequestContext = {
-        systemPrompt: prompt.system,
-        messages: [
-          {
-            role: "user" as const,
-            content: prompt.user,
-            timestamp: Date.now(),
-          },
-        ],
-        tools: [],
-      };
-      const prepared = await captureCompiledModelInvocation({
-        store: this.store,
-        capsules: this.modelInvocationCapsules,
-        run: this.requireRun(threadId, runId),
-        model,
-        context: rawRequestContext,
-        options: modelOptions,
-        turnIndex: nextModelContextEnvelopeTurnIndex(),
-        purpose: "memory_extraction",
-        compiledPrompt: compileAuxiliaryPrompt({
-          purpose: "memory_extraction",
-          sourceId: "task.memory_extraction",
-          systemPrompt: prompt.system,
-          adapter: modelAdapterReceipt(model, modelOptions),
-        }),
-        ...(onEvent ? { onEvent } : {}),
+      const response = await requestRunAuxiliaryModel({
+        store: this.store, models: this.modelRegistry, capsules: this.modelInvocationCapsules,
+        run: this.requireRun(threadId, runId), model, prompt, options: modelOptions,
+        phase: "memory_extraction", turnIndex: nextModelContextEnvelopeTurnIndex(), onEvent,
+        onAttribution: (value) => { extractionAttribution = value; },
       });
-      const { context: requestContext, envelope } = prepared;
-      let response: AssistantMessage;
-      try {
-        response = await this.modelRegistry.models.completeSimple(
-          model,
-          requestContext,
-          modelOptions,
-        );
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        await this.record(
-          {
-            threadId,
-            runId,
-            type: "model.response",
-            category: "model",
-            visibility: "debug",
-            payload: {
-              modelCallPurpose: "memory_extraction",
-              errorSha256: sha256Text(message),
-              errorBytes: Buffer.byteLength(message, "utf8"),
-              contentRedacted: true,
-              model: `${model.provider}/${model.id}`,
-              stopReason: "error",
-              modelContextEnvelopeSha256: envelope.contentSha256,
-              modelContextEnvelopeTurnIndex: envelope.turnIndex,
-              modelContextMessageSetSha256: envelope.messageSetSha256,
-              modelContextToolDefinitionSetSha256:
-                envelope.toolDefinitionSetSha256,
-            },
-          },
-          onEvent,
-        );
-        throw error;
-      }
       const responseText = contentText(response.content);
-      await this.record(
-        {
-          threadId,
-          runId,
-          type: "model.response",
-          category: "model",
-          visibility: "debug",
-          payload: {
-            modelCallPurpose: "memory_extraction",
-            textSha256: sha256Text(responseText),
-            textBytes: Buffer.byteLength(responseText, "utf8"),
-            contentRedacted: true,
-            model: `${model.provider}/${model.id}`,
-            ...(response.stopReason ? { stopReason: response.stopReason } : {}),
-            modelContextEnvelopeSha256: envelope.contentSha256,
-            modelContextEnvelopeTurnIndex: envelope.turnIndex,
-            modelContextMessageSetSha256: envelope.messageSetSha256,
-            modelContextToolDefinitionSetSha256:
-              envelope.toolDefinitionSetSha256,
-          },
-        },
-        onEvent,
-      );
       extractionUsage = mapModelUsage(response.usage);
       extractionUsageAccounting = createUsageAccounting(
         modelRefFromModel(model),
@@ -2980,6 +2759,7 @@ export class AgentRuntime {
             consolidations: proposals.filter(
               (proposal) => proposal.consolidatesMemoryIds,
             ).length,
+            ...(extractionAttribution ? modelAccountingLinkage(extractionAttribution) : {}),
             usage: extractionUsage,
             usageAccounting: extractionUsageAccounting,
           },
@@ -2997,6 +2777,7 @@ export class AgentRuntime {
           visibility: "debug",
           payload: {
             message: error instanceof Error ? error.message : String(error),
+            ...(extractionAttribution ? modelAccountingLinkage(extractionAttribution) : {}),
             ...(extractionUsage ? { usage: extractionUsage } : {}),
             ...(extractionUsageAccounting
               ? { usageAccounting: extractionUsageAccounting }
@@ -3006,6 +2787,7 @@ export class AgentRuntime {
         onEvent,
       );
     }
+    await budget.refreshAccounting();
     budget.throwIfExhausted();
   }
 

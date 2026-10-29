@@ -19,7 +19,8 @@ describe("production host model resource ownership", () => {
     ]);
     let services!: Awaited<ReturnType<typeof createServices>>;
     const host = await createWorkspaceRuntimeHost({
-      workspaceRoot: f.a.root, stateHome: f.stateHome, modelBudget: { maxConcurrent: 1 },
+      workspaceRoot: f.a.root, stateHome: f.stateHome,
+      modelBudget: { maxConcurrent: 1, zeroCostModels: ["faux-model-family/faux-1"] },
       services: { env: {}, sandbox: processReadySandbox("model-family") },
     }, async (options) => {
       const graph = await createServices(options);
@@ -36,11 +37,13 @@ describe("production host model resource ownership", () => {
         body: JSON.stringify({ text: "Delegate a bounded inspection and summarize the returned result.", model: agent.model }),
       }));
       await response.text();
-      expect(services.store.listRuns(thread.id).at(-1)?.status).toBe("completed");
+      const finished = services.store.listRuns(thread.id).at(-1);
+      expect(finished?.status, finished?.error).toBe("completed");
       expect(services.store.listSubagentTasks(thread.id)).toEqual([expect.objectContaining({ status: "completed" })]);
       const summary = await (await host.fetch(new Request("http://localhost/api/workspace/resources"))).json();
       expect(provider.state.callCount).toBeGreaterThanOrEqual(3);
       expect(summary).toMatchObject({ activeInvocations: 0, budgetInvocations: provider.state.callCount });
+      expect(services.store.listSubagentTasks(thread.id)[0]?.usageStatus).toBe("complete");
     } finally { await host.shutdown(); await f.cleanup(); }
   }, 30_000);
 

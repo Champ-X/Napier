@@ -12,6 +12,7 @@ import { assertSubagentRestoreWorkspace } from "./subagent-continuation-workspac
 import { readSubagentWorkingSetForRestore } from "./subagent-working-set-capsule.js";
 import { validateConsumedSubagentMailbox } from "./subagent-mailbox-state.js";
 import { totalRawTokens } from "./token-accounting.js";
+import { inheritedModelAccountingBudget } from "./model-accounting-inherited-budget.js";
 import { readInheritedSubagentCheckpoint } from "./subagent-continuation-checkpoint.js";
 import type { SubagentWorkingSetBinding } from "./subagent-working-set-types.js";
 
@@ -78,7 +79,11 @@ export async function evaluateSubagentContinuation(host: SubagentChildRunHost,
   const { accepted, consumed, pending } = restoredMailbox(host, sourceRun, sourceTask, binding);
   const mode = continuationMode(capsule, pending.length);
   const budget = subagentContinuationBudget(host.state.runs, host.state.subagents, sourceRun, sourceTask, targetParent);
-  assertBudget(budget, mode);
+  const priorAccounting = inheritedModelAccountingBudget(sourceRun, host.state.runs);
+  assertBudget(budget, mode, {
+    budgetTokens: priorAccounting.budgetTokens + (sourceRun.accounting?.budgetTokens ?? totalRawTokens(sourceRun.usage)),
+    knownBudgetCostUsd: priorAccounting.knownBudgetCostUsd + (sourceRun.accounting?.knownBudgetCostUsd ?? sourceRun.usage.costUsd),
+  });
   const content: Omit<SubagentChildContinuationAssessment, "contentSha256"> = {
     kind: "napier.subagent-continuation-assessment", schemaVersion: 1, threadId: sourceRun.threadId,
     sourceTaskId: sourceTask.id, sourceRunId: sourceRun.id, sourceExecutionId: sourceTask.executionId!, sourceParentRunId: sourceParent.id,
@@ -137,11 +142,12 @@ function restoredMailbox(host: SubagentChildRunHost, run: RunRecord, task: Subag
   return { accepted, consumed, pending: accepted.filter((entry) => !consumedIds.has(entry.id))
     .map((entry) => ({ accepted: entry, message: mailbox.messages.get(entry.id)! })) };
 }
-function assertBudget(budget: SubagentContinuationBudget, mode: "continue" | "finalize"): void {
+function assertBudget(budget: SubagentContinuationBudget, mode: "continue" | "finalize",
+  accounting: { budgetTokens: number; knownBudgetCostUsd: number }): void {
   if (Date.parse(budget.deadlineAt) <= Date.now()) unavailable("deadline_exhausted");
   if (mode === "continue" && (budget.inheritedTurnCount >= budget.limits.maxTurns ||
-      (budget.limits.maxTotalTokens > 0 && totalRawTokens(budget.inheritedUsage) >= budget.limits.maxTotalTokens) ||
-      budget.inheritedUsage.costUsd >= budget.limits.maxCostUsd)) unavailable("budget_exhausted");
+      (budget.limits.maxTotalTokens > 0 && accounting.budgetTokens >= budget.limits.maxTotalTokens) ||
+      accounting.knownBudgetCostUsd >= budget.limits.maxCostUsd)) unavailable("budget_exhausted");
 }
 function continuationMode(capsule: Awaited<ReturnType<typeof readSubagentWorkingSetForRestore>>["capsule"], pending: number) {
   const last = capsule.messages.at(-1);

@@ -62,6 +62,8 @@ export const RUN_EVENT_TOOL_DEFINITION_GROUPS_V1 = [
     activeRunTypes: [
       "context.compaction.started",
       "context.model_invocation",
+      "model.accounting.prepared",
+      "model.accounting.dispatch_intent",
       "route_attempt_started",
       "route_plan_created",
     ],
@@ -89,6 +91,8 @@ export const RUN_EVENT_TOOL_DEFINITION_GROUPS_V1 = [
       "model.context.tool-results.pruned",
       "model.harness.resolved",
       "model.response",
+      "model.usage.reconciled",
+      "model.accounting.child_undispatched",
       "model.stream.cancellation_failed",
       "model.stream.timing",
       "model.thinking_loop.detected",

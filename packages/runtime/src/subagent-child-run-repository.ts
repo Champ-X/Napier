@@ -13,7 +13,7 @@ import { acceptSubagentMessage } from "./subagent-mailbox-state.js";
 import type { AcceptSubagentMessageInput, CommitSubagentChildCheckpointInput } from "./subagent-working-set-types.js";
 import { resolveSubagentChildAuthorization } from "./subagent-child-authorization.js";
 import { assertChildRunFence, childRunState } from "./subagent-child-run-fence.js";
-import { reserveChildInvocation, settleChildInvocation } from "./subagent-child-invocations.js";
+import { assertChildLogicalInvocationsSettled, reserveChildInvocation, settleChildInvocation } from "./subagent-child-invocations.js";
 import type { FinishSubagentChildRunInput, ReserveSubagentChildInvocationInput,
   SettleSubagentChildInvocationInput, StartedSubagentChildRun, StartSubagentChildRunInput,
   SubagentChildRunFence, SubagentChildRunState, SubagentChildProgressInput, BindSubagentChildRouteInput } from "./subagent-child-run-types.js";
@@ -176,6 +176,7 @@ export class SubagentChildRunRepository {
       if (status === "completed" && run.usageStatus === "incomplete")
         throw new Error("Child Run cannot complete with unresolved model invocations");
       if (status === "completed") {
+        assertChildLogicalInvocationsSettled(this.host.requireLedger().listRunEvents(run.id));
         assertContinuationMailboxCompleted(this.host, run, task);
         validatePreparedCompletion(this.host, task, input);
       }

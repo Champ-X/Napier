@@ -3,7 +3,7 @@ import type { SubagentTask } from "@napier/contracts";
 import { sha256 } from "./ed25519.js";
 import { durableTerminalRunStatus } from "./run-event-admission.js";
 import type { ChildPersistedRun, SubagentChildRunHost } from "./subagent-child-run-host.js";
-import type { SubagentChildRunFence, SubagentChildRunState } from "./subagent-child-run-types.js";
+import type { SubagentChildRunFence, SubagentChildRunState } from "./subagent-execution-fence-types.js";
 
 export class SubagentChildRunFenceError extends Error {
   override readonly name = "SubagentChildRunFenceError";

@@ -13,6 +13,7 @@ import { resolveWorkspaceRuntimeIdentity } from "./workspace-runtime-identity.js
 import { WorkspaceRuntimeRegistry } from "./workspace-runtime-registry.js";
 import { disposeWorkspaceRuntimeServices, workspaceRuntimeCanDispose } from "./workspace-runtime-services.js";
 import { WorkspaceModelAdmission } from "./workspace-model-admission.js";
+import { reconcileWorkspaceModelUsage } from "./workspace-model-usage-recovery.js";
 import type { WorkspaceModelBudgetOptions } from "./workspace-model-budget.js";
 import { WorkspaceResourceAdmission } from "./workspace-resource-admission.js";
 import type { WorkspaceResourceLimits } from "./workspace-resource-policy.js";
@@ -44,7 +45,20 @@ export async function createWorkspaceRuntimeHost(
   const resourceAdmission = await WorkspaceResourceAdmission.open(stateHome, options.resourceLimits)
     .catch((error) => { modelAdmission.close(); catalog.close(); throw error; });
   const failures = new Map<string, string>();
+  const usageFailures = new Map<string, string>();
+  const usageProjections = new Map<string, Promise<void>>();
   const registry = createRegistry();
+
+  function reconcileUsage(workspaceId: string): Promise<void> {
+    const pending = usageProjections.get(workspaceId);
+    if (pending) return pending;
+    const projection = reconcileWorkspaceModelUsage(catalog.get(workspaceId), modelAdmission)
+      .then(() => { usageFailures.delete(workspaceId); })
+      .catch((error: unknown) => { usageFailures.set(workspaceId, String(error)); throw error; })
+      .finally(() => { usageProjections.delete(workspaceId); });
+    usageProjections.set(workspaceId, projection);
+    return projection;
+  }
 
   function createRegistry() {
     try {
@@ -54,6 +68,8 @@ export async function createWorkspaceRuntimeHost(
         ...(options.maxIdle !== undefined ? { maxIdle: options.maxIdle } : {}),
         ...(options.idleMs !== undefined ? { idleMs: options.idleMs } : {}),
         prepare: async (identity) => {
+          // Reconcile an old outbox before starting any execution/recovery workers.
+          await reconcileUsage(identity.workspaceId);
           const services = await prepareServices({
             ...options.services, workspaceRoot: identity.root, dataRoot: identity.dataRoot, startAutomation: true,
             modelCallAdmission: modelAdmission.forWorkspace(identity.workspaceId),
@@ -65,7 +81,8 @@ export async function createWorkspaceRuntimeHost(
               recentWorkspaceStateHome: stateHome,
             });
             app.get("/api/workspace/runtimes", (context) => {
-              const response = catalog.list().map((entry) => ({ ...entry, error: failures.get(entry.workspaceId) ?? null }));
+              const response = catalog.list().map((entry) => ({ ...entry, error: failures.get(entry.workspaceId) ?? null,
+                usageError: usageFailures.get(entry.workspaceId) ?? null }));
               setBodyContentSha256Header(context, response);
               return context.json(response);
             });
@@ -89,7 +106,10 @@ export async function createWorkspaceRuntimeHost(
   async function disposeGraph(services: Awaited<ReturnType<typeof createServices>>, workspaceId: string): Promise<void> {
     // Physical sessions close inside local shutdown; draining their leases before
     // initiating close would deadlock an otherwise idle persistent session.
-    await disposeWorkspaceRuntimeServices(services, () => modelAdmission.drainWorkspace(workspaceId));
+    await disposeWorkspaceRuntimeServices(services, async () => {
+      await modelAdmission.drainWorkspace(workspaceId);
+      await reconcileUsage(workspaceId);
+    });
     await resourceAdmission.drainWorkspace(workspaceId);
   }
 
@@ -131,6 +151,11 @@ export async function createWorkspaceRuntimeHost(
 
   let maintenance: Promise<void> | undefined;
   const maintain = async () => {
+    for (const identity of catalog.list()) {
+      if (!modelAdmission.hasPendingUsage(identity.workspaceId)) continue;
+      try { await reconcileUsage(identity.workspaceId); }
+      catch (error) { options.onWarning?.(identity.workspaceId, String(error)); }
+    }
     await registry.reclaimIdle();
     for (const workspaceId of [...failures.keys()]) {
       try { const lease = await registry.acquire(workspaceId); lease.release(); failures.delete(workspaceId); }

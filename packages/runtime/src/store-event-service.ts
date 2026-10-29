@@ -26,6 +26,7 @@ import {
 } from "./store-compatibility-projections.js";
 import type { StorePersistenceMonitor } from "./store-observability.js";
 import { persistStoreMutation } from "./store-persistence.js";
+import type { LedgerModelAccountingMutation } from "./sqlite-model-accounting.js";
 
 export type {
   AppendCompatibilityEventInput,
@@ -65,6 +66,7 @@ export class StoreEventService {
   constructor(private readonly host: StoreEventServiceHost) {}
 
   append(input: AppendEventInput): Promise<RunEvent> {
+    assertNotAccountingWrite(input.type);
     return this.appendResolved(resolveRegisteredEventInput(input));
   }
 
@@ -72,6 +74,7 @@ export class StoreEventService {
     input: AppendEventInput,
     idempotency: AppendEventOnceOptions,
   ): Promise<RunEvent> {
+    assertNotAccountingWrite(input.type);
     return this.appendResolvedOnce(
       resolveRegisteredEventInput(input),
       idempotency,
@@ -82,6 +85,7 @@ export class StoreEventService {
     input: AppendEventInput,
     options: AppendEventOnceAtRunHeadOptions,
   ): Promise<AppendEventOnceAtRunHeadResult> {
+    assertNotAccountingWrite(input.type);
     const { expectedRunHeadSeq, ...idempotency } = options;
     return this.appendResolvedOnceAtRunHead(
       resolveRegisteredEventInput(input),
@@ -115,6 +119,7 @@ export class StoreEventService {
   async persist(
     eventOrEvents?: RunEvent | RunEvent[],
     mode: "snapshot" | "event" = "snapshot",
+    modelAccountingMutation?: LedgerModelAccountingMutation,
   ): Promise<void> {
     const events = Array.isArray(eventOrEvents)
       ? eventOrEvents
@@ -128,6 +133,7 @@ export class StoreEventService {
       ...(snapshotRequired ? { snapshotJson: this.host.snapshotJson } : {}),
       compatibilityStateJson: this.host.compatibilityStateJson,
       events,
+      ...(modelAccountingMutation ? { modelAccountingMutation } : {}),
       ledger: this.host.ledger(),
       monitor: this.host.monitor,
       compatibility: this.host.compatibility,
@@ -137,6 +143,7 @@ export class StoreEventService {
   }
 
   private appendResolved(input: ResolvedRunEventInput): Promise<RunEvent> {
+    assertNotAccountingWrite(input.type);
     this.host.assertReady();
     return appendResolvedRunEvent(
       {
@@ -151,6 +158,7 @@ export class StoreEventService {
     input: ResolvedRunEventInput,
     idempotency: EventIdempotencyKey,
   ): Promise<RunEvent> {
+    assertNotAccountingWrite(input.type);
     this.host.assertReady();
     return appendResolvedRunEventOnce(
       {
@@ -169,6 +177,7 @@ export class StoreEventService {
     idempotency: EventIdempotencyKey,
     expectedRunHeadSeq: number,
   ): Promise<RunEventAppendResult> {
+    assertNotAccountingWrite(input.type);
     this.host.assertReady();
     return appendResolvedRunEventOnceAtRunHead(
       {
@@ -239,4 +248,9 @@ export class StoreEventService {
     }
     return { event: result.event, appended: result.appended };
   }
+}
+
+function assertNotAccountingWrite(type: string): void {
+  if (type.startsWith("model.accounting.") || type === "model.usage.reconciled")
+    throw new Error("Model accounting events require native repository authority");
 }

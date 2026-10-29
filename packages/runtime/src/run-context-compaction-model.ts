@@ -7,6 +7,7 @@ import {
   type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import type { JsonObject, RunRecord } from "@napier/contracts";
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
 import { mapModelUsage } from "./agent-model-projection.js";
 import { compileAuxiliaryPrompt } from "./agent-prompt-layers.js";
 import {
@@ -17,6 +18,8 @@ import {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { emitBestEffort, type EventSink } from "./event-sink.js";
 import { modelAdapterReceipt } from "./model-adapters.js";
+import { modelAccountingLinkage } from "./model-call-attribution.js";
+import { completeModelInvocation } from "./model-complete-invocation.js";
 import { measureModelContextWithProvider } from "./model-context-token-meter.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
@@ -29,7 +32,7 @@ import { createUsageAccounting } from "./token-accounting.js";
 export interface RunCompactionHost {
   store: Parameters<typeof captureCompiledModelInvocation>[0]["store"] &
     Pick<RunEventQueryPort, "listRunEvents">;
-  modelRegistry: Pick<ModelRegistry, "models">;
+  modelRegistry: Pick<ModelRegistry, "models"> & Partial<Pick<ModelRegistry, "accountingForRun">>;
   modelInvocationCapsules: ModelInvocationCapsuleStore;
 }
 
@@ -146,6 +149,7 @@ export async function invokeRunContextCompactor(input: {
   responseTextSha256: string;
 }> {
   input.request.options.signal?.throwIfAborted();
+  await input.budget.refreshAccounting();
   input.budget.assertCanStartAuxiliaryCall();
   if (input.invocation) {
     const result = await input.invocation.invoke({
@@ -174,27 +178,34 @@ export async function invokeRunContextCompactor(input: {
     modelContextToolDefinitionSetSha256:
       captured.envelope.toolDefinitionSetSha256,
   };
+  let attribution: ModelCallAttributionV1 | undefined;
   let response: AssistantMessage;
   try {
     response = await awaitResponse(
-      input.host.modelRegistry.models.completeSimple(
-        input.model,
-        captured.context,
-        input.request.options,
-      ),
+      completeModelInvocation({
+        models: input.host.modelRegistry.models, model: input.model,
+        context: captured.context, options: input.request.options,
+        phase: "context_compaction",
+        accounting: input.host.modelRegistry.accountingForRun?.(input.run.id),
+        capture: captured.accountingCapture,
+        onAttribution: (value) => { attribution = value; },
+      }),
       input.request.options.signal,
     );
   } catch (error) {
     const diagnostic = error instanceof Error ? error.message : String(error);
     await record({
       ...binding,
+      ...(attribution ? modelAccountingLinkage(attribution) : {}),
       stopReason: "error",
       errorSha256: sha256(diagnostic),
       errorBytes: Buffer.byteLength(diagnostic),
     });
     throw error;
   }
-  return finish(response, captured.envelope.contentSha256, binding);
+  return finish(response, captured.envelope.contentSha256, {
+    ...binding, ...(attribution ? modelAccountingLinkage(attribution) : {}),
+  });
 
   async function finish(response: AssistantMessage, envelopeSha256: string, binding?: object) {
     const usage = mapModelUsage(response.usage);
@@ -204,6 +215,7 @@ export async function invokeRunContextCompactor(input: {
     input.budget.observeAuxiliaryUsage(usage, Date.now(), accounting);
     const { text, summary, summaryError, evidence } = inspectCompactionResponse(response);
     if (binding) await record({ ...binding, ...evidence, usage, usageAccounting: accounting });
+    await input.budget.refreshAccounting();
     input.request.options.signal?.throwIfAborted();
     input.budget.throwIfExhausted();
     if (response.stopReason !== "stop")

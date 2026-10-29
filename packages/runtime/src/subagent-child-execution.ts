@@ -4,13 +4,14 @@ import type { ModelSessionLifetime } from "./model-session.js";
 import type { FinishSubagentTaskInput } from "./subagent-completion-types.js";
 import type { PreparedSubagentCompletion } from "./subagent-completion-types.js";
 import { emitBestEffort, type EventSink } from "./event-sink.js";
-import { createSubagentRunBudget } from "./subagent-budget-projection.js";
+import { createSubagentRunBudget, subagentAdmissionAccounting } from "./subagent-budget-projection.js";
 import { SubagentModelTurnDeniedError } from "./subagent-model-turn-denial.js";
 import type { PreparedSubagentWorkingSet, PrepareSubagentChildCheckpointResult, SubagentCheckpointStore } from "./subagent-working-set-types.js";
 import type {
   StartedSubagentChildRun, SubagentChildInvocationPhase,
   SubagentChildRunState, SubagentChildExecutionStore,
 } from "./subagent-child-run-types.js";
+import type { ModelInvocationAccounting } from "./model-call-accounting-driver.js";
 
 export type SubagentProgress = { turnDelta?: number; stepDelta?: number };
 export interface SubagentTaskFinisher {
@@ -59,7 +60,17 @@ export class SubagentChildExecution {
       throw new Error("Child completion is reserved; model execution cannot restart");
     if (!ownReservationPending && current.run.usageStatus === "incomplete")
       throw new Error("Child model usage is unresolved; another invocation is not permitted");
-    createSubagentRunBudget(current.run).assertCanStartAuxiliaryCall();
+    this.createBudget().assertCanStartAuxiliaryCall();
+  }
+
+  createBudget() {
+    const current = this.store.assertSubagentChildRunActive(this.fence());
+    const runs = this.store.listRuns?.(this.run.threadId) ?? [];
+    const budget = createSubagentRunBudget(current.run, runs);
+    const repository = this.store.modelAccountingRepository;
+    if (repository?.isConfigured()) budget.bindAccounting(async () => subagentAdmissionAccounting(current.run,
+      await repository.readRunAccounting(current.run.id), runs));
+    return budget;
   }
 
   assertTurnAvailable(): void {
@@ -90,6 +101,15 @@ export class SubagentChildExecution {
       await this.publish();
       return reservation;
     });
+  }
+
+  accountingForInvocation(reservation: { invocationId: string; invocationIndex: number }): ModelInvocationAccounting | undefined {
+    const repository = this.store.modelAccountingRepository;
+    if (!repository || !repository.isConfigured()) return undefined;
+    return { repository, logicalCallId: reservation.invocationId,
+      owner: repository.childAuthority({ ...this.fence(), kind: "child", threadId: this.run.threadId,
+        parentRunId: this.task.runId, childInvocationId: reservation.invocationId,
+        invocationIndex: reservation.invocationIndex }) };
   }
 
   bindRoute(routePlanId: string): Promise<SubagentTask> {
