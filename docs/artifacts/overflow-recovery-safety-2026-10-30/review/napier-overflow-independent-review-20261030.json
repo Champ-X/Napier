@@ -1,0 +1,186 @@
+{
+  "kind": "napier.overflow-independent-review",
+  "schemaVersion": 1,
+  "reviewedAtUtc": "2026-10-29T21:33:58.467604+00:00",
+  "reviewer": "/root/sandbox_admission_design",
+  "delegate": "/root/sandbox_admission_design/browser_capacity_seams",
+  "candidateManifest": "/tmp/napier-overflow-safety-handoff-20261030-v1.json",
+  "sourceRoot": "/private/tmp/napier-overflow-safety-verify-20261030",
+  "verdict": "no_new_blocking_finding",
+  "blockingFindings": [],
+  "scope": "Read-only frozen overflow16 review; native main/child stop semantics, outer routes, legacy usage ownership, deadline/grace, opaque disposition.",
+  "confirmed": [
+    {
+      "claim": "Finalized native overflow preserves original AssistantMessage identity through inner overflow, thinking guard, route consumption and settleMessage; both route fallback and same-candidate retry consult the deny-only WeakSet.",
+      "source": [
+        "packages/runtime/src/model-context-overflow-recovery.ts:25-28,50-54,102-105",
+        "packages/runtime/src/model-thinking-loop-guard.ts:200-211",
+        "packages/runtime/src/model-route-output-buffer.ts:61-69",
+        "packages/runtime/src/model-route-stream.ts:365-407,428-447"
+      ]
+    },
+    {
+      "claim": "Overflow diagnostic carries no usage and no terminal ownership. Ordinary final response owns usage if recovery does not start; a hidden first response owns auxiliary usage only after recovery starts. Cancellation after the hidden response produces a synthetic zero primary response without a duplicate envelope binding.",
+      "source": [
+        "packages/runtime/src/agent-model-recovery-evidence.ts:33-116",
+        "packages/runtime/src/agent-model-stream-lifecycle.ts:345-375",
+        "packages/runtime/src/agent-runtime.ts:1905-1945,1968-1974"
+      ],
+      "probeGroup": "main-callback-boundaries"
+    },
+    {
+      "claim": "Native readiness uses the existing private observation handle, never text as receipt authority; unknown/incomplete, failed ACK, missing handle, cancellation and timeout do not authorize recovery. Initial lifetime is captured and native wait/callback admission uses min(original lifetime, existing 5000ms grace).",
+      "source": [
+        "packages/runtime/src/model-context-overflow-recovery.ts:47,123-143",
+        "packages/runtime/src/model-call-recovery.ts:43-78"
+      ],
+      "existingTestsReviewed": [
+        "packages/runtime/test/model-overflow-readiness.test.ts",
+        "packages/runtime/test/model-context-overflow-recovery.test.ts"
+      ]
+    },
+    {
+      "claim": "Main overflowRetryUsed is shared across reconstructed thinking and route wrappers; active context/options getters are reread before a later thinking retry. Ordinary context projection requires measured reduction for overflow recovery.",
+      "source": [
+        "packages/runtime/src/agent-model-stream-lifecycle.ts:147-151,334-375",
+        "packages/runtime/src/model-thinking-loop-guard.ts:140-150",
+        "packages/runtime/src/context-projection-service.ts:112-151",
+        "packages/runtime/src/run-context-compaction.ts:172-204"
+      ]
+    },
+    {
+      "claim": "Native child partial and unknown receipts under HTTP 500 context_length_exceeded with a real fallback each stop after one physical dispatch and one route attempt, retain incomplete accounting, emit exactly one canonical response, prepared and reconciled event, and leave the durable source queue empty.",
+      "probeGroup": "child-route-and-authority"
+    },
+    {
+      "claim": "Opaque disposition does not transfer through spread, structuredClone, JSON, Object.create or forged properties. The exact original object remains marked after mutation; this is a sticky deny-only object-identity marker, not a call/content-bound receipt capability.",
+      "probeGroup": "child-route-and-authority"
+    }
+  ],
+  "executedIndependentProbeGroups": [
+    {
+      "id": "main-callback-boundaries",
+      "passed": 3,
+      "total": 3,
+      "cases": [
+        "hidden_response_callback_cancels",
+        "hidden_response_callback_cancels_and_throws",
+        "overflow_diagnostic_callback_cancels_and_throws"
+      ],
+      "configuration": "All cases use legacy main accounting, HTTP 500 context_length_exceeded and real route fallback. External fetch is stubbed to throw.",
+      "assertions": [
+        "dispatch exactly once",
+        "primary usage observation exactly once",
+        "hidden-response modes auxiliary usage once; diagnostic mode no auxiliary usage",
+        "exactly one nonzero response usage owner",
+        "aggregateRunUsage equals result usage",
+        "actual input/output usage equals original failed response",
+        "assertModelRequestEvidenceBindings passes"
+      ],
+      "source": "/tmp/napier-overflow-independent-main-20261030/main-callbacks.test.ts",
+      "config": "/tmp/napier-overflow-independent-main-20261030.config.mts",
+      "result": "/tmp/napier-overflow-independent-main-20261030-v2.json",
+      "stdout": "/tmp/napier-overflow-independent-main-20261030-v2.log"
+    },
+    {
+      "id": "child-route-and-authority",
+      "passed": 3,
+      "total": 3,
+      "cases": [
+        "native_child_partial_mixed_http_routed",
+        "native_child_unknown_mixed_http_routed",
+        "opaque_identity_copy_forge_and_mutation"
+      ],
+      "source": "/tmp/napier-overflow-child-authority-probe-20261030/probe.test.ts",
+      "config": "/tmp/napier-overflow-child-authority-probe-20261030/vitest.config.mts",
+      "result": "/tmp/napier-overflow-child-authority-probe-20261030/result.json",
+      "delegateReport": "/tmp/napier-overflow-child-authority-review-20261030.json",
+      "rawStdoutLog": null,
+      "copiedToolOutputTranscript": "/tmp/napier-overflow-child-authority-probe-20261030/stdout-copied-tool-transcript.txt",
+      "stdoutBoundary": "Original stdout was not tee-captured; copied tool completion output is labeled as a transcript, not raw capture. Tests were not rerun."
+    }
+  ],
+  "coverageBoundaries": [
+    "This review independently executed six temporary local cases only. Root reported 105 files / 831 tests separately; do not combine overlapping preexisting packs or present worker reports as independently rerun here.",
+    "Native successful overflow recovery is not established or claimed. Actual native error receipts remain partial/unknown; tested result is safe finalization with accounting retained.",
+    "Observer onEvent exceptions and cancellation are tested. Durable Store write failure/fault-injected database persistence is not part of these added callback probes.",
+    "Marker copying cannot grant a stop disposition; reusing the identical mutable provider object may retain a stale deny marker and conservatively suppress fallback. No retry, ACK, accounting or suppression authority is granted.",
+    "Candidate source hash checks cover the 16 manifest-owned paths. No independent whole-dependency-tree hash proof is claimed.",
+    "No paid/external model calls, repository/source edits, generated dist output, staging, commits, or protected-user-file mutations were performed by this review."
+  ],
+  "harnessSetupFailure": {
+    "path": "/tmp/napier-overflow-independent-main-20261030.json",
+    "stdout": "/tmp/napier-overflow-independent-main-20261030.log",
+    "testsExecuted": 0,
+    "cause": "Initial temporary config used prefix package alias, incorrectly mapping pi-ai/providers/all under dist/index.js. Final temporary config changed this alias to exact regex; source was unchanged.",
+    "disposition": "Retained as setup-only failure; final v2 ran all three cases and passed."
+  },
+  "sourceHashReport": "/tmp/napier-overflow-independent-main-source-hashes-20261030.json",
+  "artifacts": [
+    {
+      "path": "/tmp/napier-overflow-safety-handoff-20261030-v1.json",
+      "bytes": 12833,
+      "sha256": "325118d4b8b7a98e69060fa49c4f1d2c7fd02534bdd2229f8cd0c7f72a9a7ed5"
+    },
+    {
+      "path": "/tmp/napier-overflow-independent-main-source-hashes-20261030.json",
+      "bytes": 4739,
+      "sha256": "3124e2bf1bc2d33a07b051cef7a710b36b46acebb93e66d2981d6b475abcea89"
+    },
+    {
+      "path": "/tmp/napier-overflow-independent-main-20261030.json",
+      "bytes": 813,
+      "sha256": "107cceb72165937c10ef1c337b84b60067dc05b5e10947ef3686abfd6ed7dfb3"
+    },
+    {
+      "path": "/tmp/napier-overflow-independent-main-20261030.log",
+      "bytes": 75,
+      "sha256": "8de128cdbb774d194dc6596834e69480d6321858ef60757742ae0f2a01fffebb"
+    },
+    {
+      "path": "/tmp/napier-overflow-independent-main-20261030/main-callbacks.test.ts",
+      "bytes": 3860,
+      "sha256": "61086411a54021c212236460e8f5505e5af9eb608b140e0820254e87ec6138e9"
+    },
+    {
+      "path": "/tmp/napier-overflow-independent-main-20261030.config.mts",
+      "bytes": 18655,
+      "sha256": "38b6df09c00726aad58e1bbf8b32e4e8f9badb321a14b09e05e2a69e1e5df883"
+    },
+    {
+      "path": "/tmp/napier-overflow-independent-main-20261030-v2.json",
+      "bytes": 1366,
+      "sha256": "5e589e6f7ab2e4acf4671b2a0658d84e5f3138ea6fd2b735f8b5052579d5ead0"
+    },
+    {
+      "path": "/tmp/napier-overflow-independent-main-20261030-v2.log",
+      "bytes": 78,
+      "sha256": "b37420779a8c03c6775b2acd6440c29cee931858326b0a992ae58d0ed4d77b28"
+    },
+    {
+      "path": "/tmp/napier-overflow-child-authority-probe-20261030/probe.test.ts",
+      "bytes": 5555,
+      "sha256": "802ea6017946a7ab810e64080f1fabadd18b7cd3a51bba6968acbe351489ef27"
+    },
+    {
+      "path": "/tmp/napier-overflow-child-authority-probe-20261030/vitest.config.mts",
+      "bytes": 18259,
+      "sha256": "dbf6f58187de00e1091e841a8958f79c691f1c4037d0ad11db238feaaff4f2a1"
+    },
+    {
+      "path": "/tmp/napier-overflow-child-authority-probe-20261030/result.json",
+      "bytes": 1511,
+      "sha256": "613dc0bd02add76da3ec06464e583c7003af959fe3f6b34a8b535667d34392f8"
+    },
+    {
+      "path": "/tmp/napier-overflow-child-authority-review-20261030.json",
+      "bytes": 12718,
+      "sha256": "b2a980a3e07adac0b53a9789c45d9531df6e42e4ea3e053c62fda79c61e9c6dd"
+    },
+    {
+      "path": "/tmp/napier-overflow-child-authority-probe-20261030/stdout-copied-tool-transcript.txt",
+      "bytes": 443,
+      "sha256": "287f5801f647cb572eb62262045f679fef87e8bb2aab1e5b99e0f7ed77ca217f"
+    }
+  ]
+}

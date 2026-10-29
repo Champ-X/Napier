@@ -1,0 +1,3 @@
+packages/runtime/test/subagent-overflow-recovery.test.ts(56,78): error TS18047: 'event.payload' is possibly 'null'.
+packages/runtime/test/subagent-overflow-recovery.test.ts(56,78): error TS7053: Element implicitly has an 'any' type because expression of type '"stopReason"' can't be used to index type 'string | number | boolean | JsonValue[] | { [key: string]: JsonValue; }'.
+  Property 'stopReason' does not exist on type 'string | number | boolean | JsonValue[] | { [key: string]: JsonValue; }'.

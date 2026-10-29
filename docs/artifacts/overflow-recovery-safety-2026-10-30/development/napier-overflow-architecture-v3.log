@@ -1,0 +1,13 @@
+
+> napier@0.1.0 check:architecture
+> node scripts/check-architecture.mjs
+
+Architecture audit failed:
+- apps/web/src/use-workspace-view-model.ts has 2101 lines, exceeding the 1884-line budget
+- packages/contracts/src/skill-load-standard.ts has 533 lines, exceeding the 500-line budget
+- packages/runtime/src/agent-tool-result-lifecycle.ts has 513 lines, exceeding the 500-line budget
+- packages/runtime/src/plans.ts has 1378 lines, exceeding the 1367-line budget
+- packages/runtime/src/standard-skill-snapshot-compose.ts has 506 lines, exceeding the 500-line budget
+- apps/web/src/conversation-thinking-view-model.ts has function complexity 26, exceeding the 25 budget
+- apps/web/src/api.ts has change coupling (fan-in * fan-out) 111, exceeding the 102 budget
+- apps/web/src/copy.ts has change coupling (fan-in * fan-out) 588, exceeding the 582 budget

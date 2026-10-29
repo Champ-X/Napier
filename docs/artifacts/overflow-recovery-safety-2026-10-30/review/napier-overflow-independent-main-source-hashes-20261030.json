@@ -1,0 +1,102 @@
+{
+  "allMatch": true,
+  "sourceRoot": "/private/tmp/napier-overflow-safety-verify-20261030",
+  "files": [
+    {
+      "path": "packages/contracts/src/run-event-tool-definitions-v1.ts",
+      "expectedSha256": "46207e6e9cecd340fcfca83d37f9fbc208ad8c64a674b6b53d74b9ce78d9fc3f",
+      "observedSha256": "46207e6e9cecd340fcfca83d37f9fbc208ad8c64a674b6b53d74b9ce78d9fc3f",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/agent-model-recovery-evidence.ts",
+      "expectedSha256": "f0f8c241b13a527c08df7f9d2da1801de82300647db9adbf4bd05930937cb783",
+      "observedSha256": "f0f8c241b13a527c08df7f9d2da1801de82300647db9adbf4bd05930937cb783",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/agent-model-stream-lifecycle.ts",
+      "expectedSha256": "b3575913560818925821efd33a32a574be01b764f721d38d6ce53028c254be59",
+      "observedSha256": "b3575913560818925821efd33a32a574be01b764f721d38d6ce53028c254be59",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/model-context-envelope.ts",
+      "expectedSha256": "235138a01f7a040d3d2028b494cb807f26e9e2e4a6a7332a4008567fb0a69d5a",
+      "observedSha256": "235138a01f7a040d3d2028b494cb807f26e9e2e4a6a7332a4008567fb0a69d5a",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/model-context-overflow-recovery.ts",
+      "expectedSha256": "526699a00710d07f5da2f48332c6501fd8fa4984d890dea9ad01a497961e3dc2",
+      "observedSha256": "526699a00710d07f5da2f48332c6501fd8fa4984d890dea9ad01a497961e3dc2",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/model-prompt-evidence-bindings.ts",
+      "expectedSha256": "b0315d22224dbc0bffdd1da00e6151f90b9c872219290b16cf73d7e4ca8ab409",
+      "observedSha256": "b0315d22224dbc0bffdd1da00e6151f90b9c872219290b16cf73d7e4ca8ab409",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/model-route-stream.ts",
+      "expectedSha256": "58c8e75d8dc81638ccdd8c7fc4997aa72fd13eec0ecfed2dfeea33c9ef574728",
+      "observedSha256": "58c8e75d8dc81638ccdd8c7fc4997aa72fd13eec0ecfed2dfeea33c9ef574728",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/model-stream-cancellation-policy.ts",
+      "expectedSha256": "6f6131757bc7255f5e1e9e83c09d8f3b9aa1979c4a820cf994006bac8fef1c88",
+      "observedSha256": "6f6131757bc7255f5e1e9e83c09d8f3b9aa1979c4a820cf994006bac8fef1c88",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/model-stream-transport.ts",
+      "expectedSha256": "34a2a50ff39bafd27894e9b758e20382327019fd5bd4d666c78ebff8c356dcc3",
+      "observedSha256": "34a2a50ff39bafd27894e9b758e20382327019fd5bd4d666c78ebff8c356dcc3",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/model-thinking-loop-guard.ts",
+      "expectedSha256": "81959d629d3609313b24ca80b8a4eab69df7cec754ba4ba353b06a31cfc576ed",
+      "observedSha256": "81959d629d3609313b24ca80b8a4eab69df7cec754ba4ba353b06a31cfc576ed",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/subagent-context-compaction.ts",
+      "expectedSha256": "c46ca20c12107cfac52d4abd9a2faa8fe6622f4abb0576a4804ed8611ad135dc",
+      "observedSha256": "c46ca20c12107cfac52d4abd9a2faa8fe6622f4abb0576a4804ed8611ad135dc",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/src/subagent-model-session.ts",
+      "expectedSha256": "f3d05dde7c4e29bab7eff6c74810fc6f9b20039db39e0dfa09cbc8348cac0519",
+      "observedSha256": "f3d05dde7c4e29bab7eff6c74810fc6f9b20039db39e0dfa09cbc8348cac0519",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/test/agent-native-overflow-recovery.test.ts",
+      "expectedSha256": "9af9a729381d50bec80f3c0da2098c227bca380b0abbfb56284a8af1da7d8409",
+      "observedSha256": "9af9a729381d50bec80f3c0da2098c227bca380b0abbfb56284a8af1da7d8409",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/test/model-context-overflow-recovery.test.ts",
+      "expectedSha256": "15dbe61290825ae09063667bea5d182711929b3c9e86bdabc088f845cea20f99",
+      "observedSha256": "15dbe61290825ae09063667bea5d182711929b3c9e86bdabc088f845cea20f99",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/test/model-overflow-readiness.test.ts",
+      "expectedSha256": "255e656e9453de0196eaae160ed9640c773a1f9841b8ae946d4519789b05cfd9",
+      "observedSha256": "255e656e9453de0196eaae160ed9640c773a1f9841b8ae946d4519789b05cfd9",
+      "matches": true
+    },
+    {
+      "path": "packages/runtime/test/subagent-overflow-recovery.test.ts",
+      "expectedSha256": "214a8e963defb7ae7ef2ef47d3c6cc14fd86c6a2c2b8c8a433bb89cf2b0982e8",
+      "observedSha256": "214a8e963defb7ae7ef2ef47d3c6cc14fd86c6a2c2b8c8a433bb89cf2b0982e8",
+      "matches": true
+    }
+  ]
+}

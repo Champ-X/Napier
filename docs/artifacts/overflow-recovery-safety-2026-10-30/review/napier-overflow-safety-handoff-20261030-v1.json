@@ -1,0 +1,291 @@
+{
+  "kind": "napier.overflow-safety-handoff",
+  "schemaVersion": 1,
+  "frozenAtUtc": "2026-10-29T21:14:53.832399+00:00",
+  "workspace": "/Users/champ/orca/Napier",
+  "branch": "main",
+  "baseHead": "7ce8097fca66f7950e42e018764c7849a3544d27",
+  "freezeHead": "7e9dc49b8ffe6481d6550ed11bfeb410f1777dd6",
+  "ownedFileCount": 16,
+  "ownedFiles": [
+    {
+      "path": "packages/contracts/src/run-event-tool-definitions-v1.ts",
+      "sha256": "46207e6e9cecd340fcfca83d37f9fbc208ad8c64a674b6b53d74b9ce78d9fc3f",
+      "bytes": 7644,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/contracts/src/run-event-tool-definitions-v1.ts"
+    },
+    {
+      "path": "packages/runtime/src/agent-model-recovery-evidence.ts",
+      "sha256": "f0f8c241b13a527c08df7f9d2da1801de82300647db9adbf4bd05930937cb783",
+      "bytes": 8161,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/agent-model-recovery-evidence.ts"
+    },
+    {
+      "path": "packages/runtime/src/agent-model-stream-lifecycle.ts",
+      "sha256": "b3575913560818925821efd33a32a574be01b764f721d38d6ce53028c254be59",
+      "bytes": 16814,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/agent-model-stream-lifecycle.ts"
+    },
+    {
+      "path": "packages/runtime/src/model-context-envelope.ts",
+      "sha256": "235138a01f7a040d3d2028b494cb807f26e9e2e4a6a7332a4008567fb0a69d5a",
+      "bytes": 13030,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/model-context-envelope.ts"
+    },
+    {
+      "path": "packages/runtime/src/model-context-overflow-recovery.ts",
+      "sha256": "526699a00710d07f5da2f48332c6501fd8fa4984d890dea9ad01a497961e3dc2",
+      "bytes": 7596,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/model-context-overflow-recovery.ts"
+    },
+    {
+      "path": "packages/runtime/src/model-prompt-evidence-bindings.ts",
+      "sha256": "b0315d22224dbc0bffdd1da00e6151f90b9c872219290b16cf73d7e4ca8ab409",
+      "bytes": 13955,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/model-prompt-evidence-bindings.ts"
+    },
+    {
+      "path": "packages/runtime/src/model-route-stream.ts",
+      "sha256": "58c8e75d8dc81638ccdd8c7fc4997aa72fd13eec0ecfed2dfeea33c9ef574728",
+      "bytes": 15167,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/model-route-stream.ts"
+    },
+    {
+      "path": "packages/runtime/src/model-stream-cancellation-policy.ts",
+      "sha256": "6f6131757bc7255f5e1e9e83c09d8f3b9aa1979c4a820cf994006bac8fef1c88",
+      "bytes": 137,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/model-stream-cancellation-policy.ts"
+    },
+    {
+      "path": "packages/runtime/src/model-stream-transport.ts",
+      "sha256": "34a2a50ff39bafd27894e9b758e20382327019fd5bd4d666c78ebff8c356dcc3",
+      "bytes": 7647,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/model-stream-transport.ts"
+    },
+    {
+      "path": "packages/runtime/src/model-thinking-loop-guard.ts",
+      "sha256": "81959d629d3609313b24ca80b8a4eab69df7cec754ba4ba353b06a31cfc576ed",
+      "bytes": 14865,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/model-thinking-loop-guard.ts"
+    },
+    {
+      "path": "packages/runtime/src/subagent-context-compaction.ts",
+      "sha256": "c46ca20c12107cfac52d4abd9a2faa8fe6622f4abb0576a4804ed8611ad135dc",
+      "bytes": 3222,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/subagent-context-compaction.ts"
+    },
+    {
+      "path": "packages/runtime/src/subagent-model-session.ts",
+      "sha256": "f3d05dde7c4e29bab7eff6c74810fc6f9b20039db39e0dfa09cbc8348cac0519",
+      "bytes": 20448,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/src/subagent-model-session.ts"
+    },
+    {
+      "path": "packages/runtime/test/agent-native-overflow-recovery.test.ts",
+      "sha256": "9af9a729381d50bec80f3c0da2098c227bca380b0abbfb56284a8af1da7d8409",
+      "bytes": 9826,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/test/agent-native-overflow-recovery.test.ts"
+    },
+    {
+      "path": "packages/runtime/test/model-context-overflow-recovery.test.ts",
+      "sha256": "15dbe61290825ae09063667bea5d182711929b3c9e86bdabc088f845cea20f99",
+      "bytes": 8390,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/test/model-context-overflow-recovery.test.ts"
+    },
+    {
+      "path": "packages/runtime/test/model-overflow-readiness.test.ts",
+      "sha256": "255e656e9453de0196eaae160ed9640c773a1f9841b8ae946d4519789b05cfd9",
+      "bytes": 4811,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/test/model-overflow-readiness.test.ts"
+    },
+    {
+      "path": "packages/runtime/test/subagent-overflow-recovery.test.ts",
+      "sha256": "214a8e963defb7ae7ef2ef47d3c6cc14fd86c6a2c2b8c8a433bb89cf2b0982e8",
+      "bytes": 6830,
+      "frozenPath": "/tmp/napier-overflow-source-freeze-20261030-v1/packages/runtime/test/subagent-overflow-recovery.test.ts"
+    }
+  ],
+  "freezeDirectory": "/tmp/napier-overflow-source-freeze-20261030-v1",
+  "artifacts": [
+    {
+      "role": "originalNativeCounterexample",
+      "path": "/tmp/napier-overflow-native-prefix-v2-20261030.json",
+      "sha256": "3ba0ecc45cf48accafbaee90ad8c5d0b49b0d23e80077c8517df44cd08496b78",
+      "bytes": 3995
+    },
+    {
+      "role": "originalNativeCounterexampleLog",
+      "path": "/tmp/napier-overflow-native-prefix-v2-20261030.log",
+      "sha256": "c3d39ca198dea2dbc746728d277de54b8d5dd186bb2b1364ed2feb7b08de0ff5",
+      "bytes": 75
+    },
+    {
+      "role": "initialCounterexample",
+      "path": "/tmp/napier-overflow-native-prefx-20261030.json",
+      "sha256": "89bb1d17edd1bf7fa642b01821fa1ac27497dab42231f6223cab25965a7cf3b7",
+      "bytes": 1663
+    },
+    {
+      "role": "routedMixedHttpCounterexample",
+      "path": "/tmp/napier-overflow-routed-prefix-20261030.json",
+      "sha256": "c85d8368d394f459cd3f2d1287998c56d64225c8e9ee2dd2819305cd38f887a3",
+      "bytes": 4327
+    },
+    {
+      "role": "routedMixedHttpCounterexampleLog",
+      "path": "/tmp/napier-overflow-routed-prefix-20261030.log",
+      "sha256": "4ca0b00bc6a7d0d5f4896e77ece0abf48ff89097d0f09a08feff359813d8a424",
+      "bytes": 72
+    },
+    {
+      "role": "intermediateDuplicateBindingFailures",
+      "path": "/tmp/napier-overflow-review-intermediate-v1.json",
+      "sha256": "88b92a304dd5ae3656ac5b35ce03531c51a911629a140198189195e347e9b774",
+      "bytes": 11800
+    },
+    {
+      "role": "finalRegression",
+      "path": "/tmp/napier-overflow-final-focused-v1.json",
+      "sha256": "9f1fe8dd544711818a4fbd12a664c6dfda7014a51007aa6b0967c7ec69630958",
+      "bytes": 62914
+    },
+    {
+      "role": "finalRegressionLog",
+      "path": "/tmp/napier-overflow-final-focused-v1.log",
+      "sha256": "eec31e56a367862fda09b885ed734345ddeb9274c92c69b8a0ba46590303a78f",
+      "bytes": 66
+    },
+    {
+      "role": "finalGuardAfterDeadlineClamp",
+      "path": "/tmp/napier-overflow-final-guard-v2.json",
+      "sha256": "8df89fd393b8909fedc25e06e1b20db1b4d3e0ef26f21bcf05d53f572ebb7eaa",
+      "bytes": 10822
+    },
+    {
+      "role": "finalGuardLog",
+      "path": "/tmp/napier-overflow-final-guard-v2.log",
+      "sha256": "08ad9d6bdf1817a3e64aa2e831877eeeb87a962ba7134076fb2e5064c448e729",
+      "bytes": 64
+    },
+    {
+      "role": "strictFinal",
+      "path": "/tmp/napier-overflow-typecheck-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "role": "strictConfig",
+      "path": "/tmp/napier-overflow-test-tsconfig-v2.json",
+      "sha256": "060462b5d248bc065b37c479f68fb88e69186ef4984137ca554b29c0ad2d1a46",
+      "bytes": 11355
+    },
+    {
+      "role": "strictPriorFailed",
+      "path": "/tmp/napier-overflow-typecheck-v2.log",
+      "sha256": "5b14235b110ef02f8509e5d4c24a7b24488164517c449123ff342b39c0d7abd3",
+      "bytes": 499
+    },
+    {
+      "role": "architectureFinal",
+      "path": "/tmp/napier-overflow-architecture-v3.log",
+      "sha256": "d44d6843eb706456f44f1b4f1cb8aed25eecd3c61cab1a74a0e0548dba1f454c",
+      "bytes": 851
+    },
+    {
+      "role": "architectureIntermediate",
+      "path": "/tmp/napier-overflow-architecture-v1.log",
+      "sha256": "f95580b5c3e2e73562c3d9caf7865e309b011832f682a7093248d74774eb2bce",
+      "bytes": 1340
+    },
+    {
+      "role": "architectureIntermediateStaleOverride",
+      "path": "/tmp/napier-overflow-architecture-v2.log",
+      "sha256": "fd1188b9305bff878b0168b5c8335c33e3320cdb43b5a64403881b5a407bc809",
+      "bytes": 945
+    },
+    {
+      "role": "publicApiFinal",
+      "path": "/tmp/napier-overflow-public-api-final.log",
+      "sha256": "10488fa2b5c1c452c0d30413bf7e38409ec9ed7578bae6e13d11874b86f8f01d",
+      "bytes": 347
+    },
+    {
+      "role": "vitestConfig",
+      "path": "/tmp/napier-host-accounting-vitest-v6.config.mts",
+      "sha256": "d1b50211f72420cd9d09f56d6e16ff2967bc6ee1991db1e25f66d4d82c4e4f90",
+      "bytes": 15571
+    }
+  ],
+  "validation": {
+    "regression": {
+      "fileCount": 20,
+      "tests": 172,
+      "passed": 172,
+      "exitCode": 0,
+      "sourceNote": "Before final native recovery deadline reuse for post-callback real-clock check; all other final changes included"
+    },
+    "finalGuard": {
+      "fileCount": 4,
+      "tests": 31,
+      "passed": 31,
+      "exitCode": 0,
+      "sourceNote": "Frozen final source including final native grace/deadline callback clamp"
+    },
+    "strictNoEmit": {
+      "exitCode": 0,
+      "coverage": "Runtime and Server source plus four owned tests"
+    },
+    "diffCheck": {
+      "exitCode": 0
+    },
+    "overlap": "Test packs overlap; do not add their counts"
+  },
+  "gateDisposition": {
+    "architecture": {
+      "exitCode": 1,
+      "retainedFailures": 8,
+      "newFailures": 0,
+      "notes": "Earlier new cycle/complexity and later stale override failures were fixed without budget changes; latest report retains original eight workspace failures"
+    },
+    "publicApi": {
+      "exitCode": 1,
+      "retainedFailures": [
+        "runtimeRootSemanticExports 1897 > 1896",
+        "runtimeInternalSemanticExports 18 > 16",
+        "root semantic digest mismatch",
+        "internal semantic digest mismatch"
+      ],
+      "newFailures": 0
+    },
+    "priorStrictFailure": "v2 nullable child test payload typing fixed; preserved failed log"
+  },
+  "scope": [
+    "ordinary main and child context overflow only",
+    "native incomplete/unknown/ACK failure/missing handle stops, preserving canonical logical and physical usage evidence",
+    "one overflow retry shared across reconstructed thinking/route wrappers; active compacted context/options re-read for later thinking retry",
+    "readiness observes existing private handle within min(original lifetime, existing 5000ms cancellation grace)",
+    "opaque finalized overflow disposition blocks outer route replay without rewriting error or classifier",
+    "diagnostic overflow has no usage and no terminal claim; finalized normal response, child settlement, or actual hidden main response owns usage once",
+    "post-callback stop diagnostic links first overflow digest, carries no usage or retry authority",
+    "legacy recovery preserves role prompt/tool bytes and requires real compaction; raw child capsule stays original",
+    "explicit diagnostic verification retains backwards-compatible legacy overflow terminal evidence"
+  ],
+  "nonGoals": [
+    "native successful overflow recovery is not established; actual error receipts remain partial/unknown",
+    "no compiler adoption or new child prompt bytes",
+    "no repair/summary retry policy change",
+    "no suppression proof fabrication or receipt certainty weakening",
+    "no Host accounting owner module edits",
+    "no API budget/digest updates or documentation/goal edits",
+    "no paid calls, build emits, staging or commits"
+  ],
+  "independentReview": {
+    "reviewer": "/root/sandbox_admission_design/browser_capacity_seams",
+    "status": "Read-only challenge identified legacy double-charge and mixedHTTP route bypass; both reproduced/resolved. Reviewer returned to parent-priority G04 work; no final independent acceptance claimed"
+  },
+  "counterexamples": [
+    "Original native main completed after 2 physical calls while usage incomplete; frozen test now stops at 1",
+    "MixedHTTP routed native main finalized overflow/incomplete internally but outer route completed with 2 calls; now stops at 1"
+  ],
+  "stagedOwnedDiff": []
+}

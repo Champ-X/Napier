@@ -402,6 +402,14 @@
 - 首个冻结快照543测试虽通过，追加真实ordinary wrapper反例仍发现释放BUSY遗留当前PID锁，因此未提交；保留反例和修正后的同进程重获锁证据。最终隔离快照 **62文件／544测试**全部通过，含跨进程交接、失主重查及Git/LSP/subagent/capsule/Store共享消费者；编译和相关strict/type检查通过，4,032源文件／5,087产物哈希稳定，28个已有用户文件不变。旧48项strict诊断与原始基线一致。
 - 7项既有架构、root1897/1896、internal18/16及两份digest失败保留，不改预算，历史release失败不重写。后续仍需混合/多操作版本链、已证明未执行move的显式续执行授权、更多adapter与全分类验收；G04及总目标继续 **active**。见[说明](docs/deferred-operation-reinspection.md)、[最终收据](docs/artifacts/deferred-operation-reinspection-regression-2026-10-30.json)与[证据索引](docs/artifacts/deferred-operation-reinspection-evidence-index-2026-10-30.json)。
 
+### 后续推进：G03 普通回合 overflow 的记账就绪边界（2026-10-30）
+
+- 本地提交 `672bdb7`，未 push。主／子普通回合共用 overflow guard，原生请求必须观察私有 physical-call handle 的 source→Store→ACK 完成与已知／未派发收据；partial／unknown、ACK失败、缺失handle、取消或到期均停止，不伪造零用量或放宽incomplete门禁。观察期限取原剩余时间与既有5秒取消宽限的较小值，异步回调后再次检查真实时间。
+- 保留两个实际反例：原生主调用在用量仍incomplete时发起第2次请求并完成；混合`HTTP 500: context_length_exceeded`绕过内层停止继续route fallback。修复后均只调用1次并保留failed/incomplete；私有进程内终态身份同时阻断route fallback和same-candidate retry。显式legacy仍可一次压缩重试，后续thinking重试消费最新压缩上下文，不更换角色prompt／tools或覆盖child原始checkpoint。
+- overflow事件改为无usage的诊断，最终response／child logical settlement持有用量；只有主重试实际开始才单独记录隐藏失败response。回调取消／超时使用另一个关联诊断，不重复终态或费用。独立附加6个本地探针覆盖路由子调用、取消／抛错回调和opaque身份，全部通过。
+- 最终隔离快照 **105文件／831测试**通过（Runtime785、Server46），编译、相关类型与strict owned检查通过；4,036源文件／5,090产物摘要稳定，28个用户文件不变，旧48项strict诊断与原始基线一致。保留7项架构、root1897/1896、internal18/16及两份digest失败；未改预算或历史release证据，外部付费模型调用0。
+- 本片完成原生不确定调用的安全停止及legacy有界恢复，**尚未证明原生overflow成功恢复**，不据此完成G03。完整child compiler／extension parity、并发父token／cost原子预留和coder恢复仍待实施；G01–G07总目标继续 **active**。见[边界说明](docs/overflow-recovery-safety.md)、[最终收据](docs/artifacts/overflow-recovery-safety-regression-2026-10-30.json)与[证据索引](docs/artifacts/overflow-recovery-safety-evidence-index-2026-10-30.json)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -522,7 +530,7 @@
 **实施任务**
 
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
-- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 checkpoint、持久物理用量与迟到对账已完成本地功能回归；普通回合 thinking 共享恢复及 Host 记账边界收敛已完成；完整 child compiler／overflow／extension parity 和内部接口18/16门禁仍待完成。）
+- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 checkpoint、持久物理用量与迟到对账已完成本地功能回归；普通回合 thinking 共享恢复、Host 记账边界收敛及 overflow 不确定调用停止／legacy有界恢复已完成；原生overflow成功恢复、完整 child compiler／extension parity 和内部接口18/16门禁仍待完成。）
 - [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查与 mailbox 稀疏消费持久化已实现；并发共享父 token／cost 原子额度仍待完成。）
 - [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明、安全恢复授权、严格 tail 校验、原生只读 continuation 和具备完整原生证明的历史 v1 候选受限对账已实现；coder／工作区重建、未覆盖尾部及缺失证明的历史记录仍待完成。）
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。

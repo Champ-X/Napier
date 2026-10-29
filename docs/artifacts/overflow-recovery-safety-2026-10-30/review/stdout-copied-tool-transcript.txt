@@ -1,0 +1,7 @@
+Copied from tool output; this is not an original shell stdout log. No tee or shell redirection was used. Do not treat this file as a raw execution capture.
+
+Original exec tool returned session_id=88985 with no stdout.
+Completion tool: tools.write_stdin(session_id=88985, chars="", yield_time_ms=1000).
+Completion exit_code: 0
+Completion output (verbatim):
+JSON report written to /tmp/napier-overflow-child-authority-probe-20261030/result.json

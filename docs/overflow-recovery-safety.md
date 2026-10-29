@@ -1,0 +1,21 @@
+# Ordinary model overflow recovery boundaries
+
+The main and child ordinary-turn paths now share a context-overflow recovery guard. A provider error alone does not authorize a second native dispatch. The guard observes the private physical-call handle through source persistence, Store reconciliation and source ACK, then requires a known or undispatched receipt. Missing handles, failed ACK, incomplete or unknown usage, cancellation and deadline expiry finalize the failed response. Existing uncertainty remains visible; no zero-usage receipt, suppression proof or retry authority is manufactured.
+
+Before this change, a native main overflow could complete after two physical requests while accounting remained incomplete. A second real counterexample used `HTTP 500: context_length_exceeded`: the inner guard stopped, but the outer route classified the HTTP error as retryable and dispatched another candidate. The final stream carries a process-local terminal disposition through an opaque object identity; route fallback and same-candidate retry both respect it. Diagnostic text and copied objects cannot create that disposition.
+
+## Lifetime, context and accounting
+
+Readiness is bounded by the original remaining lifetime and the existing five-second cancellation grace. The guard checks the real clock and cancellation again after asynchronous diagnostic callbacks. One overflow retry is shared across reconstructed route and thinking wrappers. The explicit legacy path can retry once after actual compaction, retaining role prompt and tool definitions. A later thinking retry reads the latest compacted context rather than restoring the initial request. Child raw checkpoint messages remain intact.
+
+`model.context.overflow` is diagnostic-only and carries no usage. A finalized main response or the child logical settlement remains its canonical usage owner. When a main legacy retry actually starts, the hidden failed response is recorded once as `model.response`; publication alone does not charge it a second time. A callback that cancels or exhausts the deadline creates a linked `model.context.overflow_recovery_stopped` diagnostic without usage or terminal authority. Evidence validators preserve compatibility with historical overflow records while requiring the new diagnostic to coexist with the actual terminal response.
+
+## Verification
+
+The isolated snapshot is base `547485e1` plus the exact 16-file tree `fa8391d92321048bbf1dd382b01b9cd8c4ebade2`, committed as `672bdb7`. **105 files / 831 tests passed**: Runtime 785, Server 46, no failures or skips. Contracts/Runtime/CLI/Server compilation, Web/Harness/Benchmark types and strict owned tests passed. All **4,036 source / 5,090 emitted hashes** stayed stable, and 28 protected user files were unchanged. The existing 48 strict diagnostics in `agent-runtime.test.ts` match original `d2e33ac3` after normalization.
+
+Six additional independent local probes passed: routed main cancellation and throwing callbacks at both diagnostic and hidden-response publication, routed child partial/unknown usage, and private disposition identity. They checked one dispatch, retained incomplete accounting, one nonzero usage owner and valid evidence bindings. These probes supplement the 831-test suite; overlapping implementation/development packs are not added to its count.
+
+The [final receipt](artifacts/overflow-recovery-safety-regression-2026-10-30.json) and [hash index](artifacts/overflow-recovery-safety-evidence-index-2026-10-30.json) retain both native counterexamples, intermediate duplicate-binding/type/architecture failures, the frozen handoff, isolated verification and independent probes. All providers were local fixtures or loopback HTTP; paid/external model calls were zero.
+
+Seven preexisting architecture findings remain, alongside root API1897/1896, internal18/16 and both semantic digest mismatches. No budget/digest update or historical release-manifest replacement was made. Actual native error receipts remain partial/unknown, so successful native overflow recovery is not established. Full child compiler/extension parity, concurrent parent token/cost reservations, coder recovery and the remaining G03 requirements are still incomplete. No remote push was performed.
