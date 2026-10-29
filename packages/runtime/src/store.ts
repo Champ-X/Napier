@@ -374,7 +374,6 @@ import { EMPTY_STORE_STATE, type PersistedStoreState } from "./store-state.js";
 import {
   SubagentRepository,
   type CreateSubagentTaskInput,
-  type FinishSubagentTaskInput,
 } from "./subagent-repository.js";
 import { validateThreadImportProvenanceLedgerReceipt } from "./thread-import-provenance-validation.js";
 import type {
@@ -2429,11 +2428,10 @@ export class LocalStore {
     return this.subagentRepository.progress(taskId, input);
   }
 
-  async finishSubagentTask(
-    taskId: string,
-    input: FinishSubagentTaskInput,
+  finishSubagentTask(
+    ...args: Parameters<SubagentRepository["finish"]>
   ): Promise<SubagentTask> {
-    return this.subagentRepository.finish(taskId, input);
+    return this.subagentRepository.finish(...args);
   }
 
   async setSubagentSupervisorStatus(

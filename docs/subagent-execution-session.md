@@ -1,10 +1,9 @@
 # Main and child execution boundaries
 
-This G03 design follows the current production paths. It is not a claim that a
-shared execution session or restartable child Run has already been delivered.
-The first implementation work closes tool-authority and call-identity gaps
-before sharing more lifecycle machinery. External model requests are excluded
-from the local regression work.
+This G03 design follows the current production paths. The tool boundaries and a
+shared model invocation mechanism are implemented. Durable child Runs, child
+compaction and restart continuation remain separate unfinished work. External
+model requests are excluded from the local regression work.
 
 ## Capabilities already shared
 
@@ -24,7 +23,7 @@ responsibilities to preserve, not functionality a new engine needs to replace.
 
 | Capability | Current boundary | Required change |
 | --- | --- | --- |
-| Model lifecycle | Child `createSubagentStream` calls the admitted registry directly; the main stream also owns deadlines, overflow/thinking-loop handling and invocation capture. Typed-output repair creates another child Agent. | Share lifecycle mechanisms across child execution and repair with explicit execution identity and purpose. |
+| Model lifecycle | Main turns, child turns and both repair paths use `ModelSession.open` for exact capture and deadline/abort transport. Main retains overflow/thinking-loop policy. | Add child compaction and durable response/checkpoint boundaries; a captured request alone is not restartable execution. |
 | Context and compaction | Main preparation, prompt compilation and compaction use a ledger Run. Child starts from role instructions and a task prompt. | Give child-local context, compaction and capture an explicit owner; passing the parent Run unchanged would import the wrong history and checkpoint scope. |
 | Usage | `aggregateRunUsage` combines parent `model.response` events and `SubagentTask.usage`. | Use one authoritative accounting source per invocation. Adding child responses to the parent model stream without changing aggregation would count twice. |
 | Controls | Accepted/delivered mailbox events persist; pending `Agent.steer` work is in memory. Delivered is enqueue evidence, not a durable context-consumption checkpoint. | Persist message consumption with the child context/checkpoint identity, and replay only unconsumed messages. |
@@ -69,7 +68,7 @@ while preserving the underlying tool's identity and protocol metadata. It must
 not make a valid self-described tool fail admission, and must not become an
 independent raw execution path.
 
-These changes do not create child Runs, add model capture, change usage roll-up,
+The tool-boundary changes above do not create child Runs, change usage roll-up,
 resume an interrupted child or expand tool permissions.
 
 ## Proposed minimal shared session
@@ -121,3 +120,78 @@ runner's prior complexity. No architecture budget was raised. The nine existing
 architecture failures and two existing public-API failures remain. These fixes
 are local mechanism evidence, not live-model quality evidence or complete G03
 acceptance.
+
+## Shared model invocation mechanism
+
+`ModelSession.open` is the actual common entrance for main Agent turns and the
+child's normal, typed-repair and ordinary-repair calls. It uses the registry's
+already admitted model adapters, checks lifetime before and after asynchronous
+capture, and delegates to the same deadline/abort transport. Main context
+preparation, prompt compilation, extension order, thinking-loop recovery and
+overflow compaction remain outside this narrow mechanism.
+
+Request data is detached before asynchronous capture. Tools retain only their
+provider-visible definition, not executable callbacks. Trusted process-local
+message provenance preserves the main Agent's ownership of runtime context
+tails across snapshots; text markers and another Run's messages do not acquire
+that ownership. Capture and provider receive the same detached context. This
+adds copying work; its latency and allocation cost have not been measured.
+
+Child invocation, response and cancellation-failure receipts use
+`subagent.model.*`, explicit parent ledger/task/execution identity, phase and a
+session-local invocation index. Cache observations are scoped to that session
+and phase. They never become parent `model.response` events or main experiment
+candidates. Capsule v1 still names the real parent ledger container and uses
+its existing `agent_turn` purpose; child identity comes from the outer receipt.
+The capsule alone cannot establish which child owns it.
+
+Both repairs consume one response with an empty tool catalog. Any tool call is
+rejected, even if a later scripted response would be valid JSON. Route retry and
+fallback are capped at one `models.streamSimple` invocation, with SDK retries
+disabled. This is a provider-call boundary, not a guarantee about a third-party
+provider's internal HTTP behavior. Selected route credentials, response hooks,
+headers and environment options reach the invocation. The original defect lost
+the selected key and hook; endpoint headers were already restored by the adapter.
+
+A child has one absolute deadline spanning setup, turns, repair and settlement.
+Checks after awaited capture/request/response/repair boundaries prevent new
+dispatch or completion after cancellation. Response usage is recorded once
+before rejecting a canceled result, and a final assertion runs inside the
+serialized task mutation. Completion that has already committed wins a later
+cancellation. An ignored abort ends logical execution while the original
+physical admission remains held until the provider actually settles. Late
+physical usage is still host-accounted; exact late attribution to the canceled
+child is not implemented here.
+
+Normal child usage continues to come solely from `SubagentTask.usage`. The
+new response receipts are diagnostic and do not add a second parent roll-up.
+This does not make usage crash-atomic with responses, persist a child transcript,
+checkpoint mailbox consumption, or enable child restart recovery.
+
+Candidate delivery is guarded until the serialized completion commits. A newly
+stored candidate whose task is interrupted receives a durable `revoked` state
+under its existing apply lock. It remains inspectable and follows the existing
+retention period, but cannot be applied. A task mismatch is rejected; applying
+and settled states are never overwritten by cancellation cleanup. Publication
+and worktree-removal failures retract the candidate even if the outer caller
+has not received its ID. If cleanup cannot confirm revocation, the original
+interruption and unresolved cleanup are reported together and evidence is kept.
+This does not establish that every associated execution resource was reclaimed.
+
+The [shared-session regression receipt](artifacts/shared-model-session-regression-2026-10-29.json)
+binds 27 test files / 250 passing tests, no skips, and 1,971 unchanged source,
+test and configuration files across the final run. An independent 13-case
+actual main/child integration run binds another complete 2,246-file manifest.
+The frozen old-HEAD 11-case failures, later startup and normal-turn failures,
+candidate cancellation failures, and intermediate implementation failures are
+kept as distinct evidence. Tests include actual queued SQLite settlement,
+retained candidate apply/reopen checks, inherited tool authority, ignored-abort
+physical admission, main runtime-tail overflow recovery, and normal parent plus
+child plus repair usage roll-up.
+
+Contracts build, Runtime compile, Server build and strict new-test TypeScript
+pass. The complete Runtime release build still fails its historical source
+manifest comparison. The nine existing architecture failures and two existing
+public-API failures remain; only stale allowances were lowered. No release
+manifest, compatibility digest or historical evidence was rewritten. These
+results establish the bounded local mechanism, not complete G03 acceptance.

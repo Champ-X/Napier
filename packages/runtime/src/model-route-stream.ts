@@ -1,10 +1,8 @@
 import {
   createAssistantMessageEventStream,
-  type Api,
   type AssistantMessage,
   type AssistantMessageEvent,
   type AssistantMessageEventStream,
-  type Model,
 } from "@earendil-works/pi-ai";
 import type { RunRecord } from "@napier/contracts";
 import type {
@@ -30,6 +28,7 @@ import {
   routeCanFallback,
   routeCanRetrySameCandidate,
   routeErrorText,
+  validateRoutePhysicalAttemptLimit,
 } from "./model-route-policy.js";
 import {
   consumeModelRouteSource,
@@ -43,7 +42,7 @@ import {
 } from "./model-route-provider-evidence.js";
 import type { LocalStore } from "./store.js";
 import type {
-  ModelRouteAttemptContext,
+  ModelRouteStreamInput as StreamInput,
   ResolvedRouteCandidate,
 } from "./model-route-types.js";
 
@@ -74,14 +73,6 @@ interface StreamOptions {
   onEvent?: EventSink;
 }
 
-interface StreamInput {
-  signal: AbortSignal;
-  invoke(
-    model: Model<Api>,
-    context?: ModelRouteAttemptContext,
-  ): Promise<AssistantMessageEventStream>;
-}
-
 type AttemptResult =
   | { action: "fallback"; attempt: number; reason: RouteFailureClass }
   | {
@@ -97,6 +88,7 @@ export function createModelRouteStream(
   input: StreamInput,
   nextAttempt: () => number,
 ): AssistantMessageEventStream {
+  validateRoutePhysicalAttemptLimit(input.physicalAttemptLimit);
   const output = createAssistantMessageEventStream();
   let resolveTerminal: (message: AssistantMessage) => void = () => undefined;
   const terminal = new Promise<AssistantMessage>((resolve) => {
@@ -144,8 +136,10 @@ async function* routeEvents(
         candidateCount: candidates.length,
         attempt: nextAttempt(),
         stepAttempt,
+        hasFallbackAttempt: stepAttempt < (input.physicalAttemptLimit ?? Infinity),
         hasRetryAttempt:
           !sameCandidateRetryUsed &&
+          stepAttempt < (input.physicalAttemptLimit ?? Infinity) &&
           stepAttempt < options.plan.retryPolicy.maxAttemptsPerStep,
         ...(fallbackFromAttempt !== undefined ? { fallbackFromAttempt } : {}),
         ...(fallbackReason ? { fallbackReason } : {}),
@@ -208,6 +202,7 @@ async function* runCandidate(input: {
   attempt: number;
   stepAttempt: number;
   hasRetryAttempt: boolean;
+  hasFallbackAttempt: boolean;
   fallbackFromAttempt?: number;
   fallbackReason?: RouteFailureClass;
   retryFromAttempt?: number;
@@ -433,7 +428,7 @@ async function recordFailure(
     failureClass,
     visibleOutputProduced,
     sideEffectState,
-    hasNextCandidate: input.index + 1 < input.candidateCount,
+    hasNextCandidate: input.hasFallbackAttempt && input.index + 1 < input.candidateCount,
     aborted: input.input.signal.aborted,
   });
   const hints = { ...responseHints, ...routeFailureHints(error) };

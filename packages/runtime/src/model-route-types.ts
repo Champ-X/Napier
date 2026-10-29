@@ -1,5 +1,6 @@
 import type {
   Api,
+  AssistantMessageEventStream,
   Model,
   SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
@@ -11,6 +12,17 @@ export interface ModelRouteAttemptContext {
     SimpleStreamOptions,
     "apiKey" | "headers" | "env" | "onResponse"
   >;
+}
+
+export interface ModelRouteStreamInput {
+  signal: AbortSignal;
+  /** Per invocation cap, including all route retry and fallback dispatches. */
+  physicalAttemptLimit?: number;
+  invoke(model: Model<Api>, context?: ModelRouteAttemptContext): Promise<AssistantMessageEventStream>;
+}
+
+export interface ModelRouteStreamPort {
+  stream(input: ModelRouteStreamInput): AssistantMessageEventStream;
 }
 
 export interface ResolvedRouteCandidate {

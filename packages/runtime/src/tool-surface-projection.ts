@@ -2,6 +2,7 @@ import type { Context } from "@earendil-works/pi-ai";
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 type ToolSurfaceChange = "initial" | "membership" | "definitions" | "order";
+export type ToolSurfaceRevisionScope = "run_and_invocation_purpose" | "session_and_phase";
 
 /** Match the model-visible fields retained by invocation capsules. Runtime
  * labels and executable callbacks are not provider tool definitions. */
@@ -25,6 +26,8 @@ export class ToolSurfaceProjection {
     order: string;
     definitions: string;
   };
+
+  constructor(private readonly scope: ToolSurfaceRevisionScope = "run_and_invocation_purpose") {}
 
   observe(tools: Context["tools"]) {
     const definitions = projectToolSurface(tools);
@@ -57,7 +60,7 @@ export class ToolSurfaceProjection {
     return {
       toolSurfaceRevision: this.revision,
       toolSurfaceChanges: changes,
-      toolSurfaceRevisionScope: "run_and_invocation_purpose" as const,
+      toolSurfaceRevisionScope: this.scope,
     };
   }
 }

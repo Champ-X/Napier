@@ -16,6 +16,8 @@ import type { LocalStore } from "./store.js";
 import type { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import type { SubagentExecutionControl } from "./subagent-execution-control.js";
 import { createSubagentStream } from "./subagent-model-stream.js";
+import { createSubagentModelSession } from "./subagent-model-session.js";
+import { SubagentExecutionLifetime } from "./subagent-execution-lifetime.js";
 import { settleSubagentOutcome } from "./subagent-outcome-settlement.js";
 import {
   subagentRoleInstructions,
@@ -77,12 +79,24 @@ export class SubagentTaskRunner {
     const signals = [this.options.parentSignal, toolSignal].filter(
       (signal): signal is AbortSignal => Boolean(signal),
     );
-    const worktreeSignal =
-      signals.length === 1 ? signals[0]! : AbortSignal.any(signals);
-
     let task = await this.options.store.startSubagentTask(initialTask.id);
+    const lifetime = new SubagentExecutionLifetime(signals, this.options.limits.timeoutMs);
+    lifetime.start();
     let worktree: SubagentWorktreeSession | undefined;
+    let agent: Agent | undefined;
+    let observer: SubagentTaskObserver | undefined;
+    let turnCapped = false;
+    let usage = emptyUsage();
+    let outcomeRejected = false;
+    let abortActiveAgent = (): void => agent?.abort();
+    const abort = (): void => abortActiveAgent();
+    const activateAgent = (next: () => void): void => {
+      abortActiveAgent = next;
+      if (lifetime.signal.aborted) abortActiveAgent();
+    };
+    lifetime.signal.addEventListener("abort", abort, { once: true });
     try {
+      lifetime.assertActive();
       if (task.role === "coder") {
         if (!this.options.worktrees || !writePaths) {
           throw new Error("Coder Subagent worktree is unavailable");
@@ -90,111 +104,82 @@ export class SubagentTaskRunner {
         worktree = await this.options.worktrees.createWorktree(
           task.id,
           writePaths,
-          worktreeSignal,
+          lifetime.signal,
         );
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const cancelled = signals.some((signal) => signal.aborted);
-      task = await this.options.store.finishSubagentTask(task.id, {
-        status: cancelled ? "cancelled" : "failed",
-        stopReason: cancelled ? "cancelled" : "error",
-        error: message,
+      lifetime.assertActive();
+      await this.emit("subagent.started", task, {
+        taskId: task.id,
+        role: task.role,
+        description: task.description,
+        status: task.status,
+        limits: this.options.limits,
+        ...(worktree
+          ? {
+              workspaceMode: "isolated_write",
+              sourceSnapshotSha256: worktree.sourceSnapshotSha256,
+              sourceFileCount: worktree.sourceFileCount,
+              sourceBytes: worktree.sourceBytes,
+              writeScopeCount: worktree.writePaths.length,
+              writeScopeSetSha256: worktree.writeScopeSetSha256,
+            }
+          : { workspaceMode: "read_only" }),
       });
-      await this.emit(
-        `subagent.${cancelled ? "cancelled" : "failed"}`,
+
+      const modelSession = createSubagentModelSession({
+        store: this.options.store,
+        models: this.options.models,
         task,
-        subagentTaskPayload(task),
-      );
-      throw new Error(
-        `Delegation ${task.id} ${cancelled ? "cancelled" : "failed"}: ${message}`,
-      );
-    }
-    await this.emit("subagent.started", task, {
-      taskId: task.id,
-      role: task.role,
-      description: task.description,
-      status: task.status,
-      limits: this.options.limits,
-      ...(worktree
-        ? {
-            workspaceMode: "isolated_write",
-            sourceSnapshotSha256: worktree.sourceSnapshotSha256,
-            sourceFileCount: worktree.sourceFileCount,
-            sourceBytes: worktree.sourceBytes,
-            writeScopeCount: worktree.writePaths.length,
-            writeScopeSetSha256: worktree.writeScopeSetSha256,
-          }
-        : { workspaceMode: "read_only" }),
-    });
+        limits: this.options.limits,
+        lifetime,
+        assertTurnAvailable: () => observer?.assertTurnAvailable(),
+        ...(this.options.modelRoute ? { modelRoute: this.options.modelRoute } : {}),
+        ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
+      });
+      const tools = governSubagentTools({
+        tools: createSubagentRoleTools(
+          this.options.store,
+          this.options.worktrees,
+          this.options.createInheritedTools,
+          worktree,
+          this.options.parentCapabilities,
+        ),
+        store: this.options.store,
+        run: this.options.run,
+        taskId: task.id,
+        executionId: task.executionId,
+        concurrencyGate: this.options.concurrencyGate,
+        onEvent: this.options.onEvent,
+      });
+      agent = new Agent({
+        initialState: {
+          systemPrompt: task.outputSchema
+            ? subagentRoleInstructionsForSchema(task.role, task.outputSchema)
+            : subagentRoleInstructions(task.role),
+          model: this.options.model,
+          thinkingLevel: this.options.model.reasoning ? "medium" : "off",
+          tools,
+          messages: [],
+        },
+        streamFn: createSubagentStream(modelSession),
+        sessionId: `${this.options.run.id}:${task.id}`,
+        toolExecution: "parallel",
+        afterToolCall: async () =>
+          observer?.turnCapped ? { terminate: true } : undefined,
+      });
 
-    let turnCapped = false;
-    let observer: SubagentTaskObserver;
-    const tools = governSubagentTools({
-      tools: createSubagentRoleTools(
+      observer = new SubagentTaskObserver(
         this.options.store,
-        this.options.worktrees,
-        this.options.createInheritedTools,
-        worktree,
-        this.options.parentCapabilities,
-      ),
-      store: this.options.store,
-      run: this.options.run,
-      taskId: task.id,
-      executionId: task.executionId,
-      concurrencyGate: this.options.concurrencyGate,
-      onEvent: this.options.onEvent,
-    });
-    const agent = new Agent({
-      initialState: {
-        systemPrompt: task.outputSchema
-          ? subagentRoleInstructionsForSchema(task.role, task.outputSchema)
-          : subagentRoleInstructions(task.role),
-        model: this.options.model,
-        thinkingLevel: this.options.model.reasoning ? "medium" : "off",
-        tools,
-        messages: [],
-      },
-      streamFn: createSubagentStream(
-        this.options.models,
-        this.options.modelRoute,
-      ),
-      sessionId: `${this.options.run.id}:${task.id}`,
-      toolExecution: "parallel",
-      afterToolCall: async () =>
-        observer?.turnCapped ? { terminate: true } : undefined,
-    });
+        task,
+        usage,
+        this.options.limits,
+        (type, currentTask, payload) => this.emit(type, currentTask, payload),
+      );
+      agent.subscribe((event) => observer!.observe(event));
 
-    let timedOut = false;
-    let usage = emptyUsage();
-    let outcomeRejected = false;
-    observer = new SubagentTaskObserver(
-      this.options.store,
-      task,
-      usage,
-      this.options.limits,
-      (type, currentTask, payload) => this.emit(type, currentTask, payload),
-    );
-    agent.subscribe((event) => observer.observe(event));
-
-    let abortActiveAgent = (): void => agent.abort();
-    const abort = (): void => abortActiveAgent();
-    const activateAgent = (next: () => void): void => {
-      abortActiveAgent = next;
-      if (signals.some((signal) => signal.aborted)) abortActiveAgent();
-    };
-    signals.forEach((signal) =>
-      signal.addEventListener("abort", abort, { once: true }),
-    );
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      abortActiveAgent();
-    }, this.options.limits.timeoutMs);
-    try {
-      if (signals.some((signal) => signal.aborted)) {
-        throw new Error("Subagent task cancelled");
-      }
+      lifetime.assertActive();
       await this.options.control?.activate(agent);
+      lifetime.assertActive();
       await agent.prompt(prompt);
       this.options.control?.deactivate(agent);
       task = observer.task;
@@ -202,10 +187,7 @@ export class SubagentTaskRunner {
       turnCapped = observer.turnCapped;
       let finalText = observer.finalText;
       const lastError = observer.lastError;
-      if (timedOut) throw new Error("Subagent task timed out");
-      if (signals.some((signal) => signal.aborted)) {
-        throw new Error("Subagent task cancelled");
-      }
+      lifetime.assertActive();
       if (turnCapped) {
         throw new Error(
           `Subagent turn budget exhausted (${this.options.limits.maxTurns})`,
@@ -216,6 +198,7 @@ export class SubagentTaskRunner {
         task.id,
         "reviewing",
       );
+      lifetime.assertActive();
       if (task.outputSchema) {
         const settled = await settleSubagentTypedOutput({
           store: this.options.store,
@@ -227,6 +210,7 @@ export class SubagentTaskRunner {
           resultText: finalText,
           outputSchema: task.outputSchema,
           usage,
+          modelSession,
           activateAgent,
           emit: (type, currentTask, payload) =>
             this.emit(type, currentTask, payload),
@@ -234,6 +218,7 @@ export class SubagentTaskRunner {
         task = settled.task;
         usage = settled.usage;
         finalText = settled.resultText;
+        lifetime.assertActive();
         const terminal = await finishSubagentTypedOutput({
           store: this.options.store,
           ...(this.options.worktrees
@@ -243,8 +228,9 @@ export class SubagentTaskRunner {
           resultText: finalText,
           output: settled.output,
           usage,
+          assertActive: () => lifetime.assertActive(),
           ...(worktree ? { worktree } : {}),
-          ...(toolSignal ? { toolSignal } : {}),
+          toolSignal: lifetime.signal,
           emit: (type, currentTask, payload) =>
             this.emit(type, currentTask, payload),
         });
@@ -260,8 +246,8 @@ export class SubagentTaskRunner {
         task,
         resultText: finalText,
         usage,
-        timedOut,
-        aborted: () => signals.some((signal) => signal.aborted),
+        modelSession,
+        assertActive: () => lifetime.assertActive(),
         activateAgent,
         markOutcomeRejected: () => {
           outcomeRejected = true;
@@ -272,12 +258,12 @@ export class SubagentTaskRunner {
           ? { worktrees: this.options.worktrees }
           : {}),
         ...(worktree ? { worktree } : {}),
-        ...(toolSignal ? { toolSignal } : {}),
+        toolSignal: lifetime.signal,
       });
       if (terminal.preview) worktree = undefined;
       return terminal.result;
     } catch (error) {
-      const finalText = observer.finalText;
+      const finalText = observer?.finalText ?? "";
       const durableTask = this.options.store
         .listSubagentTasks(task.threadId, task.runId)
         .find((candidate) => candidate.id === task.id);
@@ -285,18 +271,21 @@ export class SubagentTaskRunner {
         task = durableTask;
         usage = durableTask.usage;
       }
-      turnCapped ||= observer.turnCapped;
+      // Completion already committed; a later delivery failure cannot rewrite
+      // that fact or publish a contradictory failed/cancelled terminal event.
+      if (task.status === "completed") throw error;
+      turnCapped ||= observer?.turnCapped ?? false;
       const message = turnCapped
         ? `Subagent turn budget exhausted (${this.options.limits.maxTurns})`
         : error instanceof Error
           ? error.message
           : String(error);
-      const status = timedOut
+      const status = lifetime.timedOut
         ? "timed_out"
         : signals.some((signal) => signal.aborted)
           ? "cancelled"
           : "failed";
-      const stopReason = timedOut
+      const stopReason = lifetime.timedOut
         ? "timeout"
         : status === "cancelled"
           ? "cancelled"
@@ -320,9 +309,9 @@ export class SubagentTaskRunner {
       await this.emit(`subagent.${status}`, task, subagentTaskPayload(task));
       throw new Error(`Delegation ${task.id} ${status}: ${message}`);
     } finally {
-      this.options.control?.deactivate(agent);
-      clearTimeout(timeout);
-      signals.forEach((signal) => signal.removeEventListener("abort", abort));
+      if (agent) this.options.control?.deactivate(agent);
+      lifetime.dispose();
+      lifetime.signal.removeEventListener("abort", abort);
       if (worktree) {
         await this.options.worktrees?.cleanup(worktree).catch(() => undefined);
       }

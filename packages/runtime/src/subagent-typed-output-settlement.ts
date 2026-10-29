@@ -6,6 +6,7 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
+import { completeSubagentTask } from "./subagent-completion.js";
 import {
   formatDelegationResult,
   MAX_SUBAGENT_RESULT_CHARS,
@@ -33,6 +34,7 @@ export async function finishSubagentTypedOutput(input: {
   resultText: string;
   output: JsonValue;
   usage: SubagentTask["usage"];
+  assertActive: () => void;
   worktree?: SubagentWorktreeSession;
   toolSignal?: AbortSignal;
   emit: Emit;
@@ -43,25 +45,34 @@ export async function finishSubagentTypedOutput(input: {
   };
   preview?: SubagentWorktreePreview;
 }> {
+  input.assertActive();
   const outputSha256 = sha256(canonicalJson(input.output));
-  const preview = input.worktree
-    ? await input.worktrees!.storePreview(
-        input.worktree,
-        outputSha256,
-        input.toolSignal,
-      )
-    : undefined;
   const resultText = truncateSubagentText(
     input.resultText,
     MAX_SUBAGENT_RESULT_CHARS,
   );
-  const task = await input.store.finishSubagentTask(input.task.id, {
-    status: "completed",
-    stopReason: "completed",
-    result: resultText,
-    output: input.output,
-    usage: input.usage,
+  const completion = await completeSubagentTask({
+    taskId: input.task.id,
+    outcomeSha256: outputSha256,
+    ...(input.worktree ? { worktree: input.worktree } : {}),
+    ...(input.worktrees ? { worktrees: input.worktrees } : {}),
+    ...(input.toolSignal ? { signal: input.toolSignal } : {}),
+    assertActive: input.assertActive,
+    isCommitted: () => input.store.listSubagentTasks(input.task.threadId, input.task.runId)
+      .some((current) => current.id === input.task.id && current.status === "completed"),
+    finish: async (_preview, assertActive) => {
+      const task = await input.store.finishSubagentTask(input.task.id, {
+        status: "completed",
+        stopReason: "completed",
+        result: resultText,
+        output: input.output,
+        usage: input.usage,
+      }, assertActive);
+      if (task.status !== "completed") throw new Error(`Subagent task is ${task.status}`);
+      return task;
+    },
   });
+  const { value: task, preview } = completion;
   await input.emit("subagent.output.accepted", task, {
     taskId: task.id,
     status: "accepted",

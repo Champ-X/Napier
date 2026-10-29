@@ -166,7 +166,7 @@ export function emptyTextFailureStream(
   diagnostic: string,
 ): AssistantMessageEventStream {
   const stream = createAssistantMessageEventStream();
-  const partial = modelMessage(model, "", { stopReason: "partial" });
+  const partial = modelMessage(model, "");
   const failure = modelMessage(model, "", {
     stopReason: "error",
     errorMessage: diagnostic,
@@ -184,7 +184,7 @@ export function thinkingFailureStream(
   diagnostic: string,
 ): AssistantMessageEventStream {
   const stream = createAssistantMessageEventStream();
-  const partial = modelMessage(model, "", { stopReason: "partial" });
+  const partial = modelMessage(model, "");
   const failure = modelMessage(model, "", {
     stopReason: "error",
     errorMessage: diagnostic,

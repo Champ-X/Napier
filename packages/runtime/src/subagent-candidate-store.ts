@@ -30,7 +30,7 @@ interface CandidateEnvelope {
 
 export interface CandidateState {
   candidateId: string;
-  status: "applying" | "settled";
+  status: "applying" | "settled" | "revoked";
   updatedAt: string;
   result?: SubagentWorktreeApplyResult;
   merge?: Array<{
@@ -81,15 +81,30 @@ export class SubagentCandidateStore {
     };
     const serialized = canonicalJson(envelope);
     const hash = sha256(serialized);
-    await withStorageLock(
-      this.options.dataRoot,
-      path.join(envelope.dataRoot, "subagent-candidates"),
-      async () => {
-        await this.capsules.put(hash, serialized);
-        await syncDirectory(this.capsules.rootPath);
-      },
-    );
-    return { id: `subworkpreview_${hash}`, expiresAt: envelope.expiresAt };
+    const id = `subworkpreview_${hash}`;
+    try {
+      await withStorageLock(
+        this.options.dataRoot,
+        path.join(envelope.dataRoot, "subagent-candidates"),
+        async () => {
+          await this.capsules.put(hash, serialized);
+          await syncDirectory(this.capsules.rootPath);
+        },
+      );
+    } catch (error) {
+      // A write may install the capsule before a later I/O failure rejects.
+      // The delivery caller cannot retract it because no ID was returned yet.
+      try {
+        await lstat(path.join(this.capsules.rootPath, `${hash}.json`));
+      } catch (inspectionError) {
+        if (errorCode(inspectionError) === "ENOENT") throw error;
+        throw unresolvedCandidateCleanup(error, inspectionError);
+      }
+      return rethrowAfterCandidateRevocation(error, () =>
+        this.revokeUndelivered(id, source.taskId),
+      );
+    }
+    return { id, expiresAt: envelope.expiresAt };
   }
 
   async apply(
@@ -105,6 +120,10 @@ export class SubagentCandidateStore {
       async () => {
         const envelope = await this.read(id);
         const state = await this.readState(id);
+        if (state?.status === "revoked")
+          throw new Error(
+            "Subagent candidate was revoked before delivery; retained candidate is inspection-only",
+          );
         if (state?.status === "applying")
           throw new Error(
             `Subagent candidate ${id} requires reconciliation after an interrupted merge; retained candidate must not be replayed`,
@@ -155,6 +174,30 @@ export class SubagentCandidateStore {
         afterSha256,
       })),
     });
+  }
+
+  // The caller owns this newly stored, undelivered candidate. Serialize with
+  // apply so interruption cleanup can never overwrite a merge receipt.
+  async revokeUndelivered(id: string, taskId: string): Promise<boolean> {
+    return withWorkspacePathLock(
+      this.options.dataRoot,
+      await this.lockTarget(candidateHash(id)),
+      async () => {
+        const envelope = await this.read(id);
+        if (envelope.source.taskId !== taskId)
+          throw new Error("Subagent candidate task binding changed");
+        const state = await this.readState(id);
+        if (state?.status === "revoked") return true;
+        if (state) return false;
+        await this.writeState({
+          candidateId: id,
+          status: "revoked",
+          updatedAt: this.now().toISOString(),
+        });
+        return true;
+      },
+      "Subagent candidate revocation",
+    );
   }
 
   async inspect(id: string): Promise<{
@@ -273,7 +316,7 @@ export class SubagentCandidateStore {
       if (
         sha256(canonicalJson(record.state)) !== record.sha256 ||
         record.state.candidateId !== id ||
-        !["applying", "settled"].includes(record.state.status)
+        !["applying", "settled", "revoked"].includes(record.state.status)
       )
         throw new Error("Subagent candidate state binding changed");
       if (record.state.status === "settled" && !record.state.result)
@@ -314,6 +357,29 @@ export class SubagentCandidateStore {
       throw new Error("Subagent candidate time is invalid");
     return value;
   }
+}
+
+/** Cleanup failures preserve the original interruption and retain all evidence. */
+export async function rethrowAfterCandidateRevocation(
+  error: unknown,
+  revoke: () => Promise<boolean>,
+): Promise<never> {
+  try {
+    if (!(await revoke()))
+      throw new Error("Subagent candidate is applying or settled; retained without revocation");
+  } catch (cleanupError) {
+    throw unresolvedCandidateCleanup(error, cleanupError);
+  }
+  throw error;
+}
+
+export function unresolvedCandidateCleanup(error: unknown, cleanupError: unknown): AggregateError {
+  const message = error instanceof Error ? error.message : String(error);
+  return new AggregateError(
+    [error, cleanupError],
+    `${message}; retained candidate cleanup unresolved`,
+    { cause: error },
+  );
 }
 
 function parseEnvelope(text: string): CandidateEnvelope {

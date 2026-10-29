@@ -16,6 +16,12 @@ const SAME_CANDIDATE_RETRY_FAILURES = new Set<RouteFailureClass>([
   "network",
 ]);
 
+export function validateRoutePhysicalAttemptLimit(limit: number | undefined): void {
+  if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 1)) {
+    throw new Error("Model route physical attempt limit must be a positive integer");
+  }
+}
+
 export function classifyRouteFailure(error: unknown): RouteFailureClass {
   return (
     structuredRouteFailure(error)?.failureClass ??

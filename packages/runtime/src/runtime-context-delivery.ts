@@ -1,6 +1,7 @@
 import type { Context, Message, UserMessage } from "@earendil-works/pi-ai";
 import type { RunRecord } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { modelContextMessageSource } from "./model-context-message-provenance.js";
 import {
   compilePrompt,
   STABLE_PROMPT_COMPILER_ASSEMBLY,
@@ -139,13 +140,13 @@ export function appendRuntimeContext(
 }
 
 /** Ownership, not a forgeable text marker, distinguishes runtime data from users.
- * Messages retain object identity through capture and token-pressure projection. */
+ * Trusted capture snapshots retain their original message ownership. */
 export function stripRuntimeContext(run: RunRecord, context: Context): Context {
   const owned = ownedMessages.get(run);
-  if (!owned || !context.messages.some((message) => owned.has(message)))
+  if (!owned || !context.messages.some((message) => owned.has(modelContextMessageSource(message))))
     return context;
   return {
     ...context,
-    messages: context.messages.filter((message) => !owned.has(message)),
+    messages: context.messages.filter((message) => !owned.has(modelContextMessageSource(message))),
   };
 }

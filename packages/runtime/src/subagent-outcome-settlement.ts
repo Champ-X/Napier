@@ -15,6 +15,8 @@ import {
   isRepairableSubagentOutcomeResult,
 } from "./subagent-outcomes.js";
 import type { LocalStore } from "./store.js";
+import { completeSubagentTask } from "./subagent-completion.js";
+import type { SubagentModelSession } from "./subagent-model-session.js";
 import {
   formatDelegationResult,
   MAX_SUBAGENT_RESULT_CHARS,
@@ -44,8 +46,8 @@ export async function settleSubagentOutcome(input: {
   task: SubagentTask;
   resultText: string;
   usage: SubagentTask["usage"];
-  timedOut: boolean;
-  aborted: () => boolean;
+  modelSession: SubagentModelSession;
+  assertActive: () => void;
   activateAgent: (next: () => void) => void;
   markOutcomeRejected: () => void;
   emit: Emit;
@@ -59,6 +61,7 @@ export async function settleSubagentOutcome(input: {
   };
   preview?: SubagentWorktreePreview;
 }> {
+  input.assertActive();
   let task = input.task;
   let usage = input.usage;
   let finalText = input.resultText;
@@ -66,12 +69,11 @@ export async function settleSubagentOutcome(input: {
   try {
     outcome = await groundOutcome(input.store, task, finalText, input.worktree);
   } catch (initialError) {
+    input.assertActive();
     const diagnostic = errorMessage(initialError, "Unknown outcome error");
     const canRepair =
       isRepairableSubagentOutcomeResult(finalText) &&
-      task.turnCount < input.limits.maxTurns &&
-      !input.timedOut &&
-      !input.aborted();
+      task.turnCount < input.limits.maxTurns;
     input.markOutcomeRejected();
     if (!canRepair) {
       await recordOutcomeRejection(input.emit, task, finalText, diagnostic);
@@ -87,19 +89,15 @@ export async function settleSubagentOutcome(input: {
       predecessorResult: finalText,
       diagnostic,
       usage,
+      modelSession: input.modelSession,
       activateAgent: input.activateAgent,
       emit: input.emit,
     });
     task = repair.task;
     usage = repair.usage;
-    const interrupted = input.timedOut
-      ? "Subagent outcome repair timed out"
-      : input.aborted()
-        ? "Subagent outcome repair cancelled"
-        : undefined;
-    if (interrupted || repair.error) {
-      const message =
-        interrupted ?? repair.error ?? "Subagent outcome repair failed";
+    input.assertActive();
+    if (repair.error) {
+      const message = repair.error;
       await input.emit(
         "subagent.outcome.repair.outcome",
         task,
@@ -110,6 +108,7 @@ export async function settleSubagentOutcome(input: {
           diagnostic: message,
         }),
       );
+      input.assertActive();
       await recordOutcomeRejection(
         input.emit,
         task,
@@ -154,25 +153,36 @@ export async function settleSubagentOutcome(input: {
         outcomeSha256: outcome.contentSha256,
       }),
     );
+    input.assertActive();
   }
-  const preview = input.worktree
-    ? await input.worktrees!.storePreview(
-        input.worktree,
-        outcome.contentSha256,
-        input.toolSignal,
-      )
-    : undefined;
+  input.assertActive();
   const result = truncateSubagentText(
     formatSubagentOutcome(outcome),
     MAX_SUBAGENT_RESULT_CHARS,
   );
-  task = await input.store.finishSubagentTask(task.id, {
-    status: "completed",
-    stopReason: "completed",
-    result,
-    outcome,
-    usage,
+  const completion = await completeSubagentTask({
+    taskId: input.task.id,
+    outcomeSha256: outcome.contentSha256,
+    ...(input.worktree ? { worktree: input.worktree } : {}),
+    ...(input.worktrees ? { worktrees: input.worktrees } : {}),
+    ...(input.toolSignal ? { signal: input.toolSignal } : {}),
+    assertActive: input.assertActive,
+    isCommitted: () => input.store.listSubagentTasks(input.task.threadId, input.task.runId)
+      .some((current) => current.id === input.task.id && current.status === "completed"),
+    finish: async (_preview, assertActive) => {
+      const task = await input.store.finishSubagentTask(input.task.id, {
+        status: "completed",
+        stopReason: "completed",
+        result,
+        outcome,
+        usage,
+      }, assertActive);
+      if (task.status !== "completed") throw new Error(`Subagent task is ${task.status}`);
+      return task;
+    },
   });
+  task = completion.value;
+  const { preview } = completion;
   await input.emit("subagent.outcome.accepted", task, {
     taskId: task.id,
     role: task.role,

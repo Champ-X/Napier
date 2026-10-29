@@ -101,10 +101,14 @@ export class SubagentRepository {
   finish(
     taskId: string,
     input: FinishSubagentTaskInput,
+    assertActive?: () => void,
   ): Promise<SubagentTask> {
-    return this.update(taskId, (task) =>
-      finishSubagentTaskRecord(task, input, nowIso()),
-    );
+    return this.update(taskId, (task) => {
+      // Run inside the serialized mutation, including any CAS retry. Checking
+      // only before enqueue leaves a cancellation window behind other writers.
+      assertActive?.();
+      finishSubagentTaskRecord(task, input, nowIso());
+    });
   }
 
   setSupervisorStatus(

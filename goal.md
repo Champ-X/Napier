@@ -305,6 +305,15 @@
 - [当前证据](docs/artifacts/resource-complete-receipt-recovery-2026-10-29.json)：4 文件／57 测试通过，其中恢复 27 项；真实 Node owner／target 子进程与 SQLite 故障注入覆盖清理后结算失败、存活 owner、损坏／缺失／越界文件、两进程 CAS、重试和分页。最初旧代码 2 fail／2 pass、首次新实现的 startup red／green 均留存。该进程夹具不充当新的 Guardian／PTY／OCI／Chromium／BrowserUse provider 验收。
 - Server build、Server noEmit、严格新增测试 TS、diff check 通过；最终 source／build／测试及 28 用户文件摘要已核验，仍原 9 项架构／2 项公开 API 失败。发布 receipt 会在 SQLite writer 事务内 fsync，慢 I/O 等待开销未测量；凭证历史不自动 GC。运行中遗留资源的安全清理、丢失 create 响应及完整 G05-B 验收仍未完成，其他 G01–G07 目标保持 active。
 
+### 后续推进：G03 共享模型调用与取消结算
+
+- 主 Agent、child 正常循环、typed repair 和普通 outcome repair 实际复用 `ModelSession.open`。精确请求捕获、截止时间和中止隔离共用机制；主上下文准备、prompt compiler、thinking／overflow recovery 与 compaction 策略保持原职责。只使用已有 admitted models，不增加一层额度准入。
+- 请求快照隔离异步 capture 期间的 context／model／option 数据漂移，只保留 provider 工具 schema；通过可信进程内来源保留 runtime-tail 消息身份，不能用相同文本或其他 Run 冒充。child 收据显式绑定 parent ledger、task、execution、phase、invocation index，缓存按 session／phase 分开；不写父 `model.response`，不进入主调用实验选择器，`SubagentTask.usage` 仍是唯一 child 汇总源。
+- 修复 route-selected apiKey／onResponse 丢失；endpoint headers 原本已被 adapter 保留。两类 repair 移除可继续循环的 Agent，只接受第一条响应，拒绝任意 toolCall，限制一次 route provider 调用并关闭 SDK retries。普通 child 的未知工具回路也在下一次调用入口阻断；主机未派发的预算拒绝由私有身份标记，不把 SDK 合成错误当成新模型轮次，也不靠错误文本跳过真实用量。
+- 同一绝对 deadline 贯穿初始化、模型调用、repair 和结算。请求／响应／accepted 的 awaited 边界后检查取消；最终检查位于串行 SQLite 终态写入内部。初始化工具异常也进入同一失败结算和清理；已提交 completed 不因后续交付事件失败被改写。取消期间生成而未交付的候选会被显式撤销，保留 inspection 证据并阻止 apply，已 applying／settled 的候选不被覆盖。
+- 验证使用实际主 Agent、provider、子任务 runner、SQLite 与候选文件系统，模型响应全部为本地 fixture。[最终收据](docs/artifacts/shared-model-session-regression-2026-10-29.json)：27 文件／250 测试通过，0 skipped；1,971 个源码／测试／配置文件前后哈希一致。独立 13 项实际调用集成检查另绑定 2,246 个文件。Contracts build、Runtime build:compile、Server build、新增测试严格 TypeScript 通过；Runtime 完整 build 仍因既有 release source manifest 不匹配失败，未改写清单。架构仍为原有 9 项、公开 API 仍为 2 项；只下调 store 行数／耦合和 runner 复杂度预算。旧版失败、实现期间暴露的 clone／runtime-tail／启动窗口问题均保留，不用重跑覆盖失败。
+- 边界：这里没有 child Run、child compaction、mailbox 消费 checkpoint 或重启续跑。忽略 abort 的物理请求仍占用原 lease 至真正结束；迟到物理用量到 child 的精确归属仍未完成。复制／捕获的额外耗时和内存未测量，不宣称端到端性能或模型质量改善。G03 与 G01–G07 总目标继续 active，全部剩余验收保留。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -425,7 +434,7 @@
 **实施任务**
 
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
-- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。
+- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair 与取消结算已实现；完整 child context compiler／compaction 和崩溃原子计量仍待完成。）
 - [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。
 - [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。

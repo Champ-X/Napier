@@ -3,12 +3,13 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   projectToolSurface,
   ToolSurfaceProjection,
+  type ToolSurfaceRevisionScope,
 } from "./tool-surface-projection.js";
 
 /** Run-local observations of actual invocation bytes. Prefix reuse is a
  * diagnostic, never a claim about the provider's cache implementation. */
 export class PromptCacheProjection {
-  private readonly toolSurface = new ToolSurfaceProjection();
+  private readonly toolSurface: ToolSurfaceProjection;
   private previous?: {
     turnIndex: number;
     invocationIdentitySha256: string;
@@ -16,6 +17,10 @@ export class PromptCacheProjection {
     orderedToolDefinitionsSha256: string;
     messages: Array<{ contentSha256: string; bytes: number }>;
   };
+
+  constructor(scope: ToolSurfaceRevisionScope = "run_and_invocation_purpose") {
+    this.toolSurface = new ToolSurfaceProjection(scope);
+  }
 
   observe(input: {
     turnIndex: number;

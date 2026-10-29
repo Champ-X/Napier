@@ -1,22 +1,12 @@
-import { Agent } from "@earendil-works/pi-agent-core";
-import {
-  type Api,
-  contentText,
-  type Model,
-  type MutableModels,
-  type Usage as PiUsage,
-} from "@earendil-works/pi-ai";
 import type {
   JsonValue,
-  RegisteredRunEventTypeForCategory,
-  SubagentLimits,
   SubagentTask,
   Usage,
   WorkflowValueSchema,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type { LocalStore } from "./store.js";
+import { prepareSubagentRepair, runSingleResponseRepair, type SubagentRepairPorts } from "./subagent-single-response-repair.js";
 import {
   createSubagentTypedOutputRepairPrompt,
   parseSubagentTypedOutput,
@@ -30,23 +20,12 @@ export interface SubagentTypedOutputResult {
   output: JsonValue;
 }
 
-export async function settleSubagentTypedOutput(input: {
-  store: LocalStore;
-  models: MutableModels;
-  model: Model<Api>;
-  runId: string;
-  limits: SubagentLimits;
-  task: SubagentTask;
+export async function settleSubagentTypedOutput(input: SubagentRepairPorts & {
   resultText: string;
   outputSchema: WorkflowValueSchema;
-  usage: Usage;
-  activateAgent(abort: () => void): void;
-  emit(
-    type: RegisteredRunEventTypeForCategory<"subagent">,
-    task: SubagentTask,
-    payload: unknown,
-  ): Promise<void>;
 }): Promise<SubagentTypedOutputResult> {
+  input.modelSession?.lifetime.assertActive();
+  input.signal?.throwIfAborted();
   try {
     return {
       task: input.task,
@@ -64,6 +43,7 @@ async function repairTypedOutput(
   input: Parameters<typeof settleSubagentTypedOutput>[0],
   initialError: unknown,
 ): Promise<SubagentTypedOutputResult> {
+  const session = prepareSubagentRepair(input);
   const diagnostic =
     initialError instanceof Error ? initialError.message : String(initialError);
   const schemaSha256 = subagentOutputSchemaSha256(input.outputSchema);
@@ -89,49 +69,13 @@ async function repairTypedOutput(
     contentSha256: sha256(canonicalJson(requestContent)),
   };
   await input.emit("subagent.output.repair.requested", input.task, request);
-  let task = input.task;
-  let usage = input.usage;
-  let resultText = "";
-  let messageError = "";
-  const agent = new Agent({
-    initialState: {
-      systemPrompt: "You repair typed JSON output. Never use tools.",
-      model: input.model,
-      thinkingLevel: "off",
-      tools: [],
-      messages: [],
-    },
-    streamFn: input.models.streamSimple.bind(input.models),
-    sessionId: `${input.runId}:${input.task.id}:typed-output-repair:1`,
-    afterToolCall: async () => ({ terminate: true }),
+  session.assertActive();
+  const { task, usage, resultText, error: messageError } = await runSingleResponseRepair({
+    ...input, session, phase: "typed_repair", instructions: "You repair typed JSON output. Never use tools.", prompt,
   });
-  agent.subscribe(async (event) => {
-    if (event.type !== "message_end" || event.message.role !== "assistant") {
-      return;
-    }
-    resultText = contentText(event.message.content);
-    messageError = event.message.errorMessage ?? "";
-    usage = addUsage(usage, event.message.usage);
-    task = await input.store.recordSubagentProgress(task.id, {
-      turnDelta: 1,
-      stepDelta: 1,
-      usage,
-    });
-    await input.emit("subagent.step", task, {
-      taskId: task.id,
-      messageIndex: task.stepCount,
-      kind: "typed_output_repair",
-      attempt: 1,
-      textSha256: sha256(resultText),
-      textBytes: Buffer.byteLength(resultText, "utf8"),
-      contentRedacted: true,
-    });
-  });
-  input.activateAgent(() => agent.abort());
-  await agent.prompt(prompt);
-  if (messageError) throw new Error(messageError);
   let output: JsonValue;
   try {
+    if (messageError) throw new Error(messageError);
     output = parseSubagentTypedOutput(resultText, input.outputSchema);
   } catch (error) {
     await input.emit("subagent.output.repair.outcome", task, {
@@ -158,15 +102,6 @@ async function repairTypedOutput(
     resultSha256: sha256(resultText),
     outputSha256: sha256(canonicalJson(output)),
   });
+  session.assertActive();
   return { task, usage, resultText, output };
-}
-
-function addUsage(current: Usage, update: PiUsage): Usage {
-  return {
-    inputTokens: current.inputTokens + update.input,
-    outputTokens: current.outputTokens + update.output,
-    cacheReadTokens: current.cacheReadTokens + update.cacheRead,
-    cacheWriteTokens: current.cacheWriteTokens + update.cacheWrite,
-    costUsd: current.costUsd + update.cost.total,
-  };
 }

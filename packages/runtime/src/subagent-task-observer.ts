@@ -10,6 +10,10 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import {
+  isUndispatchedSubagentModelTurn,
+  SubagentModelTurnDeniedError,
+} from "./subagent-model-turn-denial.js";
+import {
   addSubagentUsage,
   MAX_SUBAGENT_STEP_CHARS,
   subagentToolResultText,
@@ -41,6 +45,12 @@ export class SubagentTaskObserver {
     this.usage = usage;
   }
 
+  assertTurnAvailable(): void {
+    if (this.task.turnCount < this.limits.maxTurns && !this.turnCapped) return;
+    this.turnCapped = true;
+    throw new SubagentModelTurnDeniedError(this.limits.maxTurns);
+  }
+
   async observe(event: AgentEvent): Promise<void> {
     if (event.type === "message_end" && event.message.role === "assistant") {
       await this.observeAssistant(event.message);
@@ -55,6 +65,11 @@ export class SubagentTaskObserver {
       role: "assistant";
     },
   ): Promise<void> {
+    if (isUndispatchedSubagentModelTurn(message)) {
+      this.lastError = message.errorMessage ?? "Subagent model turn was denied";
+      this.turnCapped = true;
+      return;
+    }
     this.task = await this.store.recordSubagentProgress(this.task.id, {
       turnDelta: 1,
     });

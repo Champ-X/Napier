@@ -25,8 +25,10 @@ import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import type { ModelRouteSession } from "./model-route.js";
 import type { ModelRouteAttemptContext } from "./model-route.js";
+import { mergeRouteStreamOptions } from "./model-route-options.js";
 import type { ModelRegistry } from "./models.js";
-import { modelStream, streamCtx } from "./model-stream-cancellation.js";
+import { modelStreamCancellationFailureSink, streamCtx } from "./model-stream-cancellation.js";
+import { ModelSession } from "./model-session.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import type { LocalStore } from "./store.js";
@@ -116,6 +118,18 @@ export function agentModelStreamLife(
     input.run,
     input.onEvent,
   );
+  const session = new ModelSession({
+    models: input.host.modelRegistry.models,
+    lifetime: {
+      remainingMs: () => input.budget.remainingTimeoutMs(),
+      assertActive: () => {
+        if (input.budget.remainingTimeoutMs() <= 0) input.budget.exhaustTimeout();
+        input.budget.throwIfExhausted();
+      },
+    },
+    ...(cancellation.deadlinePolicy ? { deadlinePolicy: cancellation.deadlinePolicy } : {}),
+    onCancellationFailure: modelStreamCancellationFailureSink(cancellation),
+  });
   // Give a recovered model a few calls to act before restoring the requested
   // reasoning level. Neither each tool result nor one stall should cause an
   // immediate reset or a permanent reasoning downgrade for the whole Run.
@@ -248,50 +262,40 @@ export function agentModelStreamLife(
               finalizedCall.options,
               modelCallPolicy,
             );
-            const captured = await captureCompiledModelInvocation({
-              store: input.host.store,
-              capsules: input.host.modelInvocationCapsules,
-              run: input.run,
+            const opened = await session.open({
+              phase: "agent_turn",
               model: candidate,
               context: finalizedCall.context,
               options: finalizedCall.options,
-              turnIndex: input.nextTurnIndex(),
-              purpose: "agent_turn",
-              compiledPrompt,
-              ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+              capture: ({ model, context, options }) => captureCompiledModelInvocation({
+                store: input.host.store,
+                capsules: input.host.modelInvocationCapsules,
+                run: input.run,
+                model,
+                context,
+                options,
+                turnIndex: input.nextTurnIndex(),
+                purpose: "agent_turn",
+                compiledPrompt,
+                ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+              }),
+              invoke: (captured, next) => {
+                currentEnvelope = captured.envelope;
+                input.onEnvelope(captured.envelope);
+                const call = {
+                  run: input.run,
+                  attempt,
+                  model: captured.model,
+                  context: captured.context,
+                  options: captured.options ?? {},
+                  compiledPrompt,
+                  envelope: captured.envelope,
+                  ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+                };
+                return input.invokeCall ? input.invokeCall(call, next) : next();
+              },
             });
-            currentEnvelope = captured.envelope;
-            input.onEnvelope(captured.envelope);
-            const call = {
-              run: input.run,
-              attempt,
-              model: candidate,
-              context: captured.context,
-              options: finalizedCall.options,
-              compiledPrompt,
-              envelope: captured.envelope,
-              ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-            };
-            return {
-              context: captured.context,
-              options: finalizedCall.options,
-              envelope: captured.envelope,
-              source: input.invokeCall
-                ? input.invokeCall(call, () =>
-                    modelStream(
-                      cancellation,
-                      candidate,
-                      captured.context,
-                      finalizedCall.options,
-                    ),
-                  )
-                : modelStream(
-                    cancellation,
-                    candidate,
-                    captured.context,
-                    finalizedCall.options,
-                  ),
-            };
+            return { ...opened, options: opened.options ?? {} };
           };
           const first = await createInvocation(0);
           return {
@@ -352,30 +356,6 @@ export function agentModelStreamLife(
         return result;
       },
     });
-  };
-}
-
-function mergeRouteStreamOptions(
-  base: SimpleStreamOptions,
-  route: ModelRouteAttemptContext["streamOptions"],
-): SimpleStreamOptions {
-  const onResponse =
-    base.onResponse || route.onResponse
-      ? async (
-          ...args: Parameters<NonNullable<SimpleStreamOptions["onResponse"]>>
-        ) => {
-          await base.onResponse?.(...args);
-          await route.onResponse?.(...args);
-        }
-      : undefined;
-  return {
-    ...base,
-    ...route,
-    ...(base.headers || route.headers
-      ? { headers: { ...base.headers, ...route.headers } }
-      : {}),
-    ...(base.env || route.env ? { env: { ...base.env, ...route.env } } : {}),
-    ...(onResponse ? { onResponse } : {}),
   };
 }
 

@@ -1,5 +1,6 @@
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { SubagentCandidateStore } from "./subagent-candidate-store.js";
+import { rethrowAfterCandidateRevocation, SubagentCandidateStore } from "./subagent-candidate-store.js";
+export { rethrowAfterCandidateRevocation } from "./subagent-candidate-store.js";
 import { readWorktreeBaseline } from "./subagent-worktree-baseline.js";
 import {
   subagentWorktreeModifiedLspFiles,
@@ -41,7 +42,9 @@ export class SubagentWorktreeDelivery extends SubagentCandidateStore {
     candidateVerification: SubagentCandidateVerificationSummary,
     candidateCommands: SubagentCandidateCommandSummary,
     toolchain?: SubagentWorktreeToolchain,
+    signal?: AbortSignal,
   ): Promise<SubagentWorktreePreview> {
+    signal?.throwIfAborted();
     const readDependencies = worktreeReadDependencies(
       await readWorktreeBaseline(session),
       session.readScopes,
@@ -49,6 +52,7 @@ export class SubagentWorktreeDelivery extends SubagentCandidateStore {
     );
     const review = createSubagentWorktreeReview(candidate.changes);
     const modifiedFiles = subagentWorktreeModifiedLspFiles(candidate.changes);
+    signal?.throwIfAborted();
     const receipt = {
       taskId: session.taskId,
       outcomeSha256,
@@ -87,6 +91,13 @@ export class SubagentWorktreeDelivery extends SubagentCandidateStore {
       changes: candidate.changes,
       files: modifiedFiles,
     });
+    try {
+      signal?.throwIfAborted();
+    } catch (error) {
+      return rethrowAfterCandidateRevocation(error, () =>
+        this.revokeUndelivered(stored.id, session.taskId),
+      );
+    }
     return {
       id: stored.id,
       expiresAt: stored.expiresAt,

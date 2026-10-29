@@ -50,7 +50,7 @@ import {
 } from "./workspace-change-commit.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import type { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
-import { SubagentWorktreeDelivery } from "./subagent-worktree-delivery.js";
+import { rethrowAfterCandidateRevocation, SubagentWorktreeDelivery } from "./subagent-worktree-delivery.js";
 
 export {
   createSubagentWorktreeApplyTool,
@@ -238,6 +238,7 @@ export class SubagentWorktreeMutationManager {
     outcomeSha256: string,
     signal?: AbortSignal,
   ): Promise<SubagentWorktreePreview> {
+    signal?.throwIfAborted();
     if (!/^[a-f0-9]{64}$/u.test(outcomeSha256)) {
       throw new Error("Subagent worktree outcome hash is invalid");
     }
@@ -271,10 +272,19 @@ export class SubagentWorktreeMutationManager {
       candidateVerification,
       candidateCommands,
       context.toolchain,
+      signal,
     );
-    await removeSubagentWorktree(session.root);
-    this.contexts.delete(session);
-    return preview;
+    try {
+      signal?.throwIfAborted();
+      await removeSubagentWorktree(session.root);
+      this.contexts.delete(session);
+      signal?.throwIfAborted();
+      return preview;
+    } catch (error) {
+      return rethrowAfterCandidateRevocation(error, () =>
+        this.revokePreview(preview.id, session.taskId),
+      );
+    }
   }
 
   async cleanup(session: SubagentWorktreeSession): Promise<void> {
@@ -296,6 +306,10 @@ export class SubagentWorktreeMutationManager {
 
   inspectPreview(previewId: string) {
     return this.candidates.inspect(previewId);
+  }
+
+  revokePreview(previewId: string, taskId: string): Promise<boolean> {
+    return this.candidates.revokeUndelivered(previewId, taskId);
   }
 
   prunePreviews(previewIds: string[]): Promise<number> {

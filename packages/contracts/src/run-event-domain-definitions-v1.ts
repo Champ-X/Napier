@@ -250,6 +250,14 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
     projectionOwner: "subagent-roster",
   }),
   defineEventGroup({
+    activeRunTypes: ["subagent.model.invocation"],
+    runAnyTypes: ["subagent.model.response", "subagent.model.cancellation_failed"],
+    terminalTransitionTypes: [],
+    category: "subagent",
+    defaultVisibility: "debug",
+    owner: "subagent-model-session", projectionOwner: "trace-index",
+  }),
+  defineEventGroup({
     activeRunTypes: [],
     runAnyTypes: [
       "credential.reference.checked",

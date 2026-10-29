@@ -512,8 +512,12 @@ describe("SubagentCoordinator", () => {
     expect(events.map((event) => event.type)).toEqual([
       "subagent.queued",
       "subagent.started",
+      "subagent.model.invocation",
+      "subagent.model.response",
       "subagent.step",
       "subagent.outcome.repair.requested",
+      "subagent.model.invocation",
+      "subagent.model.response",
       "subagent.step",
       "subagent.outcome.repair.outcome",
       "subagent.outcome.accepted",

@@ -1,39 +1,27 @@
-import type {
-  Api,
-  Context,
-  Model,
-  SimpleStreamOptions,
-} from "@earendil-works/pi-ai";
-import type {
-  ModelContextEnvelopeReceipt,
-  ModelInvocationPurpose,
-  RunRecord,
-} from "@napier/contracts";
+import type { Api, Context, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
+import type { ModelContextEnvelopeReceipt, ModelInvocationPurpose, RunRecord } from "@napier/contracts";
 
 import type { EventSink } from "./event-sink.js";
-import { canonicalJson, sha256 } from "./ed25519.js";
-import { PromptCacheProjection } from "./prompt-cache-projection.js";
 import {
   COMPILED_PROMPT_PACKAGE_EVENT,
   createCompiledPromptPackageReceiptV3,
 } from "./compiled-prompt-package.js";
 import {
-  createModelContextEnvelopeReceipt,
-  MODEL_CONTEXT_ENVELOPE_EVENT,
-} from "./model-context-envelope.js";
-import {
-  applyModelAdapterOptions,
-  modelAdapterReceipt,
-} from "./model-adapters.js";
+  captureExactModelInvocation,
+  type ExactModelInvocationCaptureEvent,
+} from "./model-invocation-exact-capture.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { LocalStore } from "./store.js";
 
 type ModelInvocationCaptureStore = Pick<LocalStore, "appendEvent">;
-const cacheProjections = new WeakMap<
-  RunRecord,
-  Map<ModelInvocationPurpose, PromptCacheProjection>
->();
+const EVENT_TYPES = {
+  envelope: "context.model_envelope",
+  adapter: "context.model_adapter",
+  invocation: "context.model_invocation",
+  unavailable: "context.model_invocation_unavailable",
+  cache_projection: "context.prompt_cache_projection",
+} as const satisfies Record<ExactModelInvocationCaptureEvent["kind"], string>;
 
 export async function captureCompiledModelInvocation(input: {
   store: ModelInvocationCaptureStore;
@@ -45,176 +33,42 @@ export async function captureCompiledModelInvocation(input: {
   turnIndex: number;
   purpose: ModelInvocationPurpose;
   compiledPrompt: CompiledPromptArtifact;
+  cacheScope?: object;
+  phase?: string;
   onEvent?: EventSink;
-}): Promise<{
-  context: Context;
-  envelope: ModelContextEnvelopeReceipt;
-}> {
-  const context = {
-    ...input.context,
-    systemPrompt: input.compiledPrompt.systemPrompt,
-  };
-  const envelope = createModelContextEnvelopeReceipt({
+}): Promise<{ context: Context; envelope: ModelContextEnvelopeReceipt }> {
+  const record = async (
+    type: (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES] | typeof COMPILED_PROMPT_PACKAGE_EVENT,
+    payload: object,
+  ): Promise<void> => append(input.store, {
+    threadId: input.run.threadId,
+    runId: input.run.id,
+    type,
+    category: "model",
+    visibility: "debug",
+    payload: JSON.parse(JSON.stringify(payload)),
+  }, input.onEvent);
+  return captureExactModelInvocation({
+    capsules: input.capsules,
+    source: { threadId: input.run.threadId, runId: input.run.id },
+    model: input.model,
+    context: { ...input.context, systemPrompt: input.compiledPrompt.systemPrompt },
+    options: input.options,
     turnIndex: input.turnIndex,
-    systemPrompt: context.systemPrompt,
-    messages: context.messages,
-    tools: context.tools ?? [],
-  });
-  await append(
-    input.store,
-    {
-      threadId: input.run.threadId,
-      runId: input.run.id,
-      type: MODEL_CONTEXT_ENVELOPE_EVENT,
-      category: "model",
-      visibility: "debug",
-      payload: JSON.parse(JSON.stringify(envelope)),
-    },
-    input.onEvent,
-  );
-  await captureModelInvocation(
-    input.store,
-    input.capsules,
-    input.run,
-    input.model,
-    context,
-    input.options,
-    envelope,
-    input.purpose,
-    input.compiledPrompt,
-    input.onEvent,
-  );
-  await append(
-    input.store,
-    {
-      threadId: input.run.threadId,
-      runId: input.run.id,
-      type: "context.prompt_cache_projection",
-      category: "model",
-      visibility: "debug",
-      payload: cacheProjection(input.run, input.purpose).observe({
-        turnIndex: input.turnIndex,
-        contextEnvelopeSha256: envelope.contentSha256,
-        context,
-        invocationIdentitySha256: sha256(
-          canonicalJson({
-            model: input.model,
-            adapter: modelAdapterReceipt(input.model, input.options),
-          }),
-        ),
+    purpose: input.purpose,
+    cacheScope: input.cacheScope ?? input.run,
+    ...(input.phase ? { phase: input.phase } : {}),
+    emit: (event) => record(EVENT_TYPES[event.kind], event.payload),
+    afterAdapter: ({ envelope, adapter }) => record(
+      COMPILED_PROMPT_PACKAGE_EVENT,
+      createCompiledPromptPackageReceiptV3({
+        compiled: input.compiledPrompt,
+        envelope,
+        adapter,
+        purpose: input.purpose,
       }),
-    },
-    input.onEvent,
-  );
-  return { context, envelope };
-}
-
-function cacheProjection(
-  run: RunRecord,
-  purpose: ModelInvocationPurpose,
-): PromptCacheProjection {
-  let purposes = cacheProjections.get(run);
-  if (!purposes) {
-    purposes = new Map();
-    cacheProjections.set(run, purposes);
-  }
-  let projection = purposes.get(purpose);
-  if (!projection) {
-    projection = new PromptCacheProjection();
-    purposes.set(purpose, projection);
-  }
-  return projection;
-}
-
-async function captureModelInvocation(
-  store: ModelInvocationCaptureStore,
-  capsules: ModelInvocationCapsuleStore,
-  run: RunRecord,
-  model: Model<Api>,
-  context: Context,
-  options: SimpleStreamOptions | undefined,
-  envelope: ModelContextEnvelopeReceipt,
-  purpose: ModelInvocationPurpose,
-  compiledPrompt: CompiledPromptArtifact,
-  onEvent?: EventSink,
-): Promise<void> {
-  try {
-    const adaptedOptions = applyModelAdapterOptions(model, options);
-    const adapter = modelAdapterReceipt(model, options);
-    await append(
-      store,
-      {
-        threadId: run.threadId,
-        runId: run.id,
-        type: "context.model_adapter",
-        category: "model",
-        visibility: "debug",
-        payload: JSON.parse(JSON.stringify(adapter)),
-      },
-      onEvent,
-    );
-    const promptPackage = createCompiledPromptPackageReceiptV3({
-      compiled: compiledPrompt,
-      envelope,
-      adapter,
-      purpose,
-    });
-    await append(
-      store,
-      {
-        threadId: run.threadId,
-        runId: run.id,
-        type: COMPILED_PROMPT_PACKAGE_EVENT,
-        category: "model",
-        visibility: "debug",
-        payload: JSON.parse(JSON.stringify(promptPackage)),
-      },
-      onEvent,
-    );
-    const receipt = await capsules.put({
-      sourceThreadId: run.threadId,
-      sourceRunId: run.id,
-      turnIndex: envelope.turnIndex,
-      purpose,
-      model,
-      contextEnvelopeSha256: envelope.contentSha256,
-      context,
-      ...(adaptedOptions ? { options: adaptedOptions } : {}),
-    });
-    await append(
-      store,
-      {
-        threadId: run.threadId,
-        runId: run.id,
-        type: "context.model_invocation",
-        category: "model",
-        visibility: "debug",
-        payload: JSON.parse(JSON.stringify(receipt)),
-      },
-      onEvent,
-    );
-  } catch (error) {
-    await append(
-      store,
-      {
-        threadId: run.threadId,
-        runId: run.id,
-        type: "context.model_invocation_unavailable",
-        category: "model",
-        visibility: "debug",
-        payload: {
-          schemaVersion: 1,
-          turnIndex: envelope.turnIndex,
-          purpose,
-          model: `${model.provider}/${model.id}`,
-          contextEnvelopeSha256: envelope.contentSha256,
-          reason: captureFailureReason(error),
-          diagnosticSha256: sha256(errorMessage(error)),
-        },
-      },
-      onEvent,
-    );
-  }
+    ),
+  });
 }
 
 async function append(
@@ -229,22 +83,4 @@ async function append(
   } catch {
     // A disconnected observer must not cancel durable Agent execution.
   }
-}
-
-function captureFailureReason(error: unknown): "limit" | "storage" | "invalid" {
-  const message = errorMessage(error);
-  if (/\b(?:byte|count|limit|exceeds)\b/iu.test(message)) return "limit";
-  if (
-    error &&
-    typeof error === "object" &&
-    "code" in error &&
-    ["EACCES", "EDQUOT", "ENOSPC", "EROFS"].includes(String(error.code))
-  ) {
-    return "storage";
-  }
-  return "invalid";
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

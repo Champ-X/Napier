@@ -43,7 +43,7 @@ import {
 import { cooldownDurationMs } from "./model-route-policy.js";
 import { createModelRouteStream } from "./model-route-stream.js";
 import type {
-  ModelRouteAttemptContext,
+  ModelRouteStreamInput,
   ResolvedRouteCandidate,
 } from "./model-route-types.js";
 import type { ModelRegistry } from "./models.js";
@@ -330,13 +330,7 @@ export class ModelRouteSession {
     return this.options.candidates[0]!.model;
   }
 
-  stream(input: {
-    signal: AbortSignal;
-    invoke(
-      model: Model<Api>,
-      context?: ModelRouteAttemptContext,
-    ): Promise<AssistantMessageEventStream>;
-  }): AssistantMessageEventStream {
+  stream(input: ModelRouteStreamInput): AssistantMessageEventStream {
     return createModelRouteStream(this.options, input, () => ++this.attempt);
   }
 }
