@@ -419,6 +419,14 @@
 - 初次browser v3虽raw receipt为passed，但截图发现窄屏证据／来源列及导航裁切，明确拒绝其视觉验收并保留原图／回执。最终追加 `workspace-shell.css` 修复，production Web v5在light Chromium／1440、390、320 CSS px／EN-ZH下通过6场景、9截图、刷新／键盘、单元格与tab水平范围和点击命中检查；root已查看panel及顶部截图。4,040源码／5,096emit／339Web产物前后稳定，28个已有用户文件不变，模型调用0；浏览器快照含精确保留的用户overlay，不当作纯commit发布或物理移动端／dark／读屏验收。
 - 所有原始反例、中间测试／emit失败、同毫秒history、文件重现、预算越界、continuation回退以及browser误报均归档。见[说明](docs/task-artifact-facts.md)、[交付收据](docs/artifacts/task-artifact-facts-regression-2026-10-30.json)与[证据索引](docs/artifacts/task-artifact-facts-evidence-index-2026-10-30.json)。本片不新增人为验收关卡；whole objective仍为unverified／partial等既有语义。tool-only来源、完整历史字节、更多artifact卡消费者、独立整体目标验收来源及完整G01仍未完成，总目标继续 **active**。
 
+### 后续推进：G07 主调用准备的事件输入游标（2026-10-30）
+
+- 本地实现提交 `a056a3b1`，未 push。主模型 lifecycle 每个 Run 仅创建一次准备工厂／游标，以持久化 `findLatestEvent` 固定 head，再读取11类相关事件的有界 range；读失败、非法批次、head 回退及原投影拒绝均不推进。每次重新读取 Run／恢复链、记忆有效性、依赖文件、工作区成果与预算，不缓存最终上下文。分支一经发现永久回到完整 oracle；state-only 和无原生能力 adapter 保留原全量读取。
+- 测量基线明确为 `5adf1d9`，候选只叠加精确6文件，两侧独立编译。AB／BA × 探针开关各8个新进程，smoke24组与100k事件正式36组配对输出及回执语义全等，前后 source／dist／scripts／lock 摘要稳定。cold返回事件行100001→1002（1001 typed＋1 head），warm100002/100003→1 head、0 typed delta；不是SQLite内部扫描行数。probe-off warm：共享1k事实245–271→27–48ms、共享10k事实300–325→74–78ms、独立1k文件331–337→113–116ms；cold10k事实仅3404–3460→3172–3227ms。
+- 全部不利观察保留：smoke有1/24耗时比1.186、12/24 sampled peak RSS更高；没有挑选重跑。原18 pass／3 fixture failure、工厂收敛前新增两项架构失败、修正后报告与独立审查均归档。固定109测试与最终306回归重叠，不累加；独立审查核6源、82原始artifact与全部60组raw配对，没有重跑benchmark。
+- 最终隔离集成基线为 `53e2eaf2`＋6文件tree `681b9726`，**33文件／306测试**通过（Runtime302、Server4），编译、相关types／strict通过；4,043源文件／5,099产物哈希稳定，28用户文件不变。7项既有架构、root1897/1896、internal18/16及两份digest失败保留，旧48项strict诊断与原基线一致，不改预算或历史release证据。测量0模型调用，集成仅本地fixture／loopback，外部模型请求0。
+- 本片仅覆盖主 invocation preparation；mailbox、state-only／branch优化、完整10k／100k资源曲线、策略消融和目标模型质量仍未验收。typed历史与回放CPU仍随相关历史增长，batch完整性依赖原生append-only查询合同，不宣称生产端到端收益或完整G07。见[说明](docs/invocation-context-cursor.md)、[最终收据](docs/artifacts/invocation-context-cursor-regression-2026-10-30.json)及[含可移植核对脚本的证据索引](docs/artifacts/invocation-context-cursor-evidence-index-2026-10-30.json)。G07与总目标继续 **active**。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -646,12 +654,12 @@
 
 **现状与依据**
 
-已有 [model-harness-profile.ts](packages/runtime/src/model-harness-profile.ts)、compaction、记忆来源与有效性检查。潜在热路径包括主循环的全 Run 事件扫描，以及 [task-memory-context.ts](packages/runtime/src/task-memory-context.ts) 和 [task-memory-index.ts](packages/runtime/src/task-memory-index.ts) 中的依赖校验与索引同步。本轮未测量它们的实际耗时。
+已有 [model-harness-profile.ts](packages/runtime/src/model-harness-profile.ts)、compaction、记忆来源与有效性检查。潜在热路径包括主循环的全 Run 事件扫描，以及 [task-memory-context.ts](packages/runtime/src/task-memory-context.ts) 和 [task-memory-index.ts](packages/runtime/src/task-memory-index.ts) 中的依赖校验与索引同步。主 invocation 准备现已完成固定基线的100k事件／1k和10k事实测量与输入游标切片，范围及不利样本见[说明](docs/invocation-context-cursor.md)；完整资源曲线、mailbox和模型质量仍未验收。
 
 **实施任务**
 
-- [ ] 先采样模型调用前处理耗时、SQLite 读行数、JSON 解码 CPU、RSS、文件读取次数和缓存命中。
-- [ ] 复用已有增量投影机制，为 loop guard、mailbox 等引入 watermark / typed-event cursor；保留完整 replay 作为校验基准。
+- [ ] 先采样模型调用前处理耗时、SQLite 读行数、JSON 解码 CPU、RSS、文件读取次数和缓存命中。（主 invocation 的固定smoke／100k对照已记录wall／CPU／returned rows／RSS／文件读取与index telemetry，完整范围仍待补齐。）
+- [ ] 复用已有增量投影机制，为 loop guard、mailbox 等引入 watermark / typed-event cursor；保留完整 replay 作为校验基准。（沿用既有loop guard游标，主 invocation新增Run级输入游标并与完整oracle比较；mailbox未覆盖。）
 - [ ] 记忆索引按变更维护，基于文件摘要缓存校验依赖；候选检索与有效性检查之间保持正确性。
 - [ ] 按模型与任务族消融：计划开关、工具集合、上下文策略、独立验证强度、委派策略。
 - [ ] 优先保留稳定提示前缀和按需工具发现，验证缓存收益与工具召回是否兼容。
