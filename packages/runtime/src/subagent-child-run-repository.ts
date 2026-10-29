@@ -26,6 +26,7 @@ import { subagentJsonValue, subagentTaskPayload } from "./subagent-task-evidence
 import type { PrepareSubagentCompletionInput } from "./subagent-completion-types.js";
 import type { SubagentCompletionCandidate, SubagentCompletionReservation } from "@napier/contracts";
 import { assertContinuationMailboxCompleted } from "./subagent-continuation-mailbox.js";
+import { LegacySubagentCandidateRepository, type LegacyCandidateMigrationProof } from "./subagent-candidate-legacy-repository.js";
 
 /** Owns the atomic child Run/Task lifecycle; generic runPrompt never enters here. */
 export class SubagentChildRunRepository {
@@ -92,6 +93,13 @@ export class SubagentChildRunRepository {
   prepareCompletion(input: PrepareSubagentCompletionInput) { return new SubagentCompletionRepository(this.host).prepare(input); }
   candidateDelivered(reservation: SubagentCompletionReservation, candidate: SubagentCompletionCandidate) {
     return new SubagentCompletionRepository(this.host).delivered(reservation, candidate);
+  }
+  reconcileLegacyCandidateProof(proof: LegacyCandidateMigrationProof) {
+    return new LegacySubagentCandidateRepository(this.host).reconcile(proof);
+  }
+  reconcileLegacyCandidate(candidateId: string) {
+    return new SubagentCandidateStore({ ...this.host,
+      legacyCandidateAuthority: (proof) => this.reconcileLegacyCandidateProof(proof) }).reconcileLegacy(candidateId);
   }
 
   assertActive(input: SubagentChildRunFence): SubagentChildRunState {

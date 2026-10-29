@@ -154,6 +154,7 @@ export class SubagentCoordinator {
         requireCompletionBinding: true,
         candidateDeliveryAuthority: (reservation, candidate) =>
           options.store.subagentChildRunRepository.candidateDelivered(reservation, candidate),
+        legacyCandidateAuthority: (proof) => options.store.subagentChildRunRepository.reconcileLegacyCandidateProof(proof),
         enabledSemanticLspTools: options.profile.enabledTools.filter(
           isSubagentSemanticLspToolName,
         ),

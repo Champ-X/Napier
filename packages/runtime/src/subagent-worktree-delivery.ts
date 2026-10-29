@@ -20,6 +20,7 @@ import type {
   SubagentCandidateVerificationSummary,
 } from "./subagent-worktree-verification.js";
 import type { PreparedSubagentCompletion, SubagentCandidateDeliveryAuthority } from "./subagent-completion-types.js";
+import type { LegacyCandidateMigrationAuthority } from "./subagent-candidate-legacy-capability.js";
 
 export class SubagentWorktreeDelivery extends SubagentCandidateStore {
   constructor(
@@ -28,6 +29,7 @@ export class SubagentWorktreeDelivery extends SubagentCandidateStore {
       dataRoot: string;
       now?: () => Date;
       candidateDeliveryAuthority?: SubagentCandidateDeliveryAuthority;
+      legacyCandidateAuthority?: LegacyCandidateMigrationAuthority;
       requireCompletionBinding?: boolean;
     },
   ) {

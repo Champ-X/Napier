@@ -7,7 +7,8 @@ import {
   type SubagentWorktreeCandidate,
   type SubagentWorktreeSnapshot,
 } from "./subagent-worktree-diff.js";
-import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
+import { normalizeSubagentWorktreePath } from "./subagent-worktree-path.js";
+export { normalizeSubagentWorktreePath } from "./subagent-worktree-path.js";
 import { prepareSubagentWorktreeOwnerRoot } from "./subagent-worktree-storage.js";
 
 import {
@@ -18,7 +19,6 @@ import {
 import { SUBAGENT_WORKTREE_POLICY as policy } from "./subagent-worktree-policy.js";
 import {
   errorCode,
-  GENERATED_WORKTREE_DIRECTORIES as GENERATED_DIRECTORIES,
   readWorktreeSnapshot,
   type SubagentWorktreeSession,
 } from "./subagent-worktree-snapshot.js";
@@ -167,33 +167,6 @@ function normalizeWritePaths(values: string[]): string[] {
     throw new Error("Subagent worktree write paths must be unique");
   }
   return normalized.sort();
-}
-
-export function normalizeSubagentWorktreePath(value: string): string {
-  if (
-    typeof value !== "string" ||
-    !value ||
-    value.length > 500 ||
-    path.isAbsolute(value) ||
-    value.includes("\\") ||
-    /[\u0000-\u001f\u007f]/u.test(value)
-  ) {
-    throw new Error("Subagent worktree path must be workspace-relative");
-  }
-  const segments = value.split("/");
-  if (
-    segments.some(
-      (segment) =>
-        !segment ||
-        segment === "." ||
-        segment === ".." ||
-        isProtectedWorkspacePathSegment(segment) ||
-        GENERATED_DIRECTORIES.has(segment.toLowerCase()),
-    )
-  ) {
-    throw new Error("Subagent worktree path targets an unavailable scope");
-  }
-  return segments.join("/");
 }
 
 function decodeUtf8(buffer: Buffer, label: string): string {

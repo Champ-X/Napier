@@ -230,7 +230,7 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
     ],
     runAnyTypes: [
       "subagent.cancelled",
-      "subagent.completed",
+      "subagent.completed", "subagent.candidate.legacy_migrated",
       "subagent.failed",
       "subagent.message.accepted",
       "subagent.orphaned",

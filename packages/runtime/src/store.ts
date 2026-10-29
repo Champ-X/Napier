@@ -2413,10 +2413,10 @@ export class LocalStore {
   listSubagentTasks(threadId: string, runId?: string): SubagentTask[] { return this.subagentRepository.list(threadId, runId); }
   createSubagentTask(input: CreateSubagentTaskInput) { return this.subagentRepository.create(input); }
   startSubagentTask(taskId: string) { return this.subagentRepository.start(taskId); }
-
   // Child authority and aggregate mutations belong to the dedicated repository.
   prepareSubagentChildCheckpoint(input: SubagentChildRunFence) { return this.subagentChildRunRepository.prepareCheckpoint(input); }
   prepareSubagentChildCompletion(input: PrepareSubagentCompletionInput) { return this.subagentChildRunRepository.prepareCompletion(input); }
+  reconcileLegacySubagentCandidate(candidateId: string) { return this.subagentChildRunRepository.reconcileLegacyCandidate(candidateId); }
   prepareSubagentChildContinuation(input: PrepareSubagentChildContinuationInput) { return this.subagentChildRunRepository.prepareContinuation(input); }
   startSubagentChildContinuation(input: StartSubagentChildContinuationInput) { return this.subagentChildRunRepository.startContinuation(input); }
   commitSubagentChildCheckpoint(input: CommitSubagentChildCheckpointInput) { return this.subagentChildRunRepository.commitCheckpoint(input); }

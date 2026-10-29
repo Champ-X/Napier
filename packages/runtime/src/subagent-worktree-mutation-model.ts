@@ -11,6 +11,8 @@ import type { SubagentWorktreeChange } from "./subagent-worktree-diff.js";
 import type { WorktreeReadDependency } from "./subagent-worktree-read-set.js";
 
 export interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
+  /** Host-only constraint, never persisted in a candidate capsule. */
+  legacySourceSnapshotRequired?: boolean;
   completion?: SubagentCompletionReservation;
   candidateVerification?: SubagentCandidateVerificationSummary;
   candidateCommands?: SubagentCandidateCommandSummary;

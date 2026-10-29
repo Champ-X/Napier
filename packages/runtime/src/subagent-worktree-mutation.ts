@@ -69,6 +69,7 @@ export type { SubagentWorktreePreview } from "./subagent-worktree-mutation-model
 
 export interface SubagentWorktreeMutationManagerOptions {
   candidateDeliveryAuthority?: SubagentCandidateDeliveryAuthority;
+  legacyCandidateAuthority?: NonNullable<ConstructorParameters<typeof SubagentWorktreeDelivery>[0]["legacyCandidateAuthority"]>;
   requireCompletionBinding?: boolean;
   workspaceRoot: string;
   dataRoot: string;

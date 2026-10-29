@@ -11,6 +11,7 @@ import type { WorktreePreviewSource } from "./subagent-worktree-mutation-model.j
 import { SUBAGENT_WORKTREE_POLICY } from "./subagent-worktree-policy.js";
 import { readDependencyHash } from "./subagent-worktree-read-set.js";
 import { readWorktreeSnapshot } from "./subagent-worktree-snapshot.js";
+import { assertLegacySourceSnapshot } from "./subagent-legacy-source-snapshot.js";
 
 const run = promisify(execFile);
 
@@ -21,6 +22,7 @@ export async function prepareWorktreeMerge(
   dataRoot: string,
   signal?: AbortSignal,
 ): Promise<void> {
+  if (source.legacySourceSnapshotRequired) await assertLegacySourceSnapshot(source, signal);
   const writes = new Set(source.changes.map((change) => change.path));
   const current = await readWorktreeSnapshot(source.sourceRoot, {
     retainPaths: writes,

@@ -16,16 +16,8 @@ import type {
   SubagentWorktreeSnapshot,
 } from "./subagent-worktree-diff.js";
 import { SUBAGENT_WORKTREE_POLICY as policy } from "./subagent-worktree-policy.js";
-import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
-
-export const GENERATED_WORKTREE_DIRECTORIES = new Set([
-  ".vite",
-  "benchmark-results",
-  "coverage",
-  "dist",
-  "playwright-report",
-  "test-results",
-]);
+import { isUnavailableWorktreeSegment } from "./subagent-worktree-path.js";
+export { GENERATED_WORKTREE_DIRECTORIES } from "./subagent-worktree-path.js";
 const ACTIVE_CHANGE_ARTIFACT =
   /^\..+\.napier-change-[a-f0-9]{20}\.(?:bak|deleted|tmp)$/u;
 
@@ -113,8 +105,7 @@ export async function readWorktreeSnapshot(
         );
       }
       if (
-        isProtectedWorkspacePathSegment(child.name) ||
-        GENERATED_WORKTREE_DIRECTORIES.has(child.name.toLowerCase())
+        isUnavailableWorktreeSegment(child.name)
       )
         continue;
       if (

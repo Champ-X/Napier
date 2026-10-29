@@ -4,7 +4,7 @@ import { candidateSourceSha256, SubagentCandidateStore } from "./subagent-candid
 import { completionReservationIdentity } from "./subagent-completion-receipt.js";
 import type { SubagentWorktreePreview } from "./subagent-worktree-mutation-model.js";
 import { createSubagentWorktreeReview } from "./subagent-worktree-review.js";
-import { normalizeSubagentWorktreePath } from "./subagent-worktree-files.js";
+import { normalizeSubagentWorktreePath } from "./subagent-worktree-path.js";
 
 export async function readSubagentCompletionCandidate(options: { dataRoot: string; workspaceRoot: string }, task: SubagentTask,
   requireUnrevoked = false): Promise<SubagentWorktreePreview | undefined> {

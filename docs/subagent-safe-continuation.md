@@ -99,9 +99,11 @@ another model/tool invocation or another candidate. Imported Task completion
 metadata does not authorize candidate delivery. This is a local durable protocol;
 it is not a claim of universal external exactly-once effects or resource cleanup.
 
-Historical native candidates without a completion binding remain inspectable,
-but production application currently refuses them. This slice does not migrate
-their old delivery proof; native legacy reconciliation is separate follow-up work.
+Historical native candidates without a completion binding were initially
+inspection-only. The subsequent [legacy reconciliation extension](subagent-legacy-candidate-reconciliation.md)
+admits eligible native outcome/typed results through an independent migration
+receipt and conservative full-source constraint. Missing historical proof remains
+unavailable; imported copies do not inherit write authority.
 
 ## Evidence and remaining work
 

@@ -8,7 +8,8 @@ import { WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT } from "./workflow-simulation-
 export function dropPrivateImportedEvent(event: RunEvent): boolean {
   return (
     event.type !== "context.research_sources" &&
-    event.type !== "context.web_fetch_sources"
+    event.type !== "context.web_fetch_sources" &&
+    event.type !== "subagent.candidate.legacy_migrated"
   );
 }
 

@@ -90,7 +90,7 @@ async function suite(name, tests, cwd = root) {
     passed: parsed.numPassedTests, failed: parsed.numFailedTests, skipped: parsed.numPendingTests };
 }
 
-const strictTests = files.filter((file) => /^packages\/runtime\/test\/(?:subagent-(?:child|execution-tools|working-set|checkpoint|context-compaction|continuation|completion|mailbox-projection)|model-capture-cancellation|local-private-capsule-store|run-context-compaction-invocation-port).*\.test\.ts$/u.test(file));
+const strictTests = files.filter((file) => /^packages\/runtime\/test\/(?:subagent-(?:child|execution-tools|working-set|checkpoint|context-compaction|continuation|completion|mailbox-projection|legacy)|model-capture-cancellation|local-private-capsule-store|run-context-compaction-invocation-port).*\.test\.ts$/u.test(file));
 await check("new-runtime-tests-strict", [process.execPath, tsc, "--noEmit", "--strict", "--skipLibCheck",
   "--target", "ES2023", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--esModuleInterop",
   "--exactOptionalPropertyTypes", "--noUncheckedIndexedAccess", "--noUnusedLocals", "--noUnusedParameters",
@@ -124,6 +124,7 @@ const content = {
   releaseAccepted: false,
   limitations: ["Fixture behavior is not live-model quality evidence", "Continuation is bounded to native private read-only state with verified local dependencies; coder and uncovered tails remain unavailable",
     "Continuation replay import is rejected before persistence; public receipts do not transfer private authority",
+    "Legacy candidate reconciliation trusts retained local objects and constrains writes to the original full source snapshot; historical exact capsule identity was not logged",
     "Child compaction shares invocation, measurement and summary policy; full child prompt compiler parity remains incomplete",
     "No hard shared-parent token/cost reservation across concurrent children",
     "Late physical usage after an ignored abort remains unknown", "Historical release/API/architecture failures retained"],

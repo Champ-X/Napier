@@ -14,34 +14,15 @@ import type {
 } from "./subagent-worktree-mutation-model.js";
 import { errorCode } from "./subagent-worktree-snapshot.js";
 import { withWorkspacePathLock } from "./workspace-write-lock.js";
+import type { LegacyCandidateMigrationAuthority, LegacyCandidateMigrationReceipt } from "./subagent-candidate-legacy-capability.js";
+import { reconcileLegacyCandidateStorage } from "./subagent-candidate-legacy-storage.js";
+import type { CandidateEnvelope, CandidateState } from "./subagent-candidate-state.js";
+export type { CandidateState } from "./subagent-candidate-state.js";
 
 export const SUBAGENT_CANDIDATE_RETENTION_MS = 30 * 24 * 60 * 60_000;
 export const SUBAGENT_CANDIDATE_APPLY_TTL_MS = 7 * 24 * 60 * 60_000;
 const ID = /^subworkpreview_([a-f0-9]{64})$/u;
 const MAX_OBJECT_BYTES = 80 * 1024 * 1024;
-
-interface CandidateEnvelope {
-  schemaVersion: 1 | 2;
-  nonce?: string;
-  workspaceRoot: string;
-  dataRoot: string;
-  createdAt: string;
-  expiresAt: string;
-  source: WorktreePreviewSource;
-}
-
-export interface CandidateState {
-  candidateId: string;
-  status: "applying" | "settled" | "revoked";
-  updatedAt: string;
-  result?: SubagentWorktreeApplyResult;
-  merge?: Array<{
-    path: string;
-    beforeSha256: string | null;
-    afterSha256: string | null;
-  }>;
-}
-
 // Independent from process-owned disposable workspaces. Content is addressed by
 // hash, and each apply has an interprocess lock and a durable pre-commit marker.
 export class SubagentCandidateStore {
@@ -52,6 +33,7 @@ export class SubagentCandidateStore {
       dataRoot: string;
       now?: () => Date;
       candidateDeliveryAuthority?: SubagentCandidateDeliveryAuthority;
+      legacyCandidateAuthority?: LegacyCandidateMigrationAuthority;
       requireCompletionBinding?: boolean;
     },
   ) {
@@ -66,7 +48,6 @@ export class SubagentCandidateStore {
       contentSha256: (value) => sha256(canonicalJson(value)),
     });
   }
-
   async store(
     source: WorktreePreviewSource,
     prepared?: PreparedSubagentCompletion,
@@ -120,7 +101,6 @@ export class SubagentCandidateStore {
     }
     return { id, expiresAt: envelope.expiresAt, cleanupOwned };
   }
-
   async apply(
     id: string,
     operation: (
@@ -133,8 +113,6 @@ export class SubagentCandidateStore {
       await this.lockTarget(hash),
       async () => {
         const envelope = await this.read(id);
-        if (this.options.requireCompletionBinding && !envelope.source.completion)
-          throw new Error("Subagent candidate has no durable completion binding; retained for inspection");
         const state = await this.readState(id);
         if (state?.status === "revoked")
           throw new Error(
@@ -144,6 +122,8 @@ export class SubagentCandidateStore {
           throw new Error(
             `Subagent candidate ${id} requires reconciliation after an interrupted merge; retained candidate must not be replayed`,
           );
+        if (this.options.requireCompletionBinding && !envelope.source.completion)
+          await this.reconcileLegacyLocked(id, envelope, state, true);
         if (envelope.source.completion && !(await this.isDelivered(id, envelope.source)))
           throw new Error("Subagent candidate has no committed completion authority");
         if (
@@ -164,6 +144,8 @@ export class SubagentCandidateStore {
             "Subagent worktree apply preview expired; candidate remains retained for inspection",
           );
         const source = envelope.source;
+        if (this.options.requireCompletionBinding && !source.completion)
+          source.legacySourceSnapshotRequired = true;
         source.files = subagentWorktreeModifiedLspFiles(source.changes);
         source.candidateId = id;
         const result = await operation(source);
@@ -230,6 +212,23 @@ export class SubagentCandidateStore {
       source: envelope.source,
       state: await this.readState(id),
     };
+  }
+
+  /** Reconcile delivery authority only; historical bytes, expiry and merge state are immutable. */
+  reconcileLegacy(id: string): Promise<LegacyCandidateMigrationReceipt> {
+    return this.withCompletionLock(id, async () => {
+      const receipt = await this.reconcileLegacyLocked(id, await this.read(id), await this.readState(id));
+      if (!receipt) throw new Error("Legacy candidate migration authority was not committed");
+      return receipt;
+    });
+  }
+
+  private async reconcileLegacyLocked(id: string, envelope: CandidateEnvelope,
+    state: CandidateState | undefined, reuseSettled = false) {
+    return withStorageLock(this.options.dataRoot, this.capsules.rootPath, () => reconcileLegacyCandidateStorage({
+      id, envelope, state, root: this.capsules.rootPath, now: this.now(), ttlMs: SUBAGENT_CANDIDATE_APPLY_TTL_MS,
+      authority: this.options.legacyCandidateAuthority, read: (candidate) => this.read(candidate), reuseSettled,
+    }));
   }
 
   /** Serialize completion with revocation and application without changing merge state. */
