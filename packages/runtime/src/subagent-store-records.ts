@@ -1,16 +1,14 @@
 import type {
-  JsonValue,
-  SubagentOutcome,
   SubagentRole,
-  SubagentStopReason,
   SubagentSupervisorStatus,
   SubagentTask,
-  SubagentTaskStatus,
   WorkflowValueSchema,
 } from "@napier/contracts";
 import { emptyUsage } from "@napier/contracts";
 
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
+import type { FinishSubagentTaskInput } from "./subagent-completion-types.js";
+export type { FinishSubagentTaskInput } from "./subagent-completion-types.js";
 
 export interface CreateSubagentTaskInput {
   threadId: string;
@@ -29,15 +27,6 @@ export interface CreateSubagentTaskInput {
   failureContextSha256?: string;
 }
 
-export interface FinishSubagentTaskInput {
-  status: Exclude<SubagentTaskStatus, "pending" | "running">;
-  stopReason: SubagentStopReason;
-  result?: string;
-  outcome?: SubagentOutcome;
-  output?: JsonValue;
-  error?: string;
-  usage?: SubagentTask["usage"];
-}
 
 export function createSubagentTaskRecord(
   input: CreateSubagentTaskInput,

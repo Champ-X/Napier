@@ -40,6 +40,8 @@ import {
 import { createSubagentWorktreeTools } from "./subagent-worktree-tools.js";
 import { SubagentWorktreeOperationCoordinator } from "./subagent-worktree-verification.js";
 import type {
+  PreparedSubagentCompletion,
+  SubagentCandidateDeliveryAuthority,
   SubagentWorktreeApplyResult,
   SubagentWorktreePreview,
   WorktreePreviewSource,
@@ -66,6 +68,8 @@ export type {
 export type { SubagentWorktreePreview } from "./subagent-worktree-mutation-model.js";
 
 export interface SubagentWorktreeMutationManagerOptions {
+  candidateDeliveryAuthority?: SubagentCandidateDeliveryAuthority;
+  requireCompletionBinding?: boolean;
   workspaceRoot: string;
   dataRoot: string;
   ownerId: string;
@@ -239,7 +243,10 @@ export class SubagentWorktreeMutationManager {
     session: SubagentWorktreeSession,
     outcomeSha256: string,
     signal?: AbortSignal,
+    prepared?: PreparedSubagentCompletion,
   ): Promise<SubagentWorktreePreview> {
+    if (this.options.requireCompletionBinding && !prepared)
+      throw new Error("Coder candidate requires durable completion preparation");
     signal?.throwIfAborted();
     if (!/^[a-f0-9]{64}$/u.test(outcomeSha256)) {
       throw new Error("Subagent worktree outcome hash is invalid");
@@ -275,6 +282,7 @@ export class SubagentWorktreeMutationManager {
       candidateCommands,
       context.toolchain,
       signal,
+      prepared,
     );
     try {
       signal?.throwIfAborted();
@@ -283,6 +291,7 @@ export class SubagentWorktreeMutationManager {
       signal?.throwIfAborted();
       return preview;
     } catch (error) {
+      if (preview.cleanupOwned === false) throw error;
       return rethrowAfterCandidateRevocation(error, () =>
         this.revokePreview(preview.id, session.taskId),
       );

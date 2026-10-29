@@ -10,6 +10,8 @@ import {
   type FinishSubagentTaskInput,
 } from "./subagent-store-records.js";
 export type { AcceptSubagentMessageInput, CommitSubagentChildCheckpointInput } from "./subagent-working-set-types.js";
+export type { PrepareSubagentCompletionInput } from "./subagent-completion-types.js";
+export type { PrepareSubagentChildContinuationInput, StartSubagentChildContinuationInput } from "./subagent-continuation-types.js";
 export { SubagentChildRunRepository } from "./subagent-child-run-repository.js";
 export type { StartSubagentChildRunInput, SubagentChildRunFence, ReserveSubagentChildInvocationInput,
   SettleSubagentChildInvocationInput, FinishSubagentChildRunInput, SubagentChildProgressInput,

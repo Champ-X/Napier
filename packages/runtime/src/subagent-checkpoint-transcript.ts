@@ -4,7 +4,7 @@ import type { SubagentWorkingSetBinding, SubagentWorkingSetTranscriptEvidence } 
 
 /** A self-hashed capsule is storage evidence; these bindings prove the actual child source. */
 export function assertChildCheckpointTranscript(binding: SubagentWorkingSetBinding, run: RunRecord,
-  task: SubagentTask, events: readonly RunEvent[], parentEvents: readonly RunEvent[]): void {
+  task: SubagentTask, events: readonly RunEvent[], parentEvents: readonly RunEvent[], inherited?: SubagentWorkingSetBinding): void {
   if (binding.systemPromptSha256 !== run.configuration?.systemPromptSha256)
     throw new Error("Child checkpoint system prompt differs from its frozen configuration");
   assertAuthorizedTools(binding.toolNames, run, task);
@@ -12,14 +12,17 @@ export function assertChildCheckpointTranscript(binding: SubagentWorkingSetBindi
   const responses = events.filter((event) => event.type === "model.response" &&
     record(event.payload)["subagentPhase"] === "subagent_turn" &&
     !["error", "aborted"].includes(String(record(event.payload)["stopReason"])));
-  const hashes = responses.map((event) => record(event.payload)["responseSha256"]);
+  const hashes = [...(inherited?.transcript.assistantMessageSha256s ?? []), ...responses.map((event) => record(event.payload)["responseSha256"])];
   if (canonicalJson(hashes) !== canonicalJson(binding.transcript.assistantMessageSha256s))
     throw new Error("Child checkpoint assistant source differs from canonical responses");
   if (responses.some((event) => {
     const captured = record(event.payload)["modelContextToolDefinitionSetSha256"];
     return captured !== undefined && captured !== binding.toolDefinitionSetSha256;
   })) throw new Error("Child checkpoint tool definitions differ from captured model requests");
-  assertToolResults(binding.transcript.toolResults, responses, events, sdkToolReceipts(parentEvents, run, task));
+  const inheritedResults = inherited?.transcript.toolResults ?? [];
+  if (canonicalJson(binding.transcript.toolResults.slice(0, inheritedResults.length)) !== canonicalJson(inheritedResults))
+    throw new Error("Child checkpoint rewrites inherited tool result evidence");
+  assertToolResults(binding.transcript.toolResults.slice(inheritedResults.length), responses, events, sdkToolReceipts(parentEvents, run, task));
 }
 
 function assertAuthorizedTools(names: readonly string[], run: RunRecord, task: SubagentTask): void {

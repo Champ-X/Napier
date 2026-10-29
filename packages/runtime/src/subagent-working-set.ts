@@ -19,6 +19,7 @@ export class SubagentWorkingSet {
     child: SubagentChildExecution;
     systemPrompt: string;
     tools: readonly Tool[];
+    requireDurableCheckpoint?: boolean;
     control?: SubagentExecutionControl;
     onEvent: EventSink | undefined;
   }) {}
@@ -38,7 +39,7 @@ export class SubagentWorkingSet {
     try {
       try { await this.persistActive(messages, boundary); }
       catch (error) {
-        if (!(error instanceof LocalPrivateCapsuleDurabilityUnavailableError)) throw error;
+        if (!(error instanceof LocalPrivateCapsuleDurabilityUnavailableError) || this.options.requireDurableCheckpoint) throw error;
         await this.disableUnsupportedCheckpoint();
       }
     } catch (error) { this.failed = true; this.failure = error; throw error; }
@@ -63,7 +64,7 @@ export class SubagentWorkingSet {
       for (const entry of observed) {
         const accepted = snapshot.mailbox.accepted.find((candidate) => candidate.id === entry.id && candidate.contentSha256 === entry.contentSha256);
         if (!accepted) throw new Error("Consumed child message has no accepted mailbox binding");
-        consumed.set(entry.id, { ...entry, acceptedSeq: accepted.acceptedSeq });
+        consumed.set(entry.id, { ...accepted, ...entry });
       }
       const entries = [...consumed.values()].sort((a, b) => a.acceptedSeq - b.acceptedSeq);
       let consumedThroughSeq = 0;

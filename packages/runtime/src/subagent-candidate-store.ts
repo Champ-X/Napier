@@ -5,6 +5,8 @@ import { setTimeout as delay } from "node:timers/promises";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import { LocalPrivateCapsuleStore } from "./local-private-capsule-store.js";
+import { resolvePreparedSubagentCompletion } from "./subagent-completion-capability.js";
+import type { PreparedSubagentCompletion, SubagentCandidateDeliveryAuthority } from "./subagent-completion-types.js";
 import { subagentWorktreeModifiedLspFiles } from "./subagent-worktree-diff.js";
 import type {
   SubagentWorktreeApplyResult,
@@ -19,8 +21,8 @@ const ID = /^subworkpreview_([a-f0-9]{64})$/u;
 const MAX_OBJECT_BYTES = 80 * 1024 * 1024;
 
 interface CandidateEnvelope {
-  schemaVersion: 1;
-  nonce: string;
+  schemaVersion: 1 | 2;
+  nonce?: string;
   workspaceRoot: string;
   dataRoot: string;
   createdAt: string;
@@ -49,6 +51,8 @@ export class SubagentCandidateStore {
       workspaceRoot: string;
       dataRoot: string;
       now?: () => Date;
+      candidateDeliveryAuthority?: SubagentCandidateDeliveryAuthority;
+      requireCompletionBinding?: boolean;
     },
   ) {
     this.capsules = new LocalPrivateCapsuleStore({
@@ -65,11 +69,16 @@ export class SubagentCandidateStore {
 
   async store(
     source: WorktreePreviewSource,
-  ): Promise<{ id: string; expiresAt: string }> {
-    const now = this.now();
+    prepared?: PreparedSubagentCompletion,
+  ): Promise<{ id: string; expiresAt: string; cleanupOwned: boolean }> {
+    const preparation = prepared ? resolvePreparedSubagentCompletion(prepared) : undefined;
+    if (source.completion && !preparation) throw new Error("Subagent candidate requires completion preparation authority");
+    if (preparation && (preparation.reservation.producerTaskId !== source.taskId || source.completion))
+      throw new Error("Subagent candidate completion producer binding changed");
+    const now = preparation ? new Date(preparation.reservation.createdAt) : this.now();
     const envelope: CandidateEnvelope = {
-      schemaVersion: 1,
-      nonce: createId("candidate"),
+      schemaVersion: preparation ? 2 : 1,
+      ...(!preparation ? { nonce: createId("candidate") } : {}),
       workspaceRoot: await realpath(this.options.workspaceRoot),
       dataRoot: await realpath(this.options.dataRoot),
       createdAt: now.toISOString(),
@@ -77,21 +86,26 @@ export class SubagentCandidateStore {
         now.getTime() + SUBAGENT_CANDIDATE_APPLY_TTL_MS,
       ).toISOString(),
       // LSP full-text edits are derived on load, avoiding a second text copy.
-      source: { ...source, files: [] },
+      source: { ...source, files: [], ...(preparation ? { completion: preparation.reservation } : {}) },
     };
     const serialized = canonicalJson(envelope);
     const hash = sha256(serialized);
     const id = `subworkpreview_${hash}`;
+    if (preparation) await preparation.claimCandidate({ id, sourceSha256: candidateSourceSha256(envelope.source) });
+    let cleanupOwned = true;
     try {
       await withStorageLock(
         this.options.dataRoot,
         path.join(envelope.dataRoot, "subagent-candidates"),
         async () => {
+          try { await this.capsules.read(hash); cleanupOwned = false; }
+          catch (error) { if (errorCode(error) !== "ENOENT") throw error; }
           await this.capsules.put(hash, serialized);
           await syncDirectory(this.capsules.rootPath);
         },
       );
     } catch (error) {
+      if (!cleanupOwned) throw error;
       // A write may install the capsule before a later I/O failure rejects.
       // The delivery caller cannot retract it because no ID was returned yet.
       try {
@@ -104,7 +118,7 @@ export class SubagentCandidateStore {
         this.revokeUndelivered(id, source.taskId),
       );
     }
-    return { id, expiresAt: envelope.expiresAt };
+    return { id, expiresAt: envelope.expiresAt, cleanupOwned };
   }
 
   async apply(
@@ -119,6 +133,8 @@ export class SubagentCandidateStore {
       await this.lockTarget(hash),
       async () => {
         const envelope = await this.read(id);
+        if (this.options.requireCompletionBinding && !envelope.source.completion)
+          throw new Error("Subagent candidate has no durable completion binding; retained for inspection");
         const state = await this.readState(id);
         if (state?.status === "revoked")
           throw new Error(
@@ -128,6 +144,8 @@ export class SubagentCandidateStore {
           throw new Error(
             `Subagent candidate ${id} requires reconciliation after an interrupted merge; retained candidate must not be replayed`,
           );
+        if (envelope.source.completion && !(await this.isDelivered(id, envelope.source)))
+          throw new Error("Subagent candidate has no committed completion authority");
         if (
           state?.result &&
           !(
@@ -189,6 +207,7 @@ export class SubagentCandidateStore {
         const state = await this.readState(id);
         if (state?.status === "revoked") return true;
         if (state) return false;
+        if (envelope.source.completion && await this.isDelivered(id, envelope.source)) return false;
         await this.writeState({
           candidateId: id,
           status: "revoked",
@@ -211,6 +230,26 @@ export class SubagentCandidateStore {
       source: envelope.source,
       state: await this.readState(id),
     };
+  }
+
+  /** Serialize completion with revocation and application without changing merge state. */
+  async withCompletionLock<T>(id: string, operation: () => Promise<T>): Promise<T> {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await withWorkspacePathLock(this.options.dataRoot, await this.lockTarget(candidateHash(id)),
+          operation, "Subagent candidate completion");
+      } catch (error) {
+        if (attempt >= 200 || !(error instanceof Error) ||
+            error.message !== "Subagent candidate completion target is already being edited") throw error;
+        await delay(25);
+      }
+    }
+  }
+
+  private async isDelivered(id: string, source: WorktreePreviewSource): Promise<boolean> {
+    if (!source.completion || !this.options.candidateDeliveryAuthority) return false;
+    return this.options.candidateDeliveryAuthority(source.completion,
+      { id, sourceSha256: candidateSourceSha256(source) });
   }
 
   // Explicit retention cleanup, never touches an uncertain in-progress merge.
@@ -385,7 +424,7 @@ export function unresolvedCandidateCleanup(error: unknown, cleanupError: unknown
 function parseEnvelope(text: string): CandidateEnvelope {
   const value = JSON.parse(text) as CandidateEnvelope;
   if (
-    value.schemaVersion !== 1 ||
+    ![1, 2].includes(value.schemaVersion) ||
     !value.source ||
     !Array.isArray(value.source.changes) ||
     !Array.isArray(value.source.readDependencies) ||
@@ -394,6 +433,10 @@ function parseEnvelope(text: string): CandidateEnvelope {
   )
     throw new Error("Subagent candidate record is invalid");
   return value;
+}
+
+export function candidateSourceSha256(source: WorktreePreviewSource): string {
+  return sha256(canonicalJson({ ...source, files: [] }));
 }
 
 function candidateHash(id: string): string {

@@ -1,11 +1,13 @@
 import { canonicalJson } from "./ed25519.js";
 import { assertChildCheckpointTranscript } from "./subagent-checkpoint-transcript.js";
+import { readInheritedSubagentCheckpoint } from "./subagent-continuation-checkpoint.js";
+import { continuationMailbox, inheritConsumedMailbox } from "./subagent-continuation-mailbox.js";
 import { assertPreviousChildCheckpoint } from "./subagent-checkpoint-validation.js";
 import { subagentCheckpointFrontier } from "./subagent-checkpoint-frontier.js";
 import { assertChildRunFence, childRunState } from "./subagent-child-run-fence.js";
 import type { SubagentChildRunHost } from "./subagent-child-run-host.js";
 import type { SubagentChildRunFence, SubagentChildRunState } from "./subagent-child-run-types.js";
-import { acceptedSubagentMailbox, validateConsumedSubagentMailbox } from "./subagent-mailbox-state.js";
+import { validateConsumedSubagentMailbox } from "./subagent-mailbox-state.js";
 import { readSubagentWorkingSetBinding, resolvePreparedSubagentWorkingSet } from "./subagent-working-set-capsule.js";
 import type { CommitSubagentChildCheckpointInput, PrepareSubagentChildCheckpointResult,
   SubagentWorkingSetBinding } from "./subagent-working-set-types.js";
@@ -17,18 +19,21 @@ export class SubagentCheckpointRepository {
     input = { ...input };
     this.host.assertInitialized();
     const initial = assertChildRunFence(this.host, input);
-    const previousSha = initial.run.subagent!.checkpoint?.capsuleSha256;
+    const previousSha = initial.run.subagent!.checkpoint?.capsuleSha256 ?? initial.run.subagent!.continuation?.sourceCapsuleSha256;
     const previous = previousSha ? await readSubagentWorkingSetBinding(this.host.dataRoot, previousSha) : undefined;
+    const inherited = await readInheritedSubagentCheckpoint(this.host.dataRoot, initial.run);
     this.host.assertInitialized();
     return this.host.stateQueue.run(async () => {
       const { run, task } = assertChildRunFence(this.host, input);
-      if (run.subagent!.checkpoint?.capsuleSha256 !== previousSha)
+      if ((run.subagent!.checkpoint?.capsuleSha256 ?? run.subagent!.continuation?.sourceCapsuleSha256) !== previousSha)
         throw new Error("Child checkpoint pointer changed while preparing");
       const events = this.host.requireLedger().listRunEvents(run.id);
       const frontier = subagentCheckpointFrontier(run, task, events);
-      assertPreviousChildCheckpoint(frontier, run.subagent!.checkpoint, previous);
-      const accepted = acceptedSubagentMailbox(this.host.requireLedger().listRunEvents(task.runId), task);
-      const consumed = previous?.mailbox.entries ?? [];
+      if (run.subagent!.checkpoint) assertPreviousChildCheckpoint(frontier, run.subagent!.checkpoint, previous);
+      const accepted = continuationMailbox(this.host, run, task).accepted;
+      const consumed = previous === undefined ? [] : !run.subagent!.checkpoint && inherited
+        ? inheritConsumedMailbox(previous.mailbox.entries, { taskId: inherited.frontier.taskId, parentRunId: inherited.frontier.parentRunId })
+        : previous.mailbox.entries;
       const consumedThroughSeq = validateConsumedSubagentMailbox(accepted, consumed, []);
       return { frontier, ...(previous ? { previousCheckpoint: previous.receipt } : {}),
         mailbox: { accepted, consumed, consumedThroughSeq } };
@@ -43,17 +48,22 @@ export class SubagentCheckpointRepository {
     const previous = proposed.previousCapsuleSha256
       ? await readSubagentWorkingSetBinding(this.host.dataRoot, proposed.previousCapsuleSha256) : undefined;
     this.host.assertInitialized();
+    const initial = assertChildRunFence(this.host, input);
+    const inherited = await readInheritedSubagentCheckpoint(this.host.dataRoot, initial.run);
+    this.host.assertInitialized();
     return this.host.stateQueue.run(async () => {
       const { run, task } = assertChildRunFence(this.host, input);
       const events = this.host.requireLedger().listRunEvents(run.id);
       const frontier = subagentCheckpointFrontier(run, task, events);
       if (canonicalJson(frontier) !== canonicalJson(proposed.frontier))
         throw new Error("Child checkpoint execution or ledger frontier changed");
-      assertPreviousCheckpoint(proposed, previous, run.subagent!.checkpoint?.capsuleSha256);
-      assertChildCheckpointTranscript(proposed, run, task, events, this.host.requireLedger().listRunEvents(task.runId));
-      assertPreviousChildCheckpoint(frontier, run.subagent!.checkpoint, previous);
-      const accepted = acceptedSubagentMailbox(this.host.requireLedger().listRunEvents(task.runId), task);
-      const consumedThroughSeq = validateConsumedSubagentMailbox(accepted, proposed.mailbox.entries, previous?.mailbox.entries ?? []);
+      assertPreviousCheckpoint(proposed, previous, run.subagent!.checkpoint?.capsuleSha256 ?? run.subagent!.continuation?.sourceCapsuleSha256);
+      assertChildCheckpointTranscript(proposed, run, task, events, this.host.requireLedger().listRunEvents(task.runId), inherited);
+      if (run.subagent!.checkpoint) assertPreviousChildCheckpoint(frontier, run.subagent!.checkpoint, previous);
+      const accepted = continuationMailbox(this.host, run, task).accepted;
+      const priorConsumed = !run.subagent!.checkpoint && inherited ? inheritConsumedMailbox(inherited.mailbox.entries,
+        { taskId: inherited.frontier.taskId, parentRunId: inherited.frontier.parentRunId }) : previous?.mailbox.entries ?? [];
+      const consumedThroughSeq = validateConsumedSubagentMailbox(accepted, proposed.mailbox.entries, priorConsumed);
       if (consumedThroughSeq !== proposed.mailbox.consumedThroughSeq)
         throw new Error("Child checkpoint mailbox cursor is not its contiguous accepted prefix");
       const checkpoint = { ...proposed.receipt, revision: frontier.checkpointRevision + 1,

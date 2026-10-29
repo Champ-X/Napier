@@ -37,6 +37,7 @@ import type { SubagentExecutionCleanup, SubagentInheritedToolsFactory } from "./
 import { createProcessLeaseOwnerId } from "./ids.js";
 import { subagentTaskFailure } from "./subagent-task-failure.js";
 import { SubagentWorkingSet } from "./subagent-working-set.js";
+import { SubagentRunnerRestore, type StartedSubagentChildContinuation } from "./subagent-task-restore.js";
 
 type EventSink = (event: RunEvent) => Promise<void> | void;
 
@@ -47,6 +48,7 @@ export class SubagentTaskRunner {
       models: MutableModels;
       model: Model<Api>;
       createModelRoute?: (childRun: RunRecord) => Promise<ModelRouteSession>;
+      assertParentBudgetAvailable?: () => void;
       run: RunRecord;
       limits: SubagentLimits;
       parentProfile: AgentProfile;
@@ -65,32 +67,56 @@ export class SubagentTaskRunner {
     prompt: string,
     toolSignal?: AbortSignal,
     writePaths?: string[],
+  ) {
+    return this.run(initialTask, prompt, toolSignal, writePaths);
+  }
+
+  async resume(continuation: StartedSubagentChildContinuation, toolSignal?: AbortSignal) {
+    const child = new SubagentChildExecution(this.options.store, continuation.execution, this.options.onEvent);
+    try {
+      return await this.run(continuation.execution.task, continuation.execution.task.prompt, toolSignal, undefined, continuation, child);
+    } catch (error) {
+      const current = this.options.store.listSubagentTasks(continuation.execution.task.threadId)
+        .find((task) => task.id === continuation.execution.task.id);
+      // Restoration validation happens before the common execution lifetime exists.
+      // A claimed lease still owns this failure and must not leave a running successor.
+      if (current?.status === "running") {
+        const task = await child.finish({ status: "failed", stopReason: "error",
+          error: error instanceof Error ? error.message : String(error) });
+        await child.publish();
+        await this.emit("subagent.failed", task, subagentTaskPayload(task));
+      }
+      throw error;
+    } finally { child.dispose(); }
+  }
+
+  private async run(
+    initialTask: SubagentTask,
+    prompt: string,
+    toolSignal?: AbortSignal,
+    writePaths?: string[],
+    continuation?: StartedSubagentChildContinuation,
+    child?: SubagentChildExecution,
   ): Promise<{
     content: Array<{ type: "text"; text: string }>;
     details: DelegationDetails;
   }> {
-    if (this.options.parentSignal.aborted || toolSignal?.aborted) {
-      await this.finishAborted(
-        initialTask,
-        "cancelled",
-        "Cancelled before start",
-      );
-      throw new Error("Subagent task cancelled before start");
-    }
+    const restore = new SubagentRunnerRestore(continuation, this.options.run);
+    await this.assertInitialTaskActive(initialTask, continuation, toolSignal);
     const signals = [this.options.parentSignal, toolSignal].filter(
       (signal): signal is AbortSignal => Boolean(signal),
     );
     let task = initialTask;
-    let child: SubagentChildExecution | undefined;
     const leaseAbort = new AbortController();
-    const lifetime = new SubagentExecutionLifetime([...signals, leaseAbort.signal], this.options.limits.timeoutMs);
+    const lifetime = new SubagentExecutionLifetime([...signals, leaseAbort.signal], this.options.limits.timeoutMs,
+      restore.deadlineMs);
     lifetime.start();
     const assertActive = () => { lifetime.assertActive(); child?.assertActive(); };
     let worktree: SubagentWorktreeSession | undefined;
     let agent: Agent | undefined;
     let observer: SubagentTaskObserver | undefined;
     let turnCapped = false;
-    let usage = emptyUsage();
+    let usage = structuredClone(initialTask.usage ?? emptyUsage());
     let outcomeRejected = false;
     let abortActiveAgent = (): void => agent?.abort();
     const abort = (): void => abortActiveAgent();
@@ -101,8 +127,10 @@ export class SubagentTaskRunner {
     lifetime.signal.addEventListener("abort", abort, { once: true });
     try {
       assertActive();
+      await restore.prepare(this.options.store.workspaceRoot, this.options.control);
+      assertActive();
       if (!task.executionId) throw new Error("Subagent Task has no execution identity");
-      const started = await this.options.store.startSubagentChildRun({
+      const started = continuation?.execution ?? await this.options.store.startSubagentChildRun({
         taskId: task.id, executionId: task.executionId,
         authorization: authorizeSubagentChildRun({
           parentRun: this.options.run, parentProfile: this.options.parentProfile,
@@ -110,7 +138,7 @@ export class SubagentTaskRunner {
         }),
         lease: { ownerId: createProcessLeaseOwnerId("subworker"), ttlMs: 60_000 },
       });
-      child = new SubagentChildExecution(this.options.store, started, this.options.onEvent);
+      child ??= new SubagentChildExecution(this.options.store, started, this.options.onEvent);
       child.signal.addEventListener("abort", () => leaseAbort.abort(child!.signal.reason), { once: true });
       child.startHeartbeat();
       task = started.task;
@@ -158,6 +186,7 @@ export class SubagentTaskRunner {
         lifetime: child.lifetime(lifetime),
         child,
         assertTurnAvailable: () => observer?.assertTurnAvailable(),
+        assertParentBudgetAvailable: this.options.assertParentBudgetAvailable,
         ...(modelRoute ? { modelRoute } : {}),
         ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
       });
@@ -179,9 +208,12 @@ export class SubagentTaskRunner {
         concurrencyGate: this.options.concurrencyGate,
         onEvent: this.options.onEvent,
         assertActive,
+        ...restore.toolBindings,
       });
       const systemPrompt = started.profile.systemPrompt;
+      restore.assertTools(tools);
       const workingSet = new SubagentWorkingSet({ store: this.options.store, child, systemPrompt, tools,
+        requireDurableCheckpoint: restore.requiresDurableCheckpoint,
         ...(this.options.control ? { control: this.options.control } : {}),
         onEvent: this.options.onEvent });
       agent = new Agent({
@@ -190,7 +222,7 @@ export class SubagentTaskRunner {
           model: this.options.model,
           thinkingLevel: this.options.model.reasoning ? started.profile.thinkingLevel : "off",
           tools,
-          messages: [],
+          messages: restore.messages,
         },
         streamFn: createSubagentStream(modelSession),
         sessionId: `${child.run.id}:${task.id}`,
@@ -207,7 +239,9 @@ export class SubagentTaskRunner {
         this.options.limits,
         (type, currentTask, payload) => this.emit(type, currentTask, payload),
         (delta) => child!.progress(delta),
+        restore.budget,
       );
+      await restore.hydrate(agent, observer, workingSet, this.options.control);
       agent.subscribe(async (event) => {
         if (workingSet.healthy) await observer!.observe(event);
         await workingSet.observe(event, agent!.state.messages);
@@ -216,7 +250,7 @@ export class SubagentTaskRunner {
       assertActive();
       await this.options.control?.activate(agent);
       assertActive();
-      await agent.prompt(prompt);
+      await restore.invoke(agent, prompt);
       workingSet.assertHealthy();
       this.options.control?.deactivate(agent);
       task = observer.task;
@@ -337,6 +371,13 @@ export class SubagentTaskRunner {
     }
   }
 
+  private async assertInitialTaskActive(task: SubagentTask, continuation: StartedSubagentChildContinuation | undefined,
+    toolSignal: AbortSignal | undefined): Promise<void> {
+    if (continuation || (!this.options.parentSignal.aborted && !toolSignal?.aborted)) return;
+    await this.finishAborted(task, "cancelled", "Cancelled before start");
+    throw new Error("Subagent task cancelled before start");
+  }
+
   private async finishAborted(
     task: SubagentTask,
     status: "cancelled" | "timed_out",
@@ -359,14 +400,15 @@ export class SubagentTaskRunner {
     task: SubagentTask,
     payload: unknown,
   ): Promise<void> {
-    const event = await this.options.store.appendEvent({
+    const input = {
       threadId: task.threadId,
       runId: task.runId,
-      type,
-      category: "subagent",
-      visibility: "user",
+      category: "subagent" as const,
       payload: subagentJsonValue(payload),
-    });
+    };
+    const event = type === "subagent.continuation.unavailable" || type === "subagent.child.continuation_started"
+      ? await this.options.store.appendEvent({ ...input, type, visibility: "debug" })
+      : await this.options.store.appendEvent({ ...input, type });
     if (this.options.onEvent) {
       try {
         await this.options.onEvent(event);

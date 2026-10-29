@@ -230,7 +230,7 @@ import {
 import { recordActiveSkillLifecycles } from "./skill-lifecycle-projection.js";
 import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { LocalStore } from "./store.js";
-import { SubagentCoordinator } from "./subagents.js";
+import { createAgentSubagents, prepareAgentSubagentRecovery, type SubagentCoordinator } from "./agent-subagent-stage.js";
 import type { SubagentHubControlService } from "./subagent-hub-control.js";
 import { createUsageAccounting } from "./token-accounting.js";
 import { TokenMeterRegistry } from "./token-meter-provider.js";
@@ -609,9 +609,7 @@ export class AgentRuntime {
         explicitPrimary: options.model !== undefined,
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       });
-      const subagents =
-        model && !access.restricted && !access.degraded
-          ? new SubagentCoordinator({
+      const subagents = createAgentSubagents({
               store: this.store,
               models: this.modelRegistry.models,
               model,
@@ -639,11 +637,11 @@ export class AgentRuntime {
               worktreeOwnerId: this.workerId,
               parentSignal: abortController.signal,
               ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-            })
-          : undefined;
+            }, access, options.recovery?.inspection);
       unregisterSubagentHub = this.subagentHubControls?.register(
         thread.id, run.id, subagents,
       );
+      prompt += await prepareAgentSubagentRecovery(subagents, this.store, run, budget, options.recovery?.inspection);
       const modelAdvisorPolicy = effectiveModelAdvisorPolicy(agentProfile);
       const privateSourceContent = new PrivateSourceModelContentBoundary();
       const invokeTurn = async (

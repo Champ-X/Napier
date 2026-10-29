@@ -1,8 +1,9 @@
+export type { PreparedSubagentCompletion, SubagentCandidateDeliveryAuthority } from "./subagent-completion-types.js";
 import type {
   SubagentCandidateCommandSummary,
   SubagentCandidateVerificationSummary,
 } from "./subagent-worktree-verification.js";
-import type { SubagentWorktreeApplyDetails } from "@napier/contracts";
+import type { SubagentCompletionReservation, SubagentWorktreeApplyDetails } from "@napier/contracts";
 
 import type { LspRenameFile } from "./lsp-rename-workspace-edit.js";
 import type { LspWorkspaceEditPreviewSource } from "./lsp-workspace-edit-mutation.js";
@@ -10,6 +11,9 @@ import type { SubagentWorktreeChange } from "./subagent-worktree-diff.js";
 import type { WorktreeReadDependency } from "./subagent-worktree-read-set.js";
 
 export interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
+  completion?: SubagentCompletionReservation;
+  candidateVerification?: SubagentCandidateVerificationSummary;
+  candidateCommands?: SubagentCandidateCommandSummary;
   taskId: string;
   outcomeSha256: string;
   sourceRoot: string;
@@ -56,6 +60,8 @@ export interface SubagentWorktreeApplyManager {
 }
 
 export interface SubagentWorktreePreview {
+  /** Only the first staging caller may retract an uncommitted object. */
+  cleanupOwned?: boolean;
   id: string;
   expiresAt: string;
   taskId: string;

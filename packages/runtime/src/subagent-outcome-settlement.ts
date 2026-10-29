@@ -163,23 +163,25 @@ export async function settleSubagentOutcome(input: {
     formatSubagentOutcome(outcome),
     MAX_SUBAGENT_RESULT_CHARS,
   );
+  const finishTask: SubagentTaskFinisher = input.finishTask ?? ((value, active) => input.store.finishSubagentTask(input.task.id, value, active));
+  const finishInput = { status: "completed" as const, stopReason: "completed" as const, result, outcome, usage };
+  const prepared = await finishTask.prepareCompletion?.(finishInput, input.assertActive);
   const completion = await completeSubagentTask({
     taskId: input.task.id,
+    ...(prepared ? { prepared } : {}),
     outcomeSha256: outcome.contentSha256,
     ...(input.worktree ? { worktree: input.worktree } : {}),
     ...(input.worktrees ? { worktrees: input.worktrees } : {}),
     ...(input.toolSignal ? { signal: input.toolSignal } : {}),
     assertActive: input.assertActive,
-    isCommitted: () => input.store.listSubagentTasks(input.task.threadId, input.task.runId)
-      .some((current) => current.id === input.task.id && current.status === "completed"),
-    finish: async (_preview, assertActive) => {
-      const finish = input.finishTask ?? ((value, active) => input.store.finishSubagentTask(input.task.id, value, active));
-      const task = await finish({
-        status: "completed",
-        stopReason: "completed",
-        result,
-        outcome,
-        usage,
+    isCommitted: (preview) => input.store.listSubagentTasks(input.task.threadId, input.task.runId)
+      .some((current) => current.id === input.task.id && current.status === "completed" &&
+        (!prepared || current.completion?.reservation.candidate?.id === preview.id) &&
+        current.result === finishInput.result && current.outcome?.contentSha256 === outcome.contentSha256),
+    finish: async (preview, assertActive) => {
+      const task = await finishTask({ ...finishInput,
+        ...(prepared ? { preparedCompletion: prepared } : {}),
+        ...(prepared && preview ? { candidateId: preview.id } : {}),
       }, assertActive);
       if (task.status !== "completed") throw new Error(`Subagent task is ${task.status}`);
       return task;
@@ -188,23 +190,25 @@ export async function settleSubagentOutcome(input: {
   task = completion.value;
   await input.publishCommitted?.();
   const { preview } = completion;
-  await input.emit("subagent.outcome.accepted", task, {
-    taskId: task.id,
-    role: task.role,
-    status: "accepted",
-    outcomeSha256: outcome.contentSha256,
-    resultSha256: outcome.resultSha256,
-    itemSetSha256: outcome.itemSetSha256,
-    itemCount: outcome.itemCount,
-    unknownCount: outcome.unknownCount,
-    evidenceSetSha256: outcome.evidenceSetSha256,
-    evidenceCount: outcome.evidenceCount,
-  });
-  await input.emit(
-    "subagent.completed",
-    task,
-    subagentTaskPayload(task, preview),
-  );
+  if (!task.completion) {
+    await input.emit("subagent.outcome.accepted", task, {
+      taskId: task.id,
+      role: task.role,
+      status: "accepted",
+      outcomeSha256: outcome.contentSha256,
+      resultSha256: outcome.resultSha256,
+      itemSetSha256: outcome.itemSetSha256,
+      itemCount: outcome.itemCount,
+      unknownCount: outcome.unknownCount,
+      evidenceSetSha256: outcome.evidenceSetSha256,
+      evidenceCount: outcome.evidenceCount,
+    });
+    await input.emit(
+      "subagent.completed",
+      task,
+      subagentTaskPayload(task, preview),
+    );
+  }
   return {
     result: {
       content: [

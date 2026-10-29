@@ -1,11 +1,6 @@
-import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
+import type { Api, Model } from "@earendil-works/pi-ai";
 import type {
-  JsonValue,
-  AgentProfile,
-  RegisteredRunEventTypeForCategory,
-  RunEvent,
   RunRecord,
-  SubagentLimits,
   SubagentTask,
 } from "@napier/contracts";
 import type {
@@ -19,10 +14,8 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
-import type { ModelRouteSession, ModelRouter } from "./model-route.js";
-import type { LocalStore } from "./store.js";
-import type { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import { SubagentExecutionControl } from "./subagent-execution-control.js";
+import { projectSubagentMailbox } from "./subagent-mailbox-projection.js";
 import {
   normalizeSubagentOutputSchema,
   subagentOutputSchemaSha256,
@@ -30,42 +23,16 @@ import {
 import type { SubagentContext, SubagentProvider } from "./subagent-provider.js";
 import { SubagentTaskRunner } from "./subagent-task-runner.js";
 import { subagentJsonValue } from "./subagent-task-evidence.js";
-import type { SubagentWorktreeMutationManager } from "./subagent-worktree-mutation.js";
-import type { SubagentExecutionCleanup, SubagentInheritedToolsFactory } from "./subagent-execution-context.js";
 import { resolveModelRouteSelection } from "./model-route-resolution.js";
-
-type EventSink = (event: RunEvent) => Promise<void> | void;
-type RunnerResult = Awaited<ReturnType<SubagentTaskRunner["execute"]>>;
-
-interface ActiveExecution {
-  handle: SubagentHandle;
-  control: SubagentExecutionControl;
-  abort: AbortController;
-  settled: Promise<{ result?: RunnerResult; error?: unknown }>;
-}
+import { launchSubagentContinuation, type SubagentActiveExecution } from "./subagent-continuation-provider.js";
+import { readCommittedSubagentResult } from "./subagent-committed-result.js";
+import type { SubagentModelRouteSession, SubagentProviderOptions } from "./subagent-provider-options.js";
 
 export class InProcessSubagentProvider implements SubagentProvider {
   readonly id = "in_process";
-  private readonly active = new Map<string, ActiveExecution>();
+  private readonly active = new Map<string, SubagentActiveExecution>();
 
-  constructor(
-    private readonly options: {
-      store: LocalStore;
-      models: MutableModels;
-      modelRouter?: ModelRouter;
-      defaultModel: Model<Api>;
-      profile: AgentProfile;
-      run: RunRecord;
-      limits: SubagentLimits;
-      parentSignal: AbortSignal;
-      concurrencyGate: ToolConcurrencyGate;
-      worktrees?: SubagentWorktreeMutationManager;
-      createInheritedTools?: SubagentInheritedToolsFactory;
-      cleanupExecutionResources?: SubagentExecutionCleanup;
-      schedule?<T>(operation: () => Promise<T>): Promise<T>;
-      onEvent?: EventSink;
-    },
-  ) {
+  constructor(private readonly options: SubagentProviderOptions) {
     this.options = {
       ...options,
       profile: structuredClone(options.profile),
@@ -187,17 +154,16 @@ export class InProcessSubagentProvider implements SubagentProvider {
     await execution.control.send(message);
   }
 
+  resume(input: Pick<Parameters<typeof launchSubagentContinuation>[0], "prepared" | "assessment" | "authorization" | "assertParentBudgetAvailable">) {
+    return launchSubagentContinuation({ ...input, options: this.options,
+      register: (execution) => this.active.set(execution.handle.executionId, execution),
+      delivered: (task, message) => this.recordDelivered(task, message) });
+  }
+
   async inspect(handle: SubagentHandle): Promise<SubagentSnapshot> {
     const task = this.requireTask(handle);
-    const events = (await this.options.store.listEvents(task.threadId)).filter(
-      (event) => messageTaskId(event.payload) === task.id,
-    );
-    const accepted = events.filter(
-      (event) => event.type === "subagent.message.accepted",
-    );
-    const delivered = events.filter(
-      (event) => event.type === "subagent.message.delivered",
-    );
+    const mailbox = projectSubagentMailbox(task, this.options.store.listSubagentTasks(task.threadId),
+      await this.options.store.listEvents(task.threadId));
     return {
       kind: "napier.subagent-snapshot",
       schemaVersion: 1,
@@ -209,20 +175,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
       ...(task.routePlanId ? { routePlanId: task.routePlanId } : {}),
       stepCount: task.stepCount,
       turnCount: task.turnCount,
-      mailbox: {
-        acceptedCount: accepted.length,
-        deliveredCount: delivered.length,
-        consumedCount: task.mailboxConsumedCount ?? 0,
-        consumedThroughSeq: task.mailboxConsumedThroughSeq ?? 0,
-        pendingConsumptionCount: Math.max(0, accepted.length - (task.mailboxConsumedCount ?? 0)),
-        pendingCount: Math.max(0, accepted.length - delivered.length),
-        ...(accepted.at(-1)
-          ? { lastAcceptedAt: accepted.at(-1)!.createdAt }
-          : {}),
-        ...(delivered.at(-1)
-          ? { lastDeliveredAt: delivered.at(-1)!.createdAt }
-          : {}),
-      },
+      mailbox,
       taskRevision: task.revision,
       createdAt: task.createdAt,
       ...(task.startedAt ? { startedAt: task.startedAt } : {}),
@@ -256,6 +209,8 @@ export class InProcessSubagentProvider implements SubagentProvider {
     if (!isSupervisorTerminal(status)) {
       throw new Error("Subagent task has no in-process execution to collect");
     }
+    const providerResult = settlement?.result ??
+      (task.completion ? await readCommittedSubagentResult(this.options.store, task) : undefined);
     return {
       kind: "napier.subagent-collected-outcome",
       schemaVersion: 1,
@@ -267,15 +222,15 @@ export class InProcessSubagentProvider implements SubagentProvider {
       ...(task.outputSchemaSha256
         ? { outputSchemaSha256: task.outputSchemaSha256 }
         : {}),
-      ...(settlement?.result
-        ? { providerResult: subagentJsonValue(settlement.result) }
+      ...(providerResult
+        ? { providerResult: subagentJsonValue(providerResult) }
         : {}),
     };
   }
 
   private async resolveRoute(request: SubagentRequest): Promise<{
     model: Model<Api>;
-    createModelRoute?: (executionRun: RunRecord) => Promise<ModelRouteSession>;
+    createModelRoute?: (executionRun: RunRecord) => Promise<SubagentModelRouteSession>;
   }> {
     if (!this.options.modelRouter) {
       if (
@@ -356,7 +311,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
     return task;
   }
 
-  private requireActive(handle: SubagentHandle): ActiveExecution {
+  private requireActive(handle: SubagentHandle): SubagentActiveExecution {
     this.requireTask(handle);
     const execution = this.active.get(handle.executionId);
     if (!execution || execution.handle.taskId !== handle.taskId) {
@@ -378,7 +333,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
   }
 
   private async emit(
-    type: RegisteredRunEventTypeForCategory<"subagent">,
+    type: "subagent.queued" | "subagent.cancel.requested" | "subagent.message.delivered",
     task: SubagentTask,
     payload: unknown,
   ): Promise<void> {
@@ -387,7 +342,6 @@ export class InProcessSubagentProvider implements SubagentProvider {
       runId: task.runId,
       type,
       category: "subagent",
-      visibility: "user",
       payload: subagentJsonValue(payload),
     });
     try {
@@ -420,14 +374,6 @@ function assertMessage(message: SubagentMessage, taskId: string): void {
   ) {
     throw new Error("Subagent message binding is invalid");
   }
-}
-
-function messageTaskId(payload: JsonValue): string | undefined {
-  return payload && !Array.isArray(payload) && typeof payload === "object"
-    ? typeof payload["taskId"] === "string"
-      ? payload["taskId"]
-      : undefined
-    : undefined;
 }
 
 function isTerminal(task: SubagentTask): boolean {

@@ -9,7 +9,7 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type { SubagentWorktreePreview } from "./subagent-worktree-mutation.js";
+import type { SubagentWorktreePreview } from "./subagent-worktree-mutation-model.js";
 import {
   formatSubagentCandidateCommands,
   formatSubagentCandidateVerification,

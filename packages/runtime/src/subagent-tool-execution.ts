@@ -26,9 +26,11 @@ export function governSubagentTools(input: {
   concurrencyGate: ToolConcurrencyGate;
   onEvent: EventSink | undefined;
   assertActive?: () => void;
+  inheritedProviderCallIds?: readonly string[];
 }): AgentTool[] {
   const identify = createSubagentToolCallScope({ store: input.store, runId: input.run.id,
-    taskId: input.taskId, ...(input.executionId ? { executionId: input.executionId } : {}) });
+    taskId: input.taskId, ...(input.executionId ? { executionId: input.executionId } : {}),
+    ...(input.inheritedProviderCallIds ? { inheritedProviderCallIds: input.inheritedProviderCallIds } : {}) });
   return input.tools.map((tool) => {
     const protocol = createOwnedToolRecordV2(tool);
     const acquisitionCapable =

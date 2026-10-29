@@ -1,9 +1,11 @@
 import type { JsonObject, ModelContextEnvelopeReceipt, RunEvent, SubagentTask, Usage } from "@napier/contracts";
 import { createId } from "./ids.js";
 import type { ModelSessionLifetime } from "./model-session.js";
-import type { FinishSubagentTaskInput } from "./subagent-store-records.js";
+import type { FinishSubagentTaskInput } from "./subagent-completion-types.js";
+import type { PreparedSubagentCompletion } from "./subagent-completion-types.js";
 import { emitBestEffort, type EventSink } from "./event-sink.js";
-import { RunBudgetTracker } from "./run-budget.js";
+import { createSubagentRunBudget } from "./subagent-budget-projection.js";
+import { SubagentModelTurnDeniedError } from "./subagent-model-turn-denial.js";
 import type { PreparedSubagentWorkingSet, PrepareSubagentChildCheckpointResult, SubagentCheckpointStore } from "./subagent-working-set-types.js";
 import type {
   StartedSubagentChildRun, SubagentChildInvocationPhase,
@@ -11,9 +13,10 @@ import type {
 } from "./subagent-child-run-types.js";
 
 export type SubagentProgress = { turnDelta?: number; stepDelta?: number };
-export type SubagentTaskFinisher = (
-  finish: FinishSubagentTaskInput, assertActive?: () => void,
-) => Promise<SubagentTask>;
+export interface SubagentTaskFinisher {
+  (finish: FinishSubagentTaskInput, assertActive?: () => void): Promise<SubagentTask>;
+  prepareCompletion?: (finish: FinishSubagentTaskInput, assertActive?: () => void) => Promise<PreparedSubagentCompletion>;
+}
 
 /** One lease holder serializes execution revisions; heartbeats have their own revision. */
 export class SubagentChildExecution {
@@ -52,13 +55,20 @@ export class SubagentChildExecution {
   assertCanInvoke(ownReservationPending = false): void {
     this.assertActive();
     const current = this.store.assertSubagentChildRunActive(this.fence());
+    if (current.task.completionReservation)
+      throw new Error("Child completion is reserved; model execution cannot restart");
     if (!ownReservationPending && current.run.usageStatus === "incomplete")
       throw new Error("Child model usage is unresolved; another invocation is not permitted");
-    const budget = new RunBudgetTracker(current.run.limits!, current.run.startedAt);
-    // Task turns (including repair) remain governed by the existing child
-    // counter. Canonical usage supplies the same raw roll-up as parent budgets.
-    budget.observeAuxiliaryUsage(current.run.usage);
-    budget.assertCanStartAuxiliaryCall();
+    createSubagentRunBudget(current.run).assertCanStartAuxiliaryCall();
+  }
+
+  assertTurnAvailable(): void {
+    this.assertActive();
+    const current = this.store.assertSubagentChildRunActive(this.fence());
+    const inherited = current.run.subagent?.continuation?.budget;
+    const maxTurns = inherited?.limits.maxTurns ?? current.run.limits!.maxTurns;
+    if (current.task.turnCount + (inherited?.inheritedTurnCount ?? 0) >= maxTurns)
+      throw new SubagentModelTurnDeniedError(maxTurns);
   }
 
   lifetime(parent: ModelSessionLifetime): ModelSessionLifetime {
@@ -120,13 +130,17 @@ export class SubagentChildExecution {
     });
   }
 
-  readonly finish: SubagentTaskFinisher = (finish, assertActive) => this.serialize(async () => {
+  readonly finish: SubagentTaskFinisher = Object.assign((finish: FinishSubagentTaskInput, assertActive?: () => void) => this.serialize(async () => {
     this.state = await this.store.finishSubagentChildRun({
       ...this.fence(), finish, ...(assertActive ? { assertActive } : {}),
     });
     this.pendingEvents.push(...this.state.events ?? []);
     return this.task;
-  });
+  }), { prepareCompletion: (finish: FinishSubagentTaskInput, assertActive?: () => void) => this.serialize(async () => {
+    const ready = await this.store.prepareSubagentChildCompletion({ ...this.fence(), finish, ...(assertActive ? { assertActive } : {}) });
+    this.state = ready;
+    return ready.prepared;
+  }) });
 
   /** Completion publishes only after the candidate ownership transfer returns. */
   publish(): Promise<void> {

@@ -167,6 +167,10 @@ export class ThreadReplayImportRepository {
         `Thread replay bundle verification failed: ${bundleVerification.diagnostics.join(", ")}`,
       );
     }
+    if (bundle.runs.some((run) => run.subagent?.continuation) ||
+        bundle.subagents.some((task) => task.continuedFromTaskId !== undefined)) {
+      throw new Error("Thread replay import of child continuation lineage is unsupported");
+    }
     const importedThreadId = await this.host.stateQueue.run(async () => {
       const importedAt = nowIso();
       const ids = createThreadReplayImportIds(bundle);
@@ -203,7 +207,9 @@ export class ThreadReplayImportRepository {
       const subagents: SubagentTask[] = bundle.subagents.map((source) => {
         const active =
           source.status === "pending" || source.status === "running";
-        const { outcome: _outcome, ...sourceTask } = structuredClone(source);
+        // Imported IDs cannot inherit local candidate delivery or completion authority.
+        const { outcome: _outcome, completion: _completion,
+          completionReservation: _completionReservation, ...sourceTask } = structuredClone(source);
         const taskId = taskIds.get(source.id)!;
         return {
           ...sourceTask,

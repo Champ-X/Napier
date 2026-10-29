@@ -57,6 +57,7 @@ export function createSubagentModelSession(input: {
   child?: SubagentChildExecution;
   modelRoute?: ModelRouteStreamPort;
   assertTurnAvailable?: () => void;
+  assertParentBudgetAvailable?: (() => void) | undefined;
   onEvent?: EventSink;
 }): SubagentModelSession {
   const lifetime = input.lifetime ?? new SubagentExecutionLifetime(
@@ -100,7 +101,11 @@ export function createSubagentModelSession(input: {
       try {
         lifetime.assertActive();
         invocationSignal.throwIfAborted();
-        if (phase === "subagent_turn") input.assertTurnAvailable?.();
+        if (phase !== "context_compaction") {
+          input.assertTurnAvailable?.();
+          input.child?.assertTurnAvailable();
+        }
+        input.assertParentBudgetAvailable?.();
         input.child?.assertCanInvoke();
       } catch (error) {
         const denied = subagentModelTurnDeniedStream(model, error, invocationSignal);
@@ -168,7 +173,17 @@ export function createSubagentModelSession(input: {
             kind: "napier.subagent-model-cancellation-failure", phase, invocationIndex,
             contextEnvelopeSha256, ...failure,
           }),
-          invoke: (_invocation, next) => { input.child?.assertCanInvoke(true); return next(); },
+          invoke: (_invocation, next) => {
+            try {
+              input.assertParentBudgetAvailable?.();
+              input.child?.assertCanInvoke(true);
+              return next();
+            } catch (error) {
+              const denied = subagentModelTurnDeniedStream(candidate, error, invocationSignal);
+              if (denied) return denied;
+              throw error;
+            }
+          },
         });
         return observeResponse(opened.source, async (message) => {
           const usage = hostModelAbortProvenance(message) ? undefined : addSubagentUsage(emptyUsage(), message.usage);

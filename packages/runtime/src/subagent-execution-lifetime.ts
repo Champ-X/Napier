@@ -7,8 +7,9 @@ export class SubagentExecutionLifetime implements ModelSessionLifetime {
   private readonly timeout = new AbortController();
   private timer: ReturnType<typeof setTimeout> | undefined;
 
-  constructor(signals: readonly AbortSignal[], timeoutMs: number) {
-    this.deadline = Date.now() + timeoutMs;
+  constructor(signals: readonly AbortSignal[], timeoutMs: number, deadlineMs?: number) {
+    this.deadline = deadlineMs ?? Date.now() + timeoutMs;
+    if (!Number.isFinite(this.deadline)) throw new Error("Subagent deadline is invalid");
     this.signal = AbortSignal.any([...signals, this.timeout.signal]);
   }
 

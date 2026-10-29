@@ -2,7 +2,7 @@ import type { Api, AssistantMessageEventStream, Context, Model, SimpleStreamOpti
 import type { ModelContextEnvelopeReceipt } from "@napier/contracts";
 import type { EventSink } from "./event-sink.js";
 import type { ModelSessionLifetime } from "./model-session.js";
-import { RunBudgetTracker } from "./run-budget.js";
+import { createSubagentRunBudget } from "./subagent-budget-projection.js";
 import { RunContextCompactor } from "./run-context-compaction.js";
 import type { RunCompactionHost, RunCompactionInvocationInput } from "./run-context-compaction-model.js";
 import type { SubagentChildExecution } from "./subagent-child-execution.js";
@@ -26,9 +26,8 @@ export async function compactSubagentContext(input: {
   onEvent?: EventSink;
 }): Promise<Context> {
   const run = input.child.run;
-  const budget = new RunBudgetTracker(run.limits!, run.startedAt);
-  // This local tracker is independent of the child owner's canonical settlement.
-  budget.observeAuxiliaryUsage(run.usage);
+  // Independent local tracker includes inherited admission debt, never new usage.
+  const budget = createSubagentRunBudget(run);
   const compactor = new RunContextCompactor(input.host, run, budget, () => 0, input.onEvent, {
     invoke: async ({ model, request, responseEvidence }) => {
       let envelopeSha256: string | undefined;

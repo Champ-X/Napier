@@ -18,7 +18,7 @@ const authorizations = new WeakMap<object, AuthorizationSnapshot>();
 /** Internal host capability: copying its public shape does not copy authority. */
 export function authorizeSubagentChildRun(input: AuthorizationSnapshot): SubagentChildRunAuthorization {
   const snapshot = structuredClone(input);
-  assertParentProfile(snapshot.parentRun, snapshot.parentProfile);
+  assertSubagentParentProfile(snapshot.parentRun, snapshot.parentProfile);
   snapshot.limits = normalizeSubagentLimits(snapshot.limits);
   if ((Object.keys(snapshot.limits) as Array<keyof SubagentLimits>).some((key) =>
       snapshot.limits[key] > snapshot.parentRun.configuration!.subagentLimits[key]))
@@ -64,7 +64,7 @@ export function resolveSubagentChildAuthorization(
   return { profile, limits: structuredClone(snapshot.limits) };
 }
 
-function assertParentProfile(parent: RunRecord, profile: AgentProfile): void {
+export function assertSubagentParentProfile(parent: RunRecord, profile: AgentProfile): void {
   const configuration = parent.configuration;
   if (!configuration || parent.agentId !== profile.id || parent.agentRevision !== profile.revision)
     throw new Error("Child authorization requires the parent's frozen effective profile");

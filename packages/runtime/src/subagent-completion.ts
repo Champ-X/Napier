@@ -1,12 +1,14 @@
 import { rethrowAfterCandidateRevocation, unresolvedCandidateCleanup } from "./subagent-candidate-store.js";
 import type { SubagentWorktreePreview } from "./subagent-worktree-mutation-model.js";
 import type { SubagentWorktreeSession } from "./subagent-worktree-snapshot.js";
+import type { PreparedSubagentCompletion } from "./subagent-completion-types.js";
 
 export interface CandidateDeliveryPort {
   storePreview(
     session: SubagentWorktreeSession,
     outcomeSha256: string,
     signal?: AbortSignal,
+    prepared?: PreparedSubagentCompletion,
   ): Promise<SubagentWorktreePreview>;
   revokePreview(previewId: string, taskId: string): Promise<boolean>;
 }
@@ -18,8 +20,9 @@ export async function completeSubagentTask<T>(input: {
   worktree?: SubagentWorktreeSession;
   worktrees?: CandidateDeliveryPort;
   signal?: AbortSignal;
+  prepared?: PreparedSubagentCompletion;
   assertActive: () => void;
-  isCommitted?: () => boolean | Promise<boolean>;
+  isCommitted?: (preview: SubagentWorktreePreview) => boolean | Promise<boolean>;
   finish: (
     preview: SubagentWorktreePreview | undefined,
     assertActive: () => void,
@@ -36,7 +39,7 @@ export async function completeSubagentTask<T>(input: {
       if (!input.worktrees || input.worktree.taskId !== input.taskId)
         throw new Error("Subagent completion worktree task binding changed");
       preview = await input.worktrees.storePreview(
-        input.worktree, input.outcomeSha256, input.signal,
+        input.worktree, input.outcomeSha256, input.signal, input.prepared,
       );
     }
     assertActive();
@@ -45,10 +48,10 @@ export async function completeSubagentTask<T>(input: {
     const value = await input.finish(preview, assertActive);
     return { value, ...(preview ? { preview } : {}) };
   } catch (error) {
-    if (preview && input.worktrees) {
+    if (preview && preview.cleanupOwned !== false && input.worktrees) {
       let committed: boolean;
       try {
-        committed = (await input.isCommitted?.()) ?? false;
+        committed = (await input.isCommitted?.(preview)) ?? false;
       } catch (checkError) {
         throw unresolvedCandidateCleanup(error, checkError);
       }

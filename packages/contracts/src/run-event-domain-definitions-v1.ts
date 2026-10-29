@@ -250,7 +250,7 @@ export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
     projectionOwner: "subagent-roster",
   }),
   defineEventGroup({
-    activeRunTypes: ["subagent.model.invocation", "subagent.child.invocation_reserved", "subagent.child.checkpoint_committed", "subagent.child.checkpoint_unavailable"],
+    activeRunTypes: ["subagent.model.invocation", "subagent.child.invocation_reserved", "subagent.child.checkpoint_committed", "subagent.child.checkpoint_unavailable", "subagent.continuation.unavailable", "subagent.child.continuation_started"],
     runAnyTypes: ["subagent.model.response", "subagent.model.cancellation_failed"],
     terminalTransitionTypes: [],
     category: "subagent",

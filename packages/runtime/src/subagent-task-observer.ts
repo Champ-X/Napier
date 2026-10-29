@@ -44,13 +44,15 @@ export class SubagentTaskObserver {
     private readonly limits: SubagentLimits,
     private readonly emit: Emit,
     private readonly recordProgress?: (delta: SubagentProgress) => Promise<SubagentTask>,
+    private readonly inherited = { inheritedTurnCount: 0, inheritedStepCount: 0 },
   ) {
     this.task = task;
     this.usage = usage;
+    this.stepIndex = inherited.inheritedStepCount + task.stepCount;
   }
 
   assertTurnAvailable(): void {
-    if (this.task.turnCount < this.limits.maxTurns && !this.turnCapped) return;
+    if (this.task.turnCount + this.inherited.inheritedTurnCount < this.limits.maxTurns && !this.turnCapped) return;
     this.turnCapped = true;
     throw new SubagentModelTurnDeniedError(this.limits.maxTurns);
   }
@@ -80,7 +82,7 @@ export class SubagentTaskObserver {
       turnDelta: 1,
     });
     if (
-      this.task.turnCount >= this.limits.maxTurns &&
+      this.task.turnCount + this.inherited.inheritedTurnCount >= this.limits.maxTurns &&
       message.stopReason === "toolUse"
     ) {
       this.turnCapped = true;

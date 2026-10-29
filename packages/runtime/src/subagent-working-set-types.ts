@@ -33,6 +33,9 @@ export interface SubagentMailboxAcceptedBinding {
   contentSha256: string;
   /** Digest of the deterministic user message for this accepted payload. */
   messageSha256: string;
+  /** Present for immutable acceptance inherited from a predecessor Task. */
+  originTaskId?: string;
+  originParentRunId?: string;
 }
 export interface SubagentMailboxConsumedBinding extends SubagentMailboxAcceptedBinding {
   /** Original exact user-message digest; retained when later compaction projects it. */

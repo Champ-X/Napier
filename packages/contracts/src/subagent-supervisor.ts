@@ -7,6 +7,9 @@ import type {
 import type { WorkflowValueSchema } from "./execution-workflows.js";
 import type { ModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import type { ModelRouteRequest } from "./model-route.js";
+import type { SubagentCompletionReceipt, SubagentCompletionReservation } from "./subagent-completion.js";
+export type { SubagentCompletionCandidate, SubagentCompletionReceipt, SubagentCompletionReservation } from "./subagent-completion.js";
+export type * from "./subagent-continuation.js";
 
 /** Durable compatibility state used by the existing task projections. */
 export type SubagentTaskStatus =
@@ -287,6 +290,8 @@ export interface SubagentTask {
   status: SubagentTaskStatus;
   result?: string;
   outcome?: SubagentOutcome;
+  completionReservation?: SubagentCompletionReservation;
+  completion?: SubagentCompletionReceipt;
   error?: string;
   stopReason?: SubagentStopReason;
   model: ModelRef;
@@ -300,6 +305,7 @@ export interface SubagentTask {
   routePlanId?: string;
   revivedFromTaskId?: string;
   failureContextSha256?: string;
+  continuedFromTaskId?: string;
   stepCount: number;
   turnCount: number;
   usage: Usage;

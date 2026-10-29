@@ -41,6 +41,7 @@ export function validateConsumedSubagentMailbox(accepted: readonly SubagentMailb
     const source = byId.get(entry.id);
     if (!source || consumedById.has(entry.id) || entry.acceptedSeq !== source.acceptedSeq ||
         entry.contentSha256 !== source.contentSha256 || entry.messageSha256 !== source.messageSha256 ||
+        entry.originTaskId !== source.originTaskId || entry.originParentRunId !== source.originParentRunId ||
         !Number.isSafeInteger(entry.messageIndex) || entry.messageIndex < 0)
       throw new Error("Subagent mailbox consumed binding is invalid");
     consumedById.set(entry.id, entry);

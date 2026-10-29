@@ -1,5 +1,6 @@
 import type { JsonObject, RunEvent, RunRecord, SubagentTask } from "@napier/contracts";
 import type { SubagentCheckpointFrontier, SubagentWorkingSetBinding } from "./subagent-working-set-types.js";
+import { canonicalJson } from "./ed25519.js";
 
 type Reference = NonNullable<NonNullable<RunRecord["subagent"]>["checkpoint"]>;
 const POINTER_KEYS = ["schemaVersion", "revision", "capsuleSha256", "capsuleBytes", "messageCount",
@@ -39,11 +40,15 @@ export function assertPreviousChildCheckpoint(frontier: SubagentCheckpointFronti
 }
 
 export function validateChildCheckpointEvents(run: RunRecord, events: readonly RunEvent[]): void {
+  const starts = events.filter((event) => event.type === "subagent.child.continuation_started");
+  const continuation = run.subagent?.continuation;
+  if (continuation ? starts.length !== 1 || canonicalJson(starts[0]!.payload) !== canonicalJson(continuation) : starts.length !== 0)
+    throw new Error("Child continuation receipt differs from its durable event");
   const commits = events.filter((event) => event.type === "subagent.child.checkpoint_committed");
   const reference = run.subagent?.checkpoint;
   if (!reference && commits.length === 0) return;
   if (!reference || commits.length !== reference.revision) throw new Error("Child checkpoint event count is invalid");
-  let previous = "";
+  let previous = run.subagent?.continuation?.sourceCapsuleSha256 ?? "";
   for (const [index, event] of commits.entries()) {
     const payload = record(event.payload);
     if (payload["revision"] !== index + 1 || payload["previousCapsuleSha256"] !== previous ||

@@ -19,6 +19,7 @@ import type {
   SubagentCandidateCommandSummary,
   SubagentCandidateVerificationSummary,
 } from "./subagent-worktree-verification.js";
+import type { PreparedSubagentCompletion, SubagentCandidateDeliveryAuthority } from "./subagent-completion-types.js";
 
 export class SubagentWorktreeDelivery extends SubagentCandidateStore {
   constructor(
@@ -26,6 +27,8 @@ export class SubagentWorktreeDelivery extends SubagentCandidateStore {
       workspaceRoot: string;
       dataRoot: string;
       now?: () => Date;
+      candidateDeliveryAuthority?: SubagentCandidateDeliveryAuthority;
+      requireCompletionBinding?: boolean;
     },
   ) {
     super(deliveryOptions);
@@ -43,6 +46,7 @@ export class SubagentWorktreeDelivery extends SubagentCandidateStore {
     candidateCommands: SubagentCandidateCommandSummary,
     toolchain?: SubagentWorktreeToolchain,
     signal?: AbortSignal,
+    prepared?: PreparedSubagentCompletion,
   ): Promise<SubagentWorktreePreview> {
     signal?.throwIfAborted();
     const readDependencies = worktreeReadDependencies(
@@ -90,16 +94,19 @@ export class SubagentWorktreeDelivery extends SubagentCandidateStore {
       sourceRoot: session.sourceRoot,
       changes: candidate.changes,
       files: modifiedFiles,
-    });
+      ...(prepared ? { candidateVerification, candidateCommands } : {}),
+    }, prepared);
     try {
       signal?.throwIfAborted();
     } catch (error) {
+      if (!stored.cleanupOwned) throw error;
       return rethrowAfterCandidateRevocation(error, () =>
         this.revokeUndelivered(stored.id, session.taskId),
       );
     }
     return {
       id: stored.id,
+      cleanupOwned: stored.cleanupOwned,
       expiresAt: stored.expiresAt,
       taskId: session.taskId,
       changedPaths: candidate.changedPaths,

@@ -4,7 +4,8 @@ export type { SubagentChildRunFence, SubagentChildRunState, SubagentChildCheckpo
 import type { SubagentCheckpointStore } from "./subagent-working-set-types.js";
 import type { RunLeaseOptions } from "./run-lease-renewal.js";
 import type { SubagentChildRunAuthorization } from "./subagent-child-authorization.js";
-import type { FinishSubagentTaskInput } from "./subagent-store-records.js";
+import type { FinishSubagentTaskInput } from "./subagent-completion-types.js";
+import type { PrepareSubagentCompletionInput, PreparedSubagentCompletionResult } from "./subagent-completion-types.js";
 
 export interface StartSubagentChildRunInput {
   taskId: string;
@@ -47,6 +48,7 @@ export interface SubagentChildProgressInput extends SubagentChildRunFence {
 export interface BindSubagentChildRouteInput extends SubagentChildRunFence { routePlanId: string }
 /** Runner-facing port; keeps the executor independent of the workspace store facade. */
 export interface SubagentChildExecutionStore extends SubagentCheckpointStore {
+  prepareSubagentChildCompletion(input: PrepareSubagentCompletionInput): Promise<PreparedSubagentCompletionResult>;
   renewRunLease(runId: string, token: string, ttlMs: number): Promise<RunRecord>;
   assertSubagentChildRunActive(input: SubagentChildRunFence): SubagentChildRunState;
   reserveSubagentChildInvocation(input: ReserveSubagentChildInvocationInput): Promise<SubagentChildInvocationReservation>;

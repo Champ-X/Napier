@@ -375,6 +375,7 @@ import { EMPTY_STORE_STATE, type PersistedStoreState } from "./store-state.js";
 import {
   SubagentRepository,
   SubagentChildRunRepository, type AcceptSubagentMessageInput, type CommitSubagentChildCheckpointInput,
+  type PrepareSubagentCompletionInput, type PrepareSubagentChildContinuationInput, type StartSubagentChildContinuationInput,
   type CreateSubagentTaskInput,
   type StartSubagentChildRunInput, type SubagentChildRunFence, type ReserveSubagentChildInvocationInput,
   type SettleSubagentChildInvocationInput, type FinishSubagentChildRunInput, type SubagentChildProgressInput, type BindSubagentChildRouteInput,
@@ -2415,6 +2416,9 @@ export class LocalStore {
 
   // Child authority and aggregate mutations belong to the dedicated repository.
   prepareSubagentChildCheckpoint(input: SubagentChildRunFence) { return this.subagentChildRunRepository.prepareCheckpoint(input); }
+  prepareSubagentChildCompletion(input: PrepareSubagentCompletionInput) { return this.subagentChildRunRepository.prepareCompletion(input); }
+  prepareSubagentChildContinuation(input: PrepareSubagentChildContinuationInput) { return this.subagentChildRunRepository.prepareContinuation(input); }
+  startSubagentChildContinuation(input: StartSubagentChildContinuationInput) { return this.subagentChildRunRepository.startContinuation(input); }
   commitSubagentChildCheckpoint(input: CommitSubagentChildCheckpointInput) { return this.subagentChildRunRepository.commitCheckpoint(input); }
   acceptSubagentMessage(input: AcceptSubagentMessageInput) { return this.subagentChildRunRepository.acceptMessage(input); }
   startSubagentChildRun(input: StartSubagentChildRunInput) { return this.subagentChildRunRepository.start(input); }
@@ -2425,12 +2429,8 @@ export class LocalStore {
   bindSubagentChildRoute(input: BindSubagentChildRouteInput) { return this.subagentChildRunRepository.bindRoute(input); }
   finishSubagentChildRun(input: FinishSubagentChildRunInput) { return this.subagentChildRunRepository.finish(input); }
 
-  recordSubagentProgress(...args: Parameters<SubagentRepository["progress"]>): Promise<SubagentTask> {
-    return this.subagentRepository.progress(...args);
-  }
-  finishSubagentTask(...args: Parameters<SubagentRepository["finish"]>): Promise<SubagentTask> {
-    return this.subagentRepository.finish(...args);
-  }
+  recordSubagentProgress(...args: Parameters<SubagentRepository["progress"]>): Promise<SubagentTask> { return this.subagentRepository.progress(...args); }
+  finishSubagentTask(...args: Parameters<SubagentRepository["finish"]>): Promise<SubagentTask> { return this.subagentRepository.finish(...args); }
 
   setSubagentSupervisorStatus(...args: Parameters<SubagentRepository["setSupervisorStatus"]>): Promise<SubagentTask> {
     return this.subagentRepository.setSupervisorStatus(...args);

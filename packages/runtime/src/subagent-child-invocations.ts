@@ -17,6 +17,7 @@ export async function reserveChildInvocation(host: SubagentChildRunHost,
     throw new Error("Child invocation request identity or phase is invalid");
   return host.stateQueue.run(async () => {
     const { run, task } = assertChildRunFence(host, input, { checkRevision: false });
+    if (task.completionReservation) throw new Error("Child completion is reserved; new model invocations are fenced");
     const invocationId = `childinv_${sha256(canonicalJson({ runId: run.id,
       executionId: input.executionId, requestId: input.requestId }))}`;
     const existing = reservation(host.requireLedger().listRunEvents(run.id), invocationId);

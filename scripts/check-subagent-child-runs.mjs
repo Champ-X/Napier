@@ -57,6 +57,8 @@ const runtimeTests = files.filter((file) => /^packages\/runtime\/test\/subagent.
   "packages/runtime/test/run-recovery-checkpoint.test.ts",
   "packages/runtime/test/agent-manual-run-recovery.test.ts",
   "packages/runtime/test/automatic-recovery.test.ts",
+  "packages/runtime/test/thread-bundles.test.ts",
+  "packages/runtime/test/agent-capability-replay-import.test.ts",
   "packages/runtime/test/tool-effect-indeterminate-recovery.test.ts",
   "packages/runtime/test/run-context-compaction.test.ts",
   "packages/runtime/test/run-context-compaction-runtime.test.ts",
@@ -88,7 +90,7 @@ async function suite(name, tests, cwd = root) {
     passed: parsed.numPassedTests, failed: parsed.numFailedTests, skipped: parsed.numPendingTests };
 }
 
-const strictTests = files.filter((file) => /^packages\/runtime\/test\/(?:subagent-(?:child|execution-tools|working-set|checkpoint|context-compaction)|model-capture-cancellation|local-private-capsule-store|run-context-compaction-invocation-port).*\.test\.ts$/u.test(file));
+const strictTests = files.filter((file) => /^packages\/runtime\/test\/(?:subagent-(?:child|execution-tools|working-set|checkpoint|context-compaction|continuation|completion|mailbox-projection)|model-capture-cancellation|local-private-capsule-store|run-context-compaction-invocation-port).*\.test\.ts$/u.test(file));
 await check("new-runtime-tests-strict", [process.execPath, tsc, "--noEmit", "--strict", "--skipLibCheck",
   "--target", "ES2023", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--esModuleInterop",
   "--exactOptionalPropertyTypes", "--noUncheckedIndexedAccess", "--noUnusedLocals", "--noUnusedParameters",
@@ -120,7 +122,8 @@ const content = {
   passedRequiredChecks: checks.filter((item) => item.required).every((item) => item.exitCode === 0) &&
     suites.every((item) => item.failed === 0 && item.skipped === 0) && sourceDrift.length === 0 && emittedDrift.length === 0 && preservedDrift.length === 0,
   releaseAccepted: false,
-  limitations: ["Fixture behavior is not live-model quality evidence", "Private checkpoints do not yet enable safe child restart continuation",
+  limitations: ["Fixture behavior is not live-model quality evidence", "Continuation is bounded to native private read-only state with verified local dependencies; coder and uncovered tails remain unavailable",
+    "Continuation replay import is rejected before persistence; public receipts do not transfer private authority",
     "Child compaction shares invocation, measurement and summary policy; full child prompt compiler parity remains incomplete",
     "No hard shared-parent token/cost reservation across concurrent children",
     "Late physical usage after an ignored abort remains unknown", "Historical release/API/architecture failures retained"],

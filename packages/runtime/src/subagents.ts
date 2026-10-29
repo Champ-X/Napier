@@ -23,6 +23,8 @@ import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
 import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import { InProcessSubagentProvider } from "./in-process-subagent-provider.js";
+import { logicalSubagentDelegationCount, resumeInterruptedSubagents } from "./subagent-recovery-coordination.js";
+import type { RunBudgetTracker } from "./run-budget.js";
 import { ModelRouter } from "./model-route.js";
 import { resolveModelRouteSelection } from "./model-route-resolution.js";
 import type { DelegationDetails } from "./subagent-task-evidence.js";
@@ -109,6 +111,7 @@ export class SubagentCoordinator {
   private readonly semaphore: AsyncSemaphore;
   private readonly worktrees?: SubagentWorktreeMutationManager;
   private readonly supervisor: SubagentSupervisor;
+  private readonly provider: InProcessSubagentProvider;
   private readonly reservedIntentSha256 = new Set<string>();
   private totalDelegations: number;
 
@@ -148,6 +151,9 @@ export class SubagentCoordinator {
           options.profile.enabledTools.includes("verify_workspace"),
         enableCandidateCommand:
           options.profile.enabledTools.includes("run_command"),
+        requireCompletionBinding: true,
+        candidateDeliveryAuthority: (reservation, candidate) =>
+          options.store.subagentChildRunRepository.candidateDelivered(reservation, candidate),
         enabledSemanticLspTools: options.profile.enabledTools.filter(
           isSubagentSemanticLspToolName,
         ),
@@ -163,8 +169,7 @@ export class SubagentCoordinator {
           ownerId: options.worktreeOwnerId,
         },
       });
-    this.supervisor = new SubagentSupervisor(
-      new InProcessSubagentProvider({
+    this.provider = new InProcessSubagentProvider({
         store: options.store,
         models: options.models,
         ...(options.modelRouter ? { modelRouter: options.modelRouter } : {}),
@@ -183,12 +188,16 @@ export class SubagentCoordinator {
           ? { cleanupExecutionResources: options.cleanupExecutionResources }
           : {}),
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
-      }),
-    );
-    this.totalDelegations = options.store.listSubagentTasks(
-      options.run.threadId,
-      options.run.id,
-    ).length;
+      });
+    this.supervisor = new SubagentSupervisor(this.provider);
+    this.totalDelegations = logicalSubagentDelegationCount(options.store, options.run);
+  }
+
+  async resumeInterruptedChildren(configuredProfile: AgentProfile, budget: RunBudgetTracker): Promise<string> {
+    const result = await resumeInterruptedSubagents({ ...this.options, parentProfile: this.options.profile,
+      configuredProfile, provider: this.provider, budget, signal: this.options.parentSignal });
+    this.totalDelegations = logicalSubagentDelegationCount(this.options.store, this.options.run);
+    return result;
   }
 
   hasEnabledRoles(): boolean {

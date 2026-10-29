@@ -1,6 +1,8 @@
 import type { RunRecord, SubagentTask } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { validateChildCheckpointReference } from "./subagent-checkpoint-validation.js";
+import { assertContinuationReceipt, assertSubagentContinuationState } from "./subagent-continuation-lineage.js";
+import { assertSubagentCompletionState } from "./subagent-completion-validation.js";
 import { projectSubagentToolNames } from "./subagent-child-profile.js";
 import { subagentRoleInstructions, subagentRoleInstructionsForSchema } from "./subagent-role-instructions.js";
 
@@ -46,6 +48,12 @@ function validateChildConfiguration(run: RunRecord, parent: RunRecord, task: Sub
   configuration: NonNullable<RunRecord["configuration"]>, origin: NonNullable<RunRecord["configuration"]>): void {
   const prompt = task.outputSchema ? subagentRoleInstructionsForSchema(task.role, task.outputSchema)
     : subagentRoleInstructions(task.role);
+  const continuation = run.subagent?.continuation;
+  if (continuation) {
+    assertContinuationReceipt(continuation, run, task);
+    validateContinuationConfiguration(run, parent, task, prompt);
+    return;
+  }
   if (run.agentRevision !== parent.agentRevision || configuration.agentRevision !== origin.agentRevision ||
       canonicalJson(configuration.model) !== canonicalJson(task.model) ||
       configuration.systemPromptSha256 !== sha256(prompt) ||
@@ -63,9 +71,24 @@ function validateChildConfiguration(run: RunRecord, parent: RunRecord, task: Sub
     throw new Error(`Subagent child configuration exceeds or conflicts with its parent: ${run.id}`);
 }
 
+function validateContinuationConfiguration(run: RunRecord, parent: RunRecord, task: SubagentTask, prompt: string): void {
+  const configuration = run.configuration!, origin = parent.configuration!, continuation = run.subagent!.continuation!;
+  const tools = new Set(continuation.grant.toolNames.map((name) => name === "skill_resource" ? "skill_load" : name));
+  if (run.agentRevision !== parent.agentRevision || configuration.agentRevision !== origin.agentRevision ||
+      canonicalJson(configuration.model) !== canonicalJson(task.model) || configuration.systemPromptSha256 !== sha256(prompt) ||
+      configuration.systemPromptSha256 !== continuation.grant.systemPromptSha256 || configuration.toolPolicy !== "observe" ||
+      configuration.enabledSubagents.length !== 0 ||
+      canonicalJson([...configuration.enabledTools].sort()) !== canonicalJson([...tools].sort()) ||
+      canonicalJson(configuration.runLimits) !== canonicalJson(continuation.budget.limits) ||
+      configuration.enabledSkills.some((skill) => !origin.enabledSkills.includes(skill)))
+    throw new Error("Child continuation configuration conflicts with its grant");
+}
+
 export function validateSubagentChildRunState(
   runs: readonly RunRecord[], tasks: readonly SubagentTask[],
 ): void {
+  assertSubagentCompletionState(runs, tasks);
+  assertSubagentContinuationState(runs, tasks);
   const byRun = new Map(runs.map((run) => [run.id, run]));
   const byTask = new Map(tasks.map((task) => [task.id, task]));
   for (const run of runs) {

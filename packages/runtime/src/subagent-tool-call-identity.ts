@@ -11,8 +11,10 @@ export function createSubagentToolCallScope(input: {
   runId: string;
   taskId: string;
   executionId?: string;
+  inheritedProviderCallIds?: readonly string[];
 }) {
   const { store, runId, taskId, executionId } = input;
+  const inherited = new Set(input.inheritedProviderCallIds);
   let legacy: Promise<ReadonlySet<string>> | undefined;
   const legacyCalls = () => {
     legacy ??= store.listRunEvents(runId, 0, [
@@ -28,6 +30,10 @@ export function createSubagentToolCallScope(input: {
   };
   return async (providerCallId: string) => {
     assertToolOperationParentCallId(providerCallId);
+    if (inherited.has(providerCallId)) {
+      throw new ToolExecutionClaimError(providerCallId, "rejected",
+        "Subagent tool call was inherited from a previous execution and cannot be replayed");
+    }
     if ((await legacyCalls()).has(providerCallId)) {
       throw new ToolExecutionClaimError(providerCallId, "rejected",
         "Legacy subagent tool call already has durable execution evidence");

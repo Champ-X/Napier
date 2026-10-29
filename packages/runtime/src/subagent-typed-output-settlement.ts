@@ -54,23 +54,25 @@ export async function finishSubagentTypedOutput(input: {
     input.resultText,
     MAX_SUBAGENT_RESULT_CHARS,
   );
+  const finishTask: SubagentTaskFinisher = input.finishTask ?? ((value, active) => input.store.finishSubagentTask(input.task.id, value, active));
+  const finishInput = { status: "completed" as const, stopReason: "completed" as const, result: resultText, output: input.output, usage: input.usage };
+  const prepared = await finishTask.prepareCompletion?.(finishInput, input.assertActive);
   const completion = await completeSubagentTask({
     taskId: input.task.id,
+    ...(prepared ? { prepared } : {}),
     outcomeSha256: outputSha256,
     ...(input.worktree ? { worktree: input.worktree } : {}),
     ...(input.worktrees ? { worktrees: input.worktrees } : {}),
     ...(input.toolSignal ? { signal: input.toolSignal } : {}),
     assertActive: input.assertActive,
-    isCommitted: () => input.store.listSubagentTasks(input.task.threadId, input.task.runId)
-      .some((current) => current.id === input.task.id && current.status === "completed"),
-    finish: async (_preview, assertActive) => {
-      const finish = input.finishTask ?? ((value, active) => input.store.finishSubagentTask(input.task.id, value, active));
-      const task = await finish({
-        status: "completed",
-        stopReason: "completed",
-        result: resultText,
-        output: input.output,
-        usage: input.usage,
+    isCommitted: (preview) => input.store.listSubagentTasks(input.task.threadId, input.task.runId)
+      .some((current) => current.id === input.task.id && current.status === "completed" &&
+        (!prepared || current.completion?.reservation.candidate?.id === preview.id) &&
+        current.result === finishInput.result && current.output !== undefined && sha256(canonicalJson(current.output)) === outputSha256),
+    finish: async (preview, assertActive) => {
+      const task = await finishTask({ ...finishInput,
+        ...(prepared ? { preparedCompletion: prepared } : {}),
+        ...(prepared && preview ? { candidateId: preview.id } : {}),
       }, assertActive);
       if (task.status !== "completed") throw new Error(`Subagent task is ${task.status}`);
       return task;
@@ -78,17 +80,19 @@ export async function finishSubagentTypedOutput(input: {
   });
   const { value: task, preview } = completion;
   await input.publishCommitted?.();
-  await input.emit("subagent.output.accepted", task, {
-    taskId: task.id,
-    status: "accepted",
-    outputSchemaSha256: task.outputSchemaSha256 ?? "",
-    outputSha256,
-  });
-  await input.emit(
-    "subagent.completed",
-    task,
-    subagentTaskPayload(task, preview),
-  );
+  if (!task.completion) {
+    await input.emit("subagent.output.accepted", task, {
+      taskId: task.id,
+      status: "accepted",
+      outputSchemaSha256: task.outputSchemaSha256 ?? "",
+      outputSha256,
+    });
+    await input.emit(
+      "subagent.completed",
+      task,
+      subagentTaskPayload(task, preview),
+    );
+  }
   return {
     result: {
       content: [

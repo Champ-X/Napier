@@ -1,3 +1,4 @@
+import type { SubagentContinuationReceipt } from "./subagent-continuation.js";
 import type {
   AutomaticRecoveryPolicy,
   LegacyModelAdvisorPolicy,
@@ -199,6 +200,7 @@ export interface RunRecord {
     /** Execution CAS revision, independent of lease heartbeat revisions. */
     executionRevision: number;
     nextInvocationIndex: number;
+    continuation?: SubagentContinuationReceipt;
     checkpoint?: {
       schemaVersion: 1;
       revision: number;

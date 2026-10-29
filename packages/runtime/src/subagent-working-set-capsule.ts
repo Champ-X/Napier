@@ -76,6 +76,11 @@ export async function readSubagentWorkingSetBinding(dataRoot: string, capsuleSha
   return binding(stored.value, stored.bytes);
 }
 
+export async function readSubagentWorkingSetForRestore(dataRoot: string, capsuleSha256: string) {
+  const stored = await subagentWorkingSetCapsules(dataRoot).readWithBytes(capsuleSha256);
+  return { capsule: stored.value, binding: binding(stored.value, stored.bytes) };
+}
+
 export function validateSubagentWorkingSetCapsule(input: unknown): SubagentWorkingSetCapsule {
   if (!record(input) || Object.keys(input).sort().join(",") !== ["kind", "schemaVersion", "frontier", "boundary",
     "systemPrompt", "tools", "messages", "systemPromptSha256", "toolDefinitionSetSha256", "messageSetSha256", "mailbox", "contentSha256",
@@ -129,13 +134,18 @@ function validateMailbox(mailbox: SubagentWorkingSetBinding["mailbox"], messages
   if (!record(mailbox) || Object.keys(mailbox).length !== 2 || !integer(mailbox.consumedThroughSeq) || !Array.isArray(mailbox.entries)) invalid();
   const ids = new Set<string>(), sequences = new Set<number>(), messageIndices = new Set<number>();
   for (const entry of mailbox.entries) {
-    if (!record(entry) || Object.keys(entry).length !== 5 || !/^submsg_[a-z0-9_-]{8,80}$/u.test(entry.id) ||
+    if (!record(entry) || Object.keys(entry).length !== (entry.originTaskId === undefined ? 5 : 7) || !/^submsg_[a-z0-9_-]{8,80}$/u.test(entry.id) ||
         !integer(entry.acceptedSeq) || entry.acceptedSeq < 1 || !integer(entry.messageIndex) ||
-        !hash(entry.contentSha256) || !hash(entry.messageSha256) || ids.has(entry.id) || sequences.has(entry.acceptedSeq) || messageIndices.has(entry.messageIndex)) invalid();
+        !hash(entry.contentSha256) || !hash(entry.messageSha256) || ids.has(entry.id) || sequences.has(entry.acceptedSeq) || messageIndices.has(entry.messageIndex) ||
+        !validMailboxOrigin(entry)) invalid();
     const message = messages[entry.messageIndex];
     if (message?.role !== "user" || sha256(canonicalJson(message)) !== entry.messageSha256) invalid();
     ids.add(entry.id); sequences.add(entry.acceptedSeq); messageIndices.add(entry.messageIndex);
   }
+}
+function validMailboxOrigin(entry: SubagentWorkingSetBinding["mailbox"]["entries"][number]): boolean {
+  if (entry.originTaskId === undefined && entry.originParentRunId === undefined) return true;
+  return /^task_[a-z0-9_-]{8,80}$/u.test(entry.originTaskId ?? "") && /^run_[a-z0-9_-]{8,80}$/u.test(entry.originParentRunId ?? "");
 }
 function record(value: unknown): value is Record<string, unknown> { return value !== null && typeof value === "object" && !Array.isArray(value); }
 function messageSetHash(messages: Message[]): string {
