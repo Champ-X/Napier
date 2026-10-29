@@ -241,6 +241,7 @@ export function assertModelContextEnvelopeEventBindings(
   for (const event of events) {
     if (!isEnvelopeTerminalEvent(event) || !record(event.payload)) continue;
     const payload = event.payload;
+    const diagnostic = overflowDiagnostic(event, payload, label);
     const hasBinding =
       payload["modelContextEnvelopeSha256"] !== undefined ||
       payload["modelContextEnvelopeTurnIndex"] !== undefined ||
@@ -250,26 +251,16 @@ export function assertModelContextEnvelopeEventBindings(
     const turnIndex = payload["modelContextEnvelopeTurnIndex"];
     const envelopeSha256 = payload["modelContextEnvelopeSha256"];
     const messageSetSha256 = payload["modelContextMessageSetSha256"];
-    const toolDefinitionSetSha256 =
-      payload["modelContextToolDefinitionSetSha256"];
-    const binding =
-      typeof turnIndex === "number" && Number.isSafeInteger(turnIndex)
-        ? envelopeByRunAndTurn.get(`${event.runId}:${turnIndex}`)
-        : undefined;
+    const toolDefinitionSetSha256 = payload["modelContextToolDefinitionSetSha256"];
+    const binding = lookupEnvelopeBinding(envelopeByRunAndTurn, event.runId, turnIndex);
     const bindingKey = `${event.runId}:${String(turnIndex)}`;
-    if (
-      !binding ||
-      terminalBindingKeys.has(bindingKey) ||
-      event.seq <= binding.eventSeq ||
-      !shaFieldOrUndefined(envelopeSha256) ||
-      !shaFieldOrUndefined(messageSetSha256) ||
-      !shaFieldOrUndefined(toolDefinitionSetSha256) ||
-      envelopeSha256 !== binding.receipt.contentSha256 ||
+    if (!binding || (!diagnostic && terminalBindingKeys.has(bindingKey)) || event.seq <= binding.eventSeq ||
+      !shaFieldOrUndefined(envelopeSha256) || !shaFieldOrUndefined(messageSetSha256) ||
+      !shaFieldOrUndefined(toolDefinitionSetSha256) || envelopeSha256 !== binding.receipt.contentSha256 ||
       messageSetSha256 !== binding.receipt.messageSetSha256 ||
-      toolDefinitionSetSha256 !== binding.receipt.toolDefinitionSetSha256
-    ) {
+      toolDefinitionSetSha256 !== binding.receipt.toolDefinitionSetSha256)
       throw new Error(`${label} terminal binding is invalid: ${event.runId}`);
-    }
+    if (diagnostic) continue;
     terminalBindingKeys.add(bindingKey);
     terminalBindingsByRun.set(
       event.runId,
@@ -282,6 +273,18 @@ export function assertModelContextEnvelopeEventBindings(
       throw new Error(`${label} terminal binding count is invalid: ${runId}`);
     }
   }
+}
+
+function overflowDiagnostic(event: RunEvent, payload: Record<string, unknown>, label: string): boolean {
+  const diagnostic = event.type === "model.context.overflow" && payload["evidenceRole"] === "diagnostic";
+  if (diagnostic && (payload["usage"] !== undefined || payload["usageAccounting"] !== undefined))
+    throw new Error(`${label} overflow diagnostic cannot own usage: ${event.runId}`);
+  return diagnostic;
+}
+
+function lookupEnvelopeBinding<T>(bindings: ReadonlyMap<string, T>, runId: string, turnIndex: unknown): T | undefined {
+  return typeof turnIndex === "number" && Number.isSafeInteger(turnIndex)
+    ? bindings.get(`${runId}:${turnIndex}`) : undefined;
 }
 
 function isEnvelopeTerminalEvent(event: RunEvent): boolean {

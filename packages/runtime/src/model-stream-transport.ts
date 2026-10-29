@@ -12,6 +12,8 @@ import {
 
 import { attestHostModelAbort } from "./model-abort-provenance.js";
 import { preserveModelAdmissionFailure } from "./model-call-admission.js";
+import { MODEL_STREAM_CANCELLATION_GRACE_MS } from "./model-stream-cancellation-policy.js";
+export { MODEL_STREAM_CANCELLATION_GRACE_MS } from "./model-stream-cancellation-policy.js";
 import {
   createModelTurnDeadline,
   isModelTurnWatchdogError,
@@ -19,7 +21,6 @@ import {
 } from "./model-turn-deadline.js";
 
 const ABORTED = Symbol("model-stream-aborted");
-export const MODEL_STREAM_CANCELLATION_GRACE_MS = 5_000;
 
 export interface ModelStreamCancellationFailure {
   provider: string;

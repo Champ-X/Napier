@@ -15,6 +15,7 @@ import { recordModelThinkingTrace } from "./model-thinking-trace-store.js";
 import { mapModelUsage } from "./agent-model-projection.js";
 import { createUsageAccounting } from "./token-accounting.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import type { ModelContextOverflowDecision } from "./model-context-overflow-recovery.js";
 import type { ModelRecoveryReadiness } from "./model-call-recovery.js";
 
 interface RecoveryEvidenceInput {
@@ -34,40 +35,36 @@ export async function recordContextOverflow(
   model: Model<Api>,
   error: AssistantMessage,
   envelope: ModelContextEnvelopeReceipt,
-): Promise<"retry" | "budget_exhausted"> {
+  decision?: ModelContextOverflowDecision,
+): Promise<{ action: "retry" | "finalize" | "budget_exhausted"; contentSha256: string }> {
   const attribution = modelResultAttribution(error);
-  const usage = mapModelUsage(error.usage);
-  const usageAccounting = createUsageAccounting(
-    { provider: model.provider, id: model.id },
-    usage,
-  );
-  input.budget.observeAuxiliaryUsage(usage, Date.now(), usageAccounting);
   await input.budget.refreshAccounting();
-  const action = input.budget.exhaustion
+  const action = decision?.action === "finalize" ? "finalize" as const : input.budget.exhaustion
     ? ("budget_exhausted" as const)
     : ("retry" as const);
   const content = {
     kind: "napier.model-context-overflow" as const,
     schemaVersion: 1 as const,
+    evidenceRole: "diagnostic" as const,
     action,
+    ...(decision ? { recoveryReadiness: decision.readiness } : {}),
     provider: model.provider,
     model: model.id,
     diagnosticSha256: sha256(error.errorMessage ?? ""),
-    usage,
     ...(attribution ? modelAccountingLinkage(attribution) : {}),
-    usageAccounting,
     modelContextEnvelopeSha256: envelope.contentSha256,
     modelContextEnvelopeTurnIndex: envelope.turnIndex,
     modelContextMessageSetSha256: envelope.messageSetSha256,
     modelContextToolDefinitionSetSha256: envelope.toolDefinitionSetSha256,
   };
+  const contentSha256 = sha256(canonicalJson(content));
   const event = await input.host.store.appendEvent({
     threadId: input.run.threadId,
     runId: input.run.id,
     type: "model.context.overflow",
     category: "model",
     visibility: "debug",
-    payload: { ...content, contentSha256: sha256(canonicalJson(content)) },
+    payload: { ...content, contentSha256 },
   });
   if (input.onEvent) {
     try {
@@ -76,7 +73,47 @@ export async function recordContextOverflow(
       // Durable overflow evidence survives a disconnected stream.
     }
   }
-  return action;
+  return { action, contentSha256 };
+}
+
+/** The failed main response becomes hidden only when recovery actually starts. */
+export async function recordHiddenContextOverflowResponse(
+  input: RecoveryEvidenceInput,
+  model: Model<Api>,
+  error: AssistantMessage,
+  envelope: ModelContextEnvelopeReceipt,
+): Promise<void> {
+  const attribution = modelResultAttribution(error), usage = mapModelUsage(error.usage);
+  const usageAccounting = createUsageAccounting({ provider: model.provider, id: model.id }, usage);
+  input.budget.observeAuxiliaryUsage(usage, Date.now(), usageAccounting);
+  await input.budget.refreshAccounting();
+  const event = await input.host.store.appendEvent({
+    threadId: input.run.threadId, runId: input.run.id, type: "model.response", category: "model", visibility: "debug",
+    payload: { model: `${error.provider}/${error.model}`, stopReason: error.stopReason,
+      responseSha256: sha256(canonicalJson(error)), responseDisposition: "context_overflow_retry",
+      diagnosticSha256: sha256(error.errorMessage ?? ""), usage, usageAccounting,
+      ...(attribution ? modelAccountingLinkage(attribution) : {}),
+      modelContextEnvelopeSha256: envelope.contentSha256, modelContextEnvelopeTurnIndex: envelope.turnIndex,
+      modelContextMessageSetSha256: envelope.messageSetSha256,
+      modelContextToolDefinitionSetSha256: envelope.toolDefinitionSetSha256 },
+  });
+  try { await input.onEvent?.(event); } catch { /* The hidden failed response remains durable. */ }
+}
+
+/** Diagnostic continuation only: no usage, logical response or retry authority. */
+export async function recordContextOverflowStopped(
+  input: Pick<RecoveryEvidenceInput, "host" | "run" | "onEvent">,
+  overflowEventSha256: string,
+  readiness: "cancelled" | "pending_timeout",
+): Promise<void> {
+  const content = { kind: "napier.model-context-overflow-recovery-stopped", schemaVersion: 1,
+    action: "finalize", recoveryReadiness: readiness, overflowEventSha256 };
+  const event = await input.host.store.appendEvent({
+    threadId: input.run.threadId, runId: input.run.id,
+    type: "model.context.overflow_recovery_stopped", category: "model", visibility: "debug",
+    payload: { ...content, contentSha256: sha256(canonicalJson(content)) },
+  });
+  try { await input.onEvent?.(event); } catch { /* Durable diagnostic survives a disconnected observer. */ }
 }
 
 export async function recordDetection(

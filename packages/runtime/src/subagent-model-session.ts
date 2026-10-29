@@ -31,6 +31,8 @@ import { guardModelThinkingLoop, shortThinkingLoopRetryOptions, thinkingLoopRetr
   type ModelThinkingLoopAttemptSource } from "./model-thinking-loop-guard.js";
 import type { ModelThinkingLoopEvidence } from "./model-thinking-loop-policy.js";
 import { readModelRegistryRuntimeSettings } from "./model-registry-runtime-settings.js";
+import { recoverModelContextOverflow } from "./model-context-overflow-recovery.js";
+import { recordContextOverflow, recordContextOverflowStopped } from "./agent-model-recovery-evidence.js";
 import type { ModelThinkingSuppressionProof } from "./model-thinking-suppression.js";
 
 export type SubagentModelPhase = "subagent_turn" | "typed_repair" | "outcome_repair" | "context_compaction";
@@ -126,8 +128,10 @@ export function createSubagentModelSession(input: {
       let modelAttempt = 0;
       const callIndex = ++modelCallIndex;
       let thinkingRetryUsed = false;
+      let overflowRetryUsed = false;
       const invokePhysical = async (candidate: Model<Api>, routedOptions: SimpleStreamOptions,
-        invocationContext = context): Promise<ModelThinkingLoopAttemptSource> => {
+        invocationContext = context, recoveryAttempt: 0 | 1 = 0,
+        failedContext?: Context): Promise<ModelThinkingLoopAttemptSource & { envelope?: ModelContextEnvelopeReceipt }> => {
         modelAttempt += 1;
         let activeContext = invocationContext;
         let reservation;
@@ -142,9 +146,12 @@ export function createSubagentModelSession(input: {
           input.child?.assertCanInvoke();
           if (phase === "subagent_turn" && input.child) activeContext = await compactSubagentContext({
             host: { store: input.store, modelRegistry: { models: input.models }, modelInvocationCapsules: capsules },
-            child: input.child, session: modelSession, model: candidate, context: invocationContext, options: routedOptions, modelAttempt,
+            child: input.child, session: modelSession, model: candidate, context: invocationContext, options: routedOptions, modelAttempt, recoveryAttempt,
             ...(input.onEvent ? { onEvent: input.onEvent } : {}),
           });
+          if (recoveryAttempt === 1 && (!failedContext ||
+              sha256(canonicalJson(activeContext.messages)) === sha256(canonicalJson(failedContext.messages))))
+            throw new Error("Model context overflow recovery did not reduce the request");
           reservation = await input.child?.reserve(phase);
         } catch (error) {
           const denied = subagentModelTurnDeniedStream(candidate, error, invocationSignal);
@@ -244,6 +251,7 @@ export function createSubagentModelSession(input: {
         })();
         const attribution = modelResultAttribution(opened.source);
         return { source: opened.source, context: activeContext, options: opened.options ?? routedOptions, settleLogical,
+          ...(envelope ? { envelope } : {}),
           logicalResult: () => opened.source.result(),
           recovery: () => ({ ...(opened.recovery ? { handle: opened.recovery } : {}), ...(attribution ? { attribution } : {}) }) };
       };
@@ -264,7 +272,45 @@ export function createSubagentModelSession(input: {
             const adjusted = attempt === 1 && (shortReasoningThroughCall.get(`${candidate.provider}/${candidate.id}`) ?? 0) < callIndex
               ? nextOptions : shortThinkingLoopRetryOptions(candidate, nextOptions);
             current = undefined;
-            current = await invokePhysical(candidate, adjusted, nextContext);
+            let active = await invokePhysical(candidate, adjusted, nextContext);
+            let overflowEventSha256: string | undefined;
+            current = {
+              get context() { return active.context; },
+              get options() { return active.options; },
+              logicalResult: () => active.logicalResult?.() ?? active.source.result(),
+              recovery: () => active.recovery?.() ?? {},
+              settleLogical: (message, evidence, proof) => active.settleLogical?.(message, evidence, proof) ?? Promise.resolve(),
+              source: recoverModelContextOverflow({
+                source: active.source, signal,
+                nativeAccounting: settings?.nativeAccounting !== false,
+                remainingMs: () => lifetime.remainingMs(),
+                recovery: () => active.recovery?.() ?? {},
+                claimRetry: () => { if (overflowRetryUsed) return false; overflowRetryUsed = true; return true; },
+                onOverflow: async (error, decision) => {
+                  // The hidden error is still a canonical logical response. It
+                  // has no thinking-suppression proof and never enters the raw SDK transcript.
+                  await active.settleLogical?.(error);
+                  if (input.child && active.envelope) {
+                    const budget = input.child.createBudget();
+                    const evidence = await recordContextOverflow({ host: { store: input.store }, run: input.child.run,
+                      budget, ...(input.onEvent ? { onEvent: input.onEvent } : {}) },
+                    candidate, error, active.envelope, decision);
+                    overflowEventSha256 = evidence.contentSha256;
+                    if (decision.action === "retry" && evidence.action !== "retry") return false;
+                  }
+                },
+                onRecoveryStopped: async (readiness) => {
+                  if (input.child && overflowEventSha256) await recordContextOverflowStopped({
+                    host: { store: input.store }, run: input.child.run, ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+                  }, overflowEventSha256, readiness);
+                },
+                recover: async () => {
+                  lifetime.assertActive(); signal.throwIfAborted();
+                  active = await invokePhysical(candidate, adjusted, nextContext, 1, active.context);
+                  return active.source;
+                },
+              }),
+            };
             return current;
           },
           onDetected: async (evidence, action, _terminal, _trace, recovery) => {

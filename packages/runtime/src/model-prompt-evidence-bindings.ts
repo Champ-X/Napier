@@ -318,6 +318,7 @@ export function assertModelPromptEvidenceBindings(
           : undefined;
       if (
         turnIndex !== undefined &&
+        !isOverflowDiagnostic(event) &&
         (event.type === "model.response" ||
           event.type === "model.context.overflow" ||
           payload?.["action"] === "retry")
@@ -334,6 +335,11 @@ export function assertModelPromptEvidenceBindings(
   for (const [runId, run] of runs) {
     assertRunEvidence(runId, run, label);
   }
+}
+
+function isOverflowDiagnostic(event: RunEvent): boolean {
+  return event.type === "model.context.overflow" && !!event.payload && typeof event.payload === "object" &&
+    !Array.isArray(event.payload) && event.payload["evidenceRole"] === "diagnostic";
 }
 
 interface PromptEvidenceRun {

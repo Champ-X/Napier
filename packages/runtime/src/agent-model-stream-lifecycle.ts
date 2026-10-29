@@ -21,6 +21,8 @@ import {
 import type { ModelThinkingLoopEvidence } from "./model-thinking-loop-policy.js";
 import {
   recordContextOverflow,
+  recordContextOverflowStopped,
+  recordHiddenContextOverflowResponse,
   recordDetection,
 } from "./agent-model-recovery-evidence.js";
 import { captureCompiledModelInvocation } from "./model-invocation-capture.js";
@@ -145,6 +147,7 @@ export function agentModelStreamLife(
     let currentServingModel = model;
     const rootSignal = options?.signal ?? new AbortController().signal;
     let thinkingRetryUsed = false;
+    let overflowRetryUsed = false;
     const createCandidateStream = (servingModel: Model<Api>, routeContext?: ModelRouteAttemptContext) => guardModelThinkingLoop({
       nativeAccounting: !!input.host.modelRegistry.accountingRepository,
       remainingMs: () => input.budget.remainingTimeoutMs(),
@@ -331,30 +334,42 @@ export function agentModelStreamLife(
             return { ...opened, options: opened.options ?? {} };
           };
           const first = await createInvocation(0);
+          let active = first;
+          let overflowEventSha256: string | undefined;
           return {
             recovery,
             logicalResult,
-            context: first.context,
-            options: first.options,
+            get context() { return active.context; },
+            get options() { return active.options; },
             source: recoverModelContextOverflow({
               source: first.source,
               signal,
-              recover: async (error) => {
-                const action = await recordContextOverflow(
+              nativeAccounting: !!input.host.modelRegistry.accountingRepository,
+              remainingMs: () => input.budget.remainingTimeoutMs(),
+              recovery,
+              claimRetry: () => { if (overflowRetryUsed) return false; overflowRetryUsed = true; return true; },
+              onOverflow: async (error, decision) => {
+                const evidence = await recordContextOverflow(
                   input,
                   candidate,
                   error,
                   first.envelope,
+                  decision,
                 );
+                overflowEventSha256 = evidence.contentSha256;
+                if (decision.action === "retry" && evidence.action !== "retry") return false;
+              },
+              onRecoveryStopped: async (readiness) => {
+                if (overflowEventSha256) await recordContextOverflowStopped(input, overflowEventSha256, readiness);
+              },
+              recover: async (error) => {
                 currentEnvelope = undefined;
                 input.onEnvelope(undefined);
-                if (action !== "retry") {
-                  input.budget.throwIfExhausted();
-                  throw new Error(
-                    "Model context overflow recovery unavailable",
-                  );
-                }
-                return (await createInvocation(1, first.context)).source;
+                await recordHiddenContextOverflowResponse(input, candidate, error, first.envelope);
+                input.budget.throwIfExhausted();
+                signal.throwIfAborted();
+                active = await createInvocation(1, active.context);
+                return active.source;
               },
             }),
           };

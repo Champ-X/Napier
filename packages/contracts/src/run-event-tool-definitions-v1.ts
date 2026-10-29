@@ -86,6 +86,7 @@ export const RUN_EVENT_TOOL_DEFINITION_GROUPS_V1 = [
       "harness.experiment.profile.applied",
       "harness.policy.bound",
       "model.context.overflow",
+      "model.context.overflow_recovery_stopped",
       "model.context.token_calibration",
       "model.context.token_pressure",
       "model.context.tool-results.pruned",

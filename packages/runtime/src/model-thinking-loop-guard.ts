@@ -21,7 +21,7 @@ import {
 import { attestHostModelAbort } from "./model-abort-provenance.js";
 import { ModelSemanticStallObserver } from "./model-semantic-stall-observer.js";
 import { awaitModelCallRecovery, type ModelCallRecoveryHandle, type ModelRecoveryReadiness } from "./model-call-recovery.js";
-import { MODEL_STREAM_CANCELLATION_GRACE_MS } from "./model-stream-transport.js";
+import { MODEL_STREAM_CANCELLATION_GRACE_MS } from "./model-stream-cancellation-policy.js";
 import { issueModelThinkingSuppression, type ModelThinkingSuppressionProof } from "./model-thinking-suppression.js";
 import {
   ModelThinkingTrace,
@@ -140,6 +140,10 @@ export function guardModelThinkingLoop(
         );
         if (action === "retry" && attempt === 1 && retryReady) {
           if (retryWithinDeadline(input, recoveryDeadlineAt)) {
+            // An inner context-overflow recovery may have replaced the active
+            // request while this thinking attempt was being consumed.
+            context = created.context;
+            options = created.options;
             priorEvidence = detected;
             continue;
           }

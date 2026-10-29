@@ -1,3 +1,6 @@
+import type { ModelCallAttributionV1 } from "@napier/contracts/model-accounting";
+import { awaitModelCallRecovery, type ModelCallRecoveryHandle, type ModelRecoveryReadiness } from "./model-call-recovery.js";
+import { MODEL_STREAM_CANCELLATION_GRACE_MS } from "./model-stream-cancellation-policy.js";
 import {
   createAssistantMessageEventStream,
   type AssistantMessage,
@@ -14,20 +17,39 @@ export function isModelContextOverflowMessage(
   );
 }
 
+export interface ModelContextOverflowDecision {
+  action: "retry" | "finalize";
+  readiness: ModelRecoveryReadiness | "retry_exhausted";
+}
+
+const finalizedOverflows = new WeakSet<AssistantMessage>();
+/** Process-local stop disposition; diagnostic text cannot authorize route replay. */
+export function isFinalizedModelContextOverflow(value: unknown): boolean {
+  return typeof value === "object" && value !== null && finalizedOverflows.has(value as AssistantMessage);
+}
+
 export function recoverModelContextOverflow(input: {
   source: AssistantMessageEventStream;
   signal: AbortSignal;
+  nativeAccounting: boolean;
+  remainingMs?(): number;
+  recovery?(): { handle?: ModelCallRecoveryHandle; attribution?: ModelCallAttributionV1 };
+  claimRetry?(): boolean;
+  onOverflow?(error: AssistantMessage, decision: ModelContextOverflowDecision): Promise<void | false>;
+  onRecoveryStopped?(readiness: "cancelled" | "pending_timeout"): Promise<void>;
   recover(error: AssistantMessage): Promise<AssistantMessageEventStream>;
 }): AssistantMessageEventStream {
   const output = createAssistantMessageEventStream();
   let resolveTerminal: (message: AssistantMessage) => void = () => undefined;
-  const terminal = new Promise<AssistantMessage>((resolve) => {
-    resolveTerminal = resolve;
-  });
+  let rejectTerminal: (error: unknown) => void = () => undefined;
+  const terminal = new Promise<AssistantMessage>((resolve, reject) => { resolveTerminal = resolve; rejectTerminal = reject; });
+  void terminal.catch(() => undefined);
+  const deadlineAt = Date.now() + Math.max(0, input.remainingMs?.() ?? Infinity);
   let iterator: AsyncIterator<AssistantMessageEvent> | undefined;
   let settled = false;
   const settle = (message: AssistantMessage): void => {
     if (settled) return;
+    if (message.stopReason === "error" && isModelContextOverflowMessage(message.errorMessage)) finalizedOverflows.add(message);
     settled = true;
     resolveTerminal(message);
   };
@@ -46,12 +68,7 @@ export function recoverModelContextOverflow(input: {
           if (step.done) {
             const message = await source.result();
             if (
-              canRecover(
-                input.signal,
-                message,
-                recoveryAttempted,
-                visibleOutput,
-              )
+              canRecover(message, recoveryAttempted, visibleOutput) && await admitRecovery(message)
             ) {
               recoveryAttempted = true;
               source = await input.recover(message);
@@ -66,12 +83,7 @@ export function recoverModelContextOverflow(input: {
           const event = step.value;
           if (
             event.type === "error" &&
-            canRecover(
-              input.signal,
-              event.error,
-              recoveryAttempted,
-              visibleOutput,
-            )
+            canRecover(event.error, recoveryAttempted, visibleOutput) && await admitRecovery(event.error)
           ) {
             recoveryAttempted = true;
             source = await input.recover(event.error);
@@ -97,6 +109,9 @@ export function recoverModelContextOverflow(input: {
         iterator = undefined;
         if (!replaced) return;
       }
+    } catch (error) {
+      if (!settled) { settled = true; rejectTerminal(error); }
+      throw error;
     } finally {
       await Promise.resolve(iterator?.return?.()).catch(() => undefined);
       iterator = undefined;
@@ -104,6 +119,29 @@ export function recoverModelContextOverflow(input: {
   };
   output.result = () => terminal;
   return output;
+
+  async function admitRecovery(error: AssistantMessage): Promise<boolean> {
+    const recoveryDeadlineAt = input.nativeAccounting
+      ? Math.min(deadlineAt, Date.now() + MODEL_STREAM_CANCELLATION_GRACE_MS) : deadlineAt;
+    let readiness: ModelContextOverflowDecision["readiness"] = input.signal.aborted ? "cancelled"
+      : Date.now() >= recoveryDeadlineAt ? "pending_timeout" : "legacy_unaccounted";
+    if (input.nativeAccounting && readiness === "legacy_unaccounted") {
+      const attempt = input.recovery?.();
+      readiness = await awaitModelCallRecovery({ handle: attempt?.handle, attribution: attempt?.attribution,
+        signal: input.signal, deadlineAt: recoveryDeadlineAt });
+    }
+    if (input.signal.aborted) readiness = "cancelled";
+    else if (Date.now() >= recoveryDeadlineAt) readiness = "pending_timeout";
+    let retry = readiness === "legacy_unaccounted" || readiness === "known" || readiness === "undispatched";
+    if (retry && input.claimRetry && !input.claimRetry()) { retry = false; readiness = "retry_exhausted"; }
+    const observed = await input.onOverflow?.(error, { action: retry ? "retry" : "finalize", readiness });
+    if (observed === false) return false;
+    if (retry && (input.signal.aborted || Date.now() >= recoveryDeadlineAt)) {
+      await input.onRecoveryStopped?.(input.signal.aborted ? "cancelled" : "pending_timeout");
+      return false;
+    }
+    return retry;
+  }
 }
 
 function isTerminal(event: AssistantMessageEvent): boolean {
@@ -111,7 +149,6 @@ function isTerminal(event: AssistantMessageEvent): boolean {
 }
 
 function canRecover(
-  signal: AbortSignal,
   message: AssistantMessage,
   attempted: boolean,
   visibleOutput: boolean,
@@ -119,7 +156,6 @@ function canRecover(
   return (
     !attempted &&
     !visibleOutput &&
-    !signal.aborted &&
     message.stopReason === "error" &&
     isModelContextOverflowMessage(message.errorMessage)
   );

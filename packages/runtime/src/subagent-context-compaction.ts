@@ -22,6 +22,7 @@ export async function compactSubagentContext(input: {
   context: Context;
   options: SimpleStreamOptions;
   modelAttempt: number;
+  recoveryAttempt?: 0 | 1;
   onEvent?: EventSink;
 }): Promise<Context> {
   const run = input.child.run;
@@ -56,7 +57,7 @@ export async function compactSubagentContext(input: {
     compiledPrompt: { systemPrompt: input.context.systemPrompt ?? "" },
     tokenMeters: new TokenMeterRegistry(),
     modelAttempt: input.modelAttempt,
-    recoveryAttempt: 0,
+    recoveryAttempt: input.recoveryAttempt ?? 0,
   });
   input.session.lifetime.assertActive();
   return projected.context;

@@ -16,6 +16,7 @@ import type {
 import { sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
 import { nowIso } from "./ids.js";
+import { isFinalizedModelContextOverflow } from "./model-context-overflow-recovery.js";
 import {
   appendRouteEvent,
   createStartedRouteAttempt,
@@ -424,7 +425,8 @@ async function recordFailure(
     input.options.run,
     attemptStartedSeq,
   );
-  const canFallback = routeCanFallback({
+  const overflowFinalized = isFinalizedModelContextOverflow(error);
+  const canFallback = !overflowFinalized && routeCanFallback({
     failureClass,
     visibleOutputProduced,
     sideEffectState,
@@ -433,6 +435,7 @@ async function recordFailure(
   });
   const hints = { ...responseHints, ...routeFailureHints(error) };
   const canRetry =
+    !overflowFinalized &&
     !canFallback &&
     (hints.retryAfterMs ?? 0) <= MAX_INLINE_RETRY_DELAY_MS &&
     routeCanRetrySameCandidate({
