@@ -1,0 +1,82 @@
+{
+  "scope": "G03 native thinking recovery Store receipt query and guarded child suppression",
+  "baseHead": "68612f81",
+  "sourceFrozen": true,
+  "files": [
+    {
+      "path": "packages/runtime/src/model-accounting-repository.ts",
+      "sha256": "84c4fe6f4e7da8fe264695cded30d4745f69f3c1304c95e9f487c589eb1ceb09"
+    },
+    {
+      "path": "packages/runtime/src/model-attempt-receipt.ts",
+      "sha256": "27fa9111e0518aa5804acc98a35c0cd23f71263ccba2ea147fd18e01fa988d34"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-ledger.ts",
+      "sha256": "985ab39050923471f43feb134020d094bac7b473f7e9c96ba8d3d64c297761b8"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-ledger-state.ts",
+      "sha256": "01cf58d64238c0944c370c5de7196d0df597f2b407c585b00e3156ecd8b883c5"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-model-accounting.ts",
+      "sha256": "e23ea704deeb5fb3a963dc05d79c6802eb93623e3b68dcc7008ce27751d10d83"
+    },
+    {
+      "path": "packages/runtime/src/store-event-service.ts",
+      "sha256": "c7cb275324f6e73794ba63fff0240aef8d788452beb8356685a17be66fe3cd98"
+    },
+    {
+      "path": "packages/runtime/src/subagent-checkpoint-transcript.ts",
+      "sha256": "ae80e34affe08b4853390c53fa9466983b9b59247475f9d6dee6b7e74b1a2290"
+    },
+    {
+      "path": "packages/runtime/src/subagent-child-evidence-validation.ts",
+      "sha256": "825101bd4157a87d1d17dc91ab280ccea40e4e75773e9986e856f9b0a3d8cd61"
+    },
+    {
+      "path": "packages/runtime/src/subagent-child-invocations.ts",
+      "sha256": "e83c0d89be90c06aab17725e4795b3b84e24572ed2be1f2e9a7c976cc05fb4a9"
+    },
+    {
+      "path": "packages/runtime/src/subagent-child-run-types.ts",
+      "sha256": "3b39ca68f2b0bb226e358c107db1e6adf6750b19cf4389ba688f6a973b313938"
+    },
+    {
+      "path": "packages/runtime/src/subagent-response-disposition.ts",
+      "sha256": "adfd602a2de79ed33ea242a63283242f5871b9e814207a82de8d918e18071017"
+    },
+    {
+      "path": "packages/runtime/test/model-attempt-receipt.test.ts",
+      "sha256": "3eed69ff4b43773d6f69a28b5cd38ffc0bd298c4a9b0d8d21b3b50660cb1833f"
+    },
+    {
+      "path": "packages/runtime/test/subagent-thinking-disposition.test.ts",
+      "sha256": "66246b0e294a318856611d47a627687bb3bff00504c5f83ea6a0d21eeac2eb67"
+    }
+  ],
+  "workerOwnedRequired": [
+    "packages/runtime/src/model-thinking-suppression.ts",
+    "packages/runtime/src/model-call-accounting-port.ts"
+  ],
+  "verification": {
+    "regression": "/tmp/napier-thinking-store-regression-v4.json",
+    "regressionLog": "/tmp/napier-thinking-store-regression-v4.log",
+    "regressionPassed": 85,
+    "regressionFailed": 0,
+    "strictTypes": "/tmp/napier-thinking-store-strict-types-v4.log",
+    "strictTypeConfiguration": "/tmp/napier-thinking-store-strict-tsconfig.json",
+    "strictTypesStatus": "Only external concurrent G04 error run-lost-owner-recovery.ts84 missing reconcileInterruptedWorkspacePatches; no owner-file error",
+    "architecture": "/tmp/napier-thinking-store-architecture-v2.log",
+    "architectureStatus": "No owner-file violations; runtime worker guard complexity at that intermediate snapshot plus existing external failures"
+  },
+  "noEmit": true,
+  "commits": false,
+  "remainingBoundaries": [
+    "readAttemptReceipt is non-authorizing evidence; private runtime completion proves source projection/ACK and fresh admission proves liveness/budget",
+    "Guard alone issues suppression proof after withholding executable text/tool delivery; Store verifies opaque proof and exact payload/fence/capture binding",
+    "Final unknown/partial physical receipts remain incomplete; checkpoint/completion completeness gates unchanged",
+    "Main overflow behavior unchanged; full child compiler/overflow parity remains open"
+  ]
+}

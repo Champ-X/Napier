@@ -365,6 +365,14 @@
 - [证据索引](docs/artifacts/model-physical-usage-evidence-index-2026-10-30.json) 保留首次冻结 590／592 失败、复制零值 DTO 绕过证明反例与夹具错误。修复了双 replayer 启动的混合 revision 读取、stale finish、未知总额抹掉已知费用下界、advisor 导入哈希、续跑加权／计价准入；确定性并发／损坏专项 9／9，最终真实 SIGKILL／双进程 replay 通过。仅本地 faux／loopback HTTP，零外部付费调用。
 - **门禁仍不完整**：8 项既有架构失败、根 API 1897／1896 与 digest、历史 release manifest 失败保留；新增 5 项生产必需 internal 接口带来 21／16 与内部 digest 门禁失败，尚未通过接口验收。没有提高预算或宣称发布完成。完整 child compiler／thinking／overflow、coder 恢复、并发共享预留额度及其他目标继续推进；详见 [实现边界](docs/model-physical-usage-accounting.md)。G03、G02 与 G01–G07 总目标保持 **active**。
 
+### 后续推进：G03 thinking 恢复的主子共享规则（2026-10-30）
+
+- 实现本地提交 `250c55f1`，未 push。主、子普通回合共用位于 route candidate 内的 thinking guard，避免路由缓冲遮住停滞；一次逻辑 open 跨候选最多一次 thinking 重试。检测后恰好一次结算逻辑 attempt，仅等待本次物理调用的持久 receipt／Store 投影／ACK，以原剩余寿命和既有 5 秒宽限的较小值为限；根取消、真实时钟超时和计量失败均停止。
+- 原生 handle 来自真实 admitted 调用；缺失／伪造／失配不能降级到 legacy。重试重新检查 owner／预算／turn／admission并生成新 capture／physical ID。child 抑制响应需要 guard 私有证明，绑定逻辑响应、证据、归属及首次消费 fence；通用 append 不能绕过。迟到 raw 文本／工具只参与计量，不发布或执行；最终 unknown／partial 与 checkpoint 完整性规则不放宽。
+- [最终联合收据](docs/artifacts/native-thinking-recovery-regression-2026-10-30.json)：**99 文件／777 测试通过，0 failed／skipped**；Contracts／Runtime／CLI／Server 编译、Web／Harness／Benchmark 类型检查和新增／修改测试严格检查通过。独立 HEAD＋G03 staged 快照排除并行 G04 和用户原改动，4,009 源码、5,051 emitted 摘要稳定，原工作区 28 用户文件完整保留。提交前仅去除一处 EOF 空行，重编译的 5,051 文件逐字节相同，实际 staged diff 检查通过，没有为此重复行为测试。
+- [证据索引](docs/artifacts/native-thinking-recovery-evidence-index-2026-10-30.json) 保留 route-buffer 反例、取消误分类和首轮冻结 773／774。唯一冻结失败是按预算检查次数注入的旧 fixture 提前触发；改为 durable capture 后耗尽预算，保留一份 reservation、known-zero response、零派发／turn／step及顺序断言。新增实际路由主／子用例验证 thinking 重试不随 fallback 重置；不完整原生 child receipt 仍阻断后续调用。
+- 隔离快照有 **7 项既有架构失败**（此前包含用户工作区改动的收据为 8 项，范围不同）；API 仍为 root 1897／1896、internal 21／16 与两项 digest 失败，旧测试 48 个严格类型错误与 `d2e33ac3` 完全一致。历史 release manifest 未重写，零外部付费请求。不宣称完整 compiler／overflow／extension parity或质量／性能改善；并发 owner 额度、coder 恢复与其余 G01–G07 目标继续 **active**。详见 [实现边界](docs/native-thinking-recovery.md)。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：

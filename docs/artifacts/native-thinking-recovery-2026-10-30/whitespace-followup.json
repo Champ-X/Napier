@@ -1,0 +1,17 @@
+{
+  "kind": "napier.native-thinking-whitespace-followup",
+  "baseStagedTree": "8489c51086853ebb0a28a0f82e5b3ae2907588b4",
+  "reason": "Final staged diff check found one extra blank line at EOF in a new file. The earlier isolated unstaged diff did not inspect untracked additions.",
+  "changedFile": "packages/runtime/src/model-call-accounting-port.ts",
+  "beforeSha256": "1a0280acaa1d318b4b6494758ae6a446b4a9347e6357c9d43647cf859023cf8e",
+  "afterSha256": "158e756e50a9aa80a1f055230f962ccfbfba38639f0392588a40810a207e7d01",
+  "exactChange": "remove one trailing newline, no token changes",
+  "failedGate": "git diff --cached --check: model-call-accounting-port.ts:31 new blank line at EOF",
+  "behavioralTests": "Reuse frozen final-v2 tests only if rebuilt emitted artifact bytes are identical.",
+  "finalStagedTree": "30ae2855baedfcf5ae30000fe68eb3a286bda765",
+  "emittedFiles": 5051,
+  "emittedChanges": [],
+  "stagedDiffCheckExitCode": 0,
+  "rebuiltExitCode": 0,
+  "passed": true
+}

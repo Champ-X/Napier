@@ -1,0 +1,103 @@
+{
+  "owner": "/root/sandbox_admission_design/browser_capacity_seams",
+  "base": "68612f814905d9ca7f0719e88e6971088dc716ea",
+  "scope": "G03 native thinking recovery shared runtime mechanism and integration",
+  "files": [
+    {
+      "path": "packages/runtime/src/agent-model-recovery-evidence.ts",
+      "sha256": "a9daec6387ea7ccef5fa3b91f3762920cc47474a84257fa427de21ba8296d12c"
+    },
+    {
+      "path": "packages/runtime/src/agent-model-stream-lifecycle.ts",
+      "sha256": "00378c04e7f0da41ef22e3d8d5199c29bcf0721c75591a4bf4b815c1dbf18995"
+    },
+    {
+      "path": "packages/runtime/src/model-call-accounting-driver.ts",
+      "sha256": "fbd9e364feb24916cce4214a416273fd67691df0f3c6f56613798c06970ebc2c"
+    },
+    {
+      "path": "packages/runtime/src/model-call-accounting-port.ts",
+      "sha256": "1a0280acaa1d318b4b6494758ae6a446b4a9347e6357c9d43647cf859023cf8e"
+    },
+    {
+      "path": "packages/runtime/src/model-call-admission.ts",
+      "sha256": "2c891192997c42e957833d5d529b97b8888b01be94e01b4eb4bfba42f2f31872"
+    },
+    {
+      "path": "packages/runtime/src/model-call-recovery.ts",
+      "sha256": "b3caeaa344a4f814eea7f21da562fe4ebc1ee092adcb66a41d58b7d60cf0edb7"
+    },
+    {
+      "path": "packages/runtime/src/model-session.ts",
+      "sha256": "3db9dc5476d270134bd5a3a4b656a54028b1eac0b6479bdb5b3a296275ce5a64"
+    },
+    {
+      "path": "packages/runtime/src/model-stream-transport.ts",
+      "sha256": "f7eebb1b0a42571e190ce28ef6fa97b2c44fd51c7fa959edfa5c5312dfa616e5"
+    },
+    {
+      "path": "packages/runtime/src/model-thinking-loop-guard.ts",
+      "sha256": "1d81b248de4afd275e089e1b8c42436143d48c36fc4800a983b669175201ab5d"
+    },
+    {
+      "path": "packages/runtime/src/model-thinking-suppression.ts",
+      "sha256": "51cbee701169d784ccebe35444d47ce89b8f20c369cd9e94ef07312b6edba74d"
+    },
+    {
+      "path": "packages/runtime/src/subagent-child-execution.ts",
+      "sha256": "31d429a50beacf4830616f75655ad205a9b279760d1dcab6bcfe22bc29c33b69"
+    },
+    {
+      "path": "packages/runtime/src/subagent-model-session.ts",
+      "sha256": "517624e71d29bcfed212e80ca037833e31488bce6ab0266476b7aa33fad6d00e"
+    },
+    {
+      "path": "packages/runtime/test/model-thinking-recovery.test.ts",
+      "sha256": "0baf7b98fa32a8202b0c5be611b0d8c1ea11cb828aea80a9be38907b0c4a5835"
+    },
+    {
+      "path": "packages/runtime/test/subagent-thinking-recovery.test.ts",
+      "sha256": "ea8e77b06ecc4697967eb62d8675630802ea253f40930c845ada6460eb0dc49f"
+    },
+    {
+      "path": "packages/runtime/test/subagent-model-session-fixture.ts",
+      "sha256": "88fd440c69f2124b5bc1950f865c1bf350374356a5a6b0475552a11aa7482218"
+    },
+    {
+      "path": "packages/runtime/test/agent-native-thinking-recovery.test.ts",
+      "sha256": "3159ccc67506a6acb895a9eed6e93fb44e6e0fb553a3e2e81c5e27f9567aabcc"
+    },
+    {
+      "path": "packages/runtime/test/subagent-continuation-runner.test.ts",
+      "sha256": "1c52ce7527920c87357e032a47b8a8d7ce17adf6c402631b7ca1bad543b63899"
+    }
+  ],
+  "verification": {
+    "source_no_emit": "npx tsc -p packages/runtime/tsconfig.json --noEmit --tsBuildInfoFile /tmp/napier-thinking-recovery-tsconfig.tsbuildinfo",
+    "strict_new_tests": "npx tsc -p /tmp/napier-thinking-recovery-tests-strict.json",
+    "regression": "73/73 prior affected 9-file suite; 67/67 final 6-file route/native suite; exact latest 4-file result reported separately",
+    "architecture": "No new G03 findings after guard consumption extraction and accounting port extraction; baseline and concurrent G04 findings remain",
+    "final_test_only_followup": {
+      "command": "npx vitest run packages/runtime/test/subagent-continuation-runner.test.ts packages/runtime/test/agent-native-thinking-recovery.test.ts packages/runtime/test/subagent-thinking-recovery.test.ts --maxWorkers=2 --testTimeout=30000",
+      "result": "37/37 tests, 3/3 files passed",
+      "strict_command": "npx tsc -p /tmp/napier-thinking-routed-tests-strict.json",
+      "strict_result": "passed; model-thinking-recovery, subagent-thinking-recovery, subagent-model-session-fixture, agent-native-thinking-recovery",
+      "diff_check": "git diff --check passed",
+      "source_drift": "All 12 originally owned runtime source file hashes match prior frozen manifest; no runtime edits."
+    }
+  },
+  "notes": [
+    "No emit, commit, paid model calls, or external requests.",
+    "Native complete receipt requires exact opaque per-attempt handle, successful source durability plus projection/ACK, original remaining lifetime and existing5s grace, then fresh owner/budget/turn/host admission.",
+    "Legacy compatibility explicitly records legacy_unaccounted readiness; no native handle fallback.",
+    "Guard inside main and child route candidates avoids hidden thinking buffer; one thinking retry budget per logical open across candidates.",
+    "Late raw known text/tool content is usage-only; logical child suppression carries private guard proof, validated by resource owner Store changes.",
+    "Main suppressed logical terminal settles at actual ModelSession transport result; durable detection event follows readiness decision, no fabricated model.response.",
+    "A native onDetected callback exceeding grace records retry intent followed by finalize/pending_timeout without redispatch.",
+    "Single physical ModelSession primitive remains retry-free. Auxiliary typed/outcome repair and compaction stay single-attempt.",
+    "Root delegated agent-native-thinking-recovery.test.ts routed regression extension; parent owns registry settings helper and constructor binding; resource owns 13-file Store manifest.",
+    "Final continuation fixture injects budget exhaustion only after durable subagent.model.invocation capture; final physical gate retains one reservation, one known-zero error response, no dispatch, no logical turn.",
+    "Routed native main and explicit legacy child observe exact A,A,B calls with retry then finalize; native child observes A,A and stops before B because errored A receipt is incomplete.",
+    "Refrozen after final test-only followup; no staging, commits, emit, external or paid model calls."
+  ]
+}

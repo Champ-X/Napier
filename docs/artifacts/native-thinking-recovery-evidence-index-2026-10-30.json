@@ -1,0 +1,530 @@
+{
+  "kind": "napier.native-thinking-recovery-evidence-index",
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T20:02:02.955107+00:00",
+  "baselineCommit": "68612f814905d9ca7f0719e88e6971088dc716ea",
+  "implementationCommit": "250c55f115aa546748b7f6de0bd943097e8e2c1f",
+  "finalSourceTree": "30ae2855baedfcf5ae30000fe68eb3a286bda765",
+  "externalModelCalls": 0,
+  "releaseAccepted": false,
+  "g03Complete": false,
+  "overallGoalComplete": false,
+  "budgetsRaised": false,
+  "historicalEvidenceRewritten": false,
+  "validationScope": "Exact HEAD68612f81 plus staged G03 source/test blobs in isolated checkout; concurrent G04 and preexisting user changes excluded",
+  "finalRegression": {
+    "path": "docs/artifacts/native-thinking-recovery-regression-2026-10-30.json",
+    "sha256": "a90a30845fd38bd7b271df4cb83bd073518b952a327d82e590b5438702be276c",
+    "files": 99,
+    "passed": 777,
+    "failed": 0,
+    "skipped": 0,
+    "passedRequiredChecks": true,
+    "sourceCount": 4009,
+    "emittedCount": 5051,
+    "sourceDrift": [],
+    "emittedDrift": []
+  },
+  "preservedUserFiles": {
+    "count": 28,
+    "changed": []
+  },
+  "retainedNonPassingGates": {
+    "architecture": "7 pre-existing findings in isolated HEAD+G03 snapshot; earlier mixed-user-workspace receipt reported8. None names G03 changed files; concurrent G04/user overlay excluded.",
+    "rootApi": "1897/1896 plus existing root semantic digest mismatch",
+    "internalApi": "21/16 plus existing internal semantic digest mismatch; prior physical-usage composition exports remain unaccepted",
+    "legacyTestStrictTypes": "48 errors in agent-runtime.test.ts exactly match normalized d2e33ac3 baseline; no added/removed diagnostics",
+    "historicalReleaseManifest": "Prior mismatch retained; no new release acceptance or manifest rewrite"
+  },
+  "retainedFailures": [
+    "Unfrozen main development log: one test payload-field assertion mistake plus four pre-detection timeouts. Actual route buffer hid ~6KB repeated thinking; guard moved inside candidate. This is discovery evidence, not a frozen performance baseline.",
+    "Native root abort was initially classified failed; final host-attested aborted/cancelled behavior covered by frozen tests.",
+    "Frozen v1:773/774 pass; continuation fixture injected budget exhaustion by check ordinal and now triggered at valid pre-reserve check. Test-only correction injects after durable capture while preserving one reservation, known-zero response, no raw call/turn/step and capture-before-response assertions.",
+    "Final staged diff check exposed one extra trailing newline omitted by isolated unstaged diff on untracked additions. Removed only that newline; both staged diff checks pass and all5051 rebuilt emitted files remain byte-identical."
+  ],
+  "addedRoutedCases": [
+    "Native main A stall, A recovery503, B stall: exactly A,A,B; shared thinking budget stops B retry; error receipt remains incomplete.",
+    "Explicit legacy child exactly A,A,B with legacy_unaccounted readiness; native child exactly A,A because incomplete physical accounting denies B."
+  ],
+  "limitations": [
+    "Normal-turn thinking recovery only; full child compiler/overflow/extension parity incomplete.",
+    "Final unknown/partial receipt immutable; physicalId denotes admitted Models API invocation, not hidden SDK HTTP retries.",
+    "Native child incomplete prior physical receipt blocks later admission; no relaxed checkpoint or completion completeness.",
+    "No live provider quality, cost/latency improvement, cross-platform power-loss or universal cancellation guarantee.",
+    "Concurrent owner allowance, coder continuation and remaining G01-G07 requirements remain active."
+  ],
+  "artifacts": [
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/architecture.log.json",
+      "bytes": 887,
+      "sha256": "2ccb9b5f8195a353d8572d9e684a324216cbdb44aefc714699ebcb228ca3d81b",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/architecture.log",
+      "originalBytes": 685,
+      "originalSha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/benchmark-types.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/benchmark-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/bundled-skills.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/bundled-skills.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/contracts-runtime-emit.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/contracts-runtime-emit.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/diff-check.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/diff-check.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/emitted-after.json",
+      "bytes": 630653,
+      "sha256": "7415e6ff51e395fccb7e25757307049064968ec4d28d36548aeb55f10ce6d3d3",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/emitted-after.json",
+      "originalBytes": 630653,
+      "originalSha256": "7415e6ff51e395fccb7e25757307049064968ec4d28d36548aeb55f10ce6d3d3"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/emitted-before.json",
+      "bytes": 630653,
+      "sha256": "7415e6ff51e395fccb7e25757307049064968ec4d28d36548aeb55f10ce6d3d3",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/emitted-before.json",
+      "originalBytes": 630653,
+      "originalSha256": "7415e6ff51e395fccb7e25757307049064968ec4d28d36548aeb55f10ce6d3d3"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/harness-types.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/harness-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/legacy-strict-baseline-comparison.json",
+      "bytes": 462,
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/legacy-strict-baseline-comparison.json",
+      "originalBytes": 462,
+      "originalSha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/legacy-strict-tests.json",
+      "bytes": 469,
+      "sha256": "bb768cb56f8c8b47280241dcb9400e2cfba76c1422f1426831231a3ab2d73d6f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/legacy-strict-tests.json",
+      "originalBytes": 469,
+      "originalSha256": "bb768cb56f8c8b47280241dcb9400e2cfba76c1422f1426831231a3ab2d73d6f"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/legacy-strict-tests.log.json",
+      "bytes": 17116,
+      "sha256": "3b19abf07196977983663d55f3de7f757d7d87a6ac9cd4456a3d54d593dc29d2",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/legacy-strict-tests.log",
+      "originalBytes": 16655,
+      "originalSha256": "636d47416751919b903ad7572aad824c5a9e635195001eb70dd4b8772514b56f"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/public-api.log.json",
+      "bytes": 476,
+      "sha256": "f5914552a1645875f1c5abc6fe41ce13ffd555cf5b995006a6ec0e05811ade76",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/public-api.log",
+      "originalBytes": 277,
+      "originalSha256": "2dc0e441cef13d05f2e54e1cbb764defd210cd9457412df1ad84600855622048"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/regression.json",
+      "bytes": 20296,
+      "sha256": "32e2f3d8d5e8bcddabad6e6e027e0475dc8fe0a66c7713d5243dfda15718f517",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/regression.json",
+      "originalBytes": 20296,
+      "originalSha256": "32e2f3d8d5e8bcddabad6e6e027e0475dc8fe0a66c7713d5243dfda15718f517"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/runtime-tests.log.json",
+      "bytes": 269,
+      "sha256": "cc217dab407ffa73f82548dc8b1ab46ece76e507e1154e4f38a51639119aea7f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/runtime-tests.log",
+      "originalBytes": 75,
+      "originalSha256": "8bb897fa723e1af1645bdfc4eb0dcac1e60c7765525fe9cc298e4bf2021e2a3e"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/runtime.json",
+      "bytes": 266957,
+      "sha256": "8d27b965ef5163415ddd4848271e005a4c5ea313c82304daa1ab039692532aaf",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/runtime.json",
+      "originalBytes": 266957,
+      "originalSha256": "8d27b965ef5163415ddd4848271e005a4c5ea313c82304daa1ab039692532aaf"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/sandbox-assets.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/sandbox-assets.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/selected-tests.json",
+      "bytes": 6948,
+      "sha256": "a1d711af8fe1e81b6b0508ed140ea6a6e4ac7e50ddfa4c214204233f5f8e6ceb",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/selected-tests.json",
+      "originalBytes": 6948,
+      "originalSha256": "a1d711af8fe1e81b6b0508ed140ea6a6e4ac7e50ddfa4c214204233f5f8e6ceb"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/server-tests.log.json",
+      "bytes": 268,
+      "sha256": "9e69c79bfd03915f888b3c8fec1f7a08b682815e99cc3bbfd585404d4520c6e2",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/server-tests.log",
+      "originalBytes": 74,
+      "originalSha256": "24aca6e1ea3fa2e4d62c17ba5f69cf265d541c419838dda03c78539466b27211"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/server.json",
+      "bytes": 16870,
+      "sha256": "ff1f242f83fca1f36ae531d0b3f4ee1e1a068f68d0a4173b580c672be77e333a",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/server.json",
+      "originalBytes": 16870,
+      "originalSha256": "ff1f242f83fca1f36ae531d0b3f4ee1e1a068f68d0a4173b580c672be77e333a"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/source-after.json",
+      "bytes": 483517,
+      "sha256": "8bc507ceec61d1da74674a95db48e75fb2383d1b2eef42e0623a51e883fc219d",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/source-after.json",
+      "originalBytes": 483517,
+      "originalSha256": "8bc507ceec61d1da74674a95db48e75fb2383d1b2eef42e0623a51e883fc219d"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/source-before.json",
+      "bytes": 483517,
+      "sha256": "8bc507ceec61d1da74674a95db48e75fb2383d1b2eef42e0623a51e883fc219d",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/source-before.json",
+      "originalBytes": 483517,
+      "originalSha256": "8bc507ceec61d1da74674a95db48e75fb2383d1b2eef42e0623a51e883fc219d"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/strict-tests.json",
+      "bytes": 1091,
+      "sha256": "4e24e62c93797dccf29437fd9978e05e2373e4e1eac585d16cbc3b63b39f5711",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/strict-tests.json",
+      "originalBytes": 1091,
+      "originalSha256": "4e24e62c93797dccf29437fd9978e05e2373e4e1eac585d16cbc3b63b39f5711"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/strict-tests.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/strict-tests.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/web-types.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v1/web-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/architecture.log.json",
+      "bytes": 887,
+      "sha256": "2ccb9b5f8195a353d8572d9e684a324216cbdb44aefc714699ebcb228ca3d81b",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/architecture.log",
+      "originalBytes": 685,
+      "originalSha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/benchmark-types.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/benchmark-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/bundled-skills.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/bundled-skills.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/contracts-runtime-emit.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/contracts-runtime-emit.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/diff-check.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/diff-check.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/emitted-after.json",
+      "bytes": 630653,
+      "sha256": "7415e6ff51e395fccb7e25757307049064968ec4d28d36548aeb55f10ce6d3d3",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/emitted-after.json",
+      "originalBytes": 630653,
+      "originalSha256": "7415e6ff51e395fccb7e25757307049064968ec4d28d36548aeb55f10ce6d3d3"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/emitted-before.json",
+      "bytes": 630653,
+      "sha256": "7415e6ff51e395fccb7e25757307049064968ec4d28d36548aeb55f10ce6d3d3",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/emitted-before.json",
+      "originalBytes": 630653,
+      "originalSha256": "7415e6ff51e395fccb7e25757307049064968ec4d28d36548aeb55f10ce6d3d3"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/harness-types.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/harness-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/legacy-strict-baseline-comparison.json",
+      "bytes": 462,
+      "sha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/legacy-strict-baseline-comparison.json",
+      "originalBytes": 462,
+      "originalSha256": "116502e2648259b72af689fcba9a49d69fd97abfcc07a71b2e527ec5af6e2908"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/legacy-strict-tests.json",
+      "bytes": 469,
+      "sha256": "bb768cb56f8c8b47280241dcb9400e2cfba76c1422f1426831231a3ab2d73d6f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/legacy-strict-tests.json",
+      "originalBytes": 469,
+      "originalSha256": "bb768cb56f8c8b47280241dcb9400e2cfba76c1422f1426831231a3ab2d73d6f"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/legacy-strict-tests.log.json",
+      "bytes": 17116,
+      "sha256": "3b19abf07196977983663d55f3de7f757d7d87a6ac9cd4456a3d54d593dc29d2",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/legacy-strict-tests.log",
+      "originalBytes": 16655,
+      "originalSha256": "636d47416751919b903ad7572aad824c5a9e635195001eb70dd4b8772514b56f"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/public-api.log.json",
+      "bytes": 476,
+      "sha256": "f5914552a1645875f1c5abc6fe41ce13ffd555cf5b995006a6ec0e05811ade76",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/public-api.log",
+      "originalBytes": 277,
+      "originalSha256": "2dc0e441cef13d05f2e54e1cbb764defd210cd9457412df1ad84600855622048"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/regression.json",
+      "bytes": 20431,
+      "sha256": "96385212ccaf05cf9dce7f3c8f2ab828a6ad99f6bc8915f16e84a7d4162333bd",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/regression.json",
+      "originalBytes": 20431,
+      "originalSha256": "96385212ccaf05cf9dce7f3c8f2ab828a6ad99f6bc8915f16e84a7d4162333bd"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/runtime-tests.log.json",
+      "bytes": 269,
+      "sha256": "52e634bc159f172b2f97ff056b905880aec0caa80f5908bcd8884bc66211b456",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/runtime-tests.log",
+      "originalBytes": 75,
+      "originalSha256": "a9e0c6a0d697b05d147cc0e1648c6377f94ed9c9a11cfea001cbeef805d57945"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/runtime.json",
+      "bytes": 267197,
+      "sha256": "222139c6d5b35ff6d360d34087c30c66cd35068bb5931389f9ba7ee86bcb5351",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/runtime.json",
+      "originalBytes": 267197,
+      "originalSha256": "222139c6d5b35ff6d360d34087c30c66cd35068bb5931389f9ba7ee86bcb5351"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/sandbox-assets.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/sandbox-assets.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/selected-tests.json",
+      "bytes": 7051,
+      "sha256": "893d2b2801e73c826c3bd8a1b4bef5894ee8fbe4432d1896e1fdd17a5b62a87c",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/selected-tests.json",
+      "originalBytes": 7051,
+      "originalSha256": "893d2b2801e73c826c3bd8a1b4bef5894ee8fbe4432d1896e1fdd17a5b62a87c"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/server-tests.log.json",
+      "bytes": 268,
+      "sha256": "543ea6130b19ff3e8436df0fe1faa8dcb166bb060dca762ff2acddcd9b8df037",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/server-tests.log",
+      "originalBytes": 74,
+      "originalSha256": "05a7480f473e566cd7b48da325298f69a2a3774517cca47aeacaeb404f76d9b9"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/server.json",
+      "bytes": 16885,
+      "sha256": "41de079d04fcd72eb1fd10e7e61ab6094e0407197147533c1ba775b2823df89b",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/server.json",
+      "originalBytes": 16885,
+      "originalSha256": "41de079d04fcd72eb1fd10e7e61ab6094e0407197147533c1ba775b2823df89b"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/source-after.json",
+      "bytes": 483517,
+      "sha256": "495570d69d849536cc14cce0b5c6434fbfe796d354e568e360e10145f93d036d",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/source-after.json",
+      "originalBytes": 483517,
+      "originalSha256": "495570d69d849536cc14cce0b5c6434fbfe796d354e568e360e10145f93d036d"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/source-before.json",
+      "bytes": 483517,
+      "sha256": "495570d69d849536cc14cce0b5c6434fbfe796d354e568e360e10145f93d036d",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/source-before.json",
+      "originalBytes": 483517,
+      "originalSha256": "495570d69d849536cc14cce0b5c6434fbfe796d354e568e360e10145f93d036d"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/strict-tests.json",
+      "bytes": 1194,
+      "sha256": "7dbe45f5829b4adb02bd94417d361be37c6b5e44b4e9f85bc5ab25d375ab461a",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/strict-tests.json",
+      "originalBytes": 1194,
+      "originalSha256": "7dbe45f5829b4adb02bd94417d361be37c6b5e44b4e9f85bc5ab25d375ab461a"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/strict-tests.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/strict-tests.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/web-types.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/final-v2/web-types.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/main-development-v1.log.json",
+      "bytes": 5309,
+      "sha256": "d07a798a130c28e24c7f4877c9f77adbfd9ed9457373a153b4e14e5de0919427",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/main-development-v1.log",
+      "originalBytes": 5010,
+      "originalSha256": "ffce88519abe9ce8272751fe1ace4e8ea0a409b97d45ba5c84e9c7a35dca91de"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/main-terminal-development-v2.log.json",
+      "bytes": 1324,
+      "sha256": "0fe5d97020529395cc7eb440d753fa00a22c7d8d13bfaabed54cd51cd409e28b",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/main-terminal-development-v2.log",
+      "originalBytes": 1114,
+      "originalSha256": "a136fcbc33705d6cc4d8bdbd8b33d587df2798d0f9185dd8ee2905ca0b071fdd"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/runtime-handoff-v1.json",
+      "bytes": 4512,
+      "sha256": "39266b9f727b26893db3bc94a9e7c39c935b2157cf9cae605fa53804f3042a2f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/runtime-handoff-v1.json",
+      "originalBytes": 4512,
+      "originalSha256": "39266b9f727b26893db3bc94a9e7c39c935b2157cf9cae605fa53804f3042a2f"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/runtime-handoff-v2.json",
+      "bytes": 6147,
+      "sha256": "dc18cee0179e4ff22248303dec2e2b0a4817a62ffda3b55a6f7d8d50e846ca3c",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/runtime-handoff-v2.json",
+      "originalBytes": 6147,
+      "originalSha256": "dc18cee0179e4ff22248303dec2e2b0a4817a62ffda3b55a6f7d8d50e846ca3c"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/staged-source-final.json",
+      "bytes": 4394,
+      "sha256": "6c9bc1ce1f3e63e4fed253fe5898dac3be8b74ab6f44fd6972ff8db407f0f480",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/staged-source-final.json",
+      "originalBytes": 4394,
+      "originalSha256": "6c9bc1ce1f3e63e4fed253fe5898dac3be8b74ab6f44fd6972ff8db407f0f480"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/staged-source-v1.json",
+      "bytes": 4260,
+      "sha256": "ffc1f484a55647cf48a685f583773928466f8aaf286e90ea4f2b62356d14b481",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/staged-source-v1.json",
+      "originalBytes": 4260,
+      "originalSha256": "ffc1f484a55647cf48a685f583773928466f8aaf286e90ea4f2b62356d14b481"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/store-development-v4.json",
+      "bytes": 32068,
+      "sha256": "9a0b2bff077c30f408be1d7e4fa0ed942b074ccd9a2aa9c25a2ff1ea8e993d39",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/store-development-v4.json",
+      "originalBytes": 32068,
+      "originalSha256": "9a0b2bff077c30f408be1d7e4fa0ed942b074ccd9a2aa9c25a2ff1ea8e993d39"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/store-handoff.json",
+      "bytes": 3765,
+      "sha256": "97cd994990a609b4bee6ae8ed0cf2ba0e2104dc784f3526f4724bab5f05924fa",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/store-handoff.json",
+      "originalBytes": 3765,
+      "originalSha256": "97cd994990a609b4bee6ae8ed0cf2ba0e2104dc784f3526f4724bab5f05924fa"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/verifier-v1.py",
+      "bytes": 9011,
+      "sha256": "7901b0166b38d5e49e6e4263daddd9a828e096c3a32851ac4d081d09764117c1",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/verifier-v1.py",
+      "originalBytes": 9011,
+      "originalSha256": "7901b0166b38d5e49e6e4263daddd9a828e096c3a32851ac4d081d09764117c1"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/whitespace-build.log.json",
+      "bytes": 192,
+      "sha256": "53a7b7b66fe0abf13ec4df55940e6b5f1a4286135609865ca89abcb8a9f53e0f",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/whitespace-build.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/artifacts/native-thinking-recovery-2026-10-30/whitespace-followup.json",
+      "bytes": 985,
+      "sha256": "29e57ca844cb50850fa942a468b763426a55fc3f195000a885f74f406eb39889",
+      "originalArtifactPath": "docs/artifacts/native-thinking-recovery-2026-10-30/whitespace-followup.json",
+      "originalBytes": 985,
+      "originalSha256": "29e57ca844cb50850fa942a468b763426a55fc3f195000a885f74f406eb39889"
+    }
+  ]
+}
