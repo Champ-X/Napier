@@ -46,6 +46,7 @@ export function taskNarrativeView(
   const references = eventState.outputReferencesByRun[runId] ?? [];
   const declared = projectTaskDeliverables(source.plans, {
     preferredPaths: references,
+    history: eventState.artifactHistory,
   });
   const message = eventState.outputMessageByRun[runId];
   const candidates: NonNullable<TaskNarrativeProjection["deliverables"]> =

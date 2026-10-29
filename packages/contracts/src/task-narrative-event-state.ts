@@ -1,5 +1,6 @@
 import type { RunEvent } from "./execution-core.js";
 import { taskDeliverableReferences } from "./task-deliverable-references.js";
+import { taskArtifactHistoryEvent, type TaskArtifactHistoryEvent } from "./task-artifact-history.js";
 
 interface ToolCallProgress {
   toolName: string;
@@ -21,6 +22,7 @@ export interface TaskNarrativeEventState {
   decisions: Record<string, DecisionProgress>;
   outputReferencesByRun: Record<string, string[]>;
   outputMessageByRun: Record<string, { id: string; createdAt: string }>;
+  artifactHistory: TaskArtifactHistoryEvent[];
 }
 
 const TOOL_EVENT = /^tool\.(started|completed|failed|blocked)$/u;
@@ -31,6 +33,7 @@ export function createTaskNarrativeEventState(): TaskNarrativeEventState {
     decisions: {},
     outputReferencesByRun: {},
     outputMessageByRun: {},
+    artifactHistory: [],
   };
 }
 
@@ -41,6 +44,9 @@ export function applyTaskNarrativeEvent(
   const next = structuredClone(state);
   applyToolProgress(next, event);
   applyDecisionProgress(next, event);
+  const artifact = taskArtifactHistoryEvent(event);
+  if (artifact && !next.artifactHistory.some((entry) => entry.eventId === artifact.eventId))
+    next.artifactHistory.push(artifact);
   if (event.type === "message.assistant" && event.visibility === "user") {
     next.outputMessageByRun[event.runId] = {
       id: event.id,

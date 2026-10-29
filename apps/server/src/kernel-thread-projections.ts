@@ -28,11 +28,26 @@ export type KernelThreadProjectionServices = {
   taskNarratives: Pick<AgentKernel["taskNarratives"], "project">;
 };
 
+type KernelThreadProjection = {
+  [Key in
+    | "taskNarrative"
+    | "messages"
+    | "artifacts"
+    | "activityEvents"
+    | "activityCandidates"
+    | "conversationPlans"
+    | "citations"
+    | "recoveries"
+    | "subagentCards"
+    | "subagentHub"
+    | "operatorDecisions"]: NonNullable<ThreadDetail[Key]>;
+} & Pick<ThreadDetail, "activePlan">;
+
 export async function projectKernelThreadProjections(
   threadId: string,
   kernel: KernelThreadProjectionServices,
   subagentHubControls?: Pick<SubagentHubControlService, "availability">,
-) {
+): Promise<KernelThreadProjection> {
   const [
     taskNarrative,
     activePlan,
@@ -101,8 +116,8 @@ export async function attachKernelThreadProjections(
   detail.recoveries = projections.recoveries;
   detail.subagentCards = projections.subagentCards;
   detail.subagentHub = projections.subagentHub;
-  detail.subagents = detail.subagents.map(({ writePaths: _writePaths, ...task }) =>
-    task,
+  detail.subagents = detail.subagents.map(
+    ({ writePaths: _writePaths, ...task }) => task,
   );
   detail.operatorDecisions = projections.operatorDecisions;
   if (projections.activePlan) detail.activePlan = projections.activePlan;

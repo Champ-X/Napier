@@ -1,4 +1,5 @@
-import type { ArtifactManifestEntry, ExecutionPlan, RunEvent } from "@napier/contracts";
+import type { ExecutionPlan, RunEvent, ThreadDetail } from "@napier/contracts";
+import { taskArtifactFacts } from "@napier/contracts/task-narrative";
 
 import { toolEventTraceView } from "./tool-event-view";
 
@@ -7,12 +8,8 @@ export type TaskValidationCheckId =
   | "tests"
   | "diagnostics"
   | "artifact";
-export type TaskValidationStatus =
-  | "passed"
-  | "failed"
-  | "warning"
-  | "unknown";
-export type TaskValidationSource = "receipt" | "lsp" | "ledger";
+export type TaskValidationStatus = "passed" | "failed" | "warning" | "unknown";
+export type TaskValidationSource = "receipt" | "lsp" | "ledger" | "workspace";
 
 export interface TaskValidationMatrixRow {
   id: TaskValidationCheckId;
@@ -29,19 +26,21 @@ export interface TaskValidationMatrixRow {
   verifiedArtifactCount?: number;
   producedArtifactCount?: number;
   missingArtifactCount?: number;
+  driftedArtifactCount?: number;
   stale?: boolean;
 }
 
 export function taskValidationMatrix(
   events: readonly RunEvent[],
   plans: readonly ExecutionPlan[],
+  narrative?: ThreadDetail["taskNarrative"],
 ): TaskValidationMatrixRow[] {
   const latestWriteSeq = latestWorkspaceWriteSeq(events);
   return [
     verificationRow("typecheck", events, latestWriteSeq),
     verificationRow("tests", events, latestWriteSeq),
     diagnosticsRow(events, latestWriteSeq),
-    artifactRow(plans),
+    artifactRow(plans, narrative),
   ];
 }
 
@@ -53,9 +52,11 @@ function verificationRow(
   const kind = id === "tests" ? "test" : "typecheck";
   const evidence = [...events].reverse().find((event) => {
     const view = toolEventTraceView(event);
-    return view?.toolName === "verify_workspace" &&
+    return (
+      view?.toolName === "verify_workspace" &&
       view.verificationKind === kind &&
-      view.verificationStatus;
+      view.verificationStatus
+    );
   });
   const view = evidence ? toolEventTraceView(evidence) : undefined;
   if (!evidence || !view?.verificationStatus) {
@@ -121,45 +122,18 @@ function diagnosticsRow(
 
 function artifactRow(
   plans: readonly ExecutionPlan[],
+  narrative: ThreadDetail["taskNarrative"],
 ): TaskValidationMatrixRow {
-  const plan = currentPlan(plans);
-  const artifacts = plan?.artifacts ?? [];
-  if (artifacts.length === 0) {
+  const facts = taskArtifactFacts(plans, narrative?.deliverables);
+  if (facts.artifactCount === 0) {
     return { id: "artifact", status: "unknown", source: "ledger" };
   }
-  const counts = artifactCounts(artifacts);
-  const status: TaskValidationStatus =
-    counts.missingArtifactCount > 0
-      ? "failed"
-      : counts.verifiedArtifactCount === counts.artifactCount
-        ? "passed"
-        : counts.verifiedArtifactCount + counts.producedArtifactCount > 0
-          ? "warning"
-          : "unknown";
-  return { id: "artifact", status, source: "ledger", ...counts };
-}
-
-function currentPlan(plans: readonly ExecutionPlan[]): ExecutionPlan | undefined {
-  return (
-    plans.findLast(
-      (candidate) =>
-        candidate.status === "active" || candidate.status === "blocked",
-    ) ?? plans.at(-1)
-  );
-}
-
-function artifactCounts(artifacts: readonly ArtifactManifestEntry[]) {
   return {
-    artifactCount: artifacts.length,
-    verifiedArtifactCount: artifacts.filter(
-      (artifact) => artifact.status === "verified",
-    ).length,
-    producedArtifactCount: artifacts.filter(
-      (artifact) => artifact.status === "produced",
-    ).length,
-    missingArtifactCount: artifacts.filter(
-      (artifact) => artifact.status === "missing",
-    ).length,
+    id: "artifact",
+    source: narrative?.deliverables?.some((entry) => entry.observation)
+      ? "workspace"
+      : "ledger",
+    ...facts,
   };
 }
 

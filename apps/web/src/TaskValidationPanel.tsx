@@ -8,7 +8,7 @@ import {
   type TaskValidationMatrixRow,
 } from "./task-validation-matrix";
 
-type ValidationDetail = Pick<ThreadDetail, "events" | "plans" | "runs">;
+type ValidationDetail = Pick<ThreadDetail, "events" | "plans" | "runs" | "taskNarrative">;
 
 export function TaskValidationPanel({
   detail,
@@ -16,7 +16,7 @@ export function TaskValidationPanel({
   detail: ValidationDetail | undefined;
 }) {
   const latestRun = latestPrimaryRun(detail?.runs ?? []);
-  const rows = taskValidationMatrix(detail?.events ?? [], detail?.plans ?? []);
+  const rows = taskValidationMatrix(detail?.events ?? [], detail?.plans ?? [], detail?.taskNarrative);
 
   return (
     <section
@@ -82,6 +82,7 @@ function validationEvidence(row: TaskValidationMatrixRow): string {
       .replace("{verified}", String(row.verifiedArtifactCount ?? 0))
       .replace("{produced}", String(row.producedArtifactCount ?? 0))
       .replace("{missing}", String(row.missingArtifactCount ?? 0))
+      .replace("{drifted}", String(row.driftedArtifactCount ?? 0))
       .replace("{total}", String(row.artifactCount ?? 0));
   }
   const parts = [

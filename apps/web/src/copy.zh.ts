@@ -146,6 +146,7 @@ export const zh: LocaleOverride<typeof en> = {
         receipt: "验证回执",
         lsp: "LSP",
         ledger: "Ledger",
+        workspace: "工作区当前观察",
       },
       noEvidence: "未记录直接证据",
       exitCode: "退出码",
@@ -154,7 +155,7 @@ export const zh: LocaleOverride<typeof en> = {
       errors: "错误",
       warnings: "警告",
       artifactCounts:
-        "已验证 {verified} · 已产出 {produced} · 缺失 {missing} · 总计 {total}",
+        "完整性已核对 {verified} · 声明产出 {produced} · 缺失 {missing} · 已变化 {drifted} · 总计 {total}",
     },
     status: {
       queued: "排队中",

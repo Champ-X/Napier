@@ -148,17 +148,7 @@ export interface ThreadDetail {
     remainingItems?: string[];
     /** Tool activity is process evidence, never a task deliverable. */
     processItems?: string[];
-    deliverables?: Array<{
-      path: string;
-      planId?: string;
-      planRevision?: number;
-      artifact: ArtifactManifestEntry;
-      source: "plan" | "final_reference";
-      sourceEventId?: string;
-      accessibility: "unchecked" | "available" | "missing" | "drifted";
-      verification: "unverified" | "integrity_recorded";
-      previousVersions: Array<{ planId: string; artifactId: string; runId?: string; sha256?: string }>;
-    }>;
+    deliverables?: import("./task-artifact-facts.js").TaskDeliverable[];
     phaseLabel: string;
     currentAction: string;
     completedItems: string[];

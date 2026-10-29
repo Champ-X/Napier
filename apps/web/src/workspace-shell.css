@@ -238,6 +238,7 @@
 }
 
 .task-workspace {
+  container: task-workspace / inline-size;
   width: min(1120px, 100%);
   min-height: 100%;
   margin: 0 auto;
@@ -1005,6 +1006,47 @@
   color: var(--color-fg-subtle);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@container task-workspace (max-width: 720px) {
+  .task-workspace-masthead {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--stack-sm);
+  }
+
+  .task-section-navigation {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .task-validation-matrix-head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    padding: 0;
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .task-validation-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--stack-sm);
+  }
+
+  .task-validation-row > div {
+    flex-wrap: wrap;
+  }
+
+  .task-validation-row strong,
+  .task-validation-row p,
+  .task-validation-source {
+    min-width: 0;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
 }
 
 .task-runtime-card {

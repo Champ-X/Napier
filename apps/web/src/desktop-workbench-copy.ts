@@ -83,6 +83,7 @@ export const desktopWorkbenchCopy = {
         receipt: "Verification receipt",
         lsp: "LSP",
         ledger: "Ledger",
+        workspace: "Workspace observation",
       },
       noEvidence: "No direct evidence recorded",
       exitCode: "exit",
@@ -91,7 +92,7 @@ export const desktopWorkbenchCopy = {
       errors: "errors",
       warnings: "warnings",
       artifactCounts:
-        "verified {verified} · produced {produced} · missing {missing} · total {total}",
+        "integrity checked {verified} · declared produced {produced} · missing {missing} · changed {drifted} · total {total}",
     },
     status: {
       queued: "Queued",

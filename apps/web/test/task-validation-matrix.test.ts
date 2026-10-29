@@ -1,5 +1,13 @@
-import type { ArtifactManifestEntry, ExecutionPlan, RunEvent } from "@napier/contracts";
+import type {
+  ArtifactManifestEntry,
+  ExecutionPlan,
+  RunEvent,
+} from "@napier/contracts";
 import { describe, expect, it } from "vitest";
+import {
+  projectTaskDeliverables,
+  taskArtifactBinding,
+} from "@napier/contracts/task-narrative";
 
 import { taskValidationMatrix } from "../src/task-validation-matrix";
 
@@ -52,7 +60,7 @@ describe("taskValidationMatrix", () => {
         status: "warning",
         source: "ledger",
         artifactCount: 2,
-        verifiedArtifactCount: 1,
+        verifiedArtifactCount: 0,
         producedArtifactCount: 1,
         missingArtifactCount: 0,
       }),
@@ -78,6 +86,67 @@ describe("taskValidationMatrix", () => {
         stale: true,
       }),
     );
+  });
+
+  it("requires a current observation bound to the exact manifest and plan revision", () => {
+    const p = plan([
+      { ...artifact("verified"), sha256: "a".repeat(64), sizeBytes: 1 },
+    ]);
+    p.revision = 3;
+    const [entry] = projectTaskDeliverables([p]);
+    const observed = {
+      ...entry!,
+      verification: "integrity_observed" as const,
+      observation: {
+        source: "workspace" as const,
+        status: "matched" as const,
+        bindingSha256: taskArtifactBinding(entry!),
+        sha256: "a".repeat(64),
+        sizeBytes: 1,
+      },
+    };
+    const narrative = {
+      phase: "ended" as const,
+      phaseLabel: "Ended",
+      currentAction: "Inspect",
+      completedItems: [],
+      deliverables: [observed],
+    };
+    expect(taskValidationMatrix([], [p]).at(-1)?.status).toBe("unknown");
+    expect(taskValidationMatrix([], [p], narrative).at(-1)).toMatchObject({
+      status: "passed",
+      source: "workspace",
+      verifiedArtifactCount: 1,
+    });
+    expect(
+      taskValidationMatrix([], [{ ...p, revision: 4 }], narrative).at(-1)
+        ?.status,
+    ).toBe("unknown");
+    expect(
+      taskValidationMatrix([], [p], {
+        ...narrative,
+        deliverables: [
+          {
+            ...observed,
+            observation: {
+              ...observed.observation,
+              bindingSha256: "b".repeat(64),
+            },
+          },
+        ],
+      }).at(-1)?.status,
+    ).toBe("unknown");
+    expect(
+      taskValidationMatrix([], [p], {
+        ...narrative,
+        deliverables: [
+          {
+            ...observed,
+            observation: { ...observed.observation, sha256: "b".repeat(64) },
+          },
+        ],
+      }).at(-1)?.status,
+    ).toBe("unknown");
   });
 });
 
