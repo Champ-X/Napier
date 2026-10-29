@@ -15,6 +15,7 @@ import { ModelRouter } from "../src/model-route.js";
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
 import { SubagentSupervisor } from "../src/subagent-supervisor.js";
+import { ToolConcurrencyGate } from "../src/tool-concurrency-gate.js";
 
 const roots: string[] = [];
 
@@ -51,9 +52,13 @@ async function harness(options: { models?: Array<{ id: string }> } = {}) {
     models: registry.models,
     modelRouter: new ModelRouter(store, registry),
     defaultModel: model,
+    profile: agent,
     run,
     limits: { maxConcurrent: 2, maxTotal: 4, maxTurns: 4, timeoutMs: 5_000 },
     parentSignal: parent.signal,
+    concurrencyGate: new ToolConcurrencyGate({
+      durable: { backend: store.toolConcurrencyLeaseBackend(), ownerId: "supervisor_test" },
+    }),
   });
   return {
     store,

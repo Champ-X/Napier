@@ -2,6 +2,7 @@ import { Agent, type AgentTool } from "@earendil-works/pi-agent-core";
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
 import {
   emptyUsage,
+  type AgentProfile,
   type RunEvent,
   type RunRecord,
   type RegisteredRunEventTypeForCategory,
@@ -46,6 +47,7 @@ export class SubagentTaskRunner {
       modelRoute?: ModelRouteSession;
       run: RunRecord;
       limits: SubagentLimits;
+      parentCapabilities: Pick<AgentProfile, "enabledTools" | "toolPolicy">;
       parentSignal: AbortSignal;
       concurrencyGate: ToolConcurrencyGate;
       worktrees?: SubagentWorktreeMutationManager;
@@ -134,10 +136,12 @@ export class SubagentTaskRunner {
         this.options.worktrees,
         this.options.createInheritedTools,
         worktree,
+        this.options.parentCapabilities,
       ),
       store: this.options.store,
       run: this.options.run,
       taskId: task.id,
+      executionId: task.executionId,
       concurrencyGate: this.options.concurrencyGate,
       onEvent: this.options.onEvent,
     });
@@ -403,9 +407,23 @@ function createSubagentRoleTools(
   worktrees: SubagentWorktreeMutationManager | undefined,
   createInheritedTools: (() => AgentTool[]) | undefined,
   worktree: SubagentWorktreeSession | undefined,
+  parentCapabilities: Pick<AgentProfile, "enabledTools" | "toolPolicy">,
 ): AgentTool[] {
+  const enabled = new Set(parentCapabilities.enabledTools);
   const roleTools = worktree
     ? worktrees!.createCoderTools(worktree)
     : createWorkspaceTools(store.workspaceRoot);
-  return mergeSubagentTools(roleTools, createInheritedTools?.() ?? []);
+  return mergeSubagentTools(
+    roleTools.filter((tool) => {
+      if (tool.name !== "candidate_file") return enabled.has(tool.name);
+      // This existing coder-only grant has no Profile tool name. It remains
+      // confined to the candidate factory and the coder prerequisites.
+      return Boolean(worktree) && parentCapabilities.toolPolicy !== "observe"
+        && enabled.has("apply_patch") && enabled.has("lsp_diagnostics");
+    }),
+    (createInheritedTools?.() ?? []).filter((tool) =>
+      // Keep only an actually constructed resource loader; skill_load alone
+      // cannot manufacture the safe snapshot/access state it requires.
+      enabled.has(tool.name === "skill_resource" ? "skill_load" : tool.name)),
+  );
 }

@@ -14,15 +14,19 @@ import type { AppendEventInput } from "./run-event-registry.js";
 import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
 import { executeAdmittedToolCall } from "./tool-execution-admission-service.js";
 import type { ToolOperationJournalStore } from "./tool-operation-model.js";
+import { createSubagentToolCallScope, type SubagentToolCallIdentity } from "./subagent-tool-call-identity.js";
 
 export function governSubagentTools(input: {
   tools: readonly AgentTool[];
   store: ToolOperationJournalStore;
   run: Pick<RunRecord, "id" | "threadId">;
   taskId: string;
+  executionId?: string | undefined;
   concurrencyGate: ToolConcurrencyGate;
   onEvent: EventSink | undefined;
 }): AgentTool[] {
+  const identify = createSubagentToolCallScope({ store: input.store, runId: input.run.id,
+    taskId: input.taskId, ...(input.executionId ? { executionId: input.executionId } : {}) });
   return input.tools.map((tool) => {
     const protocol = createOwnedToolRecordV2(tool);
     const acquisitionCapable =
@@ -33,7 +37,9 @@ export function governSubagentTools(input: {
       ...(acquisitionCapable || opaqueProgress
         ? { executionMode: "sequential" as const }
         : {}),
-      execute: async (callId, args, signal, onUpdate) => {
+      execute: async (providerCallId, args, signal, onUpdate) => {
+        const identity = await identify(providerCallId);
+        const { callId } = identity;
         let started = false;
         try {
           const admitted = await executeAdmittedToolCall({
@@ -45,7 +51,7 @@ export function governSubagentTools(input: {
             protocol,
             concurrencyGate: input.concurrencyGate,
             startedPayload: {
-              subagentTaskId: input.taskId,
+              ...identity,
               ...privateInputProjection(tool.name, args),
               toolProtocol: protocol.uiProjection(
                 "started",
@@ -54,7 +60,7 @@ export function governSubagentTools(input: {
             },
             ...(signal ? { signal } : {}),
             ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-            admissionPayload: { subagentTaskId: input.taskId },
+            admissionPayload: identity,
             onStarted: () => {
               started = true;
             },
@@ -62,14 +68,14 @@ export function governSubagentTools(input: {
               tool.execute(callId, args as never, signal, onUpdate),
             settlement: (result) => ({ result, isError: false }),
           });
-          await appendTerminal(input, tool, protocol, callId, args, {
+          await appendTerminal(input, tool, protocol, identity, args, {
             status: "completed",
             result: admitted.value,
           });
           return admitted.value;
         } catch (error) {
           if (started) {
-            await appendTerminal(input, tool, protocol, callId, args, {
+            await appendTerminal(input, tool, protocol, identity, args, {
               status: "failed",
               error,
             }).catch(() => undefined);
@@ -85,7 +91,7 @@ async function appendTerminal(
   input: Parameters<typeof governSubagentTools>[0],
   tool: AgentTool,
   protocol: OwnedToolRecordV2,
-  callId: string,
+  identity: SubagentToolCallIdentity,
   args: unknown,
   outcome:
     | {
@@ -97,10 +103,9 @@ async function appendTerminal(
   const completed = outcome.status === "completed";
   const output = completed ? agentToolResultText(outcome.result) : "";
   const payload: Record<string, JsonValue> = {
-    callId,
+    ...identity,
     toolName: tool.name,
     status: completed ? "completed" : "failed",
-    subagentTaskId: input.taskId,
     toolProtocol: protocol.uiProjection(
       completed ? "completed" : "failed",
       args,
@@ -133,7 +138,7 @@ async function appendTerminal(
   } as AppendEventInput;
   const receipt = await claimRunHeadEvent(input.store, eventInput, {
     namespace: "subagent-tool-terminal",
-    key: `${input.run.id}:${callId}`,
+    key: `${input.run.id}:${identity.callId}`,
   });
   if (receipt.appended) await emitBestEffort(input.onEvent, receipt.event);
   return receipt.event;

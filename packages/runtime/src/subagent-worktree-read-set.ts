@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
+import { preserveAgentToolIdentity } from "./agent-tool-metadata.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { SubagentWorktreeSnapshot } from "./subagent-worktree-diff.js";
 import type { SubagentWorktreeSession } from "./subagent-worktree-snapshot.js";
@@ -28,9 +29,9 @@ export function trackWorktreeReads(
   tools: AgentTool[],
   session: SubagentWorktreeSession,
 ): AgentTool[] {
-  return tools.map((tool) => ({
+  return tools.map((tool) => preserveAgentToolIdentity(tool, {
     ...tool,
-    async execute(...args: Parameters<AgentTool["execute"]>) {
+    execute: async (...args: Parameters<AgentTool["execute"]>) => {
       if (!WRITE_TOOLS.has(tool.name)) {
         const input = args[1] as { path?: unknown };
         const exact = FILE_TOOLS.has(tool.name);

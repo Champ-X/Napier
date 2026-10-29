@@ -1,0 +1,630 @@
+{
+  "kind": "napier.child-execution-boundaries-regression",
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-29T12:38:58.329502+00:00",
+  "sourceHead": "a14c60e3378cb21fd68d1ba77797f3a12c2d66f6",
+  "externalModelRequests": 0,
+  "uniqueTestFiles": 10,
+  "uniquePassedTests": 78,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "rawFinalReport": {
+    "path": "/tmp/napier-child-execution-boundaries-final-20261029.json",
+    "sha256": "e2d34ee1ef61fe75e5e91fad6e770bcacc3d29e9acc9fa0cc30b4273280b0257"
+  },
+  "sourceBindings": [
+    {
+      "path": "packages/runtime/src/in-process-subagent-provider.ts",
+      "sha256": "9a3c8317f766a6ed130e3d5ea097cfe0bcad14a788b1749d78ac68edde6eb0c5"
+    },
+    {
+      "path": "packages/runtime/src/subagent-task-runner.ts",
+      "sha256": "6104cdacc4be48c30183f71ad1699503b528b3ca29a2360ec1fb95db24496e38"
+    },
+    {
+      "path": "packages/runtime/src/subagent-tool-call-identity.ts",
+      "sha256": "a4a143df35e4c78758acb56dd411613dbe9bf976ea0444b186a77b62fd92c580"
+    },
+    {
+      "path": "packages/runtime/src/subagent-tool-execution.ts",
+      "sha256": "fc3dd3bace9023b190f9acb01e7cfa49825da486eff2dd9f39172942058e318a"
+    },
+    {
+      "path": "packages/runtime/src/subagent-worktree-read-set.ts",
+      "sha256": "ee79496969830ecc250bc71cc71487e08d07c8f8e1bf3e5eee569eb9148f9c78"
+    }
+  ],
+  "files": [
+    {
+      "path": "packages/runtime/test/agent-coder-subagent.test.ts",
+      "sha256": "d9f6d31a9f2e92836e4dc75921e746b16a1b22655e91098582de62f312d634f6",
+      "assertions": [
+        {
+          "name": "Agent coder Subagent delegates, reviews, and applies an isolated candidate through one Run",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/agent-tool-admission.test.ts",
+      "sha256": "40a14e8cb80d786b5c33c99f002e79da885b8e5899c39fdb80294b2940619de6",
+      "assertions": [
+        {
+          "name": "normal Agent tool admission grants one durable execution lease and orders admission before start",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission atomically rejects concurrent attempts to change one call binding",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission reuses a role-less legacy authority after reopening the store",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission keeps invocation and result receipts unique across store reopen",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission replays a captured failure with its error bit and no second receipt",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission replays a terminal thrown result without executing or recapturing",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission repairs a captured result after restart before replaying it",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission fails closed when a terminal effect conflicts with its result receipt",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission does not count the web_search execution lease as a provider attempt",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission does not count the web_fetch execution lease as a source attempt",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission shares semantic resource arbitration across Run owners",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission uses the same Run-scoped concurrency contract as nested dispatch",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission does not let an unattested unknown tool overlap a trusted reader",
+          "status": "passed"
+        },
+        {
+          "name": "normal Agent tool admission keeps progress adapter failures observable without interrupting the tool",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/subagent-supervisor.test.ts",
+      "sha256": "ef1cb230f8a0857faa451905ca384de89351ea84f0c5db7b6f0bf950d66ab3f7",
+      "assertions": [
+        {
+          "name": "SubagentSupervisor delivers durable steering at the next assistant boundary",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentSupervisor repairs and persists a caller-provided typed output once",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentSupervisor uses a role-specific immutable child route plan",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentSupervisor cancels an active child and rejects a tampered handle",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/subagent-tool-authority.test.ts",
+      "sha256": "83ba5180dd8bb0603af6eafc54041524bb68b8a62bbd5182ec6bf966f7b61d9a",
+      "assertions": [
+        {
+          "name": "SubagentCoordinator child tool authority keeps researcher baseline tools within the parent enabled set",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority keeps reviewer baseline tools within the parent enabled set",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority keeps general baseline tools within the parent enabled set",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority rejects a model call to a disabled inherited tool before admission",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority keeps allowed inherited tools governed without inheriting root writes",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority derives skill_resource only from enabled skill_load (false)",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority derives skill_resource only from enabled skill_load (true)",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority does not synthesize skill tools when the parent has no active snapshot",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority snapshots parent tool grants before inherited tool construction",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority keeps coder lifecycle grants without restoring disabled candidate reads or AST tools",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator child tool authority keeps the candidate reader instead of an inherited root reader with the same name",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/subagent-tool-execution.test.ts",
+      "sha256": "57cc041b68cfdebfcfd3d757e6a802696802abf7533e3526dcf19a07fb1c5b5e",
+      "assertions": [
+        {
+          "name": "subagent tool execution ownership preserves the provider call ID boundary before creating an owned ID: \"\"",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership preserves the provider call ID boundary before creating an owned ID: \"   \"",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership preserves the provider call ID boundary before creating an owned ID: \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership retries a failed legacy-evidence lookup without authorizing a partial call",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership independently settles siblings with the same provider call ID through the shared gate and real ledger",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership keeps the existing main Run claim distinct from a child's identical provider ID",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership fences repeats and changed arguments after reopening the same execution",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership binds the execution identity as well as the task and preserves a stable legacy task fallback",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership preserves legacy unscoped admissions for the same child instead of re-executing them after upgrade",
+          "status": "passed"
+        },
+        {
+          "name": "subagent tool execution ownership keeps a failed sibling terminal separate from a successful sibling",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/subagent-worktree-mutation.test.ts",
+      "sha256": "785405869a9652f18ce4dd2a3f80e9d99e8c45d5d9e6a9e7b824667039d322d1",
+      "assertions": [
+        {
+          "name": "Subagent worktree mutation manager inherits semantic LSP tools and requires paired apply capabilities",
+          "status": "passed"
+        },
+        {
+          "name": "Subagent worktree mutation manager refuses a semantic rename that targets an ungranted candidate file",
+          "status": "passed"
+        },
+        {
+          "name": "Subagent worktree mutation manager keeps candidate writes isolated until one-use coordinated apply",
+          "status": "passed"
+        },
+        {
+          "name": "Subagent worktree mutation manager preserves unrelated changes while merging the retained candidate",
+          "status": "passed"
+        },
+        {
+          "name": "Subagent worktree mutation manager merges authorized add, delete, and rename lifecycle changes once",
+          "status": "passed"
+        },
+        {
+          "name": "Subagent worktree mutation manager rechecks exact target freshness after diagnostics and before commit",
+          "status": "passed"
+        },
+        {
+          "name": "Subagent worktree mutation manager returns a durable rolled-back outcome when commit fails before mutation",
+          "status": "passed"
+        },
+        {
+          "name": "Subagent worktree mutation manager isolates concurrent candidates and retains previews across restart",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/subagent-worktree-read-set.test.ts",
+      "sha256": "6d15cfe85106639fbecd38b13946755884d0997703b8b572a21b8c99a2202274",
+      "assertions": [
+        {
+          "name": "coder worktree read-tracking identity admits real coder tools and reads the edited private candidate through the durable execution path",
+          "status": "passed"
+        },
+        {
+          "name": "coder worktree read-tracking identity retains native read policy while binding the decorator and rejecting later execute replacement",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/subagents.test.ts",
+      "sha256": "3880be38cc8b6b9a71f073090e6413c01bbc1568d7c5a8c427b494aa293eddb4",
+      "assertions": [
+        {
+          "name": "SubagentCoordinator inherits parent research capabilities without recursive or root mutation tools",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator fails closed when direct control targets a terminal task",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator exposes async supervisor tools with durable steering and collection",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator keeps the delegate tool definition within one KiB",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator uses the validated profile limits without a second silent clamp",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator runs a coder in a private worktree and applies only its reviewed preview",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator enforces the per-run total delegation budget before creating work",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator rejects equivalent durable work while permitting a failed intent retry",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator does not recreate a coder task after the same provider schema failure",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator restores the per-run total budget from durable tasks",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator repairs one malformed outcome with a bounded tool-free turn",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator fails closed when a repaired outcome still violates its contract",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator does not repair malformed output after consuming the turn budget",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator does not repair structurally valid output with ungrounded evidence",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator closes a queued task as cancelled when its tool signal is already aborted",
+          "status": "passed"
+        },
+        {
+          "name": "SubagentCoordinator fails closed when a subagent exhausts its turn budget",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/tool-execution-admission-structure.test.ts",
+      "sha256": "894b2127c46a07462f23fd9f8383aa21075a1c9f4138cd921adcb9a8f6387ae2",
+      "assertions": [
+        {
+          "name": "unified tool execution admission structure routes every independent AgentTool execution through the admission service",
+          "status": "passed"
+        },
+        {
+          "name": "unified tool execution admission structure wraps every SubagentTaskRunner Agent toolset in an admission delegate",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "packages/runtime/test/tool-execution-retry-lineage.test.ts",
+      "sha256": "78594bcf9dd6ee64b28b528892b8c2275772c78f2ca625523f3adfadd1b9f6bd",
+      "assertions": [
+        {
+          "name": "tool execution retry lineage persists tool-owned failure semantics at the common raw execution boundary",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage allows a new Run after the prior attempt never started",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage rejects a new Run after a started call reports a partial-effect failure",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage isolates distinct logical inputs while preserving attempt ordering",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage uses a surface budget for three durable failures of a declared read",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage rejects duplicate, skipped and exhausted surface attempts",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage allows an expired started read lease takeover without an effect boundary",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage keeps an unresolved write effect boundary indeterminate",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage replays an exact terminal result without invoking the raw tool",
+          "status": "passed"
+        },
+        {
+          "name": "tool execution retry lineage rejects a replay value that does not match the prior terminal effect",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "testHelperBindings": [
+    {
+      "path": "packages/runtime/test/subagent-test-harness.ts",
+      "sha256": "86169adbcdfe3281dee442044df7c0c3c7a0bd67e6b950a1d20cc7d09868a8e4"
+    }
+  ],
+  "redEvidence": {
+    "authority": {
+      "summary": {
+        "baselineOwnedSourceMatchesHead": {
+          "packages/runtime/src/in-process-subagent-provider.ts": true,
+          "packages/runtime/src/subagent-task-runner.ts": true
+        },
+        "baseline": {
+          "failedTests": 11,
+          "passedTests": 0,
+          "skippedTests": 16,
+          "permissionAssertionFailures": 9,
+          "preexistingCandidateReadProtocolFailures": 2
+        },
+        "final": {
+          "passedTests": 40,
+          "failedTests": 0,
+          "testFiles": 4,
+          "sourceStable": true
+        },
+        "newRegressionBlockUnchanged": true,
+        "regressionBlockSha256": "51edcedbdfb34e461de148b5cebb4933fc31cc8c3bd416526e2c82859beaf28b",
+        "testFileDelta": "Only an existing outcome test receives explicit JsonValue object narrowing for strict TypeScript; the 11 new regression cases are byte-identical.",
+        "checks": {
+          "strict-authority-tests": {
+            "command": [
+              "/Users/champ/orca/Napier/node_modules/.bin/tsc",
+              "--noEmit",
+              "--strict",
+              "--exactOptionalPropertyTypes",
+              "--noUncheckedIndexedAccess",
+              "--noUnusedLocals",
+              "--noUnusedParameters",
+              "--noImplicitOverride",
+              "--noFallthroughCasesInSwitch",
+              "--skipLibCheck",
+              "--esModuleInterop",
+              "--resolveJsonModule",
+              "--isolatedModules",
+              "--verbatimModuleSyntax",
+              "--module",
+              "NodeNext",
+              "--moduleResolution",
+              "NodeNext",
+              "--target",
+              "ES2023",
+              "--lib",
+              "ES2023,DOM,DOM.Iterable",
+              "packages/runtime/test/subagents.test.ts",
+              "packages/runtime/test/subagent-supervisor.test.ts"
+            ],
+            "exitCode": 0
+          },
+          "runtime-typecheck": {
+            "command": [
+              "npm",
+              "run",
+              "typecheck",
+              "-w",
+              "@napier/runtime"
+            ],
+            "exitCode": 0
+          }
+        },
+        "rawSha256": {
+          "baseline-red.json": "a5b312a2f865f5e5b4c2085ee837ba58e3d1c10a01c7a6d8e0c1797e30a05119",
+          "baseline-red.log": "c4edcab93e45ee0e68d27c49a0015d4b7d6d7804b3a84753dc068779b9b24fdd",
+          "baseline-source-binding.json": "d8e09f284d8990cee79492919fb8200ff696f451d6ef7622601f70e36d5dca78",
+          "baseline-subagents.test.ts": "001c76e59fd2c3723654faa27dae40a4a74b4b83a93ff407b8fd4f22d578c12c",
+          "final-tests.json": "adc7318ca600083f715c381709d8eba5b414adaa697022e844effcfbba14a790",
+          "final-tests.log": "6e716fed4839141ffea571bfbca0715020fda30e62da81ea38e83c9bb467fb0d",
+          "final-source-binding.json": "fb2e559683a0ee85e4ccd31fd983388e53d6746168ab9e4695566cfdae4d6cfb",
+          "test-source-delta.patch": "60c16e23085b145bbc5166280d5d68766d554bcc8b2e26270a7d1449a72b28dc",
+          "strict-authority-tests.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "runtime-typecheck.log": "80c4c59b70749b39c1e0819f1e9320d73958ece249233c7e89ac1c322b6a0114",
+          "final-typecheck-results.json": "38b158042fbc945a061fa88218ef754a44e89c3cf066825515e9cc4a20b0872e",
+          "final-strict-authority-tests.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "final-runtime-typecheck.log": "80c4c59b70749b39c1e0819f1e9320d73958ece249233c7e89ac1c322b6a0114",
+          "post-split-runtime-typecheck.log": "80c4c59b70749b39c1e0819f1e9320d73958ece249233c7e89ac1c322b6a0114",
+          "post-split-tests.log": "55aec8456a729762351f4246e8b1e8dba33d83fe3a3e825c2b775ebbceab08dc",
+          "post-split-results.json": "559aba7120e010ffcf4cb7ed0ee89052177295f94e041a0712d44f2d409341a7",
+          "post-split-strict-ts.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "post-split-after-source-binding.json": "111bda5138a6e7afe8a55215508ce6c18d24b988cf43a3fc409c02000a3d8e26",
+          "post-split-before-source-binding.json": "111bda5138a6e7afe8a55215508ce6c18d24b988cf43a3fc409c02000a3d8e26",
+          "post-split-tests.json": "3163dce35d6040af05118ce9739d2e1380270d1cbd2672eb690873c18d81be22",
+          "post-split-architecture.log": "bd1da43ab78d34e19da29df2934a089e1fcb59224e22988b619e7a3e96d0fae9"
+        },
+        "finalTypechecks": {
+          "sourceStable": true,
+          "sourceMatchesFinalTests": true,
+          "exitCodes": {
+            "strict-authority-tests": 0,
+            "runtime-typecheck": 0
+          }
+        },
+        "postSplit": {
+          "sourceStable": true,
+          "passedTests": 31,
+          "failedTests": 0,
+          "testFiles": 3,
+          "regressionCasesPreserved": 11,
+          "regressionBlockSha256": "51edcedbdfb34e461de148b5cebb4933fc31cc8c3bd416526e2c82859beaf28b",
+          "strictTestTypecheckExitCode": 0,
+          "runtimeTypecheckExitCode": 0,
+          "diffCheckExitCode": 0,
+          "architectureExitCode": 1,
+          "ownedArchitectureOverages": 0,
+          "unrelatedArchitectureOverages": 9
+        }
+      },
+      "raw": {
+        "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-child-tool-authority-phxxskvl/baseline-red.json",
+        "sha256": "a5b312a2f865f5e5b4c2085ee837ba58e3d1c10a01c7a6d8e0c1797e30a05119"
+      },
+      "binding": {
+        "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-child-tool-authority-phxxskvl/baseline-source-binding.json",
+        "sha256": "d8e09f284d8990cee79492919fb8200ff696f451d6ef7622601f70e36d5dca78"
+      },
+      "testSnapshot": {
+        "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-child-tool-authority-phxxskvl/baseline-subagents.test.ts",
+        "sha256": "001c76e59fd2c3723654faa27dae40a4a74b4b83a93ff407b8fd4f22d578c12c"
+      },
+      "postSplit": {
+        "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-child-tool-authority-phxxskvl/post-split-results.json",
+        "sha256": "559aba7120e010ffcf4cb7ed0ee89052177295f94e041a0712d44f2d409341a7"
+      },
+      "boundary": "Nine true permission assertions failed; two coder cases also stopped at the separately reproduced preexisting read-tracking metadata defect. Eleven new assertion bodies retained byte-for-byte through extraction."
+    },
+    "callOwnership": {
+      "binding": {
+        "head": "a14c60e3378cb21fd68d1ba77797f3a12c2d66f6",
+        "files": [
+          {
+            "path": "packages/runtime/src/subagent-tool-execution.ts",
+            "sha256": "5d16fb038d82adc707e3659a15ae1ecc5481527bccf54f255d0e2737193b3e7a"
+          },
+          {
+            "path": "packages/runtime/test/subagent-tool-execution.test.ts",
+            "sha256": "5b4383c8a3e0f91bbb0d13d0b7bded5f9201da63103ba9cc1ea38ca0831db3f7"
+          }
+        ]
+      },
+      "raw": {
+        "path": "/tmp/napier-child-tool-ownership-red-20261029.json",
+        "sha256": "ed53c9f9fd9d35d9e9ff444744463891034433e894b62e6882b7cdc48e89334a"
+      },
+      "sourceSnapshot": {
+        "path": "/tmp/napier-child-tool-ownership-red.source.ts",
+        "sha256": "5d16fb038d82adc707e3659a15ae1ecc5481527bccf54f255d0e2737193b3e7a"
+      },
+      "testSnapshot": {
+        "path": "/tmp/napier-child-tool-ownership-red.test.ts",
+        "sha256": "5b4383c8a3e0f91bbb0d13d0b7bded5f9201da63103ba9cc1ea38ca0831db3f7"
+      },
+      "passed": 1,
+      "failed": 5,
+      "boundary": "Six initial real-ledger cases; the same-execution replay guard already passed. Four additional validation/read-failure cases and strict type narrowing were added before the final 10-case pass."
+    },
+    "readTracking": {
+      "raw": {
+        "path": "/tmp/napier-readset-identity-red-20261029.json",
+        "sha256": "9497bbb3d083a3fbc25f6d319fd2ddb711b36b9dca4e18307f71634a38d5eadb"
+      },
+      "baselineSourceSha256": "b6e69fde05a3898ab36ab2690c59bf804690a5ada9a898260152b53b5885bcb3",
+      "baselineTestSha256": "0f20dc1c9755e7555cae01f6a120e8bbd0647b4cb55b852ccfdc8b8743d5cdeb",
+      "failed": 2,
+      "finalVerification": {
+        "path": "/tmp/napier-readset-identity-final-verification-20261029.json",
+        "sha256": "02b9a5ea1f816d7acf9477b8110753fed12011757fddbc79d4ec6b6a592a8790"
+      },
+      "boundary": "Both old-source cases failed before raw execution with a self-described read_file protocol mismatch. A later incorrect expected error string and explicit payload narrowing were corrected; original failed reports remain."
+    }
+  },
+  "validation": {
+    "runtimeFullCompile": "passed; subsequent final-source TypeScript emit also passed",
+    "strictNewTests": {
+      "result": "passed",
+      "config": {
+        "path": "/tmp/napier-child-boundaries-tsconfig-20261029.json",
+        "sha256": "d2a74ea1d475a5807850595f70f4f031b07423d55dfb551448cac8212d0e0697"
+      },
+      "log": {
+        "path": "/tmp/napier-child-boundaries-tsc-20261029.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "authorityStrictTypechecks": {
+      "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-child-tool-authority-phxxskvl/post-split-results.json",
+      "sha256": "559aba7120e010ffcf4cb7ed0ee89052177295f94e041a0712d44f2d409341a7"
+    },
+    "architecture": {
+      "existingFailures": 9,
+      "noBudgetRaised": true,
+      "raw": {
+        "path": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-child-tool-authority-phxxskvl/post-split-architecture.log",
+        "sha256": "bd1da43ab78d34e19da29df2934a089e1fcb59224e22988b619e7a3e96d0fae9"
+      }
+    },
+    "publicApi": {
+      "existingFailures": 2,
+      "raw": {
+        "path": "/tmp/napier-child-authority-public-api-20261029.log",
+        "sha256": "cb665a0dd59af08132e9ee6469cafce1c2e1ecb345c83538f75610ec9610ca8f"
+      }
+    },
+    "preservedUserFiles": 28
+  },
+  "limits": [
+    "Fixture models and real local SQLite/filesystem/candidate tools; no live-model quality or latency claim.",
+    "Shared model/session lifecycle, compaction, child Run lineage and restartable child work remain unimplemented.",
+    "Parent and child still share a ledger; adversarial equality between a parent raw ID and a derived child infrastructure ID fails closed rather than granting a second execution.",
+    "Legacy evidence is a wrapper-lifetime snapshot, not mixed-version concurrent child execution coordination."
+  ]
+}

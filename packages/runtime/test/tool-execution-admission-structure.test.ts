@@ -26,6 +26,7 @@ const invocationExemptions = new Set([
   "subagent-worktree-verification.ts#SubagentWorktreeOperationCoordinator.wrapMutationTool",
   "subagent-worktree-verification.ts#SubagentWorktreeOperationCoordinator.wrapVerificationTool",
   "subagent-worktree-verification.ts#SubagentWorktreeOperationCoordinator.wrapCommandTool",
+  "subagent-worktree-read-set.ts#trackWorktreeReads",
 ]);
 
 const referenceExemptions = new Set([

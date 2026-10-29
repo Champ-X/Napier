@@ -1,122 +1,26 @@
-import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import {
-  fauxAssistantMessage,
-  fauxProvider,
-  fauxToolCall,
-} from "@earendil-works/pi-ai";
+import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type { AgentProfile, SubagentLimits } from "@napier/contracts";
-import { Type } from "typebox";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ModelRegistry } from "../src/models.js";
-import { LocalStore } from "../src/store.js";
 import { SubagentCoordinator } from "../src/subagents.js";
 import { coderFailureContextSha256 } from "../src/subagents.js";
 import {
   TOOL_MINIMUM_DEADLINE_MS,
   type ToolMinimumDeadline,
 } from "../src/tool-deadline-policy.js";
+import {
+  cleanupSubagentHarnesses,
+  createHarness,
+  delegatedTask,
+  inheritedTool,
+  sha256,
+  typedResult,
+} from "./subagent-test-harness.js";
 
-const temporaryRoots: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(
-    temporaryRoots
-      .splice(0)
-      .map((root) => rm(root, { recursive: true, force: true })),
-  );
-});
-
-async function createHarness(
-  limits: Partial<SubagentLimits> = {},
-  profileOverrides: Partial<AgentProfile> = {},
-  createInheritedTools?: () => AgentTool[],
-) {
-  const root = await mkdtemp(path.join(tmpdir(), "napier-subagent-"));
-  temporaryRoots.push(root);
-  const workspaceRoot = path.join(root, "workspace");
-  await mkdir(workspaceRoot, { recursive: true });
-  const store = new LocalStore({
-    dataRoot: path.join(root, "data"),
-    workspaceRoot,
-  });
-  await store.initialize();
-  const seededAgent = store.listAgents()[0]!;
-  const profile: AgentProfile = {
-    ...seededAgent,
-    enabledSubagents: ["researcher"],
-    subagentLimits: {
-      maxConcurrent: 1,
-      maxTotal: 2,
-      maxTurns: 4,
-      timeoutMs: 5_000,
-      ...limits,
-    },
-    ...profileOverrides,
-  };
-  const thread = await store.createThread({
-    title: "Subagent harness",
-    agentId: profile.id,
-  });
-  const run = await store.createRun({
-    threadId: thread.id,
-    agentId: profile.id,
-  });
-  const faux = fauxProvider({ provider: `faux-${run.id}` });
-  const registry = new ModelRegistry();
-  registry.registerProvider(faux.provider);
-  const model = registry.resolve({
-    provider: faux.provider.id,
-    id: "faux-1",
-  });
-  if (!model) throw new Error("Faux model was not registered");
-  const parentAbort = new AbortController();
-  const coordinator = new SubagentCoordinator({
-    store,
-    models: registry.models,
-    model,
-    run,
-    profile,
-    sandbox: { id: "unused", launch: vi.fn() },
-    ...(createInheritedTools ? { createInheritedTools } : {}),
-    worktreeOwnerId: "worker_test_subagents",
-    parentSignal: parentAbort.signal,
-  });
-  return {
-    store,
-    thread,
-    run,
-    profile,
-    faux,
-    registry,
-    model,
-    coordinator,
-    parentAbort,
-  };
-}
-
-const delegatedTask = {
-  role: "researcher" as const,
-  description: "Inspect isolation",
-  task: "Inspect the workspace boundary and return concise evidence.",
-};
-
-function typedResult(summary: string): string {
-  return JSON.stringify({
-    summary,
-    items: [],
-    unknowns: [],
-  });
-}
-
-function sha256(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
+afterEach(cleanupSubagentHarnesses);
 
 describe("SubagentCoordinator", () => {
   it("inherits parent research capabilities without recursive or root mutation tools", async () => {
@@ -129,7 +33,9 @@ describe("SubagentCoordinator", () => {
       inheritedTool("delegate_task"),
       inheritedTool("run_command"),
     ];
-    const { coordinator, faux } = await createHarness({}, {}, () => inherited);
+    const { coordinator, faux } = await createHarness({}, {
+      enabledTools: ["list_files", "web_search", "web_fetch", "browser", "skill_load"],
+    }, () => inherited);
     faux.setResponses([
       (context) => {
         const toolNames = context.tools?.map((tool) => tool.name) ?? [];
@@ -296,7 +202,11 @@ describe("SubagentCoordinator", () => {
       {},
       {
         enabledSubagents: ["coder"],
-        enabledTools: ["apply_patch", "lsp_diagnostics", "node_debugger"],
+        enabledTools: [
+          "list_files", "read_file", "search_files", "list_symbols", "inspect_data",
+          "inspect_code", "read_symbol", "ast_query", "ast_edit_preview",
+          "apply_patch", "lsp_diagnostics", "node_debugger",
+        ],
         toolPolicy: "workspace",
       },
     );
@@ -689,6 +599,10 @@ describe("SubagentCoordinator", () => {
     expect(JSON.stringify(rejected?.payload)).not.toContain(
       "Still unstructured.",
     );
+    const rejectedPayload = rejected?.payload;
+    if (!rejectedPayload || typeof rejectedPayload !== "object" || Array.isArray(rejectedPayload)) {
+      throw new Error("Expected a structured rejection receipt");
+    }
     const events = await store.listEvents(thread.id);
     expect(
       events.find((event) => event.type === "subagent.outcome.repair.outcome")
@@ -696,8 +610,8 @@ describe("SubagentCoordinator", () => {
     ).toEqual(
       expect.objectContaining({
         status: "rejected",
-        resultSha256: rejected?.payload["resultSha256"],
-        diagnosticSha256: rejected?.payload["diagnosticSha256"],
+        resultSha256: rejectedPayload["resultSha256"],
+        diagnosticSha256: rejectedPayload["diagnosticSha256"],
       }),
     );
     expect(JSON.stringify(events)).not.toContain("Unstructured result.");
@@ -849,16 +763,3 @@ describe("SubagentCoordinator", () => {
     );
   });
 });
-
-function inheritedTool(name: string): AgentTool {
-  return {
-    name,
-    label: name,
-    description: `${name} fixture`,
-    parameters: Type.Object({}),
-    execute: async () => ({
-      content: [{ type: "text", text: `${name} result` }],
-      details: {},
-    }),
-  };
-}

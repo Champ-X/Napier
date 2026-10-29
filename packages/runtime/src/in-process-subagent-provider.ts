@@ -135,6 +135,10 @@ export class InProcessSubagentProvider implements SubagentProvider {
       ...(route ? { modelRoute: route } : {}),
       run: this.options.run,
       limits: this.options.limits,
+      parentCapabilities: {
+        enabledTools: [...this.options.profile.enabledTools],
+        toolPolicy: this.options.profile.toolPolicy,
+      },
       parentSignal: this.options.parentSignal,
       concurrencyGate: this.options.concurrencyGate,
       ...(this.options.worktrees ? { worktrees: this.options.worktrees } : {}),

@@ -288,6 +288,15 @@
 - Probe-off 100k 事件循环检查冷态从 190.78–191.27 ms 到 22.60–23.13 ms，未变化暖态从 192.63–194.92 ms 到 1.51–1.57 ms；此合成语料每百条仅两条相关事件，不扩称密集事件工作负载。100k 事件＋10k 共享事实暖准备从 1,231.71–1,252.33 ms 到 296.74–309.94 ms；1k／10k 事实共享 32 路径时读取从 1,000／10,000 到 64。1k 独立文件对照仍读取 1,000 次，冷态 380.55–383.76→386.60–386.99 ms 略慢，暖态范围重叠，保留不利结果。
 - [首次完整采样失败](docs/artifacts/harness-preparation-comparison-2026-10-29.json) 原样保留：脚本错误的 loop-trigger category 被生产 registry 拒绝。修正脚本并将 smoke 扩至实际触发该分支后另存 v2，不覆盖旧基线或筛选最快试验。详细曲线、observer／RSS／冷缓存边界见 [harness-preparation-profiling.md](docs/harness-preparation-profiling.md)。调用上下文仍全量读取事件；mailbox、完整 pre-call、增量索引与模型／任务族消融未完成，G07 及全部剩余目标保持 active。
 
+### 后续推进：G03 主子边界审计与工具权限／调用归属
+
+- G07 增量准备已本地提交 `a14c60e3`，未 push。主子执行能力与最小共享接口已按当前源码梳理，见 [subagent-execution-session.md](docs/subagent-execution-session.md)：模型 admission 和工具 durable authority 已共享；模型生命周期／压缩／capture、child Run、mailbox checkpoint 和恢复仍有独立缺口。不能在父 `model.response` 复制 child usage 制造双计，也不能绕过同 Thread 单活跃 Run 约束伪造 child Run。
+- 子工具集现在受有效父 profile 的能力快照约束，role baseline 和 inherited callback 均不能恢复已禁用工具；保留 coder 私有工作区及 `candidate_file`／`skill_resource` 的既有派生条件。兄弟／父子相同 provider call ID 改为稳定的 child invocation 身份，贯穿 gate、admission、底层 execute、journal 和 terminal；原 provider ID 独立保留。重复调用、参数变化、账本重开及旧 child claim 仍受 fencing。
+- 验证同时复现并修复 candidate 读取依赖包装器丢失工具协议 identity 的问题；复用原 identity-preserving decorator 机制，真实 coder 私有 patch/read、父内容不变、read-set 和越界写拒绝均验证。结构检查对该透明 decorator 使用精确函数豁免，不增加独立绕过 admission 的执行入口。
+- [当前回归收据](docs/artifacts/child-execution-boundaries-regression-2026-10-29.json)：10 文件／78 测试通过，0 外部模型请求。旧源码红测分别有 9 个权限断言失败、最初 6 个归属用例中 5 个失败，以及 2 个协议 identity 失败；权限测试中另有两个 coder 在协议缺陷处先失败，未重复计为权限反例。最终源码／测试摘要、原始红绿报告、拆分前后证据均留存。
+- Runtime compile／最终 TypeScript emit、严格测试 TS、diff check 通过。新增测试行数与 runner 复杂度超限通过共享 fixture、独立权限测试文件和直接 optional 参数传递消除，未提高预算；仍为原 9 项架构及 2 项公开 API 失败。28 个用户文件保持不变。
+- 本片仅勾选 G03 的能力审计与最小接口设计；没有宣称共享 model session、child compaction、持久 child Run 或重启恢复完成。主子仍共享父 ledger，故意选择另一个 child 内部 ID 的父调用会 fail closed；旧 claim 快照也不构成混合版本并发恢复承诺。继续推进共享调用机制、资源完整清理凭证对账及全部其他未完成目标。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -407,7 +416,7 @@
 
 **实施任务**
 
-- [ ] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。
+- [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
 - [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。
 - [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。
 - [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。
