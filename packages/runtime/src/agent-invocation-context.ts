@@ -21,11 +21,14 @@ import type { RunEventQueryPort } from "./run-event-query-port.js";
 /** The model lifecycle owns one preparation scope, including its optional native
  * event reader. Each call still evaluates current policy, memory, files and budget. */
 export function createAgentInvocationContextPreparer(
-  owner: Pick<Parameters<typeof prepareAgentInvocationContext>[0], "store" | "run">,
+  owner: Pick<Parameters<typeof prepareAgentInvocationContext>[0], "store" | "run"> & {
+    executionLineage?: () => readonly { runId: string; throughSeq?: number }[];
+  },
 ) {
   const eventCursor = new RunInvocationContextCursor(owner.store, owner.run);
-  return (input: Omit<Parameters<typeof prepareAgentInvocationContext>[0], "store" | "run" | "eventCursor">) =>
-    prepareAgentInvocationContext({ ...input, ...owner, eventCursor });
+  return (input: Omit<Parameters<typeof prepareAgentInvocationContext>[0], "store" | "run" | "eventCursor" | "executionLineage">) =>
+    prepareAgentInvocationContext({ ...input, store: owner.store, run: owner.run, eventCursor,
+      ...(owner.executionLineage ? { executionLineage: owner.executionLineage() } : {}) });
 }
 
 /** One preparation boundary for invocation-scoped context. Prepare the state
@@ -46,6 +49,8 @@ export async function prepareAgentInvocationContext(input: {
   policy?: HarnessPolicyProfile["context"] | undefined;
   budget?: RunBudgetTracker;
   eventCursor?: RunInvocationContextCursor;
+  /** An owner-validated execution lineage, distinct from supervisor ancestry. */
+  executionLineage?: readonly { runId: string; throughSeq?: number }[];
 }): Promise<Context> {
   const budgetEnabled = input.policy?.finalization === "request-aware-v2";
   if (budgetEnabled && !input.budget)
@@ -55,24 +60,23 @@ export async function prepareAgentInvocationContext(input: {
     input.policy?.memory === "task-aware-v1" ||
     input.policy?.memory === "task-aware-selective-v2" ||
     input.policy?.memory === "task-aware-grouped-v3";
-  const threadRuns =
-    stateEnabled || memoryEnabled
-      ? input.store
-          .listRuns(input.run.threadId)
-          .filter((run) => run.threadId === input.run.threadId)
-      : [];
+  const { scope, threadRuns } = invocationExecutionSources(input, stateEnabled || memoryEnabled);
   const lineage = stateEnabled
-    ? workingStateRunLineage(input.run, threadRuns)
+    ? input.executionLineage?.map((source) => source.runId) ?? workingStateRunLineage(input.run, threadRuns)
     : [input.run.id];
   const project = (events: RunEvent[]) => prepareFromEvents(input, {
     events, threadRuns, lineage, budgetEnabled, stateEnabled, memoryEnabled,
   });
-  if (memoryEnabled && input.eventCursor?.canRead(input.run, threadRuns))
+  if (memoryEnabled && !scope && input.eventCursor?.canRead(input.run, threadRuns))
     return input.eventCursor.refresh(project);
   // Conversation queries include ordinary prior turns, not only recovery
   // ancestors. Branches already own copied local history up to their cutoff.
   // Working-state tool evidence remains restricted to the recovery lineage.
-  const events = memoryEnabled
+  const events = scope && (memoryEnabled || stateEnabled)
+    ? (await Promise.all(input.executionLineage!.map(async ({ runId, throughSeq }) =>
+        (await input.store.listRunEvents(runId)).filter((event) => event.runId === runId &&
+          event.threadId === input.run.threadId && (throughSeq === undefined || event.seq <= throughSeq))))).flat()
+    : memoryEnabled
     ? await input.store.listEvents(input.run.threadId)
     : stateEnabled
       ? (
@@ -80,6 +84,22 @@ export async function prepareAgentInvocationContext(input: {
         ).flat()
       : [];
   return project(events);
+}
+
+function invocationExecutionSources(input: Parameters<typeof prepareAgentInvocationContext>[0], enabled: boolean) {
+  const scope = input.executionLineage ? new Set(input.executionLineage.map((source) => source.runId)) : undefined;
+  if (scope && (!scope.has(input.run.id) || scope.size !== input.executionLineage!.length || scope.size > 32 ||
+      input.executionLineage!.some(({ throughSeq }) => throughSeq !== undefined && (!Number.isSafeInteger(throughSeq) || throughSeq < 1))))
+    throw new Error("Invocation context execution lineage is invalid");
+  const threadRuns =
+    enabled
+      ? input.store
+          .listRuns(input.run.threadId)
+          .filter((run) => run.threadId === input.run.threadId && (!scope || scope.has(run.id)))
+      : [];
+  if (scope && enabled && threadRuns.length !== scope.size)
+    throw new Error("Invocation context execution source is unavailable in this thread");
+  return { scope, threadRuns };
 }
 
 async function prepareFromEvents(

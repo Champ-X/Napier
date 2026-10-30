@@ -58,6 +58,7 @@ export async function launchSubagentContinuation(input: {
     const control = new SubagentExecutionControl((message) => input.delivered(task, message));
     const runner = new SubagentTaskRunner({
       store: options.store, models: options.models, model,
+      ...(options.modelCallServices ? { modelCallServices: options.modelCallServices } : {}),
       run: options.run, limits: result.execution.profile.subagentLimits!,
       parentProfile: options.profile, parentSignal: options.parentSignal,
       concurrencyGate: options.concurrencyGate, control,

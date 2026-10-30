@@ -67,7 +67,7 @@ export class SubagentChildExecution {
   createBudget() {
     const current = this.store.assertSubagentChildRunActive(this.fence());
     const runs = this.store.listRuns?.(this.run.threadId) ?? [];
-    const budget = createSubagentRunBudget(current.run, runs);
+    const budget = createSubagentRunBudget(current.run, runs, current.task.turnCount);
     const repository = this.store.modelAccountingRepository;
     if (repository?.isConfigured()) budget.bindAccounting(async () => subagentAdmissionAccounting(current.run,
       await repository.readRunAccounting(current.run.id), runs));
@@ -121,7 +121,7 @@ export class SubagentChildExecution {
   }
 
   settle(invocationId: string, payload: JsonObject, usage?: Usage,
-    capture?: { envelope: ModelContextEnvelopeReceipt; adapter?: JsonObject },
+    capture?: { envelope: ModelContextEnvelopeReceipt; adapter?: JsonObject; toolNames?: string[] },
     thinkingSuppression?: ModelThinkingSuppressionProof): Promise<SubagentTask> {
     return this.serialize(async () => {
       this.state = await this.store.settleSubagentChildInvocation({

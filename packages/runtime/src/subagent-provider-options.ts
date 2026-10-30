@@ -1,3 +1,4 @@
+import type { SubagentModelCallServices } from "./subagent-model-call-services.js";
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
 import type { AgentProfile, RunRecord, SubagentLimits } from "@napier/contracts";
 import type { EventSink } from "./event-sink.js";
@@ -10,6 +11,7 @@ import type { SubagentExecutionCleanup, SubagentInheritedToolsFactory } from "./
 export type SubagentModelRouteSession = Awaited<ReturnType<ModelRouter["createSession"]>>;
 
 export interface SubagentProviderOptions {
+  modelCallServices?: SubagentModelCallServices;
   store: LocalStore;
   models: MutableModels;
   modelRouter?: ModelRouter;

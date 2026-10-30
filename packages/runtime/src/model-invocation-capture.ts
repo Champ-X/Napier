@@ -1,3 +1,4 @@
+import { captureCompiledModelRequest } from "./model-invocation-compiled-request.js";
 import type { Api, Context, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
 import type { ModelContextEnvelopeReceipt, ModelInvocationPurpose, RunRecord } from "@napier/contracts";
 import type { ModelCallCaptureBinding } from "@napier/contracts/model-accounting";
@@ -5,10 +6,8 @@ import type { ModelCallCaptureBinding } from "@napier/contracts/model-accounting
 import type { EventSink } from "./event-sink.js";
 import {
   COMPILED_PROMPT_PACKAGE_EVENT,
-  createCompiledPromptPackageReceiptV3,
 } from "./compiled-prompt-package.js";
 import {
-  captureExactModelInvocation,
   type ExactModelInvocationCaptureEvent,
 } from "./model-invocation-exact-capture.js";
 import type { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
@@ -49,28 +48,22 @@ export async function captureCompiledModelInvocation(input: {
     visibility: "debug",
     payload: JSON.parse(JSON.stringify(payload)),
   }, input.onEvent);
-  return captureExactModelInvocation({
+  return captureCompiledModelRequest({
     capsules: input.capsules,
     source: { threadId: input.run.threadId, runId: input.run.id },
     model: input.model,
-    context: { ...input.context, systemPrompt: input.compiledPrompt.systemPrompt },
+    context: input.context,
     options: input.options,
     turnIndex: input.turnIndex,
     purpose: input.purpose,
     cacheScope: input.cacheScope ?? input.run,
     ...(input.phase ? { phase: input.phase } : {}),
     emit: (event) => record(EVENT_TYPES[event.kind], event.payload),
-    afterAdapter: ({ envelope, adapter }) => record(
-      COMPILED_PROMPT_PACKAGE_EVENT,
-      createCompiledPromptPackageReceiptV3({
-        compiled: input.compiledPrompt,
-        envelope,
-        adapter,
-        purpose: input.purpose,
-      }),
-    ),
+    compiledPrompt: input.compiledPrompt,
+    recordCompiledPackage: (receipt) => record(COMPILED_PROMPT_PACKAGE_EVENT, receipt),
   });
 }
+
 
 async function append(
   store: ModelInvocationCaptureStore,

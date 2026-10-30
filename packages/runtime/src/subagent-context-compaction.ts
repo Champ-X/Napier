@@ -2,38 +2,38 @@ import type { Api, AssistantMessageEventStream, Context, Model, SimpleStreamOpti
 import type { ModelContextEnvelopeReceipt } from "@napier/contracts";
 import type { EventSink } from "./event-sink.js";
 import type { ModelSessionLifetime } from "./model-session.js";
+import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import { RunContextCompactor } from "./run-context-compaction.js";
 import type { RunCompactionHost, RunCompactionInvocationInput } from "./run-context-compaction-model.js";
 import type { SubagentChildExecution } from "./subagent-child-execution.js";
 import { subagentModelDenial } from "./subagent-model-turn-denial.js";
 import { TokenMeterRegistry } from "./token-meter-provider.js";
 
-/** Request-local projection only: the Agent and private checkpoint keep raw messages. */
-export async function compactSubagentContext(input: {
+interface SubagentContextCompactorInput {
   host: RunCompactionHost;
   child: SubagentChildExecution;
+  budget?: ReturnType<SubagentChildExecution["createBudget"]>;
   session: {
     lifetime: ModelSessionLifetime;
     open(phase: "context_compaction", model: Model<Api>, context: Context, options: SimpleStreamOptions,
-      hooks: { responseEvidence: RunCompactionInvocationInput["responseEvidence"];
+      hooks: { compiledPrompt: CompiledPromptArtifact;
+        responseEvidence: RunCompactionInvocationInput["responseEvidence"];
         onCaptured(envelope: ModelContextEnvelopeReceipt): void }): Promise<AssistantMessageEventStream>;
   };
-  model: Model<Api>;
-  context: Context;
-  options: SimpleStreamOptions;
-  modelAttempt: number;
-  recoveryAttempt?: 0 | 1;
   onEvent?: EventSink;
-}): Promise<Context> {
+}
+
+/** Auxiliary calls retain the child's reservation, settlement and selected route. */
+export function createSubagentContextCompactor(input: SubagentContextCompactorInput): RunContextCompactor {
   const run = input.child.run;
   // Independent local tracker includes inherited admission debt, never new usage.
-  const budget = input.child.createBudget();
-  const compactor = new RunContextCompactor(input.host, run, budget, () => 0, input.onEvent, {
+  const budget = input.budget ?? input.child.createBudget();
+  return new RunContextCompactor(input.host, run, budget, () => 0, input.onEvent, {
     invoke: async ({ model, request, responseEvidence }) => {
       let envelopeSha256: string | undefined;
       const stream = await input.session.open("context_compaction", model,
         { ...request.context, systemPrompt: request.compiledPrompt.systemPrompt }, request.options, {
-        responseEvidence,
+        compiledPrompt: request.compiledPrompt, responseEvidence,
         onCaptured: (envelope) => { envelopeSha256 = envelope.contentSha256; },
       });
       // ModelSession settles its terminal by consuming the cancellable stream.
@@ -45,6 +45,19 @@ export async function compactSubagentContext(input: {
       return { response, envelopeSha256 };
     },
   });
+}
+
+/** Request-local projection only: the Agent and private checkpoint keep raw messages. */
+export async function compactSubagentContext(input: SubagentContextCompactorInput & {
+  model: Model<Api>;
+  context: Context;
+  options: SimpleStreamOptions;
+  modelAttempt: number;
+  recoveryAttempt?: 0 | 1;
+  compiledPrompt?: CompiledPromptArtifact;
+  tokenMeters?: TokenMeterRegistry;
+}): Promise<Context> {
+  const compactor = createSubagentContextCompactor(input);
   const projected = await compactor.project({
     sourceContext: input.context,
     prunedContext: input.context,
@@ -53,9 +66,10 @@ export async function compactSubagentContext(input: {
     options: { ...input.options, signal: AbortSignal.any(
       [input.session.lifetime.signal, input.options.signal].filter((signal): signal is AbortSignal => Boolean(signal)),
     ) },
-    // Measurement is exact role text; it is not a full compiler acceptance claim.
-    compiledPrompt: { systemPrompt: input.context.systemPrompt ?? "" },
-    tokenMeters: new TokenMeterRegistry(),
+    // Legacy standalone callers measure their exact role text. Shared lifecycle
+    // callers supply the full compiler artifact and runtime meter registry.
+    compiledPrompt: input.compiledPrompt ?? { systemPrompt: input.context.systemPrompt ?? "" },
+    tokenMeters: input.tokenMeters ?? new TokenMeterRegistry(),
     modelAttempt: input.modelAttempt,
     recoveryAttempt: input.recoveryAttempt ?? 0,
   });

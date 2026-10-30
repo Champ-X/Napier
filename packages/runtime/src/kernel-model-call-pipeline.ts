@@ -1,34 +1,27 @@
+import { isDeepStrictEqual } from "node:util";
+import type { AgentModelCallPreparation, AgentModelCallFinalization, AgentModelInvocation,
+  PreparedAgentModelCall, AgentModelCallLifecycle } from "./model-call-lifecycle-types.js";
+export type { AgentModelCallFinalization } from "./model-call-lifecycle-types.js";
 import type { StreamFn } from "@earendil-works/pi-agent-core";
 import type {
   AssistantMessageEventStream,
   Context,
   SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
-import type { CompiledPromptArtifact } from "./prompt-compiler.js";
-import type { RunContextCompactionPort } from "./run-context-compaction-types.js";
 
 import {
   agentModelStreamLife,
-  type AgentModelCallPreparation,
-  type AgentModelInvocation,
   type AgentModelStreamLifecycleInput,
-  type PreparedAgentModelCall,
 } from "./agent-model-stream-lifecycle.js";
 
 export interface AgentTurnModelCallPipeline {
   createAgentTurnStream(input: AgentModelStreamLifecycleInput): StreamFn;
+  createInvocationLifecycle(): AgentModelCallLifecycle;
 }
 
 export interface AgentModelCallPatch {
   context?: Context;
   options?: SimpleStreamOptions;
-}
-
-export interface AgentModelCallFinalization extends AgentModelCallPreparation {
-  compiledPrompt: CompiledPromptArtifact;
-  recoveryAttempt: 0 | 1;
-  runContextCompaction?: RunContextCompactionPort;
-  refreshBudgetPrompt?: () => CompiledPromptArtifact;
 }
 
 export interface AgentModelCallExtension {
@@ -76,13 +69,22 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
   private closed = false;
 
   createAgentTurnStream(input: AgentModelStreamLifecycleInput): StreamFn {
-    this.assertOpen();
+    const lifecycle = this.createInvocationLifecycle();
     return agentModelStreamLife({
       ...input,
-      prepareCall: (call) => this.prepare(call),
-      finalizeCall: (call) => this.finalize(call),
-      invokeCall: (call, next) => this.invoke(call, next),
+      prepareCall: lifecycle.prepare,
+      finalizeCall: lifecycle.finalize,
+      invokeCall: lifecycle.invoke,
     });
+  }
+
+  createInvocationLifecycle(): AgentModelCallLifecycle {
+    this.assertOpen();
+    return {
+      prepare: (call) => { this.assertOpen(); return this.prepare(call); },
+      finalize: (call) => { this.assertOpen(); return this.finalize(call); },
+      invoke: (call, next) => { this.assertOpen(); return this.invoke(call, next); },
+    };
   }
 
   use(extension: AgentModelCallExtension, owner = "kernel"): () => void {
@@ -166,17 +168,17 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
       context: original.context,
       options: original.options,
     };
+    const authority = snapshotAuthority(original);
     for (const { extension } of this.ordered()) {
       if (!extension.prepare) continue;
-      const patch = await extension.prepare(
-        Object.freeze({
-          ...original,
-          context: prepared.context,
-          options: prepared.options,
-        }),
-      );
-      if (!patch) continue;
-      prepared = applySafePatch(original, prepared, patch, extension.id);
+      const view = isolatedCallSurface(prepared);
+      const model = copyData(original.model);
+      const patch = await extension.prepare(Object.freeze({ ...original, model, context: view.context, options: view.options }));
+      if (!isDeepStrictEqual(model, original.model))
+        throw new Error(`Model-call extension cannot change the selected model: ${extension.id}`);
+      view.assertToolsUnchanged(extension.id);
+      assertOptionsAuthority(authority, view.options, extension.id);
+      prepared = applySafePatch(authority, view, patch ?? {}, extension.id);
     }
     return prepared;
   }
@@ -192,12 +194,17 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
       const stored = extensions[index];
       if (!stored?.extension.around) return provider();
       let advanced = false;
-      const stream = stored.extension.around(Object.freeze(call), () => {
+      const view = { ...call, model: copyData(call.model), context: copyData(call.context),
+        options: copyData(call.options), compiledPrompt: copyData(call.compiledPrompt), envelope: copyData(call.envelope) };
+      const captured = { model: copyData(view.model), context: copyData(view.context), options: copyData(view.options) };
+      const stream = stored.extension.around(Object.freeze(view), () => {
         if (advanced) {
           throw new Error(
             `Model-call extension invoked next() more than once: ${stored.extension.id}`,
           );
         }
+        if (!isDeepStrictEqual({ model: view.model, context: view.context, options: view.options }, captured))
+          throw new Error(`Model-call extension cannot change the captured request: ${stored.extension.id}`);
         advanced = true;
         return dispatch(index + 1);
       });
@@ -213,18 +220,21 @@ export class ComposableAgentModelCallPipeline implements AgentTurnModelCallPipel
       context: original.context,
       options: original.options,
     };
+    const authority = snapshotAuthority(original);
     for (const { extension } of this.ordered()) {
       if (!extension.finalize) continue;
-      const patch = await extension.finalize(
-        Object.freeze({ ...original, context: finalized.context }),
-      );
-      if (!patch) continue;
-      if (patch.options) {
+      const view = isolatedCallSurface(finalized);
+      const model = copyData(original.model);
+      const patch = await extension.finalize(Object.freeze({ ...original, model, context: view.context, options: view.options }));
+      if (!isDeepStrictEqual(model, original.model))
+        throw new Error(`Model-call extension cannot change the selected model: ${extension.id}`);
+      view.assertToolsUnchanged(extension.id);
+      if (!isDeepStrictEqual(view.options, finalized.options) || patch?.options) {
         throw new Error(
           `Final model-call extension cannot change compiled options: ${extension.id}`,
         );
       }
-      const next = applySafePatch(original, finalized, patch, extension.id);
+      const next = applySafePatch(authority, view, patch ?? {}, extension.id);
       assertStableTools(finalized.context, next.context, extension.id);
       finalized = next;
     }
@@ -260,56 +270,72 @@ export function createStandaloneAgentModelCallPipeline(): AgentTurnModelCallPipe
   return new ComposableAgentModelCallPipeline();
 }
 
+type CallAuthority = ReturnType<typeof snapshotAuthority>;
+
+function snapshotAuthority(call: AgentModelCallPreparation) {
+  return { tools: new Map((call.context.tools ?? []).map(tool => [tool, copyData(tool)])),
+    signal: call.options.signal, maxTokens: call.options.maxTokens ?? call.model.maxTokens };
+}
+
+/** Tool views isolate shared host schemas while keeping returned subsets bound
+ * to the same policy-resolved tool objects after validation. */
+function isolatedCallSurface(current: PreparedAgentModelCall) {
+  const context = copyData(current.context);
+  const options = copyData(current.options);
+  const originals = current.context.tools ?? [];
+  const mapping = new Map((context.tools ?? []).map((tool, index) => [tool, originals[index]!]));
+  const definitions = new Map((context.tools ?? []).map(tool => [tool, copyData(tool)]));
+  return { context, options, mapping, assertToolsUnchanged(extensionId: string) {
+    for (const [tool, definition] of definitions) if (!isDeepStrictEqual(tool, definition))
+      throw new Error(`Model-call extension cannot change policy-resolved tool definitions: ${extensionId}`);
+  } };
+}
+
 function applySafePatch(
-  original: AgentModelCallPreparation,
-  current: PreparedAgentModelCall,
+  authority: CallAuthority,
+  current: ReturnType<typeof isolatedCallSurface>,
   patch: AgentModelCallPatch,
   extensionId: string,
 ): PreparedAgentModelCall {
-  if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
-    throw new Error(
-      `Model-call extension returned an invalid patch: ${extensionId}`,
-    );
-  }
+  if (!patch || typeof patch !== "object" || Array.isArray(patch))
+    throw new Error(`Model-call extension returned an invalid patch: ${extensionId}`);
   const context = patch.context ?? current.context;
-  const options = patch.options
-    ? { ...current.options, ...patch.options }
-    : current.options;
-  if (!context || !Array.isArray(context.messages)) {
-    throw new Error(
-      `Model-call extension returned an invalid context: ${extensionId}`,
-    );
-  }
-  assertToolSubset(original.context, context, extensionId);
-  if (options.signal !== original.options.signal) {
-    throw new Error(
-      `Model-call extension cannot replace the Run cancellation signal: ${extensionId}`,
-    );
-  }
-  const originalMaxTokens =
-    original.options.maxTokens ?? original.model.maxTokens;
-  if (
-    options.maxTokens !== undefined &&
-    options.maxTokens > originalMaxTokens
-  ) {
-    throw new Error(
-      `Model-call extension cannot increase the output-token ceiling: ${extensionId}`,
-    );
-  }
-  return { context, options };
+  const options = patch.options ? { ...current.options, ...patch.options } : current.options;
+  if (!context || !Array.isArray(context.messages))
+    throw new Error(`Model-call extension returned an invalid context: ${extensionId}`);
+  const tools = context.tools?.map(tool => {
+    const original = current.mapping.get(tool) ?? tool;
+    const definition = authority.tools.get(original);
+    if (!definition) throw new Error(`Model-call extension cannot add tools after policy resolution: ${extensionId}`);
+    if (!isDeepStrictEqual(tool, definition))
+      throw new Error(`Model-call extension cannot change policy-resolved tool definitions: ${extensionId}`);
+    return original;
+  });
+  assertOptionsAuthority(authority, options, extensionId);
+  return { context: { ...context, ...(tools ? { tools } : {}) }, options };
 }
 
-function assertToolSubset(
-  original: Context,
-  candidate: Context,
-  extensionId: string,
-): void {
-  const allowed = new Set(original.tools ?? []);
-  if ((candidate.tools ?? []).some((tool) => !allowed.has(tool))) {
-    throw new Error(
-      `Model-call extension cannot add tools after policy resolution: ${extensionId}`,
-    );
+function assertOptionsAuthority(authority: CallAuthority, options: SimpleStreamOptions, extensionId: string): void {
+  if (options.signal !== authority.signal)
+    throw new Error(`Model-call extension cannot replace the Run cancellation signal: ${extensionId}`);
+  if (options.maxTokens !== undefined && options.maxTokens > authority.maxTokens)
+    throw new Error(`Model-call extension cannot increase the output-token ceiling: ${extensionId}`);
+}
+
+/** Signals, callbacks and provider objects retain identity; mutable plain data
+ * in Context, tool schemas, headers and option bags is copied for each hook. */
+function copyData<T>(value: T, seen = new Map<object, unknown>()): T {
+  if (!value || typeof value !== "object") return value;
+  if (!Array.isArray(value) && Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) return value;
+  if (seen.has(value)) return seen.get(value) as T;
+  const copy = (Array.isArray(value) ? [] : Object.create(Object.getPrototypeOf(value))) as Record<PropertyKey, unknown>;
+  seen.set(value, copy);
+  for (const key of Reflect.ownKeys(value)) {
+    if (Array.isArray(value) && key === "length") continue;
+    Object.defineProperty(copy, key, { value: copyData((value as Record<PropertyKey, unknown>)[key], seen),
+      enumerable: Object.prototype.propertyIsEnumerable.call(value, key), writable: true, configurable: true });
   }
+  return copy as T;
 }
 
 function assertStableTools(

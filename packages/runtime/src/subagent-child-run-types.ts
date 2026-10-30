@@ -37,7 +37,7 @@ export interface SettleSubagentChildInvocationInput extends SubagentChildRunFenc
   usage?: Usage;
   /** Unknown physical completion must not manufacture a known zero-usage receipt. */
   usageStatus?: "known" | "unknown";
-  capture?: { envelope: ModelContextEnvelopeReceipt; adapter?: JsonObject };
+  capture?: { envelope: ModelContextEnvelopeReceipt; adapter?: JsonObject; toolNames?: string[] };
   thinkingSuppression?: ModelThinkingSuppressionProof;
 }
 export interface FinishSubagentChildRunInput extends SubagentChildRunFence {

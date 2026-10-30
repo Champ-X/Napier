@@ -1,3 +1,4 @@
+import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import type { JsonObject, RunEvent, RunRecord, SubagentTask } from "@napier/contracts";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { SubagentWorkingSetBinding, SubagentWorkingSetTranscriptEvidence } from "./subagent-working-set-types.js";
@@ -18,8 +19,16 @@ export function assertChildCheckpointTranscript(binding: SubagentWorkingSetBindi
   if (canonicalJson(hashes) !== canonicalJson(binding.transcript.assistantMessageSha256s))
     throw new Error("Child checkpoint assistant source differs from canonical responses");
   if (responses.some((event) => {
-    const captured = record(event.payload)["modelContextToolDefinitionSetSha256"];
-    return captured !== undefined && captured !== binding.toolDefinitionSetSha256;
+    const payload = record(event.payload);
+    const captured = payload["modelContextToolDefinitionSetSha256"];
+    if (captured === undefined || captured === binding.toolDefinitionSetSha256) return false;
+    const names = payload["modelContextToolNames"];
+    if (!Array.isArray(names) || names.some((name) => typeof name !== "string") ||
+        new Set(names).size !== names.length) return true;
+    const active = binding.tools.filter((tool) => names.includes(tool.name));
+    if (active.length !== names.length) return true;
+    return createModelContextEnvelopeReceipt({ turnIndex: 0, systemPrompt: "", tools: active, messages: [] })
+      .toolDefinitionSetSha256 !== captured;
   })) throw new Error("Child checkpoint tool definitions differ from captured model requests");
   const inheritedResults = inherited?.transcript.toolResults ?? [];
   if (canonicalJson(binding.transcript.toolResults.slice(0, inheritedResults.length)) !== canonicalJson(inheritedResults))

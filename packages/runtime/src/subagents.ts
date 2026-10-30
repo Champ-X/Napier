@@ -22,7 +22,7 @@ import {
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
 import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
-import { InProcessSubagentProvider } from "./in-process-subagent-provider.js";
+import { InProcessSubagentProvider, type SubagentProviderOptions } from "./in-process-subagent-provider.js";
 import { logicalSubagentDelegationCount, resumeInterruptedSubagents } from "./subagent-recovery-coordination.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import { ModelRouter } from "./model-route.js";
@@ -87,7 +87,7 @@ const SUBAGENT_DELEGATION_SETTLEMENT_BUFFER_MS = 30_000;
 
 type EventSink = (event: RunEvent) => Promise<void> | void;
 
-export interface SubagentCoordinatorOptions {
+export interface SubagentCoordinatorOptions extends Pick<SubagentProviderOptions, "modelCallServices"> {
   store: LocalStore;
   models: MutableModels;
   model: Model<Api>;
@@ -173,6 +173,7 @@ export class SubagentCoordinator {
     this.provider = new InProcessSubagentProvider({
         store: options.store,
         models: options.models,
+        ...(options.modelCallServices ? { modelCallServices: options.modelCallServices } : {}),
         ...(options.modelRouter ? { modelRouter: options.modelRouter } : {}),
         defaultModel: options.model,
         profile: options.profile,

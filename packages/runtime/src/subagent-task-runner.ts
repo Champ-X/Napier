@@ -1,3 +1,4 @@
+import type { SubagentModelCallServices } from "./subagent-model-call-services.js";
 import { Agent, type AgentTool } from "@earendil-works/pi-agent-core";
 import type { Api, Model, MutableModels } from "@earendil-works/pi-ai";
 import {
@@ -46,6 +47,7 @@ export class SubagentTaskRunner {
     private readonly options: {
       store: LocalStore;
       models: MutableModels;
+      modelCallServices?: SubagentModelCallServices;
       model: Model<Api>;
       createModelRoute?: (childRun: RunRecord) => Promise<ModelRouteSession>;
       assertParentBudgetAvailable?: () => void;
@@ -178,18 +180,6 @@ export class SubagentTaskRunner {
           : { workspaceMode: "read_only" }),
       });
 
-      const modelSession = createSubagentModelSession({
-        store: this.options.store,
-        models: this.options.models,
-        task,
-        limits: this.options.limits,
-        lifetime: child.lifetime(lifetime),
-        child,
-        assertTurnAvailable: () => observer?.assertTurnAvailable(),
-        assertParentBudgetAvailable: this.options.assertParentBudgetAvailable,
-        ...(modelRoute ? { modelRoute } : {}),
-        ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
-      });
       const tools = governSubagentTools({
         tools: await createSubagentRoleTools(
           this.options.store,
@@ -212,6 +202,21 @@ export class SubagentTaskRunner {
       });
       const systemPrompt = started.profile.systemPrompt;
       restore.assertTools(tools);
+      const modelSession = createSubagentModelSession({
+        store: this.options.store,
+        models: this.options.models,
+        task,
+        limits: this.options.limits,
+        lifetime: child.lifetime(lifetime),
+        child,
+        modelCalls: this.options.modelCallServices?.createScope({
+          run: child.run, profile: started.profile, role: task.role, tools,
+        }),
+        assertTurnAvailable: () => observer?.assertTurnAvailable(),
+        assertParentBudgetAvailable: this.options.assertParentBudgetAvailable,
+        ...(modelRoute ? { modelRoute } : {}),
+        ...(this.options.onEvent ? { onEvent: this.options.onEvent } : {}),
+      });
       const workingSet = new SubagentWorkingSet({ store: this.options.store, child, systemPrompt, tools,
         requireDurableCheckpoint: restore.requiresDurableCheckpoint,
         ...(this.options.control ? { control: this.options.control } : {}),

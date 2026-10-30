@@ -231,7 +231,7 @@ import {
 import { recordActiveSkillLifecycles } from "./skill-lifecycle-projection.js";
 import type { SkillSnapshot } from "./standard-skill-snapshot.js";
 import { LocalStore } from "./store.js";
-import { createAgentSubagents, prepareAgentSubagentRecovery, type SubagentCoordinator } from "./agent-subagent-stage.js";
+import { createAgentSubagents, createSubagentModelCallServices, prepareAgentSubagentRecovery, type SubagentCoordinator } from "./agent-subagent-stage.js";
 import type { SubagentHubControlService } from "./subagent-hub-control.js";
 import { createUsageAccounting } from "./token-accounting.js";
 import { TokenMeterRegistry } from "./token-meter-provider.js";
@@ -614,11 +614,11 @@ export class AgentRuntime {
       const subagents = createAgentSubagents({
               store: this.store,
               models: this.modelRegistry.models,
+              modelCallServices: createSubagentModelCallServices({ store: this.store, pipeline: this.modelCalls.current(this),
+                turnPipeline: this.turns.current(), sandboxId: this.verificationSandbox.id, harnessExperimentProfile: options.harnessExperimentProfile }),
               model,
               modelRouter: this.modelRouter,
-              ...(options.modelRoute
-                ? { modelRouteRequest: options.modelRoute }
-                : {}),
+              ...(options.modelRoute ? { modelRouteRequest: options.modelRoute } : {}),
               run,
               profile: agentProfile,
               sandbox: this.verificationSandbox,

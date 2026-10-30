@@ -78,7 +78,8 @@ function assertResponseCapture(events: readonly RunEvent[], index: number,
     ? validateModelContextEnvelopeReceipt(candidate.payload) : undefined;
   if (envelope && candidate!.seq <= reservationSeq) invalid("capture predates reservation");
   const binding = bindChildInvocationCapture({ payload,
-    ...(envelope ? { capture: { envelope, ...(adapter ? { adapter } : {}) } } : {}) }, invocationIndex);
+    ...(envelope ? { capture: { envelope, ...(adapter ? { adapter } : {}),
+      ...(payload["modelContextToolNames"] !== undefined ? { toolNames: payload["modelContextToolNames"] as string[] } : {}) } } : {}) }, invocationIndex);
   if (canonicalJson(binding.payload) !== canonicalJson(payload)) invalid("capture hash binding is invalid");
 }
 

@@ -108,7 +108,7 @@ function binding(capsule: SubagentWorkingSetCapsule, capsuleBytes: number): Suba
   return { receipt: { schemaVersion: 1, capsuleSha256: capsule.contentSha256, capsuleBytes,
     messageCount: capsule.messages.length, messageSetSha256: capsule.messageSetSha256 },
     frontier: structuredClone(capsule.frontier), mailbox: structuredClone(capsule.mailbox),
-    toolNames: capsule.tools.map((tool) => tool.name),
+    toolNames: capsule.tools.map((tool) => tool.name), tools: structuredClone(capsule.tools),
     systemPromptSha256: capsule.systemPromptSha256, toolDefinitionSetSha256: capsule.toolDefinitionSetSha256,
     previousCapsuleSha256: capsule.previousCapsuleSha256, previousMessageSetSha256: capsule.previousMessageSetSha256,
     transcript: {

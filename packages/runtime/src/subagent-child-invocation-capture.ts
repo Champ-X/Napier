@@ -11,7 +11,7 @@ const BINDING_FIELDS = ["modelContextEnvelopeSha256", "modelContextEnvelopeTurnI
 export function bindChildInvocationCapture(input: Pick<SettleSubagentChildInvocationInput, "payload" | "capture">, invocationIndex: number) {
   const events: Array<{ type: "context.model_envelope" | "context.model_adapter"; payload: JsonObject }> = [];
   if (!input.capture) {
-    if (input.payload["childCaptureSha256"] !== undefined ||
+    if (input.payload["childCaptureSha256"] !== undefined || input.payload["modelContextToolNames"] !== undefined ||
         BINDING_FIELDS.some((field) => input.payload[field] !== undefined))
       throw new Error("Child response context binding requires its captured envelope");
     return { payload: input.payload, events };
@@ -27,11 +27,20 @@ export function bindChildInvocationCapture(input: Pick<SettleSubagentChildInvoca
   };
   if (BINDING_FIELDS.some((field) => input.payload[field] !== undefined && input.payload[field] !== binding[field]))
     throw new Error("Child response context binding conflicts with its captured envelope");
+  const toolNames = input.capture.toolNames?.slice().sort();
+  if (toolNames && (toolNames.some((name) => typeof name !== "string") ||
+      toolNames.length !== envelope.toolCount || new Set(toolNames).size !== toolNames.length ||
+      sha256(canonicalJson(toolNames)) !== envelope.toolNameSetSha256))
+    throw new Error("Child captured tool names differ from its envelope");
+  if (input.payload["modelContextToolNames"] !== undefined &&
+      canonicalJson(input.payload["modelContextToolNames"]) !== canonicalJson(toolNames))
+    throw new Error("Child response tool names require their captured envelope binding");
+  if (toolNames) binding["modelContextToolNames"] = toolNames;
   events.push({ type: "context.model_envelope", payload: json(envelope) });
   const adapter = input.capture.adapter ? validateModelAdapterReceipt(input.capture.adapter) : undefined;
   if (adapter) events.push({ type: "context.model_adapter", payload: json(adapter) });
   return { events, payload: { ...input.payload, ...binding,
-    childCaptureSha256: sha256(canonicalJson({ envelope, ...(adapter ? { adapter } : {}) })) } };
+    childCaptureSha256: sha256(canonicalJson({ envelope, ...(adapter ? { adapter } : {}), ...(toolNames ? { toolNames } : {}) })) } };
 }
 
 function json(value: object): JsonObject { return JSON.parse(canonicalJson(value)) as JsonObject; }

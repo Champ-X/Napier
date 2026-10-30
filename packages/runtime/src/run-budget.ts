@@ -99,7 +99,10 @@ export class RunBudgetTracker {
     this.checkOverage(nowMs);
   }
 
-  constructor(limits: RunLimits, startedAt: string | number = Date.now()) {
+  constructor(limits: RunLimits, startedAt: string | number = Date.now(), initialPrimaryTurns = 0) {
+    if (!Number.isSafeInteger(initialPrimaryTurns) || initialPrimaryTurns < 0)
+      throw new Error("Run budget initial turn count is invalid");
+    this.primaryTurns = initialPrimaryTurns;
     this.limits = structuredClone(limits);
     this.startedAtMs =
       typeof startedAt === "number" ? startedAt : Date.parse(startedAt);

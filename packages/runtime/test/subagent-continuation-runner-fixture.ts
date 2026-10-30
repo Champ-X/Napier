@@ -32,6 +32,7 @@ export async function cleanupContinuationRunnerFixtures(): Promise<void> {
 /** Native child checkpoint and expired leases; no synthetic restoration capabilities. */
 export async function continuationRunnerFixture(options: {
   maxTurns?: number; runLimits?: Partial<RunLimits>; readFile?: boolean; outputSchema?: WorkflowValueSchema;
+  enabledTools?: string[];
   automaticRecovery?: AutomaticRecoveryPolicy;
   assertParentBudgetAvailable?: () => void;
 } = {}) {
@@ -45,7 +46,7 @@ export async function continuationRunnerFixture(options: {
   const limits: SubagentLimits = { maxConcurrent: 2, maxTotal: 4, maxTurns: options.maxTurns ?? 4, timeoutMs: 60_000 };
   const base = sourceStore.listAgents()[0]!;
   const profile = await sourceStore.updateAgent(base.id, { model: { provider: model.provider, id: model.id },
-    enabledSubagents: ["researcher"], subagentLimits: limits, enabledTools: options.readFile ? ["read_file"] : [],
+    enabledSubagents: ["researcher"], subagentLimits: limits, enabledTools: options.enabledTools ?? (options.readFile ? ["read_file"] : []),
     toolPolicy: "workspace", runLimits: { ...base.runLimits!, timeoutMs: 60_000, ...options.runLimits },
     ...(options.automaticRecovery ? { automaticRecovery: options.automaticRecovery } : {}) });
   const thread = await sourceStore.createThread({ agentId: profile.id, title: "Native child continuation" });

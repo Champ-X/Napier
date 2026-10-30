@@ -1,3 +1,4 @@
+import type { Tool } from "@earendil-works/pi-ai";
 import type { RunEvent } from "@napier/contracts";
 import type { SubagentMessage } from "@napier/contracts/subagent-supervisor";
 import type { SubagentChildCheckpointFence, SubagentChildRunFence, SubagentChildRunState } from "./subagent-execution-fence-types.js";
@@ -57,6 +58,8 @@ export interface SubagentWorkingSetBinding {
   systemPromptSha256: string;
   toolDefinitionSetSha256: string;
   toolNames: string[];
+  /** Derived from the validated private capsule; never a new authority grant. */
+  tools: Tool[];
   frontier: SubagentCheckpointFrontier;
   mailbox: {
     /** Derived contiguous accepted prefix, never the maximum sparse entry. */

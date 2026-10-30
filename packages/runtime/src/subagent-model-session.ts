@@ -12,7 +12,7 @@ import { emptyUsage, type JsonObject, type ModelContextEnvelopeReceipt, type Run
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { EventSink } from "./event-sink.js";
-import { captureExactModelInvocation } from "./model-invocation-exact-capture.js";
+import { captureExactModelInvocation, type ExactModelInvocationCaptureInput } from "./model-invocation-exact-capture.js";
 import { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
 import type { ModelRouteStreamPort } from "./model-route-types.js";
 import { mergeRouteStreamOptions } from "./model-route-options.js";
@@ -20,7 +20,7 @@ import { hostModelAbortProvenance } from "./model-abort-provenance.js";
 import { ModelSession, type ModelSessionLifetime } from "./model-session.js";
 import type { AppendEventInput } from "./store-event-service.js";
 import type { RunEventQueryPort } from "./run-event-query-port.js";
-import { compactSubagentContext } from "./subagent-context-compaction.js";
+import { prepareSubagentModelInvocation, type SubagentModelCallScope } from "./subagent-model-preparation.js";
 import { SubagentExecutionLifetime } from "./subagent-execution-lifetime.js";
 import { subagentModelTurnDeniedStream } from "./subagent-model-turn-denial.js";
 import { addSubagentUsage, subagentJsonValue } from "./subagent-task-evidence.js";
@@ -35,9 +35,13 @@ import { recoverModelContextOverflow } from "./model-context-overflow-recovery.j
 import { recordContextOverflow, recordContextOverflowStopped } from "./agent-model-recovery-evidence.js";
 import type { ModelThinkingSuppressionProof } from "./model-thinking-suppression.js";
 
+import { captureCompiledModelRequest } from "./model-invocation-compiled-request.js";
+import { COMPILED_PROMPT_PACKAGE_EVENT } from "./compiled-prompt-package.js";
+
 export type SubagentModelPhase = "subagent_turn" | "typed_repair" | "outcome_repair" | "context_compaction";
 
 export interface SubagentModelResponseHooks {
+  compiledPrompt?: Parameters<typeof captureCompiledModelRequest>[0]["compiledPrompt"];
   responseEvidence?(response: AssistantMessage): JsonObject;
   onCaptured?(envelope: ModelContextEnvelopeReceipt): void;
 }
@@ -64,6 +68,7 @@ export function createSubagentModelSession(input: {
   lifetime?: ModelSessionLifetime;
   child?: SubagentChildExecution;
   modelRoute?: ModelRouteStreamPort;
+  modelCalls?: SubagentModelCallScope | undefined;
   assertTurnAvailable?: () => void;
   assertParentBudgetAvailable?: (() => void) | undefined;
   onEvent?: EventSink;
@@ -134,6 +139,8 @@ export function createSubagentModelSession(input: {
         failedContext?: Context): Promise<ModelThinkingLoopAttemptSource & { envelope?: ModelContextEnvelopeReceipt }> => {
         modelAttempt += 1;
         let activeContext = invocationContext;
+        let activeOptions = routedOptions;
+        let compiledPrompt = hooks?.compiledPrompt;
         let reservation;
         try {
           lifetime.assertActive();
@@ -144,11 +151,24 @@ export function createSubagentModelSession(input: {
           }
           input.assertParentBudgetAvailable?.();
           input.child?.assertCanInvoke();
-          if (phase === "subagent_turn" && input.child) activeContext = await compactSubagentContext({
-            host: { store: input.store, modelRegistry: { models: input.models }, modelInvocationCapsules: capsules },
-            child: input.child, session: modelSession, model: candidate, context: invocationContext, options: routedOptions, modelAttempt, recoveryAttempt,
-            ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-          });
+          if (phase === "subagent_turn" && input.child) {
+            const prepared = await prepareSubagentModelInvocation({
+              compaction: {
+                host: { store: input.store, modelRegistry: { models: input.models }, modelInvocationCapsules: capsules },
+                child: input.child, session: modelSession,
+                ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+              },
+              ...(input.modelCalls ? { scope: input.modelCalls } : {}),
+              model: candidate, context: invocationContext, options: routedOptions, signal: invocationSignal,
+              modelAttempt, recoveryAttempt, ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+            });
+            activeContext = prepared.context;
+            activeOptions = prepared.options;
+            compiledPrompt = prepared.compiledPrompt;
+          }
+          lifetime.assertActive();
+          invocationSignal.throwIfAborted();
+          input.assertParentBudgetAvailable?.();
           if (recoveryAttempt === 1 && (!failedContext ||
               sha256(canonicalJson(activeContext.messages)) === sha256(canonicalJson(failedContext.messages))))
             throw new Error("Model context overflow recovery did not reduce the request");
@@ -161,16 +181,17 @@ export function createSubagentModelSession(input: {
         const invocationIndex = reservation?.invocationIndex ?? ++nextInvocationIndex;
         let contextEnvelopeSha256: string | undefined;
         let envelope: ModelContextEnvelopeReceipt | undefined;
+        let capturedToolNames: string[] | undefined;
         let adapter: JsonObject | undefined;
         const opened = await session.open({
           phase,
           ...(input.child && reservation ? { accounting: input.child.accountingForInvocation(reservation) } : {}),
           model: candidate,
           context: activeContext,
-          options: phase === "subagent_turn" ? routedOptions : { ...routedOptions, maxRetries: 0 },
+          options: phase === "subagent_turn" ? activeOptions : { ...activeOptions, maxRetries: 0 },
           capture: async (request) => {
             const captures: Array<{ kind: string; payload: unknown }> = [];
-            const captured = await captureExactModelInvocation({
+            const captureInput: ExactModelInvocationCaptureInput = {
               capsules,
               source: { threadId: owner.threadId, runId: input.child?.run.id ?? owner.parentRunId },
               model: request.model,
@@ -187,9 +208,21 @@ export function createSubagentModelSession(input: {
                 captures.push(event);
                 if (event.kind === "adapter") adapter = subagentJsonValue(event.payload) as JsonObject;
               },
-            });
+            };
+            const captured = compiledPrompt ? await captureCompiledModelRequest({
+              ...captureInput, compiledPrompt,
+              recordCompiledPackage: async (receipt) => {
+                const event = await input.store.appendEvent({
+                  threadId: owner.threadId, runId: input.child?.run.id ?? owner.parentRunId,
+                  type: COMPILED_PROMPT_PACKAGE_EVENT, category: "model", visibility: "debug",
+                  payload: subagentJsonValue(receipt),
+                });
+                try { await input.onEvent?.(event); } catch { /* Durable receipt is authoritative. */ }
+              },
+            }) : await captureExactModelInvocation(captureInput);
             contextEnvelopeSha256 = captured.envelope.contentSha256;
             envelope = captured.envelope;
+            capturedToolNames = (captured.context.tools ?? []).map((tool) => tool.name);
             hooks?.onCaptured?.(envelope);
             await append("subagent.model.invocation", {
               kind: "napier.subagent-model-invocation", phase, invocationIndex,
@@ -201,11 +234,17 @@ export function createSubagentModelSession(input: {
             kind: "napier.subagent-model-cancellation-failure", phase, invocationIndex,
             contextEnvelopeSha256, ...failure,
           }),
-          invoke: (_invocation, next) => {
+          invoke: (invocation, next) => {
             try {
               input.assertParentBudgetAvailable?.();
               input.child?.assertCanInvoke(true);
-              return next();
+              return phase === "subagent_turn" && input.modelCalls && input.child && compiledPrompt
+                ? input.modelCalls.lifecycle.invoke({
+                  run: input.child.run, attempt: modelAttempt, model: invocation.model,
+                  context: invocation.context, options: invocation.options ?? {}, compiledPrompt,
+                  envelope: invocation.envelope,
+                  ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+                }, next) : next();
             } catch (error) {
               const denied = subagentModelTurnDeniedStream(candidate, error, invocationSignal);
               if (denied) return denied;
@@ -238,7 +277,7 @@ export function createSubagentModelSession(input: {
               })),
             }) as JsonObject;
             await input.child.settle(reservation.invocationId, payload, usage,
-              envelope ? { envelope, ...(adapter ? { adapter } : {}) } : undefined, proof);
+              envelope ? { envelope, ...(adapter ? { adapter } : {}), ...(capturedToolNames ? { toolNames: capturedToolNames } : {}) } : undefined, proof);
           }
           await append("subagent.model.response", {
             ...(attribution ? modelAccountingLinkage(attribution) : {}),
@@ -250,7 +289,7 @@ export function createSubagentModelSession(input: {
           });
         })();
         const attribution = modelResultAttribution(opened.source);
-        return { source: opened.source, context: activeContext, options: opened.options ?? routedOptions, settleLogical,
+        return { source: opened.source, context: activeContext, options: opened.options ?? activeOptions, settleLogical,
           ...(envelope ? { envelope } : {}),
           logicalResult: () => opened.source.result(),
           recovery: () => ({ ...(opened.recovery ? { handle: opened.recovery } : {}), ...(attribution ? { attribution } : {}) }) };

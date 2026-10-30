@@ -6,7 +6,6 @@ import type {
   AssistantMessageEventStream,
   Context,
   Model,
-  SimpleStreamOptions,
   UserMessage,
 } from "@earendil-works/pi-ai";
 import type { ModelContextEnvelopeReceipt, RunRecord } from "@napier/contracts";
@@ -34,43 +33,23 @@ import type { ModelRegistry } from "./models.js";
 import { modelStreamCancellationFailureSink, streamCtx } from "./model-stream-cancellation.js";
 import { ModelSession } from "./model-session.js";
 import type { ModelCallRecoveryHandle } from "./model-call-recovery.js";
-import type { CompiledPromptArtifact } from "./prompt-compiler.js";
 import type { RunBudgetTracker } from "./run-budget.js";
 import type { LocalStore } from "./store.js";
 import { recoverModelContextOverflow } from "./model-context-overflow-recovery.js";
-import type { ModelHarnessExperimentProfile } from "./model-harness-experiment-profile.js";
 import { RunContextCompactor } from "./run-context-compaction.js";
-import type { RunContextCompactionPort } from "./run-context-compaction-types.js";
 import { createAgentInvocationContextPreparer } from "./agent-invocation-context.js";
 import { bindRunBudgetContext } from "./run-budget-context.js";
+import { prepareCompiledModelInvocation } from "./model-call-compiled-preparation.js";
 import {
   prepareHarnessModelCallBudget,
-  assertHarnessModelCallBudget,
 } from "./harness-model-call-budget.js";
 import {
-  runtimeContextDelivery,
   stripRuntimeContext,
 } from "./runtime-context-delivery.js";
 
-export interface AgentModelCallPreparation {
-  run: RunRecord;
-  attempt: number;
-  model: Model<Api>;
-  context: Context;
-  options: SimpleStreamOptions;
-  harnessExperimentProfile?: ModelHarnessExperimentProfile | undefined;
-  onEvent?: EventSink;
-}
-
-export interface PreparedAgentModelCall {
-  context: Context;
-  options: SimpleStreamOptions;
-}
-
-export interface AgentModelInvocation extends AgentModelCallPreparation {
-  compiledPrompt: CompiledPromptArtifact;
-  envelope: ModelContextEnvelopeReceipt;
-}
+import type { AgentModelCallPreparation, AgentModelCallFinalization, AgentModelInvocation,
+  PreparedAgentModelCall, CompiledModelPromptBuilder } from "./model-call-lifecycle-types.js";
+export type { AgentModelCallPreparation, AgentModelInvocation, PreparedAgentModelCall } from "./model-call-lifecycle-types.js";
 
 export interface AgentModelStreamLifecycleInput {
   host: {
@@ -80,25 +59,16 @@ export interface AgentModelStreamLifecycleInput {
   };
   budget: RunBudgetTracker;
   run: RunRecord;
-  harnessExperimentProfile?: ModelHarnessExperimentProfile | undefined;
+  harnessExperimentProfile?: AgentModelCallPreparation["harnessExperimentProfile"];
   modelRoute?: ModelRouteSession;
-  buildCompiledPrompt(
-    model: Model<Api>,
-    options: SimpleStreamOptions | undefined,
-    context: Context,
-  ): CompiledPromptArtifact;
+  buildCompiledPrompt: CompiledModelPromptBuilder;
   nextTurnIndex(): number;
   onEnvelope(envelope: ModelContextEnvelopeReceipt | undefined): void;
   prepareCall?(
     call: AgentModelCallPreparation,
   ): PreparedAgentModelCall | Promise<PreparedAgentModelCall>;
   finalizeCall?(
-    call: AgentModelCallPreparation & {
-      compiledPrompt: CompiledPromptArtifact;
-      recoveryAttempt: 0 | 1;
-      runContextCompaction?: RunContextCompactionPort;
-      refreshBudgetPrompt?: () => CompiledPromptArtifact;
-    },
+    call: AgentModelCallFinalization,
   ): PreparedAgentModelCall | Promise<PreparedAgentModelCall>;
   invokeCall?(
     call: AgentModelInvocation,
@@ -234,54 +204,20 @@ export function agentModelStreamLife(
               policy: input.harnessExperimentProfile?.policies?.context,
               budget: input.budget,
             });
-            let compiledPrompt = input.buildCompiledPrompt(
-              candidate,
-              preparedCall.options,
-              baseContext,
-            );
-            if (!input.finalizeCall && runtimeContextDelivery(compiledPrompt))
-              throw new Error(
-                "Runtime context delivery requires context projection finalization",
-              );
-            const finalizedCall = input.finalizeCall
-              ? await input.finalizeCall({
-                  run: input.run,
-                  attempt,
-                  model: candidate,
-                  context: baseContext,
-                  options: { ...preparedCall.options },
-                  compiledPrompt,
-                  recoveryAttempt,
-                  runContextCompaction,
-                  ...(input.harnessExperimentProfile?.policies?.context
-                    .finalization === "request-aware-v2"
-                    ? {
-                        refreshBudgetPrompt: () => {
-                          bindRunBudgetContext(baseContext, input.budget);
-                          compiledPrompt = input.buildCompiledPrompt(
-                            candidate,
-                            preparedCall.options,
-                            baseContext,
-                          );
-                          return compiledPrompt;
-                        },
-                      }
-                    : {}),
-                  ...(input.harnessExperimentProfile
-                    ? {
-                        harnessExperimentProfile:
-                          input.harnessExperimentProfile,
-                      }
-                    : {}),
-                  ...(input.onEvent ? { onEvent: input.onEvent } : {}),
-                })
-              : { context: baseContext, options: preparedCall.options };
-            assertHarnessModelCallBudget(
-              candidate,
-              preparedCall.options,
-              finalizedCall.options,
-              modelCallPolicy,
-            );
+            const finalizedCall = await prepareCompiledModelInvocation({
+              call: {
+                run: input.run, attempt, model: candidate, context: baseContext,
+                options: preparedCall.options,
+                ...(input.harnessExperimentProfile ? { harnessExperimentProfile: input.harnessExperimentProfile } : {}),
+                ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+              },
+              buildCompiledPrompt: input.buildCompiledPrompt,
+              ...(input.finalizeCall ? { finalize: input.finalizeCall } : {}),
+              recoveryAttempt, runContextCompaction,
+              ...(input.harnessExperimentProfile?.policies?.context.finalization === "request-aware-v2"
+                ? { refreshBudgetContext: (context: Context) => bindRunBudgetContext(context, input.budget) } : {}),
+            });
+            const { compiledPrompt } = finalizedCall;
             currentAttribution = undefined;
             await input.budget.refreshAccounting();
             if (attempt === 2) input.budget.assertCanStartAuxiliaryCall();

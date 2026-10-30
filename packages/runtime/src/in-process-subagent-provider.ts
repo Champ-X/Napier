@@ -28,6 +28,7 @@ import { resolveModelRouteSelection } from "./model-route-resolution.js";
 import { launchSubagentContinuation, type SubagentActiveExecution } from "./subagent-continuation-provider.js";
 import { readCommittedSubagentResult } from "./subagent-committed-result.js";
 import type { SubagentModelRouteSession, SubagentProviderOptions } from "./subagent-provider-options.js";
+export type { SubagentProviderOptions } from "./subagent-provider-options.js";
 
 export class InProcessSubagentProvider implements SubagentProvider {
   readonly id = "in_process";
@@ -106,6 +107,7 @@ export class InProcessSubagentProvider implements SubagentProvider {
     const runner = new SubagentTaskRunner({
       store: this.options.store,
       models: this.options.models,
+      ...(this.options.modelCallServices ? { modelCallServices: this.options.modelCallServices } : {}),
       model,
       ...(createModelRoute ? { createModelRoute } : {}),
       run: this.options.run,

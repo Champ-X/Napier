@@ -18,3 +18,5 @@ export async function prepareAgentSubagentRecovery(coordinator: SubagentCoordina
   if (!coordinator || run.source !== "recovery" || inspection) return "";
   return coordinator.resumeInterruptedChildren(store.getAgent(run.agentId), budget);
 }
+
+export { createSubagentModelCallServices } from "./subagent-model-call-services.js";
