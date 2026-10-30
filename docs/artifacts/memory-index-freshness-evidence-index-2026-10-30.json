@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "c4c7c75c5c55248fc5b3abc6105dff0b6b55cab7",
+  "archive": "memory-index-freshness-2026-10-30.tar.gz",
+  "archiveSha256": "2b9314994f37266183a548fa8278e43ff10679284aee9bdcfb64034f3239ff2b",
+  "members": [
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/baseline-source/packages/runtime/src/task-memory-context.ts",
+      "bytes": 5441,
+      "sha256": "72cd7f89d528e704a49cd6d98fdd77d028c885fada52f1b79a89fe5a859fd8b8"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/baseline-source/packages/runtime/src/task-memory-dependencies.ts",
+      "bytes": 2221,
+      "sha256": "c0b63089017ba246cf00ab7b5c28013b585ea90fd7f9312cdab2a844fd3fefa0"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/before/task-memory-index-race.test.ts",
+      "bytes": 2957,
+      "sha256": "8c0345d5f44ac0641e15d0e5aa7cd9314403ad092f34a07bb51c171a3fef3a42"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/before/tests.json",
+      "bytes": 1877,
+      "sha256": "63da936f828381da812bec2c298165514d01c1c0102dbfdd0d19ef0b42c383c8"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/before/tests.log",
+      "bytes": 77,
+      "sha256": "7a4d487dc345886deb7017d4fcc89f1a55f9ad4cb42393c894dcc39d886d19f7"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/candidate.patch",
+      "bytes": 8090,
+      "sha256": "74b497dec4b966722828b6c2a5650084f4f9b0c3de2be25f9ddf15969c4cd169"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/case-identity-overlap.json",
+      "bytes": 76579,
+      "sha256": "982948eeae6766680e3f78754a4f5ac5020f0a4835ae3d2563dc87ba564076f7"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/evidence.md",
+      "bytes": 5317,
+      "sha256": "66b8d9c436ee3ed8cea312b5bdae4f2deadf3cc5f71e1f046d2807df81c77c37"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/final-isolated/architecture.log",
+      "bytes": 685,
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/final-isolated/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/final-isolated/strict.json",
+      "bytes": 642,
+      "sha256": "00c3eb3060eddcf2de66e1c25848cf665e7e698dec823ff76220168395278d00"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/final-isolated/strict.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/final-isolated/tests.json",
+      "bytes": 24583,
+      "sha256": "81dd60234fcbcab0d40e47e8042ab62ef11c2440a663422a0e12742f0c85db04"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/final-isolated/tests.log",
+      "bytes": 89,
+      "sha256": "6e65da868cc3846ae9fe0d2876b7d7513fdee03062a7a13e1781d5b0ad1ba944"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/independent/review.json",
+      "bytes": 2474,
+      "sha256": "2f061a5a26ba0cd75c98c496d836fd3d6edc33cf3b9e7ac558b98054abc5c5a1"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/independent/sequential-boundary-probe.mjs",
+      "bytes": 1021,
+      "sha256": "1739d0d9af7c8f94c58c6aa54d3ed052b6c7d9ab606430d72e3e4b432487b9b1"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/independent/sequential-boundary-result.json",
+      "bytes": 391,
+      "sha256": "a1fdc76731e1782e2236475d97b0fc36c23cd602b53ae642b320301bdc30bbec"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/independent/tests.json",
+      "bytes": 22912,
+      "sha256": "8335182ad42928d25be75b77f25c78faeb9d6dc0cff5cd63caf7fc4b6c8c40ed"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/independent/tests.log",
+      "bytes": 73,
+      "sha256": "ccc1c2b2343f661bc41a33451733022104e61e7ff521a84ad885a03d4464b4a4"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/initial-after/tests.json",
+      "bytes": 12195,
+      "sha256": "0e10ebed6c0c04e44045f1ea7dab038fdf5607625984dfe02919db98ad7ecc42"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/initial-after/tests.log",
+      "bytes": 76,
+      "sha256": "9c9b0a24584351b2482c0de7a0d7db709f8bd7e5fdecfa78c90805f4a15a8e96"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/integrated/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/integrated/source-manifest.json",
+      "bytes": 777,
+      "sha256": "2493c0f6841bf0f3924dabbcd7013382d5c85c0de292ef8719eff3714ba23fc0"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/integrated/strict.json",
+      "bytes": 647,
+      "sha256": "8b164dac624155445a9cd564e69f326916536624f8deb7c00d9177e4bc4a0740"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/integrated/strict.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/integrated/tests.json",
+      "bytes": 10026,
+      "sha256": "43a4720164f69b01037b271572ed430fd7126417b99943532e151d082710f5ff"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/integrated/tests.log",
+      "bytes": 87,
+      "sha256": "224481e1e7f1cffe2a66c2dc93eaf3eec5d8d2ef491603e7ba84328ca8c11ad1"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/isolated-snapshot.json",
+      "bytes": 116,
+      "sha256": "3041eeb762bc2bae4d19704ac8180b17423998c95072ba35773e8a152673c6a1"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/manifest.json",
+      "bytes": 6727,
+      "sha256": "d84c0aca77a0c7419f17f05e325be6bae1da5f2cda9705eb05c91d5c597180d7"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/root-source-commit.json",
+      "bytes": 1177,
+      "sha256": "a6fa8c731ad3eaaffaa914dcab57b2826796571a89cd010ec7a86d9519478ad5"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/source/packages/runtime/src/task-memory-context.ts",
+      "bytes": 5471,
+      "sha256": "0a75f041e8843240c5042e07cc305c1feb374b695c7047a95907661847aa06d2"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/source/packages/runtime/src/task-memory-dependencies.ts",
+      "bytes": 2108,
+      "sha256": "f4093b358eaac7414395fc32af5f066eed653f8b892df84e7099cc58b09c1f9d"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/source/packages/runtime/test/task-memory-dependencies.test.ts",
+      "bytes": 6619,
+      "sha256": "4a75e971273320cd0672ffe940fdc1c09b966ddd71bacc719be0dbc18c34db79"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/source/packages/runtime/test/task-memory-index-race.test.ts",
+      "bytes": 4039,
+      "sha256": "db10e0f6f89d25ce9a9ca4d36ea59a510f65f9c60cae78738b1ed91a145b34df"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/support-source/task-memory-context.test.ts",
+      "bytes": 10782,
+      "sha256": "470411ab693a7417a2b0d28df769e15622f4fc8b9e1cf9ceafe26841ed4df1b4"
+    },
+    {
+      "path": "napier-g07-memory-freshness-evidence-20261030/verify-evidence.py",
+      "bytes": 3947,
+      "sha256": "e04017ce548b0b8e61327057d44c6c998e669c19bc9cb27ab01ec793aa26151c"
+    }
+  ]
+}

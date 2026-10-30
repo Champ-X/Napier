@@ -479,6 +479,12 @@
 - 原27文件225唯一用例通过；root整合G07后55用例及Runtime／CLI／Server编译通过。新增测试strict失败已保留并用类型收窄／完整fixture修正，生产28文件不变；同38用例及root受影响20子集、strict6通过。各数字重叠，不相加。原架构7／API4失败及独立agent-kernel的2失败保留；28用户文件摘要不变、零外部模型调用、未push。
 - 证据及可移植核验见 [child-model-lifecycle.md](docs/child-model-lifecycle.md)。本片不证明native child记忆检索有效性（缺少message.user）、repair完整parity、原生overflow成功恢复或coder恢复；完整G03和总目标继续active。
 
+### 后续推进：G07 索引后的依赖新鲜度窗口（2026-10-30）
+
+- 本地源码 `c4c7c75c5c55248fc5b3abc6105dff0b6b55cab7` 固定4文件。真实文件／原生FTS反例确认：仅被一个fact引用的文件在索引后变化会漏查，第一次剔除失效项后的重新排名也存在第二次变化窗口。两项修复前断言失败均保留。
+- 每次排名后重新读取本次成功观察的digest，移除失效项后重排并继续复验；首次失败或已失效观察不会在本调用内复活。新用例覆盖内容变化、删除、路径逃逸及连续两轮变化，并保留独立事实。稳定D条依赖读2D次；每轮重排至少减少一个fact，最多N+1轮，最坏读取O(ND)。这是正确性修复，不宣称性能改善或跨文件原子快照。
+- 最终8文件73条测试执行记录、strict2及Runtime编译通过；与G03合并后4文件23条、strict2及Runtime／CLI／Server编译通过。独立8文件68条记录及逐文件非原子边界探针留存；计数有交叠且含三种policy的同名参数用例，不相加。原架构7项失败保留，28用户文件不变，未push；证据见 [memory-index-freshness.md](docs/memory-index-freshness.md)。完整G07和总目标继续active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -712,7 +718,7 @@
 
 - [ ] 先采样模型调用前处理耗时、SQLite 读行数、JSON 解码 CPU、RSS、文件读取次数和缓存命中。（主invocation固定smoke／100k及mailbox的100／10k／100k原生对照已记录wall／CPU／returned rows／边界RSS；SQL扫描及JSON解码CPU分项等完整范围仍待补齐。）
 - [ ] 复用已有增量投影机制，为 loop guard、mailbox 等引入 watermark / typed-event cursor；保留完整 replay 作为校验基准。（沿用既有loop guard游标，主invocation新增Run级输入游标；mailbox已按类型查询并与完整replay比较，保留完整child frontier。mailbox增量cursor及更广泛负载尚未验收。）
-- [ ] 记忆索引按变更维护，基于文件摘要缓存校验依赖；候选检索与有效性检查之间保持正确性。
+- [ ] 记忆索引按变更维护，基于文件摘要缓存校验依赖；候选检索与有效性检查之间保持正确性。（已有按摘要更新的索引和调用内digest复用；本轮补齐唯一依赖与再次排名后的新鲜度复验，保留非原子观察及最坏读取成本边界；更广泛资源／质量验收仍待完成。）
 - [ ] 按模型与任务族消融：计划开关、工具集合、上下文策略、独立验证强度、委派策略。
 - [ ] 优先保留稳定提示前缀和按需工具发现，验证缓存收益与工具召回是否兼容。
 - [ ] 语义 rerank 仅作为可测候选；在有证据前不增加新的向量数据库依赖。
