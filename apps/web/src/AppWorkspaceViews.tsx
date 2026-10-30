@@ -15,7 +15,12 @@ import { artifactInspectorCopy } from "./artifact-inspector-copy";
 import { ArtifactInspector } from "./ArtifactInspector";
 import { WorkbenchBrowserRail } from "./WorkbenchBrowserRail";
 import { WorkspaceEvidenceRail } from "./WorkspaceEvidenceRail";
-import { WorkspaceFileInspector } from "./WorkspaceFileInspector";
+import {
+  WorkspaceFileInspector,
+  toolFilePreviewBindingForTarget,
+  toolFilePreviewForTarget,
+  type ToolFilePreviewBinding,
+} from "./WorkspaceFileInspector";
 import { SkillResourceInspector } from "./SkillResourceInspector";
 import { workspaceEvidenceCopy as workspaceCopy } from "./workspace-evidence-copy";
 import type { ArtifactInspection } from "./artifact-inspection";
@@ -89,6 +94,18 @@ export function AppWorkspaceViews({
     useState<ArtifactInspection>();
   const [workspaceFilePath, setWorkspaceFilePath] = useState<string>();
   const [workspaceFileSha256, setWorkspaceFileSha256] = useState<string>();
+  const workspaceFileTarget = workspaceFilePath
+    ? taskArtifactTargetForPath(
+        vm.detail,
+        bootstrap.workspace.root,
+        workspaceFilePath,
+      )
+    : undefined;
+  const workspaceToolFilePreview = toolFilePreviewForTarget(
+    vm.detail?.taskNarrative?.deliverables,
+    workspaceFileTarget,
+    workspaceFileSha256,
+  );
   const [skillResourceInspection, setSkillResourceInspection] =
     useState<MessageSkillResourceLink>();
   const [dismissedBrowserRunId, setDismissedBrowserRunId] = useState<string>();
@@ -132,11 +149,17 @@ export function AppWorkspaceViews({
         return;
       }
       setArtifactInspection(undefined);
-      setWorkspaceFileSha256(
-        taskArtifactTargetForPath(vm.detail, bootstrap.workspace.root, path)
-          ?.expectedSha256,
+      const target = taskArtifactTargetForPath(
+        vm.detail,
+        bootstrap.workspace.root,
+        path,
       );
-      setWorkspaceFilePath(path);
+      const binding = toolFilePreviewBindingForTarget(
+        vm.detail?.taskNarrative?.deliverables,
+        target,
+      );
+      setWorkspaceFileSha256(target?.expectedSha256);
+      setWorkspaceFilePath(binding ? target!.path : path);
     },
     [bootstrap.workspace.root, vm.detail],
   );
@@ -276,7 +299,8 @@ export function AppWorkspaceViews({
         suspended={evidenceSuspended}
         artifactInspection={artifactInspection}
         workspaceFilePath={workspaceFilePath}
-        workspaceFileSha256={workspaceFileSha256}
+        workspaceFileSha256={workspaceToolFilePreview.expectedSha256}
+        workspaceToolFileBinding={workspaceToolFilePreview.binding}
         skillResourceInspection={skillResourceInspection}
         showBrowserRail={showBrowserRail}
         showWorkspaceRail={showWorkspaceRail}
@@ -319,6 +343,7 @@ interface AppWorkspaceEvidenceSurfacesProps {
   artifactInspection: ArtifactInspection | undefined;
   workspaceFilePath: string | undefined;
   workspaceFileSha256: string | undefined;
+  workspaceToolFileBinding: ToolFilePreviewBinding | undefined;
   skillResourceInspection: MessageSkillResourceLink | undefined;
   showBrowserRail: boolean;
   showWorkspaceRail: boolean;
@@ -338,6 +363,7 @@ function AppWorkspaceEvidenceSurfaces({
   artifactInspection,
   workspaceFilePath,
   workspaceFileSha256,
+  workspaceToolFileBinding,
   skillResourceInspection,
   showBrowserRail,
   showWorkspaceRail,
@@ -401,6 +427,9 @@ function AppWorkspaceEvidenceSurfaces({
           onContinueEditing={continueEditing}
           {...(workspaceFileSha256
             ? { expectedSha256: workspaceFileSha256 }
+            : {})}
+          {...(workspaceToolFileBinding
+            ? { toolFileBinding: workspaceToolFileBinding }
             : {})}
           {...(vm.detail ? { threadId: vm.detail.thread.id } : {})}
           onClose={onCloseWorkspaceFile}

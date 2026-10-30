@@ -9,6 +9,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { canonicalJson } from "./stable-digest";
+import {
+  toolFilePreviewSelectionKey,
+  type ToolFilePreviewBinding,
+} from "./tool-file-preview-binding";
 import { ArtifactReviewActions } from "./ArtifactReviewActions";
 import { formatApiErrorMessage } from "./api-error";
 import { artifactInspectorCopy as copy } from "./artifact-inspector-copy";
@@ -23,11 +28,18 @@ import {
   restoreWorkbenchOverlayFocus,
 } from "./workbench-overlay-focus";
 
+export {
+  toolFilePreviewBindingForTarget,
+  toolFilePreviewForTarget,
+  type ToolFilePreviewBinding,
+} from "./tool-file-preview-binding";
+
 export interface WorkspaceFileInspectorProps {
   path: string;
   suspended?: boolean;
   threadId?: string;
   expectedSha256?: string;
+  toolFileBinding?: ToolFilePreviewBinding;
   onClose(): void;
   onContinueEditing?(path: string): void;
   previewFile?: typeof previewWorkspaceFile;
@@ -40,6 +52,7 @@ export function WorkspaceFileInspector({
   suspended = false,
   threadId,
   expectedSha256,
+  toolFileBinding,
   onClose,
   onContinueEditing,
   previewFile = previewWorkspaceFile,
@@ -48,21 +61,39 @@ export function WorkspaceFileInspector({
   const suspendedRef = useRef(suspended);
   suspendedRef.current = suspended;
   const [loadedPreview, setLoadedPreview] = useState<{
-    requestedPath: string;
-    threadId: string | undefined;
-    expectedSha256: string | undefined;
+    selectionKey: string;
     file: WorkspaceFilePreview;
   }>();
-  const preview =
-    loadedPreview?.requestedPath === path &&
-    loadedPreview.threadId === threadId &&
-    loadedPreview.expectedSha256 === expectedSha256
-      ? loadedPreview.file
-      : undefined;
   const [view, setView] = useState<WorkspaceFileView>("preview");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [reload, setReload] = useState(0);
+  const toolFileKey = toolFilePreviewSelectionKey(toolFileBinding, {
+    path,
+    threadId,
+    expectedSha256,
+  });
+  const expectedFileBytes = toolFileKey
+    ? toolFileBinding!.receipt.fileBytes
+    : undefined;
+  const selectionKey = canonicalJson({
+    path,
+    threadId,
+    expectedSha256,
+    toolFileKey,
+    reload,
+  });
+  const preview =
+    loadedPreview?.selectionKey === selectionKey
+      ? loadedPreview.file
+      : undefined;
+  const integrityRecorded = Boolean(
+    !loading &&
+    toolFileKey &&
+    preview &&
+    preview.sha256 === expectedSha256 &&
+    preview.sizeBytes === expectedFileBytes,
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,13 +105,15 @@ export function WorkspaceFileInspector({
       : previewFile(path, controller.signal);
     void request
       .then((result) => {
-        if (expectedSha256 && result.sha256 !== expectedSha256)
+        if (
+          (expectedSha256 && result.sha256 !== expectedSha256) ||
+          (expectedFileBytes !== undefined &&
+            result.sizeBytes !== expectedFileBytes)
+        )
           throw new Error(copy.fileChanged);
         if (!controller.signal.aborted) {
           setLoadedPreview({
-            requestedPath: path,
-            threadId,
-            expectedSha256,
+            selectionKey,
             file: result,
           });
         }
@@ -94,7 +127,14 @@ export function WorkspaceFileInspector({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [path, threadId, expectedSha256, previewFile, reload]);
+  }, [
+    path,
+    threadId,
+    expectedSha256,
+    expectedFileBytes,
+    selectionKey,
+    previewFile,
+  ]);
 
   useEffect(() => {
     const restoreFocus =
@@ -236,7 +276,7 @@ export function WorkspaceFileInspector({
         </span>
         {onContinueEditing ? (
           <ArtifactReviewActions
-            integrityRecorded={false}
+            integrityRecorded={integrityRecorded}
             onContinueEditing={() => onContinueEditing(path)}
           />
         ) : null}
