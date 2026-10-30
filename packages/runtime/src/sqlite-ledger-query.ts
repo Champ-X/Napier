@@ -1,6 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent } from "@napier/contracts";
+import { compileTypedEventRangeQuery } from "./sqlite-event-range-query.js";
 
 import {
   normalizeEventQueryTypes,
@@ -52,6 +53,11 @@ export class SqliteLedgerQuery {
     if (normalizedTypes?.length === 0) return [];
     const clauses = ["thread_id = ?", "seq BETWEEN ? AND ?"];
     const parameters: QueryParameter[] = [threadId, fromSeq, toSeq];
+    const compound = compileTypedEventRangeQuery(threadId, fromSeq, toSeq, normalizedTypes);
+    if (compound) {
+      const rows = this.database.prepare(compound.sql).all(...compound.parameters) as Array<{ event_json: string }>;
+      return rows.map(parseEvent);
+    }
     appendTypePredicate(clauses, parameters, normalizedTypes);
     return this.all(clauses, parameters);
   }

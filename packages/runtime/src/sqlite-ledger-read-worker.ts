@@ -1,6 +1,7 @@
 import { Worker } from "node:worker_threads";
 
 import type { RunEvent } from "@napier/contracts";
+import { compileTypedEventRangeQuery, type SqliteEventRangeQuery } from "./sqlite-event-range-query.js";
 
 import {
   normalizeEventQueryTypes,
@@ -18,6 +19,7 @@ type ReadAction =
       fromSeq: number;
       toSeq: number;
       types?: string[];
+      query?: SqliteEventRangeQuery;
     }
   | { kind: "latest"; scope: RunEventQueryScope }
   | {
@@ -91,12 +93,16 @@ export class SqliteLedgerReadWorker {
     validateEventQuerySeq(toSeq, "toSeq", 1);
     if (fromSeq > toSeq)
       throw new Error("Event range requires fromSeq <= toSeq");
+    threadId = validateEventQueryId(threadId, "Thread ID");
+    const normalized = normalizedTypes(types);
+    const query = compileTypedEventRangeQuery(threadId, fromSeq, toSeq, normalized.types);
     return this.request({
       kind: "range",
-      threadId: validateEventQueryId(threadId, "Thread ID"),
+      threadId,
       fromSeq,
       toSeq,
-      ...normalizedTypes(types),
+      ...normalized,
+      ...(query ? { query } : {}),
     }) as Promise<RunEvent[]>;
   }
 
@@ -239,6 +245,9 @@ function predicate(scope, clauses, parameters) {
 }
 
 function read(action) {
+  if (action.kind === "range" && action.query) {
+    return database.prepare(action.query.sql).all(...action.query.parameters).map(parse);
+  }
   const clauses = [], parameters = [];
   if (action.kind === "thread") predicate({ threadId: action.threadId, afterSeq: action.afterSeq }, clauses, parameters);
   if (action.kind === "run") predicate({ runId: action.runId, afterSeq: action.afterSeq, types: action.types }, clauses, parameters);
