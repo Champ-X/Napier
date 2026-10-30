@@ -472,6 +472,13 @@
 - 新预先声明的25k／250k与256字节多语言payload保留集，共96条同步BCCB样本，完整输出相同且全部符合原门槛。双类型稠密查询仍分别慢5.1%／11.8%，明确作为代价；稀疏双类型中位2.473→0.021ms、27.433→0.018ms。额外24条真实异步reader样本中位2.536→0.063ms、27.066→0.041ms，不代表完整Run性能。
 - 编译、strict及17唯一用例通过，2177源码／4388输出摘要稳定，原架构7/API4失败保留。说明与无需执行归档代码的便携核验：[two-type-event-range-queries.md](docs/two-type-event-range-queries.md)。Run范围多类型扫描、稠密异步和完整G07资源／质量验收仍待推进。
 
+### 后续推进：G03 普通子调用的编译与扩展生命周期（2026-10-30）
+
+- 本地源码 `1c0dab83f65fe47fe3bc29401733d7c6bbcd313b` 固定35文件。首次委派及continuation的普通child调用接入Runtime实际compiler、prepare／finalize／around、harness和token meter；共享准备／capture，保留child自己的Session、额度、记账、恢复及原始checkpoint。辅助compaction传递已有compiled artifact；repair阶段仍走原exact capture。
+- 保留此前child已完成但缺少钩子／meter／编译包的本地反例，以及中间版本void hook原地扩权到达一次faux调用的反例。最终共享guard隔离嵌套数据并在dispatch前拒绝原地扩权；请求内工具子集绑定精确envelope与私有原始定义。child context仅使用经验证的自身／predecessor窗口，压缩与prompt共享含继承turn debt的budget。
+- 原27文件225唯一用例通过；root整合G07后55用例及Runtime／CLI／Server编译通过。新增测试strict失败已保留并用类型收窄／完整fixture修正，生产28文件不变；同38用例及root受影响20子集、strict6通过。各数字重叠，不相加。原架构7／API4失败及独立agent-kernel的2失败保留；28用户文件摘要不变、零外部模型调用、未push。
+- 证据及可移植核验见 [child-model-lifecycle.md](docs/child-model-lifecycle.md)。本片不证明native child记忆检索有效性（缺少message.user）、repair完整parity、原生overflow成功恢复或coder恢复；完整G03和总目标继续active。
+
 ## 2. 保留的基础与实施原则
 
 当前已有的能力应继续复用：
@@ -592,7 +599,7 @@
 **实施任务**
 
 - [x] 列出主子调用链的能力差异和当前语义，确定最小共享执行接口。（当前能力、Run／计量／mailbox 依赖及内部 ExecutionSession 边界已成文；工具权限与调用归属反例已修复，后续共享模型／恢复实施项仍未完成。）
-- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 checkpoint、持久物理用量与迟到对账已完成本地功能回归；普通回合 thinking 共享恢复、Host 记账边界收敛及 overflow 不确定调用停止／legacy有界恢复已完成；原生overflow成功恢复、完整 child compiler／extension parity 和内部接口18/16门禁仍待完成。）
+- [ ] 先统一模型调用、上下文编译、计量、事件与工具生命周期；保留角色专属策略。（共享模型 invocation／capture／deadline、child repair／compaction、私有 checkpoint、持久物理用量与迟到对账已完成本地功能回归；普通child compiler／extension／meter／harness及compaction编译证据已接入，普通回合thinking和overflow不确定调用停止／legacy有界恢复已验证；原生overflow成功恢复、repair完整parity、child记忆检索有效性和内部接口18/16门禁仍待完成。）
 - [ ] 建立 parent-child Run 关系、控制消息寻址和父子预算核算，避免重复计费统计。（真实 child Run、单次 Task 汇总、child token／cost 后续调用检查、mailbox 稀疏消费持久化与共享父名义额度原子准入已实现；额度的适配器覆盖及取消／重启／恢复完整验收仍待完成，不将名义额度表述为物理token／invoice硬上界。）
 - [ ] 持久化 child 的恢复所需状态，并接入现有 supervisor/mailbox。（私有 source／capsule-first CAS／消费证明、安全恢复授权、严格 tail 校验、原生只读 continuation 和具备完整原生证明的历史 v1 候选受限对账已实现；coder／工作区重建、未覆盖尾部及缺失证明的历史记录仍待完成。）
 - [ ] 覆盖父取消、子失败、父重启、结果返回与合并期间中断的语义。
