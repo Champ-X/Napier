@@ -27,6 +27,7 @@ import type { LocalStore } from "./store.js";
 type BrowserTakeoverStore = Pick<
   LocalStore,
   | "appendEvent"
+  | "appendEventOnce"
   | "getPlan"
   | "getThread"
   | "listEvents"
@@ -219,6 +220,7 @@ export class BrowserTakeoverService {
         ) {
           await this.outputArtifacts
             .register(owner, {
+              operationId: `browser:${result.details.sessionIdSha256}:${result.details.sessionOperation}`,
               action: request.action,
               path: request.path,
               pathSha256: result.details.file.pathSha256,

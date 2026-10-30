@@ -385,7 +385,7 @@ describe("RunResearchSourceManager", () => {
     fixture.store.close();
   });
 
-  it("keeps report verification successful when Plan settlement cannot apply", async () => {
+  it("registers verified report bytes when Plan settlement cannot apply", async () => {
     const noPlan = await reportArtifactFixture();
     const noPlanManager = new RunResearchSourceManager(
       { capturePage: vi.fn(async () => sourceCapture()) },
@@ -397,7 +397,7 @@ describe("RunResearchSourceManager", () => {
     );
     const noPlanReport = await verifyFixtureReport(noPlanManager, noPlan);
     expect(noPlanReport.details.reportArtifactRegistration).toBe(
-      "no_run_bound_plan",
+      "registered",
     );
     noPlan.store.close();
 
@@ -412,7 +412,7 @@ describe("RunResearchSourceManager", () => {
     );
     const mismatchReport = await verifyFixtureReport(mismatchManager, mismatch);
     expect(mismatchReport.details.reportArtifactRegistration).toBe(
-      "no_matching_artifact",
+      "registered",
     );
     expect(mismatch.store.getPlan(mismatch.planId).artifacts[0]?.status).toBe(
       "expected",

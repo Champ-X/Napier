@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { builtInToolEffect } from "../src/agent-tool-effects.js";
 import { TOOL_INVOCATION_EXPERIMENT_TOOLS } from "../src/tool-invocation-capsule.js";
-import { webFetchSaveToolCallArgumentsLedgerProjection } from "../src/web-fetch-save-tool.js";
+import {
+  createWebFetchSaveTool,
+  webFetchSaveToolCallArgumentsLedgerProjection,
+} from "../src/web-fetch-save-tool.js";
 
 describe("Web Fetch save tool policy evidence", () => {
   it("classifies raw Source delivery as a write", () => {
@@ -43,4 +46,23 @@ describe("Web Fetch save tool policy evidence", () => {
     expect(serialized).not.toContain(path);
     expect(serialized).not.toContain("URL_MARKER");
   });
+});
+
+it("preserves the actual save tool invocation identity", async () => {
+  const execute = vi.fn(async () => {
+    throw new Error("stopped-before-network");
+  });
+  const owner = { threadId: "thread_save", runId: "run_save" };
+  const input = { url: "https://example.com/report.pdf", path: "report.pdf" };
+  const tool = createWebFetchSaveTool({ execute }, owner);
+  await expect(tool.execute("save-call-1", input)).rejects.toThrow(
+    "stopped-before-network",
+  );
+  expect(execute).toHaveBeenCalledWith(
+    owner,
+    input,
+    undefined,
+    undefined,
+    "save-call-1",
+  );
 });

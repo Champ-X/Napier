@@ -10,6 +10,8 @@ import {
   type RunEventDefinitionV1,
 } from "@napier/contracts";
 
+import { validToolFileReceipt } from "@napier/contracts/task-narrative";
+
 import { validToolOperationEventPayload } from "./tool-operation-event-validation.js";
 
 export type RunEventAdmissionPolicy = "run_active";
@@ -116,6 +118,10 @@ export function resolveRegisteredEventInput(
     );
   }
   const schemaVersion = input.schemaVersion ?? definition.schemaVersion;
+  const payload = definition.upcast(schemaVersion, input.payload);
+  if (input.type === "artifact.tool_file_verified" &&
+      (payload.threadId !== input.threadId || payload.runId !== input.runId))
+    throw new Error("Tool file receipt does not match its Run owner");
   return {
     ...input,
     admission:
@@ -124,7 +130,7 @@ export function resolveRegisteredEventInput(
         : (input.admission ?? definition.admission),
     visibility,
     schemaVersion: definition.schemaVersion,
-    payload: definition.upcast(schemaVersion, input.payload),
+    payload,
   };
 }
 
@@ -303,6 +309,7 @@ function uniqueEventTypes(
 function payloadValidator(
   type: RegisteredRunEventType,
 ): (payload: JsonValue) => payload is JsonObject {
+  if (type === "artifact.tool_file_verified") return validToolFileReceipt;
   if (type === "message.user") {
     return (payload): payload is JsonObject =>
       isJsonObject(payload) &&

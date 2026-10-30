@@ -6,6 +6,7 @@ import {
   taskRunProgress,
   type TaskNarrativeEventState,
 } from "./task-narrative-event-state.js";
+import { projectToolFileDeliverables } from "./task-tool-file.js";
 import { projectTaskDeliverables } from "./task-deliverables.js";
 import { taskOutcomeFacts } from "./task-outcome-facts.js";
 
@@ -48,11 +49,13 @@ export function taskNarrativeView(
     preferredPaths: references,
     history: eventState.artifactHistory,
   });
+  const toolFiles = projectToolFileDeliverables(eventState.toolFiles, source.thread.id, source.runs)
+    .filter((entry) => !declared.some((formal) => formal.path === entry.path));
   const message = eventState.outputMessageByRun[runId];
   const candidates: NonNullable<TaskNarrativeProjection["deliverables"]> =
     message
       ? references
-          .filter((path) => !declared.some((entry) => entry.path === path))
+          .filter((path) => ![...declared, ...toolFiles].some((entry) => entry.path === path))
           .map((path, index) => ({
             path,
             source: "final_reference",
@@ -78,7 +81,7 @@ export function taskNarrativeView(
   return {
     ...narrative,
     ...facts,
-    deliverables: [...declared, ...candidates],
+    deliverables: [...declared, ...toolFiles, ...candidates],
     processItems: taskRunProgress(eventState, narrative.metricRunId)
       .completedItems,
   };

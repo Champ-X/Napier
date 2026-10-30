@@ -300,7 +300,7 @@ export const TASK_NARRATIVE_PROJECTION: KernelProjectionDefinition<
   TaskNarrativeEventState
 > = {
   id: "task.narrative",
-  version: 5,
+  version: 6,
   init: () => createTaskNarrativeEventState(),
   apply: applyTaskNarrativeEvent,
   view: (state) => structuredClone(state),

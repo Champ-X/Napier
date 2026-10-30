@@ -92,6 +92,7 @@ export class RunResearchSourceManager {
     owner: BrowserSessionOwner,
     request: ResearchSourceRequest,
     signal?: AbortSignal,
+    operationId = createId("researchop"),
   ): Promise<ResearchSourceResult> {
     const key = ownerKey(owner);
     const cancellation = this.runCancellation(key);
@@ -119,7 +120,7 @@ export class RunResearchSourceManager {
             return this.cite(key, owner, request);
           }
           if (request.action === "verify_report") {
-            return this.verifyReport(key, owner, request, operationSignal);
+            return this.verifyReport(key, owner, request, operationId, operationSignal);
           }
           return this.list(key);
         },
@@ -316,6 +317,7 @@ export class RunResearchSourceManager {
     key: string,
     owner: BrowserSessionOwner,
     request: Extract<ResearchSourceRequest, { action: "verify_report" }>,
+    operationId: string,
     signal?: AbortSignal,
   ): Promise<ResearchSourceResult> {
     const run = this.runs.get(key);
@@ -336,6 +338,7 @@ export class RunResearchSourceManager {
     const registration = await this.reportArtifacts.register(
       owner,
       verification,
+      operationId,
     );
     return verifiedResearchReportResult({
       report: verification,

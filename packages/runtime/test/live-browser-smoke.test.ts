@@ -501,6 +501,7 @@ describeLive("live controlled Browser Session smoke", () => {
         {
           action: "save_screenshot",
           path: "browser-live.png",
+          operationId: `browser:${saved.details.sessionIdSha256}:${saved.details.sessionOperation}`,
           pathSha256: saved.details.file!.pathSha256,
           fileSha256: saved.details.file!.fileSha256,
           fileBytes: saved.details.file!.fileBytes,

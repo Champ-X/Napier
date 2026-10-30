@@ -1,3 +1,4 @@
+import type { ToolFileReceiptPayload } from "./task-tool-file-receipt.js";
 import { RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 } from "./run-event-domain-definitions-v1.js";
 import { RUN_EVENT_TOOL_DEFINITION_GROUPS_V1 } from "./run-event-tool-definitions-v1.js";
 
@@ -419,6 +420,7 @@ export interface ToolOperationEffectIndeterminatePayloadV1 extends ToolOperation
 }
 
 interface CoreRunEventMap {
+  "artifact.tool_file_verified": ToolFileReceiptPayload;
   "message.user": MessageUserPayloadV1;
   "message.assistant": MessageAssistantPayloadV1;
   "run.progress.message": RunProgressMessagePayloadV1;

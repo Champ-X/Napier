@@ -48,7 +48,7 @@ function defineEventGroup<
 
 export const RUN_EVENT_DOMAIN_DEFINITION_GROUPS_V1 = [
   defineEventGroup({
-    activeRunTypes: [],
+    activeRunTypes: ["artifact.tool_file_verified"],
     runAnyTypes: [
       "artifact.data_profile_verified",
       "artifact.data_profiled",

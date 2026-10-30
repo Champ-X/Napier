@@ -21,6 +21,7 @@ export async function settleBrowserToolOutput(input: {
   }
   const registration = await input.registrar
     .register(input.owner, {
+      operationId: `browser:${input.result.details.sessionIdSha256}:${input.result.details.sessionOperation}`,
       action: input.request.action,
       path: input.request.path,
       pathSha256: input.result.details.file.pathSha256,
@@ -31,7 +32,7 @@ export async function settleBrowserToolOutput(input: {
       status: "failed" as const,
       reason: "artifact_registration_failed" as const,
     }));
-  return `${input.result.output}\nPlan Artifact: ${
+  return `${input.result.output}\n${"planId" in registration && registration.planId ? "Plan Artifact" : "Tool file"}: ${
     registration.status === "registered"
       ? "verified"
       : `not verified (${registration.reason})`

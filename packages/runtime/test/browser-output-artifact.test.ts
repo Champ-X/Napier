@@ -30,6 +30,7 @@ describe("Browser output Plan Artifact registration", () => {
     );
 
     const registration = await registrar.register(fixture.owner, {
+      operationId: "screenshot-one",
       action: "save_screenshot",
       path: "artifacts/browser.png",
       pathSha256: sha256("artifacts/browser.png"),
@@ -70,14 +71,14 @@ describe("Browser output Plan Artifact registration", () => {
     fixture.store.close();
   });
 
-  it("skips without a Run-bound Plan or exact declared path", async () => {
+  it("rejects unverified files without a Run-bound Plan or exact declared path", async () => {
     const noPlan = await createFixture();
     const noPlanRegistration = await new BrowserOutputArtifactRegistrar(
       noPlan.store,
     ).register(noPlan.owner, output("downloads/report.pdf"));
     expect(noPlanRegistration).toEqual({
-      status: "skipped",
-      reason: "no_run_bound_plan",
+      status: "failed",
+      reason: "artifact_registration_failed",
     });
     noPlan.store.close();
 
@@ -86,9 +87,8 @@ describe("Browser output Plan Artifact registration", () => {
       mismatch.store,
     ).register(mismatch.owner, output("artifacts/other.png"));
     expect(mismatchRegistration).toEqual({
-      status: "skipped",
-      reason: "no_matching_artifact",
-      planId: mismatch.planId,
+      status: "failed",
+      reason: "artifact_registration_failed",
     });
     expect(mismatch.store.getPlan(mismatch.planId).artifacts[0]?.status).toBe(
       "expected",
@@ -137,6 +137,7 @@ describe("Browser output Plan Artifact registration", () => {
 
 function output(path: string) {
   return {
+    operationId: "download-one",
     action: "download" as const,
     path,
     pathSha256: sha256(path),

@@ -2,6 +2,8 @@ import type { RunEvent } from "./execution-core.js";
 import { taskDeliverableReferences } from "./task-deliverable-references.js";
 import { taskArtifactHistoryEvent, type TaskArtifactHistoryEvent } from "./task-artifact-history.js";
 
+import { taskToolFileReceipt, type TaskToolFileReceipt } from "./task-tool-file.js";
+
 interface ToolCallProgress {
   toolName: string;
   startedSeq?: number;
@@ -23,6 +25,7 @@ export interface TaskNarrativeEventState {
   outputReferencesByRun: Record<string, string[]>;
   outputMessageByRun: Record<string, { id: string; createdAt: string }>;
   artifactHistory: TaskArtifactHistoryEvent[];
+  toolFiles: TaskToolFileReceipt[];
 }
 
 const TOOL_EVENT = /^tool\.(started|completed|failed|blocked)$/u;
@@ -34,6 +37,7 @@ export function createTaskNarrativeEventState(): TaskNarrativeEventState {
     outputReferencesByRun: {},
     outputMessageByRun: {},
     artifactHistory: [],
+    toolFiles: [],
   };
 }
 
@@ -42,6 +46,8 @@ export function applyTaskNarrativeEvent(
   event: RunEvent,
 ): TaskNarrativeEventState {
   const next = structuredClone(state);
+  const file = taskToolFileReceipt(event);
+  if (file && !next.toolFiles.some((entry) => entry.eventId === file.eventId)) next.toolFiles.push(file);
   applyToolProgress(next, event);
   applyDecisionProgress(next, event);
   const artifact = taskArtifactHistoryEvent(event);

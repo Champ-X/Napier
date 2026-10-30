@@ -68,6 +68,7 @@ export function createWebFetchSaveTool(
           input,
           signal,
           journal?.observer(toolCallId),
+          toolCallId,
         );
         return {
           content: [{ type: "text", text: result.output }],

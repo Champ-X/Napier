@@ -33,6 +33,7 @@ describe("Browser Agent file output settlement", () => {
     expect(registrar.register).toHaveBeenCalledWith(
       { threadId: "thread_download", runId: "run_download" },
       {
+        operationId: `browser:${"d".repeat(64)}:2`,
         action: "download",
         path: "artifacts/archive.zip",
         pathSha256: "a".repeat(64),
@@ -136,3 +137,37 @@ function details(
     crossOriginAuthorized: false,
   };
 }
+
+it("binds native Browser session operations independently and labels non-Plan verification accurately", async () => {
+  const registrar = {
+    register: vi.fn(async () => ({
+      status: "registered" as const,
+      reason: "artifact_registered" as const,
+    })),
+  };
+  const owner = { threadId: "thread_download", runId: "run_download" };
+  const request = {
+    action: "download" as const,
+    target: { ref: "e1" },
+    path: "artifacts/archive.zip",
+  };
+  const result = downloadResult();
+  for (const operation of [2, 3, 2]) {
+    const text = await settleBrowserToolOutput({
+      owner,
+      request,
+      result: {
+        ...result,
+        details: { ...result.details, sessionOperation: operation },
+      },
+      registrar,
+    });
+    expect(text).toContain("Tool file: verified");
+    expect(registrar.register).toHaveBeenLastCalledWith(
+      owner,
+      expect.objectContaining({
+        operationId: `browser:${"d".repeat(64)}:${operation}`,
+      }),
+    );
+  }
+});

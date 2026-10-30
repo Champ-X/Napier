@@ -1,5 +1,8 @@
 import type { ThreadDetail } from "@napier/contracts";
-import { taskArtifactBinding } from "@napier/contracts/task-narrative";
+import {
+  taskArtifactBinding,
+  toolFileDeliverableMatches,
+} from "@napier/contracts/task-narrative";
 
 import { isArtifactManifestEntry } from "./conversation-artifacts-protocol";
 
@@ -216,6 +219,7 @@ function nonNegativeInteger(value: unknown): boolean {
 }
 
 function deliverableSource(item: Record<string, unknown>): boolean {
+  if (item["source"] === "tool_file") return toolFileDeliverableMatches(item);
   if (item["source"] === "plan")
     return (
       typeof item["planId"] === "string" &&

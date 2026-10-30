@@ -199,6 +199,7 @@ describe("research_source Agent tool", () => {
       { threadId: "thread_research", runId: "run_research" },
       { action: "capture", maxChars: 12_000 },
       undefined,
+      "call_research",
     );
   });
 

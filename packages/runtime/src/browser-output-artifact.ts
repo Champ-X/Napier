@@ -10,6 +10,7 @@ type BrowserOutputArtifactStore = RunBoundFileArtifactStore &
   Pick<LocalStore, "workspaceRoot">;
 
 export interface BrowserOutputArtifact {
+  operationId: string;
   path: string;
   pathSha256: string;
   fileSha256: string;
@@ -33,6 +34,10 @@ export class BrowserOutputArtifactRegistrar {
   ): Promise<BrowserOutputArtifactRegistration> {
     validateOutput(output);
     return this.files.register(owner, {
+      operationId: output.operationId,
+      toolName: "browser",
+      action: output.action,
+      materialization: "produced",
       path: output.path,
       fileSha256: output.fileSha256,
       fileBytes: output.fileBytes,

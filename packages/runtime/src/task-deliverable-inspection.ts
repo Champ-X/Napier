@@ -2,7 +2,7 @@ import { constants, type Stats } from "node:fs";
 import { lstat, open, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { ThreadDetail } from "@napier/contracts";
-import { taskArtifactBinding } from "@napier/contracts/task-narrative";
+import { taskArtifactBinding, toolFileDeliverableMatches } from "@napier/contracts/task-narrative";
 import { sha256 } from "./ed25519.js";
 import { isPathInsideWorkspace } from "./policy.js";
 
@@ -13,6 +13,15 @@ type FileObservation = Omit<Observation, "source" | "bindingSha256">;
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 32 * 1024 * 1024;
 const MAX_FILE_CHECKS = 64;
+
+/** Bounded native-file observation, shared by registration and response inspection. */
+export async function inspectWorkspaceFile(workspaceRoot: string, value: string): Promise<FileObservation> {
+  const root = await realpath(workspaceRoot).catch(() => undefined);
+  if (!root) return unchecked("workspace_unavailable");
+  const target = candidatePath(value, workspaceRoot, root);
+  if (!target) return unchecked("unsafe_path");
+  return (await inspectFile(root, target, MAX_FILE_BYTES)).observed;
+}
 
 /** Request-time observations only: never certify creation or future immutability.
  * File I/O is async and bounded by count/bytes; the workspace is never scanned. */
@@ -34,6 +43,7 @@ export async function inspectTaskDeliverables(
     remainingChecks = MAX_FILE_CHECKS;
   for (const entry of narrative.deliverables ?? []) {
     const formal = entry.source === "plan";
+    if (entry.source === "tool_file" && !toolFileDeliverableMatches(entry)) continue;
     if (
       !formal &&
       (!entry.sourceEventId ||
@@ -58,7 +68,8 @@ export async function inspectTaskDeliverables(
       observed = result.observed;
       remainingBytes -= result.bytesRead;
     }
-    if (formal) {
+    if (formal || entry.source === "tool_file") {
+      known.add(path.resolve(workspaceRoot ?? ".", entry.path));
       deliverables.push(observeDeclared(entry, observed));
     } else if (observed.status === "observed" && root && target) {
       known.add(path.resolve(workspaceRoot!, entry.path));

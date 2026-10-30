@@ -1,3 +1,4 @@
+import type { ToolFileReceiptPayload } from "./task-tool-file-receipt.js";
 import type { ExecutionPlan } from "./execution-plan-v1.js";
 import type { ArtifactManifestEntry } from "./execution-workflows.js";
 import { canonical, sha256 } from "./skill-load-validation.js";
@@ -41,7 +42,8 @@ export interface TaskDeliverable {
   planId?: string;
   planRevision?: number;
   artifact: ArtifactManifestEntry;
-  source: "plan" | "final_reference";
+  source: "plan" | "final_reference" | "tool_file";
+  toolFile?: ToolFileReceiptPayload;
   sourceEventId?: string;
   accessibility: "unchecked" | "available" | "missing" | "drifted";
   verification: "unverified" | "integrity_recorded" | "integrity_observed";
@@ -58,6 +60,7 @@ export interface TaskDeliverable {
 export function taskArtifactBinding(entry: TaskDeliverable): string {
   return sha256(
     canonical({
+      ...(entry.source === "tool_file" ? { source: entry.source, sourceEventId: entry.sourceEventId, toolFile: entry.toolFile } : {}),
       planId: entry.planId,
       planRevision: entry.planRevision,
       path: entry.path,

@@ -29,10 +29,15 @@ export class ResearchReportArtifactRegistrar {
   async register(
     owner: BrowserSessionOwner,
     report: VerifiedResearchReportFile,
+    operationId: string,
   ): Promise<ResearchReportArtifactRegistration | undefined> {
     if (!this.files) return undefined;
     try {
       const result = await this.files.register(owner, {
+        operationId,
+        toolName: "research_source",
+        action: "verify_report",
+        materialization: "observed",
         path: report.path,
         fileSha256: report.fileSha256,
         fileBytes: report.fileBytes,

@@ -1,5 +1,6 @@
 import { Readable } from "node:stream";
 
+import { createId } from "./ids.js";
 import { sha256 } from "./ed25519.js";
 import { PublicHttpClient } from "./public-http-client.js";
 import {
@@ -71,6 +72,7 @@ export interface WebFetchSaveExecutor {
     request: WebFetchSaveRequest,
     signal?: AbortSignal,
     operations?: ToolOperationObserver,
+    operationId?: string,
   ): Promise<WebFetchSaveResult>;
 }
 
@@ -100,6 +102,7 @@ export class RunWebFetchSaveManager implements WebFetchSaveExecutor {
     request: WebFetchSaveRequest,
     signal: AbortSignal = new AbortController().signal,
     operations?: ToolOperationObserver,
+    operationId = createId("websave"),
   ): Promise<WebFetchSaveResult> {
     const target = await executeSaveOperation(
       operations,
@@ -258,6 +261,10 @@ export class RunWebFetchSaveManager implements WebFetchSaveExecutor {
       ),
       () =>
         this.files.register(owner, {
+          operationId,
+          toolName: "web_fetch",
+          action: "save",
+          materialization: "produced",
           path: file.path,
           fileSha256: file.fileSha256,
           fileBytes: file.fileBytes,
