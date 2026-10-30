@@ -1,0 +1,132 @@
+{
+  "verifierSha256": "a868e6725a38cd5f208a35b164a0a3f338cf384b9cb3dc3ea87c83d8633dd798",
+  "checks": [
+    {
+      "check": "portable from /",
+      "exitCode": 0,
+      "expectedRejection": null,
+      "output": {
+        "archiveMembers": 228,
+        "sourceFiles": 30,
+        "ownerTests": 333,
+        "nativeAfterCases": 3,
+        "strictNewTests": "passed",
+        "strictExistingDiagnostics": 4,
+        "architectureFindings": 7,
+        "apiFindings": 4,
+        "workspaceCompared": false,
+        "rootIntegration": "recorded",
+        "sourceCommit": "a52fe203348ac515bfbedb866f53346350890e61",
+        "rootTests": 46,
+        "rootOwnerOverlap": 38,
+        "consumerTests": 39,
+        "consumerOwnerOverlap": 15,
+        "browserV2Recorded": false,
+        "browserV3Recorded": true,
+        "consumerCommit": "7cb5e7ffd2c5b6b2e983af310ceed1bde4687650",
+        "rootConsumerTests": 20,
+        "consumerSourceFiles": 5
+      }
+    },
+    {
+      "check": "current main source35",
+      "exitCode": 0,
+      "expectedRejection": null,
+      "output": {
+        "archiveMembers": 228,
+        "sourceFiles": 30,
+        "ownerTests": 333,
+        "nativeAfterCases": 3,
+        "strictNewTests": "passed",
+        "strictExistingDiagnostics": 4,
+        "architectureFindings": 7,
+        "apiFindings": 4,
+        "workspaceCompared": true,
+        "rootIntegration": "recorded",
+        "sourceCommit": "a52fe203348ac515bfbedb866f53346350890e61",
+        "rootTests": 46,
+        "rootOwnerOverlap": 38,
+        "consumerTests": 39,
+        "consumerOwnerOverlap": 15,
+        "browserV2Recorded": false,
+        "browserV3Recorded": true,
+        "consumerCommit": "7cb5e7ffd2c5b6b2e983af310ceed1bde4687650",
+        "rootConsumerTests": 20,
+        "consumerSourceFiles": 5
+      }
+    },
+    {
+      "check": "owner archive corruption rejected",
+      "exitCode": 1,
+      "expectedRejection": "Archive binding mismatch",
+      "output": "ValueError: Archive binding mismatch"
+    },
+    {
+      "check": "root archive corruption rejected",
+      "exitCode": 1,
+      "expectedRejection": "Supplement archive mismatch",
+      "output": "ValueError: Supplement archive mismatch"
+    },
+    {
+      "check": "consumer archive corruption rejected",
+      "exitCode": 1,
+      "expectedRejection": "Supplement archive mismatch",
+      "output": "ValueError: Supplement archive mismatch"
+    },
+    {
+      "check": "root member corruption rejected",
+      "exitCode": 1,
+      "expectedRejection": "Supplement member hash mismatch",
+      "output": "ValueError: Supplement member hash mismatch"
+    },
+    {
+      "check": "wrong root overlap rejected",
+      "exitCode": 1,
+      "expectedRejection": "Root/owner test overlap mismatch",
+      "output": "ValueError: Root/owner test overlap mismatch"
+    },
+    {
+      "check": "wrong Browser v3 expected digest rejected",
+      "exitCode": 1,
+      "expectedRejection": "Browser response binding mismatch",
+      "output": "ValueError: Browser response binding mismatch"
+    },
+    {
+      "check": "altered current consumer source rejected",
+      "exitCode": 1,
+      "expectedRejection": "Current consumer source differs",
+      "output": "ValueError: Current consumer source differs: apps/web/src/tool-file-preview-binding.ts"
+    },
+    {
+      "check": "portable restored and remains read-only",
+      "exitCode": 0,
+      "expectedRejection": null,
+      "output": {
+        "archiveMembers": 228,
+        "sourceFiles": 30,
+        "ownerTests": 333,
+        "nativeAfterCases": 3,
+        "strictNewTests": "passed",
+        "strictExistingDiagnostics": 4,
+        "architectureFindings": 7,
+        "apiFindings": 4,
+        "workspaceCompared": false,
+        "rootIntegration": "recorded",
+        "sourceCommit": "a52fe203348ac515bfbedb866f53346350890e61",
+        "rootTests": 46,
+        "rootOwnerOverlap": 38,
+        "consumerTests": 39,
+        "consumerOwnerOverlap": 15,
+        "browserV2Recorded": false,
+        "browserV3Recorded": true,
+        "consumerCommit": "7cb5e7ffd2c5b6b2e983af310ceed1bde4687650",
+        "rootConsumerTests": 20,
+        "consumerSourceFiles": 5
+      }
+    }
+  ],
+  "archiveCodeExecuted": false,
+  "archiveExtractedToDisk": false,
+  "workingDirectory": "/",
+  "portablePath": "/tmp/napier-g01-docs-portable-final-20261030"
+}

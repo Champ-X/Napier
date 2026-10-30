@@ -1,0 +1,2032 @@
+{
+  "kind": "napier.tool-file-deliverables-regression",
+  "schemaVersion": 1,
+  "sourceCommit": "a52fe203348ac515bfbedb866f53346350890e61",
+  "ownerEvidence": {
+    "baseHead": "49a91de9b8d3871ecf1c9e40761086598dc08595",
+    "manifestSha256": "e389bc19bef2c8fc603019d79b428ed7e6f4cb59afddf8e07652d595f165352c",
+    "patchSha256": "8ed863285837b9d48c5f190db4b12d672d66a97730d9c72292d667beee5cbf4b",
+    "sourceFiles": 30,
+    "testFiles": 35,
+    "testCount": 333,
+    "testCases": [
+      {
+        "file": "apps/web/test/task-completion-summary.test.ts",
+        "name": "Task completion summary accepts projected output paths without rescanning artifacts",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-completion-summary.test.ts",
+        "name": "Task completion summary an empty active projection does not hide artifacts across plans or truncate the third output",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-completion-summary.test.ts",
+        "name": "Task completion summary binds projected paths back to their Artifact and plan when available",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-completion-summary.test.ts",
+        "name": "Task completion summary does not reopen an observed mismatched output through legacy path fallback",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-completion-summary.test.ts",
+        "name": "Task completion summary does not reopen an observed missing output through legacy path fallback",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-completion-summary.test.ts",
+        "name": "Task completion summary selects a continuation's current version, then refuses to resurrect an unavailable one",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-completion-summary.test.ts",
+        "name": "Task completion summary shows recent authoritative outputs without missing artifacts",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-narrative-protocol.test.ts",
+        "name": "Task Narrative protocol accepts the bounded server projection and rejects malformed items",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-narrative-protocol.test.ts",
+        "name": "Task Narrative protocol validates observation and historical metadata bindings while retaining legacy snapshots",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-narrative-protocol.test.ts",
+        "name": "Task Narrative protocol validates optional recorder identity and time while accepting legacy history",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/task-narrative-protocol.test.ts",
+        "name": "Task Narrative protocol validates the execution, acceptance and deliverable facts independently",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/tool-file-deliverable-consumers.test.ts",
+        "name": "Tool file deliverable consumers accepts a bound browser/download receipt with produced provenance",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/tool-file-deliverable-consumers.test.ts",
+        "name": "Tool file deliverable consumers accepts a bound browser/save_screenshot receipt with produced provenance",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/tool-file-deliverable-consumers.test.ts",
+        "name": "Tool file deliverable consumers accepts a bound research_source/verify_report receipt with observed provenance",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/tool-file-deliverable-consumers.test.ts",
+        "name": "Tool file deliverable consumers accepts a bound web_fetch/save receipt with produced provenance",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/tool-file-deliverable-consumers.test.ts",
+        "name": "Tool file deliverable consumers opens a current tool output with its recorded digest and no Plan authority",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/tool-file-deliverable-consumers.test.ts",
+        "name": "Tool file deliverable consumers rejects detached receipt, artifact, provenance and Plan identities",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/tool-file-deliverable-consumers.test.ts",
+        "name": "Tool file deliverable consumers retains a mismatched receipt in the protocol and blocks output-path fallback",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "apps/web/test/tool-file-deliverable-consumers.test.ts",
+        "name": "Tool file deliverable consumers retains a missing receipt in the protocol and blocks output-path fallback",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator accepts a schema-V1 projection for the current contract version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects empty Agent identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects empty readiness detail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects empty readiness identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects empty restore Agent identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects extra operation key",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects extra readiness key",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects extra restore key",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects extra top-level key",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects fractional Agent revision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects fractional contract version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects malformed legacy digest",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects malformed restore currentManagedStateSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects malformed restore diffSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects malformed restore recommendation digest",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects malformed restore targetManagedStateSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects mismatched restore contract version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects mismatched upgrade Agent revision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects mismatched upgrade overrides",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing operation effect",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing operation field",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing operation operation",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing operation risk",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing operation value",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing readiness allowedByPolicy",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing readiness configured",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing readiness detail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing readiness exposed",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing readiness id",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing readiness status",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore agentId",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore agentRevision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore contractId",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore contractVersion",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore currentManagedStateSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore diffSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore operations",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore recommendationSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore schemaVersion",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing restore targetManagedStateSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level agentId",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level agentRevision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level configuredSkills",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level configuredSubagents",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level configuredTools",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level contractId",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level contractVersion",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level driftState",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level explicitOverrideFields",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level kind",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level ownership",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level projectionSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level readiness",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level recommendationSha256",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level restorePreview",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level runtimeExposedTools",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level schemaVersion",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects missing top-level toolPolicy",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-advancing upgrade version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-array readiness",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-array restore operations",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-boolean readiness configured",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-boolean readiness exposed",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-boolean readiness policy",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-object restore preview",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-string configuredSkills",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-string configuredSubagents",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-string configuredTools",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-string operation value",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects non-string runtimeExposedTools",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects sparse configuredSkills",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects sparse configuredSubagents",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects sparse configuredTools",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects sparse explicit override fields",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects sparse readiness",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects sparse restore operations",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects sparse runtimeExposedTools",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown drift state",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown explicit override field",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown operation discriminant",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown operation effect",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown operation field",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown operation risk",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown ownership",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown readiness status",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unknown tool policy",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unsafe Agent revision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects unsafe restore Agent revision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects uppercase recommendation digest",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects wrong contract identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects wrong kind discriminant",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects wrong restore contract identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects wrong restore schema version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects wrong schema version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects zero Agent revision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects zero contract version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects zero restore Agent revision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/agent-capability-contract.test.ts",
+        "name": "effective Agent capability projection validator rejects zero restore contract version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/context-compaction.test.ts",
+        "name": "context compaction contract binds preview content and rejects extra fields",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/context-compaction.test.ts",
+        "name": "context compaction contract validates bounded requests",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/context-compaction.test.ts",
+        "name": "context compaction contract validates the continuity-bound fork checkpoint",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/default-run-model.test.ts",
+        "name": "default Run model recommendation does not trust configured catalog rows without an active credential reference",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/default-run-model.test.ts",
+        "name": "default Run model recommendation preserves custom Agents and an explicit model revision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/default-run-model.test.ts",
+        "name": "default Run model recommendation uses the first explicitly configured live model for the untouched seed Agent",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract decodes UTF-8 and BOM-marked UTF-16 without changing content",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract keeps binary and unknown types out of the text decoder",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes go in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes jsonl in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes markdown in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes ndjson in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes py in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes sh in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes svg in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes tsv in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract recognizes tsx in either file preview path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract rejects malformed encodings and binary NUL without silent replacement",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract treats prototype-like extension CONSTRUCTOR as an unknown binary format",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract treats prototype-like extension __proto__ as an unknown binary format",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract treats prototype-like extension constructor as an unknown binary format",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/file-preview.test.ts",
+        "name": "file preview format contract treats prototype-like extension toString as an unknown binary format",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/management-http.test.ts",
+        "name": "management HTTP contracts guards the complete finite code set",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/management-http.test.ts",
+        "name": "management HTTP contracts keeps every public error-data variant serializable and bounded",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/management-http.test.ts",
+        "name": "management HTTP contracts maps every explicit and fallback status",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/manual-run-recovery.test.ts",
+        "name": "manual Run recovery accepts interrupted and resumable failed settlements only in their matching Thread states",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/manual-run-recovery.test.ts",
+        "name": "manual Run recovery keeps Workflow and experiment settlements out of manual recovery",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/research-source-evidence.test.ts",
+        "name": "Research Source evidence parser accepts current static, unavailable, used and legacy Web Fetch provenance",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/research-source-evidence.test.ts",
+        "name": "Research Source evidence parser normalizes Web Fetch citation and every report registration value",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/research-source-evidence.test.ts",
+        "name": "Research Source evidence parser normalizes the exact list, Browser capture and Browser cite members",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/research-source-evidence.test.ts",
+        "name": "Research Source evidence parser rejects unknown keys, mixed branches, partial fallback and invalid ranges",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/research-source-evidence.test.ts",
+        "name": "Research Source evidence parser requires Web provenance to cover every captured Source line in raw and normalized evidence",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-lifecycle.test.ts",
+        "name": "Skill lifecycle projection contract accepts selected, unavailable, and failed states but rejects false proof",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-lifecycle.test.ts",
+        "name": "Skill lifecycle projection contract accepts source-bound loaded and evidence-backed applied states",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load-standard.test.ts",
+        "name": "standard Skill load contracts accepts fail-closed cross-root conflict evidence",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load-standard.test.ts",
+        "name": "standard Skill load contracts accepts source-explicit user selection and receipt",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load-standard.test.ts",
+        "name": "standard Skill load contracts binds request source, roots, entries and failure relations",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load.test.ts",
+        "name": "Skill load contracts accepts only exact request and bounded catalog failures",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load.test.ts",
+        "name": "Skill load contracts binds ordered requests, availability and the immutable manifest",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load.test.ts",
+        "name": "Skill load contracts locks provider-safe naming and the exact failure vocabulary",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load.test.ts",
+        "name": "Skill load contracts projects selected and loaded only from a hash-bound same-Run chain",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load.test.ts",
+        "name": "Skill load contracts rejects adversarially resealed relational catalog and manifest drift",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load.test.ts",
+        "name": "Skill load contracts rejects crossed Skill load lifecycles instead of borrowing a later terminal",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-load.test.ts",
+        "name": "Skill load contracts uses Node-compatible code-unit canonical SHA-256 guards",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-resource.test.ts",
+        "name": "Skill resource contracts accepts a source-bound user resource receipt",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-resource.test.ts",
+        "name": "Skill resource contracts accepts bounded typed failures without retaining invalid paths",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/skill-resource.test.ts",
+        "name": "Skill resource contracts rejects traversal, hidden, binary and over-deep resource paths",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/tool-protocol-projection.test.ts",
+        "name": "Tool Protocol durable projections fails closed for missing, injected, or malformed protocol metadata",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/contracts/test/tool-protocol-projection.test.ts",
+        "name": "Tool Protocol durable projections validates the canonical current projection and caller expectations",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-output-artifact.test.ts",
+        "name": "Browser output Plan Artifact registration registers an exact declared file on the current Run-bound Plan",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-output-artifact.test.ts",
+        "name": "Browser output Plan Artifact registration rejects unverified files without a Run-bound Plan or exact declared path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-output-artifact.test.ts",
+        "name": "Browser output Plan Artifact registration repairs a one-time standard Artifact event commit gap",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-takeover.test.ts",
+        "name": "Browser takeover binds visual clicks to the exact live image and hashes coordinates",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-takeover.test.ts",
+        "name": "Browser takeover records downloaded file evidence without target path or content",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-takeover.test.ts",
+        "name": "Browser takeover records screenshot output by path and file hash without the raw path",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-takeover.test.ts",
+        "name": "Browser takeover rejects a visual click when the displayed live image is stale",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-takeover.test.ts",
+        "name": "Browser takeover rejects an inactive-tab close that changes the active tab",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-takeover.test.ts",
+        "name": "Browser takeover serializes resume behind an in-flight takeover action",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-takeover.test.ts",
+        "name": "Browser takeover uses a paused fresh snapshot and records type values by hash only",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-takeover.test.ts",
+        "name": "Browser takeover validates exact tab lifecycle transitions and stale tab bindings",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-tool-output.test.ts",
+        "name": "Browser Agent file output settlement keeps output bytes successful when registration skips or fails",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-tool-output.test.ts",
+        "name": "Browser Agent file output settlement registers confirmed downloads and reports standard Plan settlement",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/browser-tool-output.test.ts",
+        "name": "binds native Browser session operations independently and labels non-Plan verification accurately",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/conversation-artifact-version-binding.test.ts",
+        "name": "does not join an old event to a newer manifest after a state-only update, warm or cold",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/conversation-artifact-version-binding.test.ts",
+        "name": "keeps missing-current-event semantics for identical same-clock metadata at a new revision",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/conversation-artifact-version-binding.test.ts",
+        "name": "rebuilds the missing version binding from SQLite after closing and reopening the Store",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/conversation-artifact-version-binding.test.ts",
+        "name": "rejects a latest id-only assertion instead of attaching authoritative current metadata",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Active Plan projection matches canonical detail and advances only on the new event tail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Conversation Activity Events projection retains a bounded latest-call window and applies one event tail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Conversation Artifacts projection matches canonical detail and updates one artifact tail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Conversation Citations projection reuses a warm cache and applies one strict citation tail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Conversation Messages projection matches canonical detail and appends only the new message tail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Kernel projection registry invalidates cached state when a registered projection version increases",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Kernel projection registry rejects an incomplete tail instead of caching a false watermark",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Kernel projection registry removes owner-scoped definitions and cached state without residue",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Kernel projection registry replays cold state, reuses a warm watermark, and applies only the tail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Operator Decisions projection reuses cached strict decisions and applies one answer tail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Task narrative projection matches canonical detail and replays only the new event tail",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/kernel-projections.test.ts",
+        "name": "Thread summary projection matches the Store summary contract and follows trash visibility by tail replay",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification allows multiple current-Run citations for one exact claim line",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification binds exact claim lines and current workspace bytes",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification rejects 'claim drift'",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification rejects 'duplicate token'",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification rejects 'malformed token'",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification rejects 'mixed claims on one line'",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification rejects 'non-exact claim line'",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification rejects 'text after token'",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification rejects 'unknown token'",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-report-verification.test.ts",
+        "name": "Research report verification rejects stale, unsupported, escaping, and cancelled report reads",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity adopts and Replay-binds an immediate completed user continuation",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity binds Source context receipts to recovery Runs in Replay",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity continues across a recovery crash before the first Source tool call",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity does not advertise private Sources to automatic recovery",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity does not inherit Sources into an ordinary child Run",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity does not publish a Source when private capsule storage is full",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity fails closed when a private Source capsule is tampered",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity rejects a self-rehashed receipt that does not match its capsule",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity restores private Source state only into an interrupted recovery child",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-continuity.test.ts",
+        "name": "Research Source continuity restores private state from only the normalized public capsule address",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-tool.test.ts",
+        "name": "research_source Agent tool declares each new claim-to-range binding as a Run-local product",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-tool.test.ts",
+        "name": "research_source Agent tool is available under read-only policy while preserving report boundaries",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-tool.test.ts",
+        "name": "research_source Agent tool redacts Web Fetch Source IDs while retaining exact content bindings",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-tool.test.ts",
+        "name": "research_source Agent tool redacts claims, source text, URLs, and live output from Ledger projections",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-tool.test.ts",
+        "name": "research_source Agent tool redacts report paths while retaining expected file identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-source-tool.test.ts",
+        "name": "research_source Agent tool returns Source text only as live tool content",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager cancels active and queued captures without repopulating the Run",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager captures immutable page text and binds an exact range to a claim",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager enforces per-Run Source and citation limits",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager imports an exact same-Run Web Fetch Source and reuses citation semantics",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager isolates Sources by Run and removes live text at Run settlement",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager registers verified report bytes when Plan settlement cannot apply",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager rejects forged capture bindings, stale hashes, and invalid ranges",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager rejects incomplete or impossible Web Fetch fallback provenance",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager retains validated Browser fallback provenance on a fetched Research Source",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager settles only an exact Run-bound declared Markdown Artifact",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/research-sources.test.ts",
+        "name": "RunResearchSourceManager verifies one Markdown report against a Web Fetch-backed citation",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "deduplicates concurrent retries and never resurrects an older same-path version",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "keeps formal declarations authoritative and never borrows tool verification for a different identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "reconciles an acknowledged-late receipt append without duplicating its event",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "refuses a different file binding under the same actual operation identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "refuses mismatched bytes, escaping paths, symlinks, directories, and oversized files before any receipt",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "rejects a FIFO without waiting for a writer",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "rejects foreign, missing, terminal, and terminal-racing owners",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "rejects malformed or relabeled receipt envelopes and excludes foreign/child Runs",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "retains expected identity on changed or missing bytes in full and warm projections, even with a final reference",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "retains prior-Run receipts across continuation without adopting a new final-reference digest",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-bound-tool-file.test.ts",
+        "name": "selects the third real invocation for A to B to A, while retries keep their original event",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission accepts active Run events and omits the admission request from the Ledger",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission allows only one terminal outcome across independent Stores",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission applies the terminal fence to registered batch mutations",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission keeps terminal-transition admission aligned with the Run state machine",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission preserves explicit retrospective audit events after Run termination",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission preserves the pending operator decision named by terminal recovery evidence",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission projects the first terminal fence by sequence even from reversed replay input",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission rejects a fresh SQLite Run-head claim behind a terminal event while replaying an old claim",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission rejects a second terminal outcome while the Run snapshot is still active",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission rejects a stale writer after another Store terminates the Run",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission rejects centrally classified execution claims after Run termination",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission repairs an active snapshot from durable terminal evidence on reopen",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission resolves ordinary idempotent replay before the terminal fence across stale Stores",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-admission.test.ts",
+        "name": "Run event admission treats a durable terminal event as an immediate in-memory execution fence",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry accepts an explicit compatibility boundary",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry accepts an owned, versioned extension namespace",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry applies lifecycle admission from the event definition",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry materializes the onboarding seed through v1 schemas",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry persists resolved extension and compatibility events without reclassification",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry publishes versioned category and visibility metadata",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a compatibility event with an invalid boundary",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a compatibility event with an invalid category",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a compatibility event with an invalid reason",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a compatibility event with an invalid registered type",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a compatibility event with an invalid schema",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a compatibility event with an invalid visibility",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a registered event with an invalid category",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a registered event with an invalid nested payload",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a registered event with an invalid payload",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a registered event with an invalid payload fields",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a registered event with an invalid schema",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects a registered event with an invalid visibility",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects an extension event with an invalid category",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects an extension event with an invalid namespace",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects an extension event with an invalid owner",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects an extension event with an invalid payload",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects an extension event with an invalid payload",
+        "occurrence": 2,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects an extension event with an invalid schema",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects an extension event with an invalid visibility",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry rejects incomplete or overlapping event admission partitions",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry resolves registered events through their declared schema",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/run-event-registry.test.ts",
+        "name": "Run event registry validates the public progress-message privacy boundary",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/task-outcome-projection.test.ts",
+        "name": "Shared task facts a later cancelled or failed run cannot borrow an earlier success",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/task-outcome-projection.test.ts",
+        "name": "Shared task facts checks no-plan output references against the filesystem without promoting or exposing escaped files",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/task-outcome-projection.test.ts",
+        "name": "Shared task facts does not accept a completed run with an unfinished plan, on replay or cached projection",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/task-outcome-projection.test.ts",
+        "name": "Shared task facts keeps formal bindings for absolute aliases and ignores unreferenced workspace files",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/task-outcome-projection.test.ts",
+        "name": "Shared task facts keeps no-plan and failed-plan tasks unverified and tool counts out of results",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/task-outcome-projection.test.ts",
+        "name": "Shared task facts rejects an explicitly referenced FIFO without blocking task detail or cached projection",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles accepts only exact external Branch parent evidence",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles atomically imports every thread-owned record with remapped IDs and closed in-flight state",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles binds deterministic content and event hashes while excluding generation time",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles binds evaluation completion events to saved evaluation records",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles binds frozen Prompt Variable snapshots through portable replay",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles binds plan artifact events to the artifact manifest",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles rebinds Agent milestone evidence after portable event remapping",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles reconstructs a continued operator decision after Run ID remapping",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles rejects raw artifact preview text when bundle hashes are recomputed",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles rejects raw directory manifest entries when bundle hashes are recomputed",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles rejects tampered independent Advisor reviews and preserves valid receipts",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles revalidates Tool Loop Guard triggers through portable replay",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles rolls back the state and the entire event batch when import persistence fails",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/thread-bundles.test.ts",
+        "name": "thread replay bundles round-trips Agent profiles that enable LSP diagnostics",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/tool-file-native-projection.test.ts",
+        "name": "retains a real native workspace output after Browser output registration with no Plan",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/tool-file-native-projection.test.ts",
+        "name": "retains an actual research_source verify_report result without a Plan",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/tool-file-native-projection.test.ts",
+        "name": "retains distinct research tool invocation versions A to B to A and deduplicates an older call retry",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save-import.test.ts",
+        "name": "Web Fetch save private Source import boundary strips local-only Source state from imported save completions",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save-tool.test.ts",
+        "name": "Web Fetch save tool policy evidence classifies raw Source delivery as a write",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save-tool.test.ts",
+        "name": "Web Fetch save tool policy evidence redacts URL and workspace path from durable arguments",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save-tool.test.ts",
+        "name": "preserves the actual save tool invocation identity",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save.test.ts",
+        "name": "RunWebFetchSaveManager denies missing authority before network and refuses unsafe targets",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save.test.ts",
+        "name": "RunWebFetchSaveManager does not write when Source persistence fails",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save.test.ts",
+        "name": "RunWebFetchSaveManager rechecks Plan authority after Fetch and before writing bytes",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save.test.ts",
+        "name": "RunWebFetchSaveManager rejects an image extension that disagrees with its byte signature",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save.test.ts",
+        "name": "RunWebFetchSaveManager rejects extension mismatch and symlink parents without leaving bytes",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save.test.ts",
+        "name": "RunWebFetchSaveManager retains saved bytes when late Artifact settlement fails",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save.test.ts",
+        "name": "RunWebFetchSaveManager saves exact raw bytes and verifies the declared file Artifact",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-save.test.ts",
+        "name": "RunWebFetchSaveManager saves signature-verified raster images as Plan Artifacts",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-url-artifact.test.ts",
+        "name": "Web Fetch URL Plan Artifact registration registers exact normalized Source evidence on the current Run-bound Plan",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-url-artifact.test.ts",
+        "name": "Web Fetch URL Plan Artifact registration repairs an event commit gap and isolates persistent Store failure",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-url-artifact.test.ts",
+        "name": "Web Fetch URL Plan Artifact registration requires the declared URL to equal the authoritative final URL",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/web-fetch-url-artifact.test.ts",
+        "name": "Web Fetch URL Plan Artifact registration skips absent, mismatched, and non-URL declarations",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "name": "Workflow Artifact settlement blocks a file above the bounded Artifact hashing limit",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "name": "Workflow Artifact settlement completes only after a real write Tool creates and verifies the declared file",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "name": "Workflow Artifact settlement hashes directory contents and rejects a symlink-backed file",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "name": "Workflow Artifact settlement rehashes current bytes after the produced transition",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "name": "Workflow Artifact settlement repairs a durable verified state when its standard event append failed",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "name": "Workflow Artifact settlement resumes missing and drifted artifacts without rerunning completed nodes",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "name": "Workflow Artifact settlement settles the same declared file independently for concurrent Threads",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "packages/runtime/test/workflow-artifact-settlement.test.ts",
+        "name": "Workflow Artifact settlement stops between Artifact state transitions when cancellation arrives",
+        "occurrence": 1,
+        "status": "passed"
+      }
+    ],
+    "strictNewTests": 3,
+    "strictExistingDiagnostics": 4,
+    "architectureFindings": 7,
+    "apiFindings": 4,
+    "nodeVersion": "24.19.0"
+  },
+  "rootIntegration": {
+    "status": "recorded",
+    "file": "tool-file-deliverables-root-integration-2026-10-30.json",
+    "sha256": "30c37882dbd292b99dbdc65d47d4550d4dcb346bcec49434bc548b71588716e1",
+    "note": "Root46 overlap owner333; browser v2 retains pending-label bug; separate consumer39 and v3 recorded-label verification."
+  },
+  "evidenceBoundary": [
+    "333 owner cases are the current source-owner suite, not a sum of all historical runs.",
+    "Parameterized cases with equal titles retain their within-file occurrence identity.",
+    "The 228-member archive is reused byte-for-byte and includes rejected v1 plus all retained failing evidence.",
+    "No archive code is executed and no files are extracted by the reconciler.",
+    "Whole objective remains unverified; no live Browser provider, semantic entailment, or full G01 completion follows from file integrity.",
+    "Root46 overlaps owner333 by 38 identities. Consumer39 overlaps owner333 by 15; do not sum runs."
+  ]
+}

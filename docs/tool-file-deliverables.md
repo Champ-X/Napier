@@ -1,0 +1,58 @@
+# Verified tool-file deliverables
+
+Browser downloads/screenshots and Research Source report verification can now retain a verified workspace file as a TaskNarrative deliverable when no matching Run-bound Plan artifact can be settled. A final answer does not need to repeat the path. Full detail, warm-cache projection and reopened-store projection use the same durable receipt and current-file observation.
+
+Implementation commit: `a52fe203348ac515bfbedb866f53346350890e61` (30 files). The source-owner base is `49a91de9b8d3871ecf1c9e40761086598dc08595`; the root integration base is `5859766871835a6deb22a61c7b9d48e0dff40154`, with integrated source tree `5278fa2736f03a1fcaa9b166bc015bfb4f276782`. Root recorded unchanged hashes for 28 protected files and no push. The separate preview consumer is commit `7cb5e7ffd2c5b6b2e983af310ceed1bde4687650` (three production files and two new tests), based on the original source commit; its five hashes match the frozen candidate and the 28 protected files remain unchanged.
+
+## Identity and authority
+
+A typed `artifact.tool_file_verified` event binds the owning thread/Run, actual operation identity, relative path, byte count, SHA-256 and tool provenance. Browser output records produced bytes; Research Source records observation of an existing report. Neither establishes source authority, semantic entailment, creation by the Run in every case, or independent acceptance of the whole objective.
+
+The registrar checks a running owner and bounded native file bytes, then uses the active-Run ledger fence and an idempotency key scoped to owner, tool and operation. Browser identity comes from its native session hash and operation sequence. Research and Web Fetch save tools preserve their actual tool-call IDs; direct manager callers may supply an identity, otherwise a fresh invocation allocates one before execution. Reusing an operation with different bytes fails instead of silently recording another result.
+
+Receipts remain visible across primary-Run continuations. Per path, newer Run generation wins, then event sequence within the same Run. A retry of an older operation retains its original event sequence. Plan declarations take precedence without borrowing a different tool receipt's verification. Read-time inspection retains the receipt's expected digest: changed or missing files remain drifted or missing, and a final-answer reference cannot replace that identity with current bytes.
+
+The no-Plan fallback accepts regular files up to 8 MiB, safe relative paths and at most 64 segments. It rejects symlinks, special files, unstable reads and digest mismatches. Response inspection retains the existing 64-file/32-MiB total budget. `web_fetch.save` still requires Plan authority before network access or writing. This slice does not upgrade every legacy Plan settlement race or expose a complete tool-file byte archive. Objective status remains unverified.
+
+## Counterexamples and retained rejection
+
+Two native local probes originally produced verified files but no deliverables: the Browser production writer/registrar seam and the actual `research_source` capture/cite/verify-report tool path. Their final assistant answers contain no output paths. The corrected before probe fails both intended deliverable assertions; the earlier cleanup-obscured failure is retained too. The accepted implementation passes both, with equal full/warm/reopened views. The Browser probe does not invoke a live provider; research capture is a bounded local fixture. No external model/provider call is required.
+
+The first frozen implementation used digest-only receipt deduplication. Root review rejected it: three actual operations producing A→B→A created only two receipts and left B current. The failed oracle and exact rejected patch remain archived. The accepted operation identity produces three receipts; retrying the first call produces no fourth event and leaves the third current. The final native report includes this actual research-tool case. Report hashes vary between fixture runs because citation IDs are generated; each verification binds its own exact bytes.
+
+## Verification and remaining evidence
+
+The current source-owner suite passed **35 files / 333 test cases**. Contracts/Runtime compilation and Web type checking passed. All three new tests pass strict TypeScript checking. Checking all nine changed/new tests retains exactly four diagnostics from the six corresponding baseline tests under identical options: one unused import and three fixture literal widenings in `research-sources.test.ts`. These are unchanged baseline failures, not a complete strict pass.
+
+The source architecture audit retains seven findings and the public-API audit four. Architecture diagnostics are byte-identical to baseline; public-API observations and diagnostics also match. These gates did not pass. Tests used Node 24.19.0; the repository minimum remains Node >=22.19.0, with no new minimum-version/platform acceptance claim.
+
+The two original before cases, three final native cases, three portable probe reruns and historical suites must **not be added to 333**. Root integration passed **6 files / 46 cases**: 38 overlap the owner suite and eight belong to `task-deliverable-inspection.test.ts`. The consumer suite passed **5 files / 39 cases**: 15 overlap owner cases, 20 are new consumer cases and four are existing Inspector cases. Each suite is reported separately. The portable receipt retains `(file, fullName, occurrence)` identities, including repeated parameterized titles.
+
+Root Runtime/CLI/Server compilation and strict checking of two new Runtime tests plus one new Web test passed. The retained first harness failures were broad Vitest filters that found archived source tests, a mixed NodeNext strict configuration rejecting Web extensionless imports, and the first moved Web configuration failing to resolve `vite/client`; corrected exact test includes and package-specific configurations required no source changes. The live Browser smoke test received a required identity field but was not executed in the source-owner verification.
+
+## Browser evidence and consumer correction
+
+The deterministic Browser v2 fixture uses a non-Plan verified tool file and a final answer without its path, with zero model requests. At 1440 pixels, one click opens `candidate-report.html`; at 320 pixels, two clicks do so. Both requests use the scoped `/api/workspaces/.../workspace/file` route, return HTTP 200 and the expected SHA-256 `20104cdaade5833d9922f1737dd7ce329c7720a9d9061c22e787b5140b74e922`. Programmatic in-frame interaction advances the HTML control to Step 2. Continue editing preserves the existing composer draft; the executed script asserts focus restoration and Inspector close. The receipts retain zero horizontal overflow and page errors, and objective acceptance remains unverified. The source hashes and protected overlay are recorded separately; the overlay receipt carries the initial v1 script hash, while the archived v2 script has its own indexed hash.
+
+Browser v2 also exposed a real contradiction: both previews visibly said **File verification pending**. The UI success receipt only proves its original navigation/interaction assertions. It does not accept the integrity label. That result, screenshots and the earlier unscoped-route matcher failure remain in the root supplement.
+
+The separate consumer fix carries the exact shared tool receipt into the Inspector through its component interface. App-level projection derives current provenance on each render; a new Run/operation/event identity invalidates the loaded result even if the path and digest stay unchanged. If current provenance disappears or becomes drifted, the selected digest remains as a fail-closed byte fence. A final reference cannot grant a tool binding. The Inspector records integrity only after its current request loads matching digest and byte count; transport already verifies the hash and size against the actual response bytes. Cancellation and a selection key reject late results and clear recorded status on refresh or failure. The Plan Inspector and output-target API remain unchanged.
+
+The new two test files contain 20 cases. Their strict check and the isolated Web typecheck passed. The consumer preserves the exact seven architecture and four public-API baseline findings; those gates remain failed. App-level data transfer is tested through the pure projection used directly by App; there is no separate App DOM fixture. Root reran the two new files and strict checking: **20 cases passed**, all included in the consumer 39-case set. Browser v3 explicitly asserts **File integrity recorded** at both widths; the root and source owner visually inspected both preview screenshots. The earlier navigation, scoped SHA-bound response, HTML Step 2, draft/focus/close assertions, zero overflow/errors and unverified objective checks also passed. The run uses the current 28-file protected UI overlay. Full G01 acceptance and semantic report correctness remain unclaimed.
+
+## Portable evidence
+
+The [regression receipt](artifacts/tool-file-deliverables-regression-2026-10-30.json), [member/hash index](artifacts/tool-file-deliverables-evidence-index-2026-10-30.json) and [frozen archive](artifacts/tool-file-deliverables-2026-10-30.tar.gz) retain all 30 source files, the accepted patch, rejected v1, raw before/after records, A→B→A receipts, test/config/build reports and baseline failures. The archive is reused byte-for-byte: **228 file members, 281,395 compressed bytes**, SHA-256 `14db0fc9d3e87a09b29edbae1586a1ebf29a58e3941cebd9552b44296f49e981`. It contains no database, dependency installation or whole-workspace snapshot.
+
+From any directory, with this repository at `REPO`:
+
+```sh
+python3 REPO/docs/artifacts/tool-file-deliverables-reconcile-2026-10-30.py
+python3 REPO/docs/artifacts/tool-file-deliverables-reconcile-2026-10-30.py --workspace REPO
+```
+
+The [root integration receipt](artifacts/tool-file-deliverables-root-integration-2026-10-30.json), [root supplement](artifacts/tool-file-deliverables-root-evidence-2026-10-30.tar.gz) and [consumer evidence](artifacts/tool-file-preview-evidence-2026-10-30.tar.gz) retain later raw tests, strict/build logs, scripts, screenshots, source/overlay hashes, consumer before/after evidence and setup failures. Their independent member inventories (46 root members and 46 consumer members) and SHA-256 bindings are in the same index; the original 228-member archive is unchanged.
+
+The verifier reads members in memory, checks all archive/member hashes, the 333-case identity set, strict baseline parity, native projection parity, retained failures, operation ordering, root/consumer overlaps, Browser receipt fields and optional current-source bindings (30 original plus five consumer files). It extracts no files, executes no archived code and writes no state. Archive, index, receipt and verifier can move together; `--list` lists members. Reconciliation is evidence checking, not a test rerun. A new native execution needs compatible installed dependencies, isolated Contracts/Runtime builds, rebased paths and a fresh output directory; the archived replay helper documents that boundary.
+
+The verifier also passed portable execution from `/`, a current-source comparison of all 35 files, and negative checks for archive/member corruption, incorrect overlap, a wrong Browser digest and altered consumer source. The [validation receipt](artifacts/tool-file-deliverables-verifier-validation-2026-10-30.json) records those ten checks.
