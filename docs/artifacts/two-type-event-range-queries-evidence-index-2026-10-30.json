@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "8a0542311ad9960fec5c11487b827b22416c90d1",
+  "archive": {
+    "file": "two-type-event-range-queries-2026-10-30.tar.gz",
+    "bytes": 1075964,
+    "sha256": "b98f3c6cb4a7e4914230b83184198733910eebe3bdb728ed8d421ec495742d5c"
+  },
+  "regression": {
+    "file": "two-type-event-range-queries-regression-2026-10-30.json",
+    "sha256": "3241e6775f857578f65787016c8f680a589ba70af4904a87369adc02063cb036"
+  },
+  "members": [
+    {
+      "path": "broad-v1/independent/adversarial.test.ts",
+      "bytes": 2834,
+      "sha256": "9bac60c592f5646c0a7b010914bd0d94f811066159749961a40ab2258e24b77e",
+      "origin": "/tmp/napier-g07-typed-range-independent-20261030/adversarial.test.ts"
+    },
+    {
+      "path": "broad-v1/independent/result-v1.json",
+      "bytes": 1316,
+      "sha256": "a8cf64dba4e4fc29b7bbddf444ea96e0c3cbead0e35b98e901c77b1c1ed6b5cf",
+      "origin": "/tmp/napier-g07-typed-range-independent-20261030/result-v1.json"
+    },
+    {
+      "path": "broad-v1/independent/review-v1.json",
+      "bytes": 2778,
+      "sha256": "f4992faf7d5e704cf3a57f6d488e9f26a9ce72688127d776c5471c4db44f4242",
+      "origin": "/tmp/napier-g07-typed-range-independent-20261030/review-v1.json"
+    },
+    {
+      "path": "broad-v1/independent/run-v1.log",
+      "bytes": 358,
+      "sha256": "efadd2a6e44443f82d6bddb3fa4bc551830ac13e9bc8de278878537d25af53be",
+      "origin": "/tmp/napier-g07-typed-range-independent-20261030/run-v1.log"
+    },
+    {
+      "path": "broad-v1/independent/source-before.json",
+      "bytes": 621,
+      "sha256": "2649b536c3d774b7d989a4d3882bb5f87ed7105397839021e4438a6bd8d9fe66",
+      "origin": "/tmp/napier-g07-typed-range-independent-20261030/source-before.json"
+    },
+    {
+      "path": "broad-v1/manifest.json",
+      "bytes": 493,
+      "sha256": "568f26f9ffe19b6c7d5695d11f7663144b8182c8695bf3007d2bba1299158d8e",
+      "origin": "/tmp/napier-g07-typed-range-v1-frozen-20261030/manifest.json"
+    },
+    {
+      "path": "broad-v1/packages/runtime/src/sqlite-event-range-query.ts",
+      "bytes": 1094,
+      "sha256": "3cdd2379ade477243091fdc90fba1a4834b690212dfce6c5eb468d4b72abbe0b",
+      "origin": "/tmp/napier-g07-typed-range-v1-frozen-20261030/packages/runtime/src/sqlite-event-range-query.ts"
+    },
+    {
+      "path": "broad-v1/packages/runtime/src/sqlite-ledger-query.ts",
+      "bytes": 5423,
+      "sha256": "713cd1e8a9ae8baa5996a7e893374da2415b098b02d94601cada4d3c9fb78452",
+      "origin": "/tmp/napier-g07-typed-range-v1-frozen-20261030/packages/runtime/src/sqlite-ledger-query.ts"
+    },
+    {
+      "path": "broad-v1/packages/runtime/src/sqlite-ledger-read-worker.ts",
+      "bytes": 9967,
+      "sha256": "04d7cc42e50d9d2a695a7eff4073a1f64509b756044567048b43e23095ee68f0",
+      "origin": "/tmp/napier-g07-typed-range-v1-frozen-20261030/packages/runtime/src/sqlite-ledger-read-worker.ts"
+    },
+    {
+      "path": "broad-v1/packages/runtime/test/sqlite-typed-event-range.test.ts",
+      "bytes": 4462,
+      "sha256": "9025ebe2ff2a83b23a4ef3f9c095e9dddbd816636b8dca3e34c20984fa67f2d0",
+      "origin": "/tmp/napier-g07-typed-range-v1-frozen-20261030/packages/runtime/test/sqlite-typed-event-range.test.ts"
+    },
+    {
+      "path": "broad-v1/tests.json",
+      "bytes": 6983,
+      "sha256": "1fb3fc2756454dfaa175ff3af4318863e54f0ea65dca6d0d93e2b876f251acdf",
+      "origin": "/tmp/napier-g07-typed-range-tests-v1-20261030.json"
+    },
+    {
+      "path": "config/package-lock.json",
+      "bytes": 182145,
+      "sha256": "ff62c9468f29258a55932d257b43fd4a2afd03c6378d6528bce5b2797b354041",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/package-lock.json"
+    },
+    {
+      "path": "config/package.json",
+      "bytes": 18146,
+      "sha256": "4a0b446aac957c711eb335dede9e188edc538b0fdfea975c89a6c455c7aa9577",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/package.json"
+    },
+    {
+      "path": "config/packages/contracts/tsconfig.json",
+      "bytes": 189,
+      "sha256": "ae40c0b8ea329898be2c509314c0702a9f2f243e51ffc6ebc7d47ee4d383bf50",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/contracts/tsconfig.json"
+    },
+    {
+      "path": "config/packages/runtime/tsconfig.json",
+      "bytes": 253,
+      "sha256": "f824e4c28086e99d337fa6e8dd8ce58f798a4720c356438f14543955a912cfb7",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/runtime/tsconfig.json"
+    },
+    {
+      "path": "config/runtime.json",
+      "bytes": 902,
+      "sha256": "a3e4ff85f12439bd53e5d2e5f888d9a7f0c408e2298a5f1e43c1455b8193a590",
+      "origin": "Captured on the measurement host; no Node22 runtime execution."
+    },
+    {
+      "path": "config/scripts/check-architecture.mjs",
+      "bytes": 15657,
+      "sha256": "a25b9cee3bc44762be439bf77bdfbe0e1b30034182240a752c94ee86529a2948",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/scripts/check-architecture.mjs"
+    },
+    {
+      "path": "config/scripts/check-public-api.mjs",
+      "bytes": 6503,
+      "sha256": "88260f3315457eb21487a8a062a7200cde0e602ca9421c2415f152b43fc79783",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/scripts/check-public-api.mjs"
+    },
+    {
+      "path": "config/tsconfig.base.json",
+      "bytes": 704,
+      "sha256": "1d36bd43b49880f3db80d6ade463a144d889110dc26053897422956cbd12717c",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/tsconfig.base.json"
+    },
+    {
+      "path": "emitted/baseline/sqlite-ledger-read-worker.js",
+      "bytes": 8372,
+      "sha256": "fcb32b6122cdb0fd995f3a282daa14202ed9d1612c3378d2961c16651f9eec31",
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline/packages/runtime/dist/sqlite-ledger-read-worker.js"
+    },
+    {
+      "path": "emitted/candidate/sqlite-event-range-query.js",
+      "bytes": 1094,
+      "sha256": "7cebd4e43de45819e3ef6b4af35e6795977a3f0221464243659f5c49bd9d98d0",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/runtime/dist/sqlite-event-range-query.js"
+    },
+    {
+      "path": "emitted/candidate/sqlite-ledger-query.js",
+      "bytes": 4729,
+      "sha256": "856c558c06a95890e05d5439a48b074e5a79a2eef0e565f375dacdec8ff110ad",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/runtime/dist/sqlite-ledger-query.js"
+    },
+    {
+      "path": "emitted/candidate/sqlite-ledger-read-worker.js",
+      "bytes": 8786,
+      "sha256": "323a39ddd81bec36b95e3c8e0f8c8717bf5f982a69ac9623c927adc9998d8b2f",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/runtime/dist/sqlite-ledger-read-worker.js"
+    },
+    {
+      "path": "holdout/protocol.json",
+      "bytes": 954,
+      "sha256": "d636b74e77324fe8e515f351eb56ebcf66b19f14fe2c005cccd4ee2baca7c6cd",
+      "origin": "/tmp/napier-g07-typed-range-holdout-v2-20261030/protocol.json"
+    },
+    {
+      "path": "holdout/results.json",
+      "bytes": 42000,
+      "sha256": "4d1e70d0b265c97d128139ef42e7c5a23c44ebfe405d4f127566d25c3701d0dd",
+      "origin": "/tmp/napier-g07-typed-range-holdout-v2-20261030/results.json"
+    },
+    {
+      "path": "root/prior-baseline-architecture.log",
+      "bytes": 685,
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/baseline-architecture.log"
+    },
+    {
+      "path": "root/prior-public-api-working.log",
+      "bytes": 277,
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "origin": "/tmp/napier-g07-mailbox-root-review-20261030/public-api-working.log"
+    },
+    {
+      "path": "root/source-commit.json",
+      "bytes": 978,
+      "sha256": "24c8de92bf01fe24992ef1607033204a39e4e39afce00ad558d48e9ca9e630ef",
+      "origin": "/tmp/napier-g07-typed-range-root-source-commit-20261030.json"
+    },
+    {
+      "path": "source/async-baseline/sqlite-ledger-read-worker.ts",
+      "bytes": 9506,
+      "sha256": "d4ad52cd8b717dda924ad24ea3ff70bdc661d17923a16c2af5e11ca6761efe1d",
+      "origin": "/tmp/napier-g07-mailbox-frozen-20261030/baseline/packages/runtime/src/sqlite-ledger-read-worker.ts"
+    },
+    {
+      "path": "source/baseline/packages/runtime/src/sqlite-ledger-query.ts",
+      "bytes": 5075,
+      "sha256": "52e2d313c02fc68dc0210260c432d90a486c37a0c8728fb039112162c80f5b65",
+      "origin": "git a7bd8ebd399243858b6e27a4c09c107b73627c79:packages/runtime/src/sqlite-ledger-query.ts"
+    },
+    {
+      "path": "source/baseline/packages/runtime/src/sqlite-ledger-read-worker.ts",
+      "bytes": 9506,
+      "sha256": "d4ad52cd8b717dda924ad24ea3ff70bdc661d17923a16c2af5e11ca6761efe1d",
+      "origin": "git a7bd8ebd399243858b6e27a4c09c107b73627c79:packages/runtime/src/sqlite-ledger-read-worker.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/sqlite-event-range-query.ts",
+      "bytes": 1250,
+      "sha256": "b06c06894f017d629483f39f76a1e007882567a3250b16d072ffeb15cbbd252f",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/runtime/src/sqlite-event-range-query.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/sqlite-ledger-query.ts",
+      "bytes": 5423,
+      "sha256": "713cd1e8a9ae8baa5996a7e893374da2415b098b02d94601cada4d3c9fb78452",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/runtime/src/sqlite-ledger-query.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/src/sqlite-ledger-read-worker.ts",
+      "bytes": 9967,
+      "sha256": "04d7cc42e50d9d2a695a7eff4073a1f64509b756044567048b43e23095ee68f0",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/runtime/src/sqlite-ledger-read-worker.ts"
+    },
+    {
+      "path": "source/candidate/packages/runtime/test/sqlite-typed-event-range.test.ts",
+      "bytes": 4462,
+      "sha256": "9025ebe2ff2a83b23a4ef3f9c095e9dddbd816636b8dca3e34c20984fa67f2d0",
+      "origin": "/private/tmp/napier-g07-typed-range-query-20261030/packages/runtime/test/sqlite-typed-event-range.test.ts"
+    },
+    {
+      "path": "validation/architecture.log",
+      "bytes": 685,
+      "sha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/architecture.log"
+    },
+    {
+      "path": "validation/artifact-manifest.json",
+      "bytes": 4239,
+      "sha256": "188864963b9515b4676868aae8cb460a8e98bc5b241988afb7d5265810f1964c",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/artifact-manifest.json"
+    },
+    {
+      "path": "validation/async-holdout-benchmark.mjs",
+      "bytes": 3406,
+      "sha256": "1fcaa6a8028987a6100ff90eea1e0c8b6336cf5ad18a52a2fa93a9e0c597865f",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/async-holdout-benchmark.mjs"
+    },
+    {
+      "path": "validation/async-holdout.log",
+      "bytes": 367,
+      "sha256": "9529ba71160b261ff6eae071a8bf619c9354f491491026b2cc20db25e24b423e",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/async-holdout.log"
+    },
+    {
+      "path": "validation/async-protocol.json",
+      "bytes": 697,
+      "sha256": "d2f1d0da16338c64138d489d1c1a83b1071207d0fd2fea5598820ba9963e6dcb",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/async-protocol.json"
+    },
+    {
+      "path": "validation/async-results.json",
+      "bytes": 9290,
+      "sha256": "f9f70326c8b477f65b4c830300adb729bd5074c7fe8a7d064e92e63e3375c3f3",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/async-results.json"
+    },
+    {
+      "path": "validation/capture-manifests.py",
+      "bytes": 895,
+      "sha256": "3573ed8d9f09e7838d681971760b1386c068532d89c4506eaafa5989c0698d9c",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/capture-manifests.py"
+    },
+    {
+      "path": "validation/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/compile.log"
+    },
+    {
+      "path": "validation/emitted-after-async.json",
+      "bytes": 773898,
+      "sha256": "e6261ffe055f822bcb387b33b9f06662c84880e6dce48aee7d1b51c314e8492c",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/emitted-after-async.json"
+    },
+    {
+      "path": "validation/emitted-after.json",
+      "bytes": 773898,
+      "sha256": "e6261ffe055f822bcb387b33b9f06662c84880e6dce48aee7d1b51c314e8492c",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/emitted-after.json"
+    },
+    {
+      "path": "validation/emitted-before.json",
+      "bytes": 773898,
+      "sha256": "e6261ffe055f822bcb387b33b9f06662c84880e6dce48aee7d1b51c314e8492c",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/emitted-before.json"
+    },
+    {
+      "path": "validation/holdout-benchmark.mjs",
+      "bytes": 5007,
+      "sha256": "fbb5b6189acfba48a145868e54beed7bbde2f3fe438088e69eec292a49317548",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/holdout-benchmark.mjs"
+    },
+    {
+      "path": "validation/holdout.log",
+      "bytes": 1625,
+      "sha256": "b324b3389c7429dd6fd9c69337096c887b00e6c94c2466c66e65d2ca238c822f",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/holdout.log"
+    },
+    {
+      "path": "validation/owned-source-before.json",
+      "bytes": 621,
+      "sha256": "5fb40ce051f668c893380f94ccedbec2758bacd4eb431ed956e6e08e1f6d394e",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/owned-source-before.json"
+    },
+    {
+      "path": "validation/prespecified-protocol.json",
+      "bytes": 600,
+      "sha256": "3e8a08db5f7ed0aa1848b1ff783da1385af0df3ddcfd4345e5626b04eccac86b",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/prespecified-protocol.json"
+    },
+    {
+      "path": "validation/prior-broad-benchmark.mjs",
+      "bytes": 4320,
+      "sha256": "5dace8ebf37dc698fceb911880c609f47133a0eec2dff9bcc718673a6c16cdd4",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/prior-broad-benchmark.mjs"
+    },
+    {
+      "path": "validation/prior-broad-results.json",
+      "bytes": 131636,
+      "sha256": "a3fdbdb583d69415d4e35dfd13b89104e98a2bf52dc03da72b3f5a2084619e8b",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/prior-broad-results.json"
+    },
+    {
+      "path": "validation/public-api.log",
+      "bytes": 277,
+      "sha256": "aabc0ef93eedb8b8b9c57433883074d2c51906ce068059cdd556261987bb40a3",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/public-api.log"
+    },
+    {
+      "path": "validation/review-receipt.json",
+      "bytes": 7050,
+      "sha256": "5c191b268aac3019aa1ad05137d9022758fa02d127f3655a55f06ca484758303",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/review-receipt.json"
+    },
+    {
+      "path": "validation/seed-manifest.json",
+      "bytes": 2411,
+      "sha256": "415cf580fc39f0a2789bacafc428621cb5a9de1d196c6e92d14e1f0d6565beee",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/seed-manifest.json"
+    },
+    {
+      "path": "validation/source-after-async.json",
+      "bytes": 381240,
+      "sha256": "bd1ae6daa760e3e34d33416f2a6709241860e701d358f082679b74facdf8a9f1",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/source-after-async.json"
+    },
+    {
+      "path": "validation/source-after.json",
+      "bytes": 381240,
+      "sha256": "bd1ae6daa760e3e34d33416f2a6709241860e701d358f082679b74facdf8a9f1",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/source-after.json"
+    },
+    {
+      "path": "validation/source-before.json",
+      "bytes": 381240,
+      "sha256": "bd1ae6daa760e3e34d33416f2a6709241860e701d358f082679b74facdf8a9f1",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/source-before.json"
+    },
+    {
+      "path": "validation/strict.config.json",
+      "bytes": 536,
+      "sha256": "07f84a2b56ff417825a94b967ec3a120e6f0f86f4406ff2628e5dc51451995fd",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/strict.config.json"
+    },
+    {
+      "path": "validation/strict.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/strict.log"
+    },
+    {
+      "path": "validation/tests.json",
+      "bytes": 6977,
+      "sha256": "aff29e548247a5ed65f0008f0b828a74e9786ac8ab8e89ee2c0851c556427836",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/tests.json"
+    },
+    {
+      "path": "validation/tests.log",
+      "bytes": 542,
+      "sha256": "82ef798c5dc2bec95f8f11a5405937b44bf227343c20af2631192aeb2cce56db",
+      "origin": "/tmp/napier-g07-typed-range-v2-validation-20261030/tests.log"
+    }
+  ],
+  "reconciler": {
+    "file": "two-type-event-range-queries-reconcile-2026-10-30.py",
+    "sha256": "b28ebdaa9b5736eb105749190c8f89d0e2f8dd2411b871405804e5f4573023b2"
+  }
+}

@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "8a0542311ad9960fec5c11487b827b22416c90d1",
+  "sourceTree": "1762a4c3983090065b6eb2571e8968c13a092303",
+  "baselineCommit": "a7bd8ebd399243858b6e27a4c09c107b73627c79",
+  "sourceManifest": [
+    {
+      "path": "packages/runtime/src/sqlite-ledger-query.ts",
+      "sha256": "713cd1e8a9ae8baa5996a7e893374da2415b098b02d94601cada4d3c9fb78452"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-ledger-read-worker.ts",
+      "sha256": "04d7cc42e50d9d2a695a7eff4073a1f64509b756044567048b43e23095ee68f0"
+    },
+    {
+      "path": "packages/runtime/src/sqlite-event-range-query.ts",
+      "sha256": "b06c06894f017d629483f39f76a1e007882567a3250b16d072ffeb15cbbd252f"
+    },
+    {
+      "path": "packages/runtime/test/sqlite-typed-event-range.test.ts",
+      "sha256": "9025ebe2ff2a83b23a4ef3f9c095e9dddbd816636b8dca3e34c20984fa67f2d0"
+    }
+  ],
+  "validation": {
+    "fullContractsRuntimeForceCompileExitCode": 0,
+    "newTypedRangeTestStrictExitCode": 0,
+    "regressionCases": 17,
+    "regressionPassed": 17,
+    "sameCaseSetAsOriginal": true,
+    "architectureExitCode": 1,
+    "architectureFindings": 7,
+    "architectureOutputMatchesCleanBaseline": true,
+    "publicApiExitCode": 1,
+    "publicApiFindings": 4,
+    "publicApiOutputMatchesPrior": true
+  },
+  "sourceAndEmittedFrozenCounts": {
+    "source": 2177,
+    "emitted": 4388
+  },
+  "minimumSupportedNode": ">=22.19.0",
+  "measurementNode": "v24.19.0",
+  "crossVersionRuntimeVerified": false,
+  "policy": "Exactly two distinct normalized types use one ordered UNION ALL statement; all other counts retain existing query.",
+  "synchronousHoldout": {
+    "rawSamples": 96,
+    "caseCount": 8,
+    "protocol": {
+      "scales": [
+        25000,
+        250000
+      ],
+      "cases": [
+        {
+          "name": "sparse2",
+          "types": 2,
+          "sparse": true
+        },
+        {
+          "name": "dense2",
+          "types": 2
+        },
+        {
+          "name": "dense3",
+          "types": 3
+        },
+        {
+          "name": "dense64",
+          "types": 64
+        }
+      ],
+      "order": [
+        "baseline",
+        "candidate",
+        "candidate",
+        "baseline"
+      ],
+      "samplesPerRound": 3,
+      "warmupPerVariant": 1,
+      "payloadJsonUtf8Bytes": 256,
+      "payloadLanguages": [
+        "Chinese",
+        "English",
+        "Arabic",
+        "Japanese"
+      ],
+      "candidatePolicy": "Compound SQL only for exactly two normalized types; three and64 use existing IN SQL",
+      "retentionRule": "Exact output equality and no more than 20 percent median wall regression in any dense workload; otherwise reject this holdout candidate; do not relax threshold after seeing results. Exploratory single-machine query comparison; no production or statistical quality claim."
+    },
+    "summary": [
+      {
+        "case": "sparse2",
+        "scale": 25000,
+        "activation": "compound_merge",
+        "baselineWallMedianMs": 2.4734585000000067,
+        "candidateWallMedianMs": 0.02133350000001144,
+        "wallRatio": 0.00862496783350575,
+        "withinRule": true,
+        "outputSha256": "01b2188fda35bff87ba910394d2187c3e49d2987b185794a8ca42b4e2f356d98"
+      },
+      {
+        "case": "dense2",
+        "scale": 25000,
+        "activation": "compound_merge",
+        "baselineWallMedianMs": 29.998396000000014,
+        "candidateWallMedianMs": 31.520854499999984,
+        "wallRatio": 1.0507513301711189,
+        "withinRule": true,
+        "outputSha256": "17a568d575adfd2aeca66a06faa50cf81d67ba2442fcd3d98d4757c6b0f88f65"
+      },
+      {
+        "case": "dense3",
+        "scale": 25000,
+        "activation": "existing_in",
+        "baselineWallMedianMs": 29.56616650000001,
+        "candidateWallMedianMs": 29.84562500000004,
+        "wallRatio": 1.009451969365052,
+        "withinRule": true,
+        "outputSha256": "71d44abbcaf68dc21a82ce57d605e8a0f59b0e3e433c19d8c5e2f192e6879629"
+      },
+      {
+        "case": "dense64",
+        "scale": 25000,
+        "activation": "existing_in",
+        "baselineWallMedianMs": 31.158916500000032,
+        "candidateWallMedianMs": 30.498562499999935,
+        "wallRatio": 0.9788069010679464,
+        "withinRule": true,
+        "outputSha256": "a4bbf6fb71bed0cc4d03754cacbd14658ecb4ae7af727426fc518c435b2b231f"
+      },
+      {
+        "case": "sparse2",
+        "scale": 250000,
+        "activation": "compound_merge",
+        "baselineWallMedianMs": 27.433479499999976,
+        "candidateWallMedianMs": 0.017542000000048574,
+        "wallRatio": 0.000639437662293206,
+        "withinRule": true,
+        "outputSha256": "01b2188fda35bff87ba910394d2187c3e49d2987b185794a8ca42b4e2f356d98"
+      },
+      {
+        "case": "dense2",
+        "scale": 250000,
+        "activation": "compound_merge",
+        "baselineWallMedianMs": 349.1728330000001,
+        "candidateWallMedianMs": 390.35906200000045,
+        "wallRatio": 1.1179537040328689,
+        "withinRule": true,
+        "outputSha256": "f1b811842484e52c5c0c36abae6b11e10c6242114aaf17401f00c68b7cc6bf83"
+      },
+      {
+        "case": "dense3",
+        "scale": 250000,
+        "activation": "existing_in",
+        "baselineWallMedianMs": 353.95983350000097,
+        "candidateWallMedianMs": 345.98797899999954,
+        "wallRatio": 0.9774780815631686,
+        "withinRule": true,
+        "outputSha256": "e814e200a298440dcc115bbe952b8a1b63dac4bbbc3334e0dff1f83200a0fbcb"
+      },
+      {
+        "case": "dense64",
+        "scale": 250000,
+        "activation": "existing_in",
+        "baselineWallMedianMs": 360.26291649999985,
+        "candidateWallMedianMs": 360.7249164999994,
+        "wallRatio": 1.001282396768693,
+        "withinRule": true,
+        "outputSha256": "64d1dc22b4e8c5c5b27fe47547edf539e74a561b27fccccfe2c6681e21bac391"
+      }
+    ],
+    "acceptedWithinPrespecifiedRule": true
+  },
+  "asyncSupplement": {
+    "rawSamples": 24,
+    "caseCount": 2,
+    "protocol": {
+      "kind": "supplementary_actual_async_worker",
+      "scales": [
+        25000,
+        250000
+      ],
+      "case": "sparse2",
+      "order": [
+        "baseline",
+        "candidate",
+        "candidate",
+        "baseline"
+      ],
+      "samplesPerRound": 3,
+      "samplesPerVariantPerScale": 6,
+      "warmupsPerVariantPerScale": 1,
+      "types": [
+        "model.type_0",
+        "model.type_1"
+      ],
+      "measurementBoundary": "Real listEventsRange promise wall time and whole-process CPU; one warmed worker per variant per scale, both read the same immutable database; no LocalStore initialization.",
+      "retentionRule": "Exact output digest equality. Supplemental sparse observations only; the original synchronous dense<=20%holdout gate is unchanged."
+    },
+    "summary": [
+      {
+        "scale": 25000,
+        "summary": {
+          "baseline": {
+            "wallMs": 2.5358340000000013,
+            "cpuMs": 2.5404999999999998
+          },
+          "candidate": {
+            "wallMs": 0.06308300000000244,
+            "cpuMs": 0.101
+          }
+        },
+        "wallRatio": 0.024876628359743743,
+        "databaseSha256": "56bb4b2ab222aaf47c9f025c51a3e67c13b6866642c263183e79bab3258aa9ba"
+      },
+      {
+        "scale": 250000,
+        "summary": {
+          "baseline": {
+            "wallMs": 27.06610400000001,
+            "cpuMs": 27.063499999999998
+          },
+          "candidate": {
+            "wallMs": 0.040729000000013116,
+            "cpuMs": 0.0445
+          }
+        },
+        "wallRatio": 0.0015047972918456642,
+        "databaseSha256": "7c234592d3b52344a3b16c34f0983c82d68f0b511cfd0b329af3ba9ad558c45e"
+      }
+    ],
+    "sameOutputAsSyncOracle": true,
+    "addsFunctionalTestCases": 0
+  },
+  "rejectedBroadActivation": {
+    "resultsSha256": "a3fdbdb583d69415d4e35dfd13b89104e98a2bf52dc03da72b3f5a2084619e8b",
+    "frozenSourceRoot": "/tmp/napier-g07-typed-range-v1-frozen-20261030",
+    "rejectedCases": [
+      {
+        "case": "dense8",
+        "scale": 10000,
+        "wallRatio": 1.2529135343830404
+      },
+      {
+        "case": "dense64",
+        "scale": 10000,
+        "wallRatio": 1.4398441774087831
+      },
+      {
+        "case": "dense64",
+        "scale": 100000,
+        "wallRatio": 1.3696119804342604
+      }
+    ]
+  },
+  "archivedDatabaseBytes": 0,
+  "databaseReplayBound": "No SQLite databases are archived. Deterministic seed/measurement code, database hashes, event counts, payload byte checks, plans and all raw samples are retained. Reconciliation verifies recorded evidence, not live database replay or timings.",
+  "limits": [
+    "Exactly-two-type dense workloads became slower:5.075% at25k and11.795% at250k; these pass the predeclared20% gate but are not improvements.",
+    "One-machine native synchronous query experiment with BCCB blocks inside one process per complete matrix; six measured samples per variant/case, one warmup per variant/case.",
+    "All case inputs use an exact256-byte UTF8 JSON payload with multilingual text. Cases/scales/payload and threshold were frozen before measurement.",
+    "Boundary process RSS is not peak/leak evidence. SQLite row visitation and decoder-only CPU were not separately measured.",
+    "Run-scoped admission/fence queries retain their original SQL and residual scans.",
+    "Tests used local fixtures. Benchmark makes no provider dispatch or external call.",
+    "Main source, goal, docs, staging and commits were not modified by this validation.",
+    "Async supplement measures only sparse workloads with actual read workers, one warmed worker per variant/scale, same immutable database, BCCB blocks; it does not establish dense async or end-to-end latency.",
+    "Node22.19 remains the minimum supported version and no Node24-only API was introduced. Measurements and runtime tests used Node24.19.0; no cross-version runtime acceptance is asserted.",
+    "No broad activation, universal latency claim, statistical significance, cold disk, end-to-end Run, or dense benefit established."
+  ]
+}
