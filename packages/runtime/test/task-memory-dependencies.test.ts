@@ -105,6 +105,6 @@ describe("invocation-scoped memory dependency observations", () => {
     expect(await snapshot.accepts(fact("Shipping canonical"))).toBe(true);
     await snapshot.revalidate();
     expect(snapshot.retains(missing)).toBe(false);
-    expect(snapshot.receipt()).toEqual({ uniquePaths: 3, readCount: 3, reusedChecks: 0, changedPaths: 0 });
+    expect(snapshot.receipt()).toEqual({ uniquePaths: 3, readCount: 5, reusedChecks: 0, changedPaths: 0 });
   });
 });

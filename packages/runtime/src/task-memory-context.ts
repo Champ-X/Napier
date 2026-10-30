@@ -70,12 +70,13 @@ export async function formatTaskMemoryContext(input: {
     ...(input.dataRoot ? { dataRoot: input.dataRoot } : {}),
   });
   let index = await search(facts);
-  await dependencies.revalidate();
-  const stable = facts.filter((fact) => dependencies.retains(fact));
-  if (stable.length !== facts.length) {
+  while (true) {
+    await dependencies.revalidate();
+    const stable = facts.filter((fact) => dependencies.retains(fact));
+    if (stable.length === facts.length) break;
     facts = stable;
-    // Remove invalidated rows before ranking again; an earlier index result
-    // cannot carry a fact whose source changed while the index was prepared.
+    // Each retry removes at least one fact, so this loop is bounded by the
+    // original eligible set. Recheck the remaining sources after every ranking.
     index = await search(facts);
   }
   const retained = new Set(facts);

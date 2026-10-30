@@ -1,12 +1,11 @@
 import type { MemoryFact } from "@napier/contracts";
 
 /** One invocation's observations, never a cross-call authorization cache. Every
- * reused digest is checked again after indexing before any dependent fact is
+ * successful digest is checked again after indexing before any dependent fact is
  * selected. A changed or unavailable source invalidates the whole dependency. */
 export class TaskMemoryDependencySnapshot {
   private readonly digests = new Map<string, string | undefined>();
   private readonly changed = new Set<string>();
-  private readonly reused = new Set<string>();
   private readCount = 0;
   private reuseCount = 0;
 
@@ -18,7 +17,6 @@ export class TaskMemoryDependencySnapshot {
         this.digests.set(expected.path, await this.read(expected.path));
       else {
         this.reuseCount++;
-        this.reused.add(expected.path);
       }
       const observed = this.digests.get(expected.path);
       if (observed === undefined || observed !== expected.sha256) return false;
@@ -30,7 +28,7 @@ export class TaskMemoryDependencySnapshot {
     for (const [filename, digest] of this.digests) {
       // A failed initial observation cannot authorize a fact even if the file
       // appears later. Only successful observations can require invalidation.
-      if (digest === undefined || !this.reused.has(filename)) continue;
+      if (digest === undefined) continue;
       if (await this.read(filename) !== digest) {
         this.changed.add(filename);
         this.digests.set(filename, undefined);
