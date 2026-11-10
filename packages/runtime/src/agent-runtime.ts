@@ -212,6 +212,12 @@ import {
   resolvePromptVariables,
 } from "./prompt-variables.js";
 import { RunBudgetTracker } from "./run-budget.js";
+import { requestCancelThenAbort } from "./run-cancel-then-abort.js";
+import {
+  coalescePromptRequest,
+  findRunByPromptRequestId,
+  isPromptRequestId,
+} from "./prompt-request-admission.js";
 import { finLife } from "./run-finalization-reserve.js";
 import { classifyFailure } from "./run-failure-classification.js";
 import { settleRunFailure } from "./run-failure-settlement.js";
@@ -365,17 +371,47 @@ export class AgentRuntime {
   }
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
     options = bindRunHarnessProfile(options);
+    if (
+      options.requestId !== undefined &&
+      !isPromptRequestId(options.requestId)
+    ) {
+      throw new Error("Prompt requestId is invalid");
+    }
+    return options.requestId
+      ? coalescePromptRequest(this.store, options, (fingerprint) =>
+          this.runAdmittedPrompt(options, fingerprint),
+        )
+      : this.runAdmittedPrompt(options);
+  }
+  private async runAdmittedPrompt(
+    options: RunPromptOptions,
+    requestFingerprint?: string,
+  ): Promise<RunRecord> {
     const requestedSource = (
       options as unknown as { source?: RunInvocationSource }
     ).source;
     let prompt = validateAgentRunPrompt(
       options.text,
       requestedSource,
+      [],
+    );
+    const thread = this.store.getThread(options.threadId);
+    if (options.requestId) {
+      const existing = findRunByPromptRequestId(
+        this.store.listRuns(thread.id),
+        await this.store.listEvents(thread.id),
+        options.requestId,
+        requestFingerprint,
+      );
+      if (existing) return existing;
+    }
+    validateAgentRunPrompt(
+      options.text,
+      requestedSource,
       [...(this.activeRuns.get(options.threadId)?.values() ?? [])].map(
         (active) => active.source,
       ),
     );
-    const thread = this.store.getThread(options.threadId);
     const invocationSource = requestedSource ?? "user";
     const {
       profile: effectiveAgentSnapshot,
@@ -500,27 +536,39 @@ export class AgentRuntime {
         structuredClone(DEFAULT_RUN_LIMITS),
       run.startedAt,
     );
-    const forwardAbort = (): void => abortController.abort();
+    const pullAbort = (): void => abortController.abort();
+    const durableCancel = (
+      reason: "operator_stop" | "parent_abort" | "budget_timeout" | "system",
+    ): void => {
+      void requestCancelThenAbort(this.store, {
+        threadId: thread.id,
+        runId: run.id,
+        abort: pullAbort,
+        reason,
+      });
+    };
+    const forwardAbort = (): void => durableCancel("parent_abort");
     options.signal?.addEventListener("abort", forwardAbort, { once: true });
-    if (options.signal?.aborted) abortController.abort();
+    if (options.signal?.aborted) durableCancel("parent_abort");
     const threadRuns = this.activeRuns.get(thread.id) ?? new Map();
     threadRuns.set(run.id, {
       runId: run.id,
-      abort: forwardAbort,
+      // stop() already persists cancel; keep this as the raw abort hook.
+      abort: pullAbort,
       source: invocationSource,
     });
     this.activeRuns.set(thread.id, threadRuns);
     const budgetTimeout = setTimeout(
       () => {
         budget.exhaustTimeout();
-        abortController.abort();
+        durableCancel("budget_timeout");
       },
       Math.max(1, budget.remainingTimeoutMs()),
     );
     const heartbeat = setInterval(() => {
       void this.store
         .renewRunLease(run.id, leasedRun.token, RUN_LEASE_TTL_MS)
-        .catch(() => abortController.abort());
+        .catch(() => durableCancel("system"));
     }, RUN_LEASE_HEARTBEAT_MS);
     let modelContextEnvelopeTurnIndex = 0;
     let unregisterSubagentHub: (() => void) | undefined;
@@ -543,6 +591,8 @@ export class AgentRuntime {
             capabilityPreset: options.capabilityPreset,
             parentRunId: options.parentRunId,
             sourceContinuityRunId: options.sourceContinuityRunId,
+            requestId: options.requestId,
+            requestFingerprint,
             recovery: options.recovery,
           },
       });
@@ -984,7 +1034,15 @@ export class AgentRuntime {
   stop(threadId: string): boolean {
     const activeRuns = this.activeRuns.get(threadId);
     if (!activeRuns || activeRuns.size === 0) return false;
-    for (const active of activeRuns.values()) active.abort();
+    for (const active of activeRuns.values()) {
+      // Pi Durable: persist cancel control before pulling the abort signal.
+      void requestCancelThenAbort(this.store, {
+        threadId,
+        runId: active.runId,
+        abort: active.abort,
+        reason: "operator_stop",
+      });
+    }
     return true;
   }
   private async runDemo(

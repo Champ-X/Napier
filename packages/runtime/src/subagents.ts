@@ -17,8 +17,8 @@ import { AsyncSemaphore } from "./async-semaphore.js";
 import {
   delegationFailureContextSha256,
   delegationIntentSha256,
-  findReusableDelegation,
 } from "./delegation-ledger.js";
+import { findOwnedSubagentByDelegationIntent } from "./subagent-ownership-lookup.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
 import { ToolConcurrencyGate } from "./tool-concurrency-gate.js";
@@ -333,7 +333,7 @@ export class SubagentCoordinator {
         : undefined;
     const reusable = input.revivedFromTaskId
       ? undefined
-      : findReusableDelegation(
+      : findOwnedSubagentByDelegationIntent(
           this.options.store.listSubagentTasks(this.options.run.threadId),
           input.role,
           prompt,

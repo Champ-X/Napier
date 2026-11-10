@@ -2,6 +2,7 @@ import type {
   RunEvent,
   RunStatus,
   StreamFrame,
+  SubagentTask,
   TerminalRunStatus,
   ThreadDetail,
 } from "@napier/contracts";
@@ -41,6 +42,10 @@ export function streamEventFrame(
 export function streamSnapshotFrame(
   detail: ThreadDetail,
 ): Extract<StreamFrame, { type: "snapshot" }> {
+  detail = {
+    ...detail,
+    subagents: detail.subagents.map(projectPublicSubagentTask),
+  };
   const serializedDetail = JSON.stringify(detail);
   return {
     type: "snapshot",
@@ -49,6 +54,16 @@ export function streamSnapshotFrame(
     detailBytes: Buffer.byteLength(serializedDetail, "utf8"),
     eventBytes: jsonByteLength(detail.events),
   };
+}
+
+/** Private completion records carry candidate capabilities for recovery/replay. */
+function projectPublicSubagentTask({
+  writePaths: _writePaths,
+  completionReservation: _completionReservation,
+  completion: _completion,
+  ...task
+}: SubagentTask): SubagentTask {
+  return task;
 }
 
 export function streamRunDoneFrame(

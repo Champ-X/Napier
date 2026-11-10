@@ -77,6 +77,11 @@ describe("Agent Runtime public model failure recovery", () => {
     ],
     [
       "error",
+      "404 model not found: PRIVATE_MODEL_NAME",
+      "The selected model is unavailable at the provider. Choose a current catalog model or verify the provider with Doctor, then retry.",
+    ],
+    [
+      "error",
       "Maximum context length exceeded",
       "The model context exceeded the provider limit. Start a smaller follow-up or reduce attached context, then retry.",
     ],
@@ -101,6 +106,34 @@ describe("Agent Runtime public model failure recovery", () => {
       const message = publicModelFailureMessage(stopReason, diagnostic);
       expect(message).toBe(expected);
       if (diagnostic) expect(message).not.toContain(diagnostic);
+    },
+  );
+
+  it.each([
+    [
+      "Model invocation budget is unavailable: unknown price requires a known tariff or explicit zero-cost declaration",
+      "The model call was blocked because its price is unknown. Configure a known model tariff or explicitly declare the model zero-cost, then retry.",
+    ],
+    [
+      "Model invocation budget requires reconciliation: unresolved historical usage has no bounded allowance",
+      "The model call was blocked by unresolved usage accounting. Reconcile pending model usage before retrying.",
+    ],
+    [
+      "Model invocation exceeds its current accounted Run budget plus in-flight allowance for tokens (request_input_v1)",
+      "The model call would exceed the remaining Run budget. Review token and cost limits and in-flight usage before retrying.",
+    ],
+  ])(
+    "keeps local budget refusal distinct from provider failure: %s",
+    (diagnostic, expected) => {
+      for (const detail of [
+        diagnostic,
+        `${diagnostic}; credential PRIVATE_DIAGNOSTIC`,
+      ]) {
+        const message = publicModelFailureMessage("error", detail);
+        expect(message).toBe(expected);
+        expect(message).not.toContain("PRIVATE_DIAGNOSTIC");
+        expect(message).not.toContain("provider");
+      }
     },
   );
 });

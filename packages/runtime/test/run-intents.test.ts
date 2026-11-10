@@ -69,6 +69,7 @@ describe("Run intent identity", () => {
           capabilityPreset: undefined,
           parentRunId: source.id,
           sourceContinuityRunId: undefined,
+          requestId: undefined,
           recovery: prepared.recovery,
         }),
       ).toEqual(expect.objectContaining({ intentId: "intent_delivery0001" }));

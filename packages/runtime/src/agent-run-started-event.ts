@@ -19,6 +19,9 @@ export function createAgentRunStartedPayload(input: {
   capabilityPreset: AgentCapabilityPresetId | undefined;
   parentRunId: string | undefined;
   sourceContinuityRunId: string | undefined;
+  /** Client admission identity for payload-bound prompt retries. */
+  requestId: string | undefined;
+  requestFingerprint?: string | undefined;
   recovery:
     | {
         mode: "manual" | "automatic";
@@ -48,6 +51,10 @@ export function createAgentRunStartedPayload(input: {
       ...(input.parentRunId ? { parentRunId: input.parentRunId } : {}),
       ...(input.sourceContinuityRunId
         ? { sourceContinuityRunId: input.sourceContinuityRunId }
+        : {}),
+      ...(input.requestId ? { requestId: input.requestId } : {}),
+      ...(input.requestFingerprint
+        ? { requestFingerprint: input.requestFingerprint }
         : {}),
       ...(input.recovery
         ? {

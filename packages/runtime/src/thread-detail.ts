@@ -17,7 +17,8 @@ import type {
 } from "@napier/contracts";
 
 import { inspectTaskDeliverables } from "./task-deliverable-inspection.js";
-import { projectRunRecoveryCheckpoint } from "./run-recovery-checkpoint.js";
+import { recoveryCheckpointFromOrchestration } from "./run-recovery-checkpoint.js";
+import { projectRunOrchestrationState } from "./run-orchestration-projection.js";
 import { latestPrimaryRun } from "./primary-run-selection.js";
 import { createContextCheckpointCalibrationReport } from "./checkpoint-calibration.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
@@ -129,10 +130,21 @@ export function createThreadDetail(
   },
   options?: { kernelProjections?: boolean },
 ): ThreadDetail {
-  const recoveryCheckpoint = projectRunRecoveryCheckpoint(latestPrimaryRun(input.runs), input.events, input.runs);
+  const primaryRun = latestPrimaryRun(input.runs);
+  const orchestrationState =
+    primaryRun &&
+    ["interrupted", "failed", "running", "queued"].includes(primaryRun.status)
+      ? projectRunOrchestrationState(primaryRun, input.events, input.runs)
+      : undefined;
+  const recoveryCheckpoint =
+    orchestrationState &&
+    (primaryRun?.status === "interrupted" || primaryRun?.status === "failed")
+      ? recoveryCheckpointFromOrchestration(orchestrationState)
+      : undefined;
   const detail = {
     ...input,
     ...(recoveryCheckpoint ? { recoveryCheckpoint } : {}),
+    ...(orchestrationState ? { orchestrationState } : {}),
     runControlMessages: projectRunControlMessages(input.events),
     operatorDecisions:
       options?.kernelProjections === false

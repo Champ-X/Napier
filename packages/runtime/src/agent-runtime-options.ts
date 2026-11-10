@@ -44,6 +44,8 @@ export interface RunPromptOptions {
   agentRevision?: number;
   capabilityPreset?: AgentCapabilityPresetId | undefined;
   sourceContinuityRunId?: string;
+  /** Durable admission identity for exactly-once prompt retries. */
+  requestId?: string;
   executionMode?: RunExecutionMode;
   signal?: AbortSignal;
   onEvent?: EventSink;

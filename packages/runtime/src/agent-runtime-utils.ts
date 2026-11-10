@@ -202,6 +202,21 @@ export function publicModelFailureMessage(
     return "Model call was aborted. Retry when the task is ready to continue.";
   }
   const normalized = diagnostic?.toLowerCase() ?? "";
+  // Local admission failures happen before provider dispatch. Match their
+  // bounded prefixes before interpreting arbitrary provider diagnostics.
+  if (
+    normalized.startsWith("model invocation budget is unavailable: unknown price")
+  ) {
+    return "The model call was blocked because its price is unknown. Configure a known model tariff or explicitly declare the model zero-cost, then retry.";
+  }
+  if (normalized.startsWith("model invocation budget requires reconciliation:")) {
+    return "The model call was blocked by unresolved usage accounting. Reconcile pending model usage before retrying.";
+  }
+  if (
+    normalized.startsWith("model invocation exceeds its current accounted run budget")
+  ) {
+    return "The model call would exceed the remaining Run budget. Review token and cost limits and in-flight usage before retrying.";
+  }
   if (
     /\b401\b|unauthori[sz]ed|authentication|invalid api[- ]?key|credential/u.test(
       normalized,
