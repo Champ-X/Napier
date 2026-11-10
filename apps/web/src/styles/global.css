@@ -55,8 +55,15 @@
   --mono: var(--font-mono);
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+:where(*) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }
 
 html,
@@ -73,6 +80,38 @@ body {
   background: var(--color-canvas);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  color: var(--color-fg);
+  background: var(--color-accent-subtle);
+}
+
+input,
+textarea {
+  caret-color: var(--color-accent);
+}
+
+:where(*)::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+:where(*)::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-border) 88%, transparent);
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  background-clip: padding-box;
+}
+
+:where(*)::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-border-strong) 80%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+:where(*)::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 button,

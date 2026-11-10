@@ -35,6 +35,7 @@
   color: var(--color-fg);
   background: var(--color-bg-subtle);
   border-inline-start: 1px solid var(--color-border-subtle);
+  container: artifact-panel / inline-size;
 }
 
 .artifact-inspector-header {
@@ -90,23 +91,79 @@
 }
 
 .artifact-inspector-header .artifact-inspector-views button {
+  display: inline-flex;
+  flex-shrink: 0;
   width: auto;
   min-width: var(--control-target);
   gap: var(--space-1);
+  align-items: center;
+  justify-content: center;
   padding-inline: var(--space-2);
   font-size: var(--text-xs);
 }
 
 .artifact-inspector-header .artifact-inspector-back {
+  display: inline-flex;
   width: auto;
   gap: var(--space-1);
+  align-items: center;
+  justify-content: center;
   padding-inline: var(--space-2);
   font-size: var(--text-xs);
 }
 
 .artifact-inspector-views button[aria-pressed="true"] {
-  color: var(--color-fg);
-  background: var(--color-surface-muted);
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+
+/* Keep the document name and actions readable in a narrow evidence pane. */
+@container artifact-panel (max-width: 560px) {
+  .artifact-inspector-header {
+    grid-template-columns: minmax(0, 1fr) repeat(4, auto);
+    grid-template-rows: auto auto;
+    grid-auto-flow: row;
+    gap: var(--space-1);
+    padding-block: var(--space-2);
+  }
+
+  .artifact-inspector-header .artifact-inspector-identity {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-height: var(--control-target);
+  }
+
+  .artifact-inspector-header .artifact-inspector-views {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: var(--control-target);
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .artifact-inspector-header > button,
+  .artifact-inspector-header > a {
+    grid-row: 2;
+  }
+
+  .artifact-inspector-header .artifact-inspector-back > span {
+    display: none;
+  }
+}
+
+@container artifact-panel (max-width: 360px) {
+  .artifact-inspector-header .artifact-inspector-identity {
+    grid-column: 1;
+  }
+
+  .artifact-inspector-header .artifact-inspector-views {
+    grid-column: 1 / -1;
+  }
+
+  .artifact-inspector-header > button,
+  .artifact-inspector-header > a {
+    grid-row: 1;
+  }
 }
 
 .artifact-inspector-header button:disabled {

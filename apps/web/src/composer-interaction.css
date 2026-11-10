@@ -1,0 +1,153 @@
+.conversation-workspace-view .composer.composer-interactive {
+  border-color: var(--color-border);
+  border-radius: var(--component-composer-radius);
+  box-shadow: var(--component-composer-shadow);
+}
+
+.conversation-workspace-view .composer.composer-interactive:focus-within {
+  border-color: var(--color-focus-ring);
+  box-shadow: var(--component-composer-shadow);
+}
+
+.conversation-workspace-view
+  .composer.composer-interactive:has(textarea:focus-visible) {
+  outline: var(--control-focus-width) solid var(--color-focus-ring);
+  outline-offset: var(--control-focus-offset);
+}
+
+.composer.composer-interactive .composer-interaction-bar {
+  margin: var(--space-1) var(--space-2) 0;
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.composer.composer-interactive .composer-interaction-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+}
+
+.composer.composer-interactive .composer-interaction-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg-muted);
+}
+
+.composer.composer-interactive[data-interaction-state="running"]
+  .composer-interaction-status {
+  color: var(--color-accent);
+}
+
+.composer.composer-interactive[data-interaction-state="decision"]
+  .composer-interaction-status,
+.composer.composer-interactive[data-interaction-state="browser"]
+  .composer-interaction-status {
+  color: var(--color-warning);
+}
+
+.composer.composer-interactive .composer-interaction-status svg {
+  flex-shrink: 0;
+}
+
+.composer.composer-interactive .composer-interaction-mode {
+  max-width: 100%;
+  min-height: var(--control-target);
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-fg);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.composer.composer-interactive .composer-interaction-mode:hover {
+  background: var(--color-bg-subtle);
+  border-color: var(--color-border-strong);
+}
+
+.composer.composer-interactive .composer-interaction-bar p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-compact);
+  color: var(--color-fg-subtle);
+}
+
+.conversation-workspace-view .composer.composer-interactive textarea {
+  caret-color: var(--color-accent);
+}
+
+.conversation-workspace-view .composer.composer-interactive textarea:disabled {
+  cursor: not-allowed;
+}
+
+.conversation-workspace-view
+  .composer.composer-interactive
+  .composer-run-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.conversation-workspace-view
+  .composer.composer-interactive
+  .composer-run-actions
+  .run-button {
+  width: auto;
+  gap: var(--space-2);
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.conversation-workspace-view
+  .composer.composer-interactive
+  .composer-run-actions
+  .run-button
+  > span {
+  display: inline;
+}
+
+@container (max-width: 560px) {
+  .conversation-workspace-view
+    .composer.composer-interactive[data-interaction-state="running"]
+    .composer-input-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .conversation-workspace-view
+    .composer.composer-interactive
+    .composer-run-actions {
+    justify-self: end;
+  }
+}
+
+@media (forced-colors: active) {
+  .conversation-workspace-view .composer.composer-interactive {
+    border: 1px solid ButtonText;
+    box-shadow: none;
+  }
+
+  .composer.composer-interactive .composer-interaction-bar {
+    border: 1px solid ButtonText;
+    background: Canvas;
+  }
+
+  .composer.composer-interactive .composer-interaction-mode:focus-visible,
+  .conversation-workspace-view
+    .composer.composer-interactive:has(textarea:focus-visible) {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}

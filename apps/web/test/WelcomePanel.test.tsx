@@ -10,7 +10,6 @@ vi.mock("lucide-react", () => {
   const Icon = (props: Record<string, unknown>) => <svg {...props} />;
   return {
     ArrowUpRight: Icon,
-    BookOpenCheck: Icon,
     Blocks: Icon,
     Bug: Icon,
     FolderSearch2: Icon,

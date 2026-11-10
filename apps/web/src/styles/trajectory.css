@@ -5,7 +5,7 @@
   background: var(--color-paper);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--workbench-panel-shadow);
+  box-shadow: var(--shadow-none);
 }
 
 .trace-evidence-stack > summary {
@@ -158,25 +158,18 @@
 
 .agent-milestone-card {
   position: relative;
-  padding: 11px 11px 10px 14px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   overflow: hidden;
-  background:
-    linear-gradient(color-mix(in srgb, var(--color-paper) 40%, transparent), color-mix(in srgb, var(--color-paper) 40%, transparent)),
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 21px,
-      color-mix(in srgb, var(--color-gray-30) 8%, transparent) 22px
-    ),
-    var(--color-surface-muted);
-  border: 1px solid var(--rule-strong);
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--color-gray-30) 5%, transparent);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-none);
 }
 
 .agent-milestone-card::before {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 3px;
+  width: 1px;
   content: "";
   background: var(--vermilion);
 }
@@ -279,9 +272,9 @@
 
 .delegation-heading h3 {
   margin: 0;
-  font-family: var(--serif);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 .delegation-heading > span {
@@ -296,17 +289,18 @@
 
 .delegation-card {
   position: relative;
-  padding: 11px 11px 10px 13px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
   overflow: hidden;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--rule-strong);
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--color-gray-30) 5%, transparent);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-none);
 }
 
 .delegation-card::before {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 3px;
+  width: 1px;
   content: "";
   background: var(--ink-faint);
 }
@@ -443,7 +437,7 @@
   color: var(--ink-soft);
   background: var(--color-sage-91);
   border: 1px solid var(--color-sage-71);
-  border-left: 2px solid var(--color-teal-28);
+  border-inline-start: 1px solid var(--color-teal-28);
 }
 
 .delegation-evidence-receipt strong,
@@ -493,7 +487,7 @@
   color: var(--ink-soft);
   background: var(--color-sage-91);
   border: 1px solid var(--color-sage-71);
-  border-left: 2px solid var(--color-teal-28);
+  border-inline-start: 1px solid var(--color-teal-28);
 }
 
 .delegation-review-receipt strong,
@@ -609,21 +603,19 @@
 
 .otel-export-card {
   position: relative;
-  padding: 11px 10px 9px 13px;
-  margin: 0 0 18px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  margin: 0 0 var(--space-6);
   overflow: hidden;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-teal-28) 5%, transparent) 1px, transparent 1px) 0 0 / 22px
-      100%,
-    var(--color-surface-muted);
-  border: 1px solid var(--color-sage-71);
-  box-shadow: 3px 4px 0 color-mix(in srgb, var(--color-teal-28) 7%, transparent);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-none);
 }
 
 .otel-export-card::before {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 4px;
+  width: 1px;
   content: "";
   background: var(--color-teal-28);
 }
@@ -637,19 +629,19 @@
 
 .otel-export-card > header span,
 .otel-export-controls label > span {
-  font-family: var(--mono);
+  font-family: var(--font-sans);
   font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-teal-28);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-fg-muted);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .otel-export-card > header h3 {
-  margin: 3px 0 0;
-  font-family: var(--serif);
-  font-size: 14px;
-  font-weight: 500;
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 .otel-export-card > header svg {
@@ -736,7 +728,7 @@
   margin-top: 7px;
   background: var(--color-sage-91);
   border: 1px solid var(--color-sage-71);
-  border-left: 2px solid var(--color-teal-28);
+  border-inline-start: 1px solid var(--color-teal-28);
 }
 
 .otel-export-receipt.status-invalid {
@@ -868,7 +860,7 @@
   margin-top: 8px;
   background: color-mix(in srgb, var(--color-success-surface) 75%, transparent);
   border: 1px solid var(--color-sage-76);
-  border-left: 2px solid var(--color-teal-28);
+  border-inline-start: 1px solid var(--color-teal-28);
 }
 
 .trace-summary-verification.status-invalid {

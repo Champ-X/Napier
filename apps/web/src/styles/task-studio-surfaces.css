@@ -2,9 +2,9 @@
 .operator-decision {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-inline-start: 3px solid var(--color-warning);
+  border-inline-start: 1px solid var(--color-warning);
   border-radius: var(--radius-md);
-  box-shadow: var(--workbench-panel-shadow);
+  box-shadow: var(--shadow-none);
 }
 
 .operator-decision::after {
@@ -88,7 +88,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--workbench-panel-shadow);
+  box-shadow: var(--shadow-none);
 }
 
 .settings-content .fixture-docket {

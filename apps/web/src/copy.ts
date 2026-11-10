@@ -23,7 +23,6 @@ export const en = {
   idle: "Ready",
   failed: "Needs review",
   composerPlaceholder: "Message Napier…",
-  steeringPlaceholder: "Redirect the active run without losing its ledger...",
   send: "Run",
   modelUnavailable: "Model unavailable",
   modelUnavailableHint:
@@ -34,11 +33,7 @@ export const en = {
     hostDirect:
       "Host-direct execution is explicitly enabled without OS isolation. Commands run on this machine.",
   },
-  steer: "Steer",
-  queueFollowUp: "Queue next",
   controlMode: "Run input mode",
-  inputMode: "Input",
-  runControlMode: "Run control",
   steering: "Steering",
   followUp: "Follow-up",
   shortcut: "⌘ ↵",

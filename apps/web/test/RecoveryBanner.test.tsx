@@ -4,11 +4,14 @@ import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { RunRecord } from "@napier/contracts";
+import type { RunRecoveryCheckpoint } from "@napier/contracts/manual-run-recovery";
 
 import { RecoveryBanner } from "../src/RecoveryBanner";
 
 vi.mock("lucide-react", () => ({
   RotateCcw: (props: Record<string, unknown>) => <svg {...props} />,
+  Search: (props: Record<string, unknown>) => <svg {...props} />,
+  ArrowRight: (props: Record<string, unknown>) => <svg {...props} />,
 }));
 
 const containers: HTMLElement[] = [];
@@ -31,26 +34,30 @@ describe("RecoveryBanner", () => {
       render(
         <RecoveryBanner
           run={run("partial")}
+          checkpoint={settledCheckpoint("run_partial")}
           running={false}
           modelConfigured
           onResume={onResume}
+          onInspect={vi.fn()}
+          onOpenWorkflow={vi.fn()}
         />,
         container,
       );
     });
 
     expect(container.textContent).toContain(
-      "This task has preserved partial work.",
+      "Continue from preserved work",
     );
     expect(container.textContent).toContain(
-      "Your plan and existing results are saved.",
+      "the original Agent capability boundary",
     );
     expect(container.textContent).not.toContain("interrupted");
     const button = findButton(container);
-    expect(button.textContent).toContain("Continue this task");
+    expect(button.textContent).toContain("Continue task");
     button.click();
-    expect(onResume).toHaveBeenCalledOnce();
-    expect(container.querySelector("details")).toBeNull();
+    expect(onResume).toHaveBeenCalledExactlyOnceWith(false);
+    expect(container.querySelector(".recovery-stop")).toBeNull();
+    expect(container.querySelector(".recovery-receipt")?.textContent).toContain("run_partial");
   });
 
   it("makes the failure reason available as escaped, collapsed text", async () => {
@@ -64,11 +71,13 @@ describe("RecoveryBanner", () => {
           running={false}
           modelConfigured
           onResume={vi.fn()}
+          onInspect={vi.fn()}
+          onOpenWorkflow={vi.fn()}
         />,
         container,
       );
     });
-    const details = container.querySelector("details");
+    const details = container.querySelector(".recovery-stop");
     expect(details?.hasAttribute("open")).toBe(false);
     expect(details?.querySelector("summary")?.textContent).toBe(
       "Why this run stopped",
@@ -77,8 +86,9 @@ describe("RecoveryBanner", () => {
     expect(details?.querySelector("script")).toBeNull();
   });
 
-  it("preserves the paused-budget recovery action", async () => {
+  it("offers read-only inspection for a paused-budget run without operation evidence", async () => {
     const container = installDom();
+    const onResume = vi.fn();
 
     await act(async () => {
       render(
@@ -86,14 +96,18 @@ describe("RecoveryBanner", () => {
           run={run("paused_budget")}
           running={false}
           modelConfigured
-          onResume={vi.fn()}
+          onResume={onResume}
+          onInspect={vi.fn()}
+          onOpenWorkflow={vi.fn()}
         />,
         container,
       );
     });
 
-    expect(container.textContent).toContain("A run stopped before settlement.");
-    expect(findButton(container).textContent).toContain("Resume safely");
+    expect(container.textContent).toContain("Operation evidence is unavailable");
+    expect(findButton(container).textContent).toContain("Inspect read-only");
+    findButton(container).click();
+    expect(onResume).toHaveBeenCalledExactlyOnceWith(true);
   });
 });
 
@@ -133,7 +147,8 @@ function installDom(): HTMLElement {
 
 function findButton(root: Node): HTMLButtonElement {
   for (const child of Array.from(root.childNodes)) {
-    if ("localName" in child && child.localName === "button") {
+    if ("localName" in child && child.localName === "button" &&
+      (child as HTMLButtonElement).classList.contains("recovery-primary")) {
       return child as HTMLButtonElement;
     }
     try {
@@ -143,4 +158,17 @@ function findButton(root: Node): HTMLButtonElement {
     }
   }
   throw new Error("Recovery button not found");
+}
+
+function settledCheckpoint(runId: string): RunRecoveryCheckpoint {
+  return {
+    runId,
+    sourceRunId: runId,
+    throughSeq: 1,
+    total: 0,
+    omitted: 0,
+    evidenceLimited: false,
+    counts: { completed: 0, not_executed: 0, needs_reconciliation: 0, not_replayable: 0 },
+    operations: [],
+  };
 }

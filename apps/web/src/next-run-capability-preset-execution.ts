@@ -15,6 +15,8 @@ export interface NextRunPromptInput {
   model: ModelRef;
   capabilityPreset?: AgentCapabilityPresetId;
   harnessPolicyPreset?: HarnessPolicyPresetId;
+  /** Durable admission identity; retries of the same send reuse this value. */
+  requestId?: string;
   onStart: () => void;
   onRefresh: () => Promise<void>;
   onError: (error: unknown) => void;
@@ -30,11 +32,13 @@ export async function executeNextRunPrompt(
 ): Promise<void> {
   input.onStart();
   let runAccepted = false;
+  const requestId = input.requestId ?? crypto.randomUUID();
   try {
     await stream(
       input.threadId,
       {
         text: input.text,
+        requestId,
         ...(input.images ? { images: input.images } : {}),
         model: input.model,
         ...(input.harnessPolicyPreset

@@ -24,27 +24,28 @@ export function useActiveChannelDeliveryPolling(
   useEffect(() => {
     if (!activeChannelKey) return;
     const channelIds = activeChannelKey.split(",");
-    let cancelled = false;
-    const refresh = async (): Promise<void> => {
-      try {
-        const results = await Promise.all(
-          channelIds.map(async (channelId) => ({
-            channelId,
-            value: await getInboundDeliveries(channelId),
-          })),
-        );
-        if (!cancelled) {
-          for (const result of results)
-            onDeliveries(result.channelId, result.value);
+    const controller = new AbortController();
+    const stopPolling = channelIds.map((channelId) => {
+      let timer: number;
+      const refresh = async (): Promise<void> => {
+        try {
+          const value = await getInboundDeliveries(channelId, controller.signal);
+          if (!controller.signal.aborted) onDeliveries(channelId, value);
+        } catch {
+          // Retry this channel without preventing other channels from updating.
+        } finally {
+          // Schedule after settling so a slow response cannot overlap a newer
+          // request and overwrite it with stale delivery state.
+          if (!controller.signal.aborted)
+            timer = window.setTimeout(() => void refresh(), 2_000);
         }
-      } catch {
-        // The next interval or an explicit refresh can recover transient reads.
-      }
-    };
-    const timer = window.setInterval(() => void refresh(), 2_000);
+      };
+      timer = window.setTimeout(() => void refresh(), 2_000);
+      return () => window.clearTimeout(timer);
+    });
     return () => {
-      cancelled = true;
-      window.clearInterval(timer);
+      controller.abort();
+      for (const stop of stopPolling) stop();
     };
   }, [activeChannelKey, onDeliveries]);
 }

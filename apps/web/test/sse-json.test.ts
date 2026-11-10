@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { readSseJsonRecords } from "../src/sse-json";
 
@@ -35,6 +35,69 @@ describe("shared SSE JSON reader", () => {
       }
     };
     await expect(read()).rejects.toThrow("exceeds its byte limit");
+  });
+
+  it("releases the reader after normal completion without cancelling the source", async () => {
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"ok":true}\n\n'));
+        controller.close();
+      },
+      cancel,
+    });
+    for await (const _record of readSseJsonRecords("/api/test", stream)) {
+      // Drain the source normally.
+    }
+    expect(stream.locked).toBe(false);
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it.each(["break", "consumer-error", "parse-error", "byte-limit"])(
+    "cancels an open source and releases its reader on %s",
+    async (failure) => {
+      const cancel = vi.fn();
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode(
+              failure === "parse-error" ? "data: invalid\n\n" : 'data: {"ok":true}\n\n',
+            ),
+          );
+        },
+        cancel,
+      });
+      const consume = async () => {
+        for await (const _record of readSseJsonRecords("/api/test", stream, {
+          ...(failure === "byte-limit" ? { maxTotalBytes: 1 } : {}),
+        })) {
+          if (failure === "consumer-error") throw new Error("Invalid protocol frame");
+          break;
+        }
+      };
+      if (failure === "break") await consume();
+      else await expect(consume()).rejects.toThrow();
+      expect(cancel).toHaveBeenCalledTimes(1);
+      expect(stream.locked).toBe(false);
+    },
+  );
+
+  it("preserves the original failure when source cancellation also fails", async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"ok":true}\n\n'));
+      },
+      cancel() {
+        throw new Error("Cancellation failed");
+      },
+    });
+    const consume = async () => {
+      for await (const _record of readSseJsonRecords("/api/test", stream)) {
+        throw new Error("Invalid protocol frame");
+      }
+    };
+    await expect(consume()).rejects.toThrow("Invalid protocol frame");
+    expect(stream.locked).toBe(false);
   });
 });
 

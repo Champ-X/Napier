@@ -1,5 +1,5 @@
 /* Generated from DESIGN.md. Do not edit by hand. */
-/* source-sha256: 0a29c28b860b60c1f859113ae151d64a6d59262eb3f6939c220ce4441f23ed85 */
+/* source-sha256: f446b85cc711ae4554762a09855adcc5b2dc3de9e24a221fc9955e2cbace7c1b */
 :root {
   color-scheme: light;
   --color-accent: #2F567D;
@@ -178,6 +178,9 @@
   --layout-reading-max: 820px;
   --layout-reading-min: 640px;
   --layout-reading-target: 760px;
+  --layout-results-rail-max: 336px;
+  --layout-results-rail-min: 280px;
+  --layout-results-rail-preferred: 24vw;
   --layout-settings-form: 800px;
   --layout-sidebar-compact: 56px;
   --layout-sidebar-expanded: 252px;

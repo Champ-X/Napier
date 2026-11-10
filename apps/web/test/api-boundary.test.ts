@@ -9,7 +9,7 @@ const webRoot = path.resolve(
   "..",
 );
 const sourceRoot = path.join(webRoot, "src");
-const allowedFetchCallers = new Set([
+const allowedWorkspaceFetchCallers = new Set([
   "src/agent-message-experiment-api.ts",
   "src/api-client.ts",
   "src/artifact-file-api.ts",
@@ -23,22 +23,28 @@ const allowedFetchCallers = new Set([
   "src/tool-invocation-experiment-api.ts",
   "src/workflow-api.ts",
   "src/workflow-experiment-api.ts",
+  "src/workflow-recovery-api.ts",
   "src/workspace-directory-api.ts",
 ]);
 
 describe("Web API boundary", () => {
-  it("keeps direct fetch calls behind hash-verified JSON and SSE clients", async () => {
+  it("keeps direct fetch calls inside the workspace binding and bound requests inside protocol clients", async () => {
     const files = await listSourceFiles(sourceRoot);
     const directFetchCallers = [];
+    const workspaceFetchCallers = [];
 
     for (const filePath of files) {
       const source = await readFile(filePath, "utf8");
       if (/\bfetch\s*\(/.test(source)) {
         directFetchCallers.push(toWebRelativePath(filePath));
       }
+      if (/\bworkspaceFetch\s*\(/.test(source)) {
+        workspaceFetchCallers.push(toWebRelativePath(filePath));
+      }
     }
 
-    expect(directFetchCallers.sort()).toEqual([...allowedFetchCallers].sort());
+    expect(directFetchCallers).toEqual(["src/workspace-api-binding.ts"]);
+    expect(workspaceFetchCallers.sort()).toEqual([...allowedWorkspaceFetchCallers].sort());
   });
 
   it("keeps hash-verified JSON requests scoped to management API routes", async () => {

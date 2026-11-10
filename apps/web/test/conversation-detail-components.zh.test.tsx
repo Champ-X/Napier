@@ -55,7 +55,7 @@ describe("conversation detail Chinese copy", () => {
     );
     const citationMarkup = citationContainer.textContent ?? "";
 
-    expect(artifactMarkup).toContain("当前 产物 · 已验证");
+    expect(artifactMarkup).toContain("当前 产物 · 完整性已记录");
     expect(artifactMarkup).toContain("类型");
     expect(artifactMarkup).toContain("预览");
     expect(artifactMarkup).not.toContain("Current Artifact");

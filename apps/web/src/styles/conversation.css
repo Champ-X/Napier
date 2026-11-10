@@ -330,35 +330,21 @@
   animation: caret-blink 900ms step-end infinite;
 }
 
+/* Visual welcome composition lives in task-studio.css; keep structure here. */
 .welcome-panel {
   display: flex;
   width: var(--content-axis);
   flex-direction: column;
-  align-items: center;
   margin: 0 auto;
   padding: 0;
-  text-align: center;
 }
 
 .welcome-panel h2 {
-  max-width: 760px;
   margin: 0;
-  font-family: var(--font-sans);
-  font-size: clamp(var(--text-3xl), 4vw, 48px);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1.12;
-  letter-spacing: -0.04em;
-  text-wrap: balance;
 }
 
 .welcome-panel > p {
-  max-width: 620px;
-  margin: var(--space-3) auto 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: var(--leading-body);
-  color: var(--color-fg-muted);
-  text-wrap: balance;
+  margin: var(--space-3) 0 0;
 }
 
 .welcome-starters {
@@ -366,79 +352,32 @@
   margin: 0 auto;
 }
 
-.welcome-starters > h3 {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-fg-muted);
-}
-
 .welcome-starter-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
 }
 
 .welcome-starter {
   display: grid;
   min-width: 0;
-  min-height: 74px;
-  grid-template-columns: 34px minmax(0, 1fr);
-  gap: var(--space-3);
   align-items: center;
-  padding: var(--space-3);
   color: var(--color-fg);
   text-align: left;
   cursor: pointer;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-none);
-  transition:
-    background var(--duration-base) var(--ease-out),
-    border-color var(--duration-base) var(--ease-out),
-    box-shadow var(--duration-base) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
-}
-
-.welcome-starter:hover {
-  background: var(--color-surface-raised);
-  border-color: var(--color-border);
-  box-shadow: var(--workbench-panel-shadow);
-  transform: translateY(-1px);
 }
 
 .welcome-starter-icon {
   display: grid;
-  width: 34px;
-  height: 34px;
-  color: var(--color-fg-muted);
-  background: var(--color-bg-subtle);
-  border-radius: var(--radius-sm);
   place-items: center;
 }
 
 .welcome-starter-copy {
   display: grid;
   min-width: 0;
-  gap: 2px;
 }
 
 .welcome-starter-copy strong,
 .welcome-starter-copy small {
   overflow-wrap: anywhere;
-}
-
-.welcome-starter-copy strong {
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--leading-compact);
-}
-
-.welcome-starter-copy small {
-  font-size: var(--text-xs);
-  line-height: var(--leading-compact);
-  color: var(--color-fg-subtle);
 }
 
 .operator-decision {
@@ -817,21 +756,10 @@
 
 .composer-input-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--inline-sm);
   align-items: center;
   min-height: var(--layout-composer-min);
-}
-
-.composer-mode {
-  align-self: start;
-  margin-top: 15px;
-  font-family: var(--mono);
-  font-size: var(--text-annotation);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-accent);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .composer textarea {
@@ -933,17 +861,16 @@
 .composer-options-popover {
   position: absolute;
   z-index: 40;
-  bottom: calc(100% + 12px);
-  left: -9px;
+  bottom: calc(100% + var(--space-3));
+  left: calc(var(--space-2) * -1);
   width: min(640px, calc(100vw - 132px));
   max-height: min(68vh, 620px);
-  padding: 10px;
+  padding: var(--space-3);
   overflow: hidden auto;
-  background: color-mix(in srgb, var(--color-paper) 98%, transparent);
-  border: 1px solid var(--rule-strong);
-  border-radius: 12px;
-  box-shadow: 0 24px 70px
-    color-mix(in srgb, var(--color-blue-16) 16%, transparent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
 }
 
 .composer-model-warning {
@@ -961,21 +888,10 @@
   color: var(--color-warning);
 }
 
-.control-mode,
 .composer-run-actions {
   display: flex;
   align-items: center;
   gap: 7px;
-}
-
-.control-mode select {
-  padding: 4px 20px 4px 6px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-soft);
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-xs);
 }
 
 .run-button,

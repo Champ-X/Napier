@@ -1,6 +1,5 @@
 import {
   ArrowUpRight,
-  BookOpenCheck,
   Blocks,
   Bug,
   FolderSearch2,
@@ -10,18 +9,15 @@ import {
 } from "lucide-react";
 
 import { copy } from "./copy";
-import { shellCopy } from "./shell-copy";
 
 export function WelcomePanel() {
   return (
-    <div className="welcome-panel" aria-describedby="welcome-description">
-      <div className="welcome-identity">
-        <span className="welcome-ledger-mark" aria-hidden="true">
-          <BookOpenCheck size={25} strokeWidth={1.5} />
-        </span>
-        <span>{shellCopy.initialStates.welcomeEyebrow}</span>
-      </div>
-      <h2>{copy.welcome.title}</h2>
+    <div
+      className="welcome-panel"
+      aria-labelledby="welcome-title"
+      aria-describedby="welcome-description"
+    >
+      <h2 id="welcome-title">{copy.welcome.title}</h2>
       <p id="welcome-description">{copy.welcome.body}</p>
     </div>
   );

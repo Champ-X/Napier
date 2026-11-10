@@ -30,6 +30,9 @@ export function useThreadSubmission(input: {
 }) {
   const controlOutbox = useRunControlOutbox(input);
   const submitting = useRef(new Set<string>());
+  const pendingPrompt = useRef<{ fingerprint: string; requestId: string } | null>(
+    null,
+  );
   const submit = async (override?: string) => {
     const draft = input.composer;
     const text = (override ?? draft.composer).trim();
@@ -73,11 +76,24 @@ export function useThreadSubmission(input: {
       }
       const imageAttachments = draft.composerImages;
       const images = promptImagesFromAttachments(imageAttachments);
+      const fingerprint = JSON.stringify([
+        input.workspaceKey,
+        threadId,
+        text,
+        imageAttachments.map((image) => image.id),
+      ]);
+      const pending = pendingPrompt.current;
+      const requestId =
+        pending?.fingerprint === fingerprint
+          ? pending.requestId
+          : crypto.randomUUID();
+      pendingPrompt.current = { fingerprint, requestId };
       draft.setComposer("");
       draft.setComposerImages([]);
       await input.execute({
         threadId,
         text,
+        requestId,
         ...(images ? { images } : {}),
         model: input.model,
         ...(input.capabilityPreset
@@ -88,7 +104,12 @@ export function useThreadSubmission(input: {
         onError: (error) => input.onError(threadId, error),
         restoreInput: draft.restoreComposer,
         restoreImages: () => draft.setComposerImages(imageAttachments),
-        onFinish: () => input.onFinish(threadId),
+        onFinish: () => {
+          if (pendingPrompt.current?.requestId === requestId) {
+            pendingPrompt.current = null;
+          }
+          input.onFinish(threadId);
+        },
         onFrame: input.onFrame(threadId),
       });
     } finally {

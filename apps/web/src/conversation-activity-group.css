@@ -34,7 +34,7 @@
 
 .conversation-activity-group-items > * {
   margin-block: 0;
-  animation: conversation-step-arrive var(--duration-base) var(--ease-out) both;
+  animation: none;
 }
 
 .conversation-activity-group-items > .status-working > summary {
@@ -42,11 +42,77 @@
   transition: background-color var(--duration-base) var(--ease-out);
 }
 
-.conversation-activity-group-items
-  > .status-completed
-  > summary
-  > [role="img"] {
-  animation: conversation-step-confirm var(--duration-base) var(--ease-out);
+.conversation-activity-group.is-summary-group
+  > .conversation-activity-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+  min-height: var(--component-button-height);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-6) var(--space-1);
+  color: var(--color-fg-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-compact);
+  text-align: start;
+  cursor: pointer;
+}
+
+.conversation-activity-group-toggle > svg {
+  flex: 0 0 auto;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.conversation-activity-group-toggle[aria-expanded="true"] > svg {
+  transform: rotate(90deg);
+}
+
+.conversation-activity-group-label {
+  flex: 0 0 auto;
+  font-weight: var(--font-weight-medium);
+}
+
+.conversation-activity-group-summary {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-fg-subtle);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-activity-group-action {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  color: var(--color-fg-subtle);
+  font-size: var(--text-xs);
+}
+
+.conversation-activity-group.is-summary-group
+  > .conversation-activity-group-toggle:hover {
+  background: var(--color-bg-subtle);
+}
+
+.conversation-activity-group.is-summary-group
+  > .conversation-activity-group-toggle:active {
+  background: var(--color-accent-subtle);
+}
+
+.conversation-activity-group.is-summary-group
+  > .conversation-activity-group-toggle:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 5px var(--color-focus-ring);
+}
+
+.conversation-activity-group.is-summary-group
+  > .conversation-activity-group-items[hidden] {
+  display: none;
 }
 
 @keyframes conversation-stage-arrive {
@@ -57,28 +123,6 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes conversation-step-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes conversation-step-confirm {
-  from {
-    opacity: 0.45;
-    transform: scale(0.86);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -120,16 +164,13 @@
 @media (prefers-reduced-motion: reduce) {
   .conversation-activity-group,
   .conversation-activity-group-items > *,
-  .conversation-activity-group-items
-    > .status-completed
-    > summary
-    > [role="img"],
   .conversation-activity-group[data-state="running"]
     .conversation-activity-group-status {
     animation: none;
   }
 
   .conversation-activity-group-status,
+  .conversation-activity-group-toggle > svg,
   .conversation-activity-group-items > .status-working > summary {
     transition: none;
   }
@@ -146,6 +187,13 @@
 }
 
 @media (forced-colors: active) {
+  .conversation-activity-group.is-summary-group
+    > .conversation-activity-group-toggle:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
   .conversation-activity-group[data-state="running"]
     .conversation-activity-group-status {
     opacity: 1;

@@ -43,7 +43,9 @@ describe("Workbench layout", () => {
     expect(styles).toContain(
       "grid-template-columns: minmax(0, 1fr) max-content;",
     );
-    expect(styles).toContain("grid-template-rows: 48px 40px;");
+    expect(styles).toContain(
+      "grid-template-rows: var(--layout-topbar) var(--layout-status-bar);",
+    );
     expect(styles).not.toContain("minmax(260px, 1fr)");
     expect(styles).not.toContain("minmax(350px, 1fr)");
     expect(navigation).toContain('<Icon size={16} aria-hidden="true" />');
@@ -113,7 +115,9 @@ describe("Workbench layout", () => {
     expect(navigation).toContain("?.click()");
     expect(navigation).toContain('openInspector("files")');
     expect(app).toContain("artifactInspectionForPath(");
-    expect(app).toContain("setWorkspaceFilePath(path)");
+    expect(app).toContain("toolFilePreviewBindingForTarget(");
+    expect(app).toContain("setWorkspaceFileSha256(target?.expectedSha256)");
+    expect(app).toContain("setWorkspaceFilePath(binding ? target!.path : path)");
     expect(app).toContain("<WorkspaceFileInspector");
     expect(app).toContain("onOpenArtifact={openArtifact}");
     expect(app).toContain("onOpenWorkspaceFile={openArtifact}");
@@ -133,7 +137,7 @@ describe("Workbench layout", () => {
   });
 
   it("keeps a workspace ledger beside the conversation and shares one resizable inspection rail", async () => {
-    const [app, ledger, ledgerStyles, artifactStyles, browserStyles] =
+    const [app, ledger, results, ledgerStyles, artifactStyles, browserStyles] =
       await Promise.all([
         readFile(
           new URL("../src/AppWorkspaceViews.tsx", import.meta.url),
@@ -141,6 +145,10 @@ describe("Workbench layout", () => {
         ),
         readFile(
           new URL("../src/WorkspaceEvidenceRail.tsx", import.meta.url),
+          "utf8",
+        ),
+        readFile(
+          new URL("../src/WorkspaceEvidenceResults.tsx", import.meta.url),
           "utf8",
         ),
         readFile(
@@ -162,13 +170,14 @@ describe("Workbench layout", () => {
     expect(app).toContain("layout.workspaceRailAvailable");
     expect(app).toContain("showResizableRail");
     expect(app).toContain("<WorkspaceEvidenceRail");
-    expect(ledger).toContain("<LazyTaskCompletionSummary");
+    expect(ledger).toContain("<WorkspaceEvidenceResults");
+    expect(results).toContain("<LazyTaskCompletionSummary");
     expect(ledgerStyles).toContain(
       ".workspace-primary-surface.has-workspace-rail",
     );
-    expect(ledgerStyles).toContain(
-      "grid-template-columns: minmax(0, 1fr) minmax(244px, 272px)",
-    );
+    expect(ledgerStyles).toContain("var(--layout-results-rail-min)");
+    expect(ledgerStyles).toContain("var(--layout-results-rail-preferred)");
+    expect(ledgerStyles).toContain("var(--layout-results-rail-max)");
     expect(ledger).toContain("onClose(): void");
     expect(artifactStyles).toContain("var(--workspace-evidence-width");
     expect(browserStyles).toContain("var(--workspace-evidence-width");

@@ -16,6 +16,7 @@ describe("persistent Composer permission", () => {
     const stream = vi.fn(async (_threadId, body, dispatch) => {
       expect(body).toEqual({
         text: "Use Browser once.",
+        requestId: "prompt-browser-permission",
         model: { provider: "faux", id: "faux-1" },
         capabilityPreset: "browser",
       });
@@ -27,6 +28,7 @@ describe("persistent Composer permission", () => {
       {
         threadId: "thread_1",
         text: "Use Browser once.",
+        requestId: "prompt-browser-permission",
         model: { provider: "faux", id: "faux-1" },
         capabilityPreset: "browser",
         onStart: vi.fn(),

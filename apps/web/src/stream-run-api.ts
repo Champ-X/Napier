@@ -47,7 +47,13 @@ export async function streamRunFrames(
   if (!response.ok) {
     await throwNapierApiError(response, "Run failed", path);
   }
-  await verifyStreamRunResponseContract(path, response, expectation);
+  try {
+    await verifyStreamRunResponseContract(path, response, expectation);
+  } catch (error) {
+    // Header rejection happens before the SSE reader owns cleanup.
+    await response.body?.cancel().catch(() => {});
+    throw error;
+  }
   if (!response.body) throw new Error("Streaming response is unavailable");
 
   const state = streamState();

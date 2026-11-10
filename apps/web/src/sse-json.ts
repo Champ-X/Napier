@@ -25,28 +25,44 @@ export async function* readSseJsonRecords(
   const maxRecordBytes = options.maxRecordBytes;
   let totalBytes = 0;
   let buffer = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    totalBytes += value.byteLength;
-    if (maxTotalBytes !== undefined && totalBytes > maxTotalBytes) {
-      throw new Error(`SSE response exceeds its byte limit for ${path}`);
+  let completed = false;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) {
+        completed = true;
+        break;
+      }
+      totalBytes += value.byteLength;
+      if (maxTotalBytes !== undefined && totalBytes > maxTotalBytes) {
+        throw new Error(`SSE response exceeds its byte limit for ${path}`);
+      }
+      buffer += decoder.decode(value, { stream: true });
+      const records = buffer.split(/\r?\n\r?\n/u);
+      buffer = records.pop() ?? "";
+      for (const record of records) {
+        assertRecordBytes(path, record, maxRecordBytes);
+        const parsed = await parseSseJsonRecord(path, record);
+        if (parsed) yield parsed;
+      }
+      assertRecordBytes(path, buffer, maxRecordBytes);
     }
-    buffer += decoder.decode(value, { stream: true });
-    const records = buffer.split(/\r?\n\r?\n/u);
-    buffer = records.pop() ?? "";
-    for (const record of records) {
-      assertRecordBytes(path, record, maxRecordBytes);
-      const parsed = await parseSseJsonRecord(path, record);
+    buffer += decoder.decode();
+    if (buffer.trim()) {
+      assertRecordBytes(path, buffer, maxRecordBytes);
+      const parsed = await parseSseJsonRecord(path, buffer);
       if (parsed) yield parsed;
     }
-    assertRecordBytes(path, buffer, maxRecordBytes);
-  }
-  buffer += decoder.decode();
-  if (buffer.trim()) {
-    assertRecordBytes(path, buffer, maxRecordBytes);
-    const parsed = await parseSseJsonRecord(path, buffer);
-    if (parsed) yield parsed;
+  } finally {
+    // A parser or consumer failure must stop the response, not leave a locked
+    // reader buffering an ongoing run. Cleanup must preserve the original error.
+    try {
+      if (!completed) await reader.cancel();
+    } catch {
+      // The transport may already have failed or been aborted.
+    } finally {
+      reader.releaseLock();
+    }
   }
 }
 

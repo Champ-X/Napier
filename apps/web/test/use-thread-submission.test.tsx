@@ -232,3 +232,25 @@ it("ordinary prompt submission retains its image and draft recovery callbacks", 
   expect(composer.composer).toBe("Ordinary prompt");
   expect(api.queue).not.toHaveBeenCalled();
 });
+
+it("reuses the same prompt requestId after a failed submit restores the draft", async () => {
+  running = false;
+  draw();
+  act(() => composer.setComposer("Retry this prompt"));
+  const requestIds: string[] = [];
+  execute.mockImplementation(async (input) => {
+    requestIds.push(input.requestId);
+    input.restoreInput(input.text);
+    input.onError(new Error("transport failed"));
+  });
+  await act(async () => {
+    await vm.submit();
+  });
+  expect(composer.composer).toBe("Retry this prompt");
+  await act(async () => {
+    await vm.submit();
+  });
+  expect(execute).toHaveBeenCalledTimes(2);
+  expect(requestIds).toHaveLength(2);
+  expect(requestIds[0]).toBe(requestIds[1]);
+});

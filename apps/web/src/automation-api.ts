@@ -120,9 +120,11 @@ export function updateInboundSignaturePolicy(
 
 export function getInboundDeliveries(
   channelId: string,
+  signal?: AbortSignal,
 ): Promise<InboundDelivery[]> {
   return requestJson(
     `/api/channels/${encodeURIComponent(channelId)}/deliveries`,
+    signal ? { signal } : undefined,
   );
 }
 

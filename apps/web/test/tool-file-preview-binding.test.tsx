@@ -1,10 +1,24 @@
 import { createHash } from "node:crypto";
 import { parseHTML } from "linkedom";
 import { createRoot, type Root } from "react-dom/client";
-import { act } from "react";
+import { act } from "preact/test-utils";
 import { afterEach, expect, it, vi } from "vitest";
 import { WorkspaceFileInspector } from "../src/WorkspaceFileInspector";
 import type { WorkspaceFilePreview } from "../src/workspace-directory-api";
+
+vi.mock("lucide-react", () => {
+  const Icon = (props: Record<string, unknown>) => <svg {...props} />;
+  return {
+    ArrowLeft: Icon,
+    Code2: Icon,
+    Download: Icon,
+    Eye: Icon,
+    ExternalLink: Icon,
+    FileCode2: Icon,
+    RotateCw: Icon,
+    PencilLine: Icon,
+  };
+});
 
 const roots: Root[] = [];
 afterEach(async () => {

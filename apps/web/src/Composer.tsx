@@ -18,6 +18,11 @@ import {
   ComposerImageError,
 } from "./composer-image-attachments";
 import { ComposerImageAttachments } from "./ComposerImageAttachments";
+import {
+  ComposerInteractionBar,
+  composerInteractionPlaceholder,
+  composerInteractionState,
+} from "./ComposerInteractionBar";
 import { ComposerHarnessPolicyControl } from "./ComposerHarnessPolicyControl";
 import { ConversationPlanProgress } from "./ConversationPlanProgress";
 import { shellCopy } from "./shell-copy";
@@ -30,6 +35,7 @@ import { useComposerHeight } from "./use-composer-height";
 import { useDismissableDetails } from "./use-dismissable-details";
 import type { useWorkspaceViewModel } from "./use-workspace-view-model";
 import "./composer-image-attachments.css";
+import "./composer-interaction.css";
 
 const LazyComposerCapabilityControl = lazy(() =>
   import("./ComposerCapabilityControl").then(
@@ -48,13 +54,7 @@ type WorkspaceViewModel = ReturnType<typeof useWorkspaceViewModel>;
 const MODEL_WARNING_ID = "composer-model-unavailable";
 const READINESS_WARNING_ID = "composer-capability-unavailable";
 
-export function Composer({
-  vm,
-  activeAgent,
-  activeModel,
-  canStartRun,
-  onOpenInspector,
-}: {
+export interface ComposerProps {
   vm: Pick<
     WorkspaceViewModel,
     | "composer"
@@ -80,7 +80,15 @@ export function Composer({
   activeModel: SelectedModelAvailability;
   canStartRun: boolean;
   onOpenInspector: (tab: InspectorTab) => void;
-}) {
+}
+
+export function Composer({
+  vm,
+  activeAgent,
+  activeModel,
+  canStartRun,
+  onOpenInspector,
+}: ComposerProps) {
   const [runReadiness, setRunReadiness] = useState<ComposerRunReadiness>(
     initialComposerRunReadiness,
   );
@@ -94,13 +102,23 @@ export function Composer({
   const imagesSupported =
     vm.composerImages.length === 0 || activeModel.vision === true;
   const canSubmit = canStartRun && runReadiness.canRun && imagesSupported;
+  const interactionState = composerInteractionState({
+    decisionPending: Boolean(vm.openOperatorDecision),
+    browserConfirmationPending: Boolean(vm.browserInteractionConfirmation),
+    running: vm.isRunning,
+  });
+  const placeholder = composerInteractionPlaceholder(
+    interactionState,
+    vm.controlMessageMode,
+  );
   const submit = useCallback(() => {
     if (vm.isRunning || canSubmit) void vm.submit();
   }, [canSubmit, vm]);
   return (
     <form
       ref={composerRef}
-      className={`composer${imageDragActive ? " is-image-dragging" : ""}`}
+      className={`composer composer-interactive${imageDragActive ? " is-image-dragging" : ""}`}
+      data-interaction-state={interactionState}
       data-image-drop-label={composerCopy.images.drop}
       data-run-readiness={readinessPending ? "checking" : runReadiness.level}
       onSubmit={(event) => {
@@ -135,22 +153,16 @@ export function Composer({
         images={vm.composerImages}
         setImages={vm.setComposerImages}
       />
+      <ComposerInteractionBar
+        state={interactionState}
+        mode={vm.controlMessageMode}
+        onMode={vm.setControlMessageMode}
+      />
       <div className="composer-input-row">
-        <span className="composer-mode" aria-hidden="true">
-          {vm.openOperatorDecision
-            ? vm.openOperatorDecision.header
-            : vm.isRunning
-              ? copy.runControlMode
-              : copy.inputMode}
-        </span>
         <textarea
-          aria-label={
-            vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
-          }
-          aria-describedby="composer-submit-hint"
-          placeholder={
-            vm.isRunning ? copy.steeringPlaceholder : copy.composerPlaceholder
-          }
+          aria-label={placeholder}
+          aria-describedby={`composer-submit-hint${interactionState === "idle" ? "" : " composer-interaction-hint"}`}
+          placeholder={placeholder}
           value={vm.composer}
           rows={1}
           disabled={
@@ -178,15 +190,15 @@ export function Composer({
                 disabled={!vm.activeRunId}
                 aria-label={
                   vm.controlMessageMode === "steering"
-                    ? copy.steer
-                    : copy.queueFollowUp
+                    ? composerCopy.interaction.sendSteering
+                    : composerCopy.interaction.sendFollowUp
                 }
               >
                 <Send size={15} aria-hidden="true" />
                 <span>
                   {vm.controlMessageMode === "steering"
-                    ? copy.steer
-                    : copy.queueFollowUp}
+                    ? composerCopy.interaction.sendSteering
+                    : composerCopy.interaction.sendFollowUp}
                 </span>
               </button>
             ) : null}
@@ -285,25 +297,6 @@ export function Composer({
               </Suspense>
             </div>
           </details>
-          {vm.isRunning ? (
-            <label className="control-mode">
-              <span>{copy.controlMode}</span>
-              <select
-                aria-label={copy.controlMode}
-                value={vm.controlMessageMode}
-                onChange={(event) =>
-                  vm.setControlMessageMode(
-                    event.target.value === "follow_up"
-                      ? "follow_up"
-                      : "steering",
-                  )
-                }
-              >
-                <option value="steering">{copy.steering}</option>
-                <option value="follow_up">{copy.followUp}</option>
-              </select>
-            </label>
-          ) : null}
         </div>
       </div>
       <ComposerReadinessNotices

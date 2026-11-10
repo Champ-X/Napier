@@ -5,6 +5,23 @@ import { deepMergeCopy, getLocale, type LocaleOverride } from "./locale";
  * readiness. Visible text resolves here so the shell stays locale-driven.
  */
 export const composerCopyEn = {
+  interaction: {
+    running: "Working on your task",
+    decision: "Your input is needed",
+    decisionHint: "Complete the choice above to continue.",
+    decisionPlaceholder: "Waiting for your choice above…",
+    browser: "Browser confirmation needed",
+    browserHint: "Review the browser action above to continue.",
+    browserPlaceholder: "Waiting for browser confirmation…",
+    steering: "Steer now",
+    followUp: "Queue follow-up",
+    steeringHint: "Your message will guide the current run.",
+    followUpHint: "Your message will wait until this run finishes.",
+    steeringPlaceholder: "Add an instruction for the current task…",
+    followUpPlaceholder: "Write the next task to queue…",
+    sendSteering: "Send instruction",
+    sendFollowUp: "Add to queue",
+  },
   labels: {
     network: "Network",
     sandbox: "Sandbox",
@@ -116,6 +133,23 @@ export const composerCopyEn = {
 } as const;
 
 export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
+  interaction: {
+    running: "任务执行中",
+    decision: "等待你的选择",
+    decisionHint: "完成上方的选择后，即可继续。",
+    decisionPlaceholder: "请先完成上方的选择…",
+    browser: "等待浏览器操作确认",
+    browserHint: "请先确认上方的浏览器操作，再继续任务。",
+    browserPlaceholder: "请先确认浏览器操作…",
+    steering: "立即纠偏",
+    followUp: "排队跟进",
+    steeringHint: "补充的指令将用于调整当前任务。",
+    followUpHint: "这条消息将在当前任务结束后继续处理。",
+    steeringPlaceholder: "补充或调整当前任务的要求…",
+    followUpPlaceholder: "写下接下来要处理的任务…",
+    sendSteering: "发送纠偏",
+    sendFollowUp: "加入队列",
+  },
   labels: {
     network: "网络",
     sandbox: "Sandbox",
@@ -196,7 +230,7 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
     title: "权限",
     defaultHint: "默认使用完全访问",
     runtimeStatus: "运行环境",
-    runtimeReady: "所选权限已就绪，将持续用于后续运行。",
+    runtimeReady: "所选权限已就绪，将用于下一次运行。",
     advancedSettings: "高级设置",
   },
   images: {

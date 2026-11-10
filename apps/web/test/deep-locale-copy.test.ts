@@ -233,7 +233,7 @@ describe("deep locale copy", () => {
     );
 
     expect(localized.subagent.outcomeSummary).toBe("结果摘要");
-    expect(localized.artifact.statuses.verified).toBe("已验证");
+    expect(localized.artifact.statuses.verified).toBe("完整性已记录");
     expect(localized.citation.guidance).toContain("来源权威性");
     expect(localized.recovery.blockReasons.unsafe_tool_effect).toContain(
       "副作用",

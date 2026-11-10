@@ -1,6 +1,7 @@
 import { RotateCcw, Search, ArrowRight } from "lucide-react";
 import type { RunRecord } from "@napier/contracts";
 import type { RunRecoveryCheckpoint } from "@napier/contracts/manual-run-recovery";
+import type { RunOrchestrationStateV1 } from "@napier/contracts/run-orchestration-state";
 import { copy } from "./copy";
 import { recoveryOperationsCopy as text } from "./recovery-operations-copy";
 import { RecoveryOperations } from "./RecoveryOperations";
@@ -9,6 +10,7 @@ import "./recovery-operations.css";
 export interface RecoveryBannerProps {
   run: RunRecord;
   checkpoint?: RunRecoveryCheckpoint | undefined;
+  orchestration?: RunOrchestrationStateV1 | undefined;
   running: boolean;
   modelConfigured: boolean;
   canResume?: boolean;
@@ -21,6 +23,7 @@ export interface RecoveryBannerProps {
 export function RecoveryBanner({
   run,
   checkpoint,
+  orchestration,
   running,
   modelConfigured,
   canResume = true,
@@ -30,6 +33,8 @@ export function RecoveryBanner({
   onOpenWorkflow,
 }: RecoveryBannerProps) {
   const facts = checkpoint?.runId === run.id ? checkpoint : undefined;
+  const register =
+    orchestration?.runId === run.id ? orchestration : undefined;
   const workflow =
     Boolean(run.workflowPlanId) || Boolean(run.source?.startsWith("workflow"));
   const needsInspection = recoveryNeedsInspection(facts);
@@ -37,10 +42,12 @@ export function RecoveryBanner({
   const unavailableId = `recovery-unavailable-${run.id}`;
   const focusDecision = () => {
     const heading = document.getElementById(`operator-decision-${decisionId}`);
-    if (heading) {
-      heading.tabIndex = -1;
-      heading.focus();
-    }
+    if (!(heading instanceof HTMLElement)) return;
+    const previousTabIndex = heading.getAttribute("tabindex");
+    if (!heading.hasAttribute("tabindex")) heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+    if (previousTabIndex === null) heading.removeAttribute("tabindex");
+    else heading.setAttribute("tabindex", previousTabIndex);
   };
   return (
     <section
@@ -61,7 +68,7 @@ export function RecoveryBanner({
               ? text.inspectHint
               : text.continueHint}
       </p>
-      <RecoveryOperations checkpoint={facts} />
+      <RecoveryOperations checkpoint={facts} orchestration={register} />
       {run.error ? (
         <details className="recovery-stop">
           <summary>{copy.recovery.failureReason}</summary>

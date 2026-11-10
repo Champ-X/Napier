@@ -1,14 +1,13 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { Files, PanelRightClose } from "lucide-react";
 
 import type { BootstrapResponse, ThreadDetail } from "@napier/contracts";
 import { taskArtifactTargets } from "./task-completion-output-paths";
 import { taskNarrative } from "./task-narrative-view-model";
 import { workspaceEvidenceCopy as t } from "./workspace-evidence-copy";
-import { WorkspaceFileTree } from "./WorkspaceFileTree";
+import { WorkspaceEvidenceFiles } from "./WorkspaceEvidenceFiles";
+import { WorkspaceEvidenceResults } from "./WorkspaceEvidenceResults";
 import "./workspace-evidence-rail.css";
-
-const LazyTaskCompletionSummary = lazy(() => import("./TaskCompletionSummary"));
 
 export interface WorkspaceEvidenceRailProps {
   workspace: BootstrapResponse["workspace"];
@@ -33,11 +32,13 @@ export function WorkspaceEvidenceRail({
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const narrative = detail ? taskNarrative(detail) : undefined;
   const targets = detail
-    ? taskArtifactTargets(detail.plans, detail.activePlan, narrative?.deliverables)
+    ? taskArtifactTargets(detail.plans, detail.activePlan, detail.taskNarrative?.deliverables)
     : [];
-  const completed = narrative?.execution === "ended" || narrative?.phase === "completed";
+  const completedItems =
+    (narrative?.execution === "ended" || narrative?.phase === "completed") ? narrative.completedItems : [];
+  const hasResults = targets.length > 0 || completedItems.length > 0;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open || !overlay || !railRef.current) return;
     restoreFocusRef.current =
       document.activeElement instanceof HTMLElement
@@ -71,98 +72,69 @@ export function WorkspaceEvidenceRail({
     };
   }, [onClose, open, overlay]);
 
+  const titleId = "workspace-evidence-rail-title";
   return (
     <aside
       ref={railRef}
       id="workspace-evidence-rail"
       className="workspace-evidence-rail"
-      aria-label={t.railLabel}
+      aria-label={overlay ? undefined : t.railLabel}
+      aria-labelledby={overlay ? titleId : undefined}
       role={overlay ? "dialog" : undefined}
       aria-modal={overlay ? "true" : undefined}
       hidden={!open}
     >
+      <header className="workspace-evidence-heading">
+        <Files size={16} aria-hidden="true" />
+        <h2 id={titleId}>{t.railTitle}</h2>
+        <button
+          type="button"
+          aria-label={t.hideRail}
+          title={t.hideRail}
+          onClick={onClose}
+        >
+          <PanelRightClose size={16} aria-hidden="true" />
+        </button>
+      </header>
       <div className="workspace-evidence-scroll">
-        <section className="workspace-card">
-          <header className="workspace-card-heading">
-            <div>
-              <strong>{t.title}</strong>
-              <span>
-                <i aria-hidden="true" />
-                {t.local}
-              </span>
-            </div>
-            <button
-              type="button"
-              aria-label={t.hideRail}
-              title={t.hideRail}
-              onClick={onClose}
-            >
-              <PanelRightClose size={15} aria-hidden="true" />
-            </button>
-          </header>
-          <div className="workspace-card-meta" title={workspace.root}>
-            <strong>{basename(workspace.root)}</strong>
-            <code>{workspace.root}</code>
-          </div>
-          <WorkspaceFileTree
+        {hasResults && detail ? (
+          <WorkspaceEvidenceResults
+            key={detail.thread.id}
+            detail={detail}
             workspaceRoot={workspace.root}
-            openablePaths={targets.map((target) => target.path)}
-            onOpenFile={onOpenArtifact}
+            targets={targets}
+            completedItems={completedItems}
+            completed={(narrative?.execution === "ended" || narrative?.phase === "completed")}
+            onLedgerChanged={onLedgerChanged}
+            onOpenArtifact={onOpenArtifact}
           />
-        </section>
-
-        <section className="workspace-evidence-results">
-          <header>
-            <Files size={14} aria-hidden="true" />
-            <strong>{t.evidence}</strong>
-            {targets.length > 0 ? <span>{targets.length}</span> : null}
-          </header>
-          {completed &&
-          detail &&
-          narrative &&
-          (narrative.completedItems.length > 0 || targets.length > 0) ? (
-            <Suspense fallback={null}>
-              <LazyTaskCompletionSummary
-                completedItems={narrative.completedItems}
-                narrative={narrative}
-                plans={detail.plans}
-                activePlan={detail.activePlan}
-                threadId={detail.thread.id}
-                onLedgerChanged={onLedgerChanged}
-                onOpenArtifact={onOpenArtifact}
-              />
-            </Suspense>
-          ) : targets.length > 0 ? (
-            <div className="workspace-evidence-output-list">
-              {targets.map((target) => (
-                <button
-                  type="button"
-                  key={target.path}
-                  title={`${t.openOutput}: ${target.path}`}
-                  onClick={() => onOpenArtifact(target.path)}
-                >
-                  <Files size={14} aria-hidden="true" />
-                  <span>{basename(target.path)}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="workspace-evidence-empty">{t.noEvidence}</p>
-          )}
-        </section>
+        ) : (
+          <p className="workspace-evidence-empty">{t.noEvidence}</p>
+        )}
+        <WorkspaceEvidenceFiles
+          key={`${workspace.root}:${detail?.thread.id ?? "idle"}`}
+          workspaceRoot={workspace.root}
+          targets={targets}
+          secondary={hasResults}
+          onOpenArtifact={onOpenArtifact}
+        />
       </div>
     </aside>
   );
 }
 
-function basename(path: string): string {
-  return path.split(/[\\/]/u).filter(Boolean).at(-1) ?? path;
-}
-
 function focusableElements(container: HTMLElement): HTMLElement[] {
   return [
     ...container.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      [
+        "a[href]",
+        "button:not([disabled])",
+        "input:not([disabled]):not([type='hidden'])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        "summary",
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(", "),
     ),
-  ];
+  ].filter((element) => !element.closest("[hidden]"));
 }

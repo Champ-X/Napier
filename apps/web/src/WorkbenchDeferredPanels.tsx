@@ -25,6 +25,7 @@ export function WorkbenchDeferredNotices({ vm, onInspect, onOpenWorkflow }: {
   onOpenWorkflow: () => void;
 }) {
   const checkpoint = vm.detail?.recoveryCheckpoint;
+  const orchestration = vm.detail?.orchestrationState;
   const latest = latestPrimaryRun(vm.detail?.runs ?? []);
   const run = !vm.isRunning && latest &&
     (latest.id === checkpoint?.runId || latest.id === vm.resumableRun?.id) ? latest : undefined;
@@ -34,7 +35,7 @@ export function WorkbenchDeferredNotices({ vm, onInspect, onOpenWorkflow }: {
       <LazyWorkbenchNotices
         error={vm.error}
         recovery={run ? {
-          run, checkpoint,
+          run, checkpoint, orchestration,
           canResume: run.id === vm.resumableRun?.id,
           decisionId: vm.openOperatorDecision?.id,
           running: vm.isRunning,

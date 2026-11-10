@@ -1,4 +1,4 @@
-import { act } from "react";
+import { act } from "preact/test-utils";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { parseHTML } from "linkedom";
@@ -12,6 +12,10 @@ import {
 } from "../src/use-thread-recovery";
 import { resumeInterruptedRun } from "../src/thread-run-api";
 vi.mock("../src/thread-run-api", () => ({ resumeInterruptedRun: vi.fn() }));
+vi.mock("lucide-react", () => {
+  const Icon = (props: Record<string, unknown>) => <svg {...props} />;
+  return { RotateCcw: Icon, Search: Icon, ArrowRight: Icon };
+});
 const roots: Root[] = [];
 afterEach(async () => {
   await act(async () => roots.splice(0).forEach((root) => root.unmount()));
@@ -91,8 +95,11 @@ it("keeps the reason and button disabled when the model is unavailable", () => {
   const html = renderToStaticMarkup(
     <RecoveryBanner {...props} modelConfigured={false} />,
   );
-  expect(html).toContain('disabled=""');
-  expect(html).toContain(`recovery-unavailable-${run.id}`);
+  const { document } = parseHTML(html);
+  const button = document.querySelector(".recovery-primary") as HTMLButtonElement;
+  expect(button.disabled).toBe(true);
+  expect(button.getAttribute("aria-describedby")).toContain(`recovery-unavailable-${run.id}`);
+  expect(document.getElementById(`recovery-unavailable-${run.id}`)?.textContent).toBeTruthy();
 });
 it("deduplicates immediate resume clicks and attributes delayed errors to the originating thread", async () => {
   const { document, window } = parseHTML(
