@@ -279,8 +279,22 @@ Operator decisions are durable request/answer/continue/cancel transitions. A
 waiting task cannot bypass its pending decision through an ordinary prompt.
 Workflow-managed Runs resume through their Plan and dependency scheduler.
 
+Recovery reads a projected **orchestration program counter**
+(`RunOrchestrationStateV1`) before classifying tool rows for the operator
+recovery panel. The register is total-state (Pi Durable `op.state` analogue):
+phase, cancel flag, and per-operation fence/replay class. When
+`tool.operation.*` journals exist, fence phases
+(intent → effect_pending → settled / indeterminate) feed the register through
+the recovery eligibility table. Operator stop persists `run.cancel.requested`
+before aborting. Evidence remains in the event ledger. Napier does not depend on
+`@earendil-works/pi-durable`; see [Pi Durable alignment](pi-durable-alignment.md).
+
 Sources: [manual recovery](../packages/runtime/src/agent-run-recovery.ts),
 [recovery contract](../packages/contracts/src/manual-run-recovery.ts),
+[orchestration state](../packages/contracts/src/run-orchestration-state.ts),
+[orchestration projection](../packages/runtime/src/run-orchestration-projection.ts),
+[tool operation eligibility](../packages/runtime/src/tool-operation-recovery-eligibility.ts),
+[cancel then abort](../packages/runtime/src/run-cancel-then-abort.ts),
 [automatic eligibility](../packages/runtime/src/automatic-recovery.ts),
 [recovery service](../packages/runtime/src/recovery-service.ts).
 

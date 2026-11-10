@@ -8,6 +8,19 @@ source baselines preserved.
 
 ### Runtime
 
+- Bind prompt retries to a payload fingerprint, coalesce matching in-flight
+  requests within a store, and reject conflicting request IDs. Reuse one
+  orchestration projection when producing recovery details. Distinguish local
+  model budget rejection from provider failures without exposing diagnostics.
+- Persist `run.cancel.requested` before abort for operator stop, parent abort,
+  budget timeout, and lease failure; derive orchestration tool ops only from the
+  recovery eligibility table.
+- Align orchestration with Pi Durable patterns without adopting the experimental
+  package: projected `RunOrchestrationStateV1` program counter, tool replay
+  class map, recovery checkpoint derived from the register, recovery UI
+  phase/replay disclosure, tool.operation fence eligibility table, prompt
+  `requestId` admission, and cancel-before-abort (`run.cancel.requested`).
+  See [Pi Durable alignment](docs/pi-durable-alignment.md).
 - Separate semantic progress from execution activity so ongoing inspection,
   implementation and verification receive bounded continuation windows; keep
   plan control tools available during acquisition convergence. Commit: `9b90593c`.
@@ -17,6 +30,9 @@ source baselines preserved.
 
 ### Development and models
 
+- Bound fragmented RPC input copying with geometric buffer growth; preserve
+  UTF-8 and per-line limits. Declare the root verification scripts' Hono
+  dependencies explicitly.
 - Reload development services when the root `.env` is created, edited,
   replaced, or removed, including the Web proxy when the API port changes.
 - Allow provider setup to check credentials again and prefer DeepSeek V4 Flash
@@ -25,6 +41,16 @@ source baselines preserved.
 
 ### Workbench
 
+- Reuse the draft prompt `requestId` after a failed submit restores the same
+  text and images; localize recovery tool phases; align the evidence overlay
+  with the results-rail width; clarify empty results vs file browser copy; and
+  remove dead composer-mode / welcome card styles that fought the live chrome.
+- Release SSE readers and browser subscriptions on cancellation or protocol
+  failure; retain workspace pins until asynchronous cleanup finishes. Poll
+  active delivery channels independently without overlapping requests.
+- Exclude private subagent completion capabilities from public Thread details,
+  Bootstrap and SSE snapshots while retaining internal recovery records and
+  binding snapshot hashes to the public content.
 - Unify workspace and artifact previews for SVG, images, PDF, HTML, Markdown
   and recognized text files. Raise preview and HTTP download limits to 128 MiB,
   bound text rendering, and retain complete downloads. See
@@ -41,6 +67,13 @@ source baselines preserved.
 
 ### Documentation and developer checks
 
+- Reconcile Web regression fixtures with Preact, current integrity language,
+  recovery checkpoints and workspace API routing. Record the
+  [2026-11-07 review](docs/investigations/2026-11-07-code-review.md), measured
+  local optimizations, validation results and remaining limits.
+- Explicitly declare local faux provider pricing in HTTP test fixtures without
+  weakening production budget admission; verify current ledger migrations and
+  evaluation settlement ordering.
 - Consolidate current architecture, including Run progress and incremental
   context compaction, into a concise source-linked reference.
 - Remove superseded design proposals, duplicate historical logs, redirect-only

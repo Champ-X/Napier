@@ -11,6 +11,7 @@ dates and baselines.
 | [Local development](local-development.md)                                  | Setup, ports, models, workspaces, previews and recovery               |
 | [File previews](file-preview.md)                                           | Supported file types, size limits, decoding and artifact receipts     |
 | [Architecture](architecture.md)                                            | Current layers, execution, persistence, tools and recovery boundaries |
+| [Pi Durable alignment](pi-durable-alignment.md)                            | Orchestration upgrade boundary vs Earendil Pi Durable                 |
 | [Design system](../DESIGN.md)                                              | Web visual rules and canonical generated-token JSON                   |
 | [Current gaps](next-stage-gap-matrix.md)                                   | Dated check failures, verification limits and closure criteria        |
 | [Changelog](../CHANGELOG.md)                                               | Recent implemented changes                                            |

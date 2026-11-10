@@ -1,7 +1,12 @@
 # Napier Current Gaps
 
-Latest review: **2026-09-21**, starting at `c454a155`. See the
-[working-tree review](investigations/2026-09-21-code-review.md) for current results:
+Latest review: **2026-11-07**, starting at `42a35898` plus the existing working
+tree. See the [current review](investigations/2026-11-07-code-review.md) for
+request admission, streaming cleanup, polling and parser improvements, current
+verification, and remaining release/architecture limits.
+
+Previous review: **2026-09-21**, starting at `c454a155`. The
+[earlier working-tree review](investigations/2026-09-21-code-review.md) recorded:
 10 architecture violations (including four current-delivery line overages), the
 unchanged 1897/1896 public API mismatch, retained source-bound receipt failures,
 and desktop layout-baseline drift after functional browser assertions pass.

@@ -9,7 +9,7 @@ released versions remain stable.
 ## 0. Meta
 
 ```yaml
-version: 2.3.0
+version: 2.4.0
 contract_status: evolving
 framework:
   css: plain-css
@@ -34,7 +34,7 @@ verification at the sizes in Section 9.
 Napier is a restrained, trustworthy, precise working tool. Its workbench follows
 a precise task studio: mist-blue navigation frames a white working canvas,
 navy identifies primary actions, and slate ink carries the content. The active
-ledger has a narrow blue spine, tying navigation to the recorded work. Status
+ledger uses a white inset surface and blue type to locate the current work. Status
 colors remain distinct from the blue interaction accent. Green means success, amber means running/waiting/warning, and
 red means failure, danger, or destructive action. Purple and orange are restricted
 to Running Trajectory data classes.
@@ -57,6 +57,14 @@ Principles:
 12. Expanded thinking rows show the complete model-provided transcript when it
     was durably retained, after secret redaction. Historical hash-only segments
     state that the original is unavailable and never fabricate replacement text.
+13. Completed execution groups with four or more steps collapse into a readable
+    summary; running or attention-needed groups remain visible. User expansion
+    choices survive streaming updates.
+14. The results rail puts task outputs before workspace browsing. File names,
+    format, and relative location identify outputs; verification claims only
+    come from recorded evidence. The full inspector remains a separate view.
+15. The composer stays quiet at rest and names its action while running or
+    waiting. Steering and follow-up modes are visible beside the execution state.
 
 ## 2. Color
 
@@ -450,6 +458,18 @@ Principles:
       "$type": "dimension",
       "$value": { "value": 420, "unit": "px" }
     },
+    "results-rail-min": {
+      "$type": "dimension",
+      "$value": { "value": 280, "unit": "px" }
+    },
+    "results-rail-preferred": {
+      "$type": "dimension",
+      "$value": { "value": 24, "unit": "vw" }
+    },
+    "results-rail-max": {
+      "$type": "dimension",
+      "$value": { "value": 336, "unit": "px" }
+    },
     "topbar": { "$type": "dimension", "$value": { "value": 48, "unit": "px" } },
     "command-bar": {
       "$type": "dimension",
@@ -654,6 +674,9 @@ Generated variables include `--font-display`, `--font-sans`, `--font-mono`, `--t
 - Product page: 22/29, section: 16/23, compact heading: 15/22.
 - 30px and above is reserved for onboarding or an intentionally sparse empty state.
 - Conversation/body: 15px with 1.7 line-height.
+- The task identity in the top bar uses 18px. View labels and event counts stay
+  subordinate at 13px and 12px. Conversation tables use 14px system sans;
+  inline code uses neutral slate rather than error colors.
 - Compact body: 14px; control: 13px; help: 12px.
 - UI and trajectory annotations use 12px as the minimum size.
 - Sans is used for UI and Chinese prose. Mono is restricted to code, paths,
@@ -742,9 +765,17 @@ double box-shadow above.
   when a recorded diff is available, plus refresh, download, and close. HTML
   preview remains sandboxed with scripts only; Source is always inert text.
 - Utility drawers and compact evidence surfaces remain 420px.
+- The file/results overview uses `clamp(280px, 24vw, 336px)` independently of
+  the resizable full preview. It has one persistent heading and puts recorded
+  outcomes first. Workspace browsing stays expanded when there are no outcomes.
+- Below 560px of inspector width, file identity and preview actions use two
+  rows. Preview/Source switching preserves the same pane and file.
 - Top bar: 48px. Task status: 40px and absent when it adds no new information.
 - Composer: 56px minimum, up to 88px at rest, 160px in normal editing, and
   240px only in an explicit expanded editor.
+- Welcome uses one outcome-oriented heading and six compact suggestions in two
+  columns, separated by rules rather than individual cards. It has no repeated
+  brand badge or eyebrow above the heading.
 - Desktop controls are at least 32px and primary actions at least 40px.
 - Validate product baselines at 1280×900, 1440×900, and 1920×1080.
 - Validate pressure cases at 1280×720, 720×900, 390×844, and 320×900.

@@ -8,11 +8,16 @@ Reviewed on **2026-09-07** against `f5a5937b`. See the
 Use Node.js `>=22.19.0`, npm, and Git. From the repository root:
 
 ```bash
-npm install
-# Create .env only if it does not exist.
-cp -n .env.example .env
-npm run dev
+./start.sh
 ```
+
+The script checks Node.js/npm, installs locked dependencies when local development
+tools are missing, and creates a private `.env` only if it does not exist.
+Existing `.env` values are preserved. It resolves the repository directory from
+the script path, so `/absolute/path/to/Napier/start.sh` also works from another
+directory. Keep the terminal open; **Ctrl+C** stops both services. Run the script
+again to restart them. For manual setup, use `npm ci`, create `.env` from
+`.env.example` if needed, and run `npm run dev`.
 
 Open the **Local** URL printed by Vite. It starts at
 `http://127.0.0.1:5173` and tries the next port if that one is occupied; a URL
@@ -24,7 +29,8 @@ proxy follows that setting.
 Server, and Web. It uses a compilation-only bootstrap. Publishable builds
 still validate the retained release source manifest.
 
-Sources: [development supervisor](../scripts/development-entry.mjs),
+Sources: [one-command startup](../start.sh),
+[development supervisor](../scripts/development-entry.mjs),
 [Vite configuration](../apps/web/vite.config.ts),
 [package scripts](../package.json).
 

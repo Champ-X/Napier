@@ -86,9 +86,15 @@ making the execution model visible.
 ```bash
 git clone https://github.com/Champ-X/Napier.git
 cd Napier
-npm install
-npm run dev
+./start.sh
 ```
+
+The startup script checks Node.js/npm, installs dependencies when the local
+development tools are missing, and creates `.env` from `.env.example` only when
+it does not exist. Existing configuration is preserved. Keep the terminal open;
+press **Ctrl+C** to stop both services. You can also run the script by absolute
+path from another directory. With dependencies already installed, `npm run dev`
+remains available as the direct development entry point.
 
 Open the **Local** URL printed by Vite, starting at
 [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite tries the next port if it
