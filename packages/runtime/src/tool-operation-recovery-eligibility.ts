@@ -63,6 +63,7 @@ export function projectRunToolRecoveryEligibilityTable(
 
   const proofs = patchProofs(events);
   const observations = collectRunToolEffectObservations(events);
+  const journals = primaryJournalsByCall(events);
   const calls = new Map<string, RunEvent[]>();
   for (const event of events) {
     if (!["tool.started", "tool.completed", "tool.failed"].includes(event.type))
@@ -77,7 +78,7 @@ export function projectRunToolRecoveryEligibilityTable(
     const callId = field(start, "callId");
     const toolName = normalizeToolName(field(start, "toolName"));
     const related = calls.get(callId) ?? [];
-    const journal = primaryJournalForCall(events, callId);
+    const journal = journals.get(callId);
     const fencePhase = journal
       ? fencePhaseFromLedger(journal.state)
       : "none";
@@ -121,26 +122,49 @@ export function fencePhaseFromLedger(
   return "none";
 }
 
-function primaryJournalForCall(
+function primaryJournalsByCall(
   events: readonly RunEvent[],
-  parentCallId: string,
-): { operationId: string; state: ToolOperationLedgerState } | undefined {
-  if (!parentCallId) return undefined;
-  const operationIds = new Set<string>();
-  let authorityId: string | undefined;
+): Map<string, { operationId: string; state: ToolOperationLedgerState }> {
+  const candidates = new Map<
+    string,
+    { operationIds: Set<string>; authorityId?: string }
+  >();
   for (const event of events) {
     if (!event.type.startsWith("tool.operation.")) continue;
     const payload = record(event.payload);
-    if (payload?.["parentCallId"] !== parentCallId) continue;
+    const parentCallId =
+      typeof payload?.["parentCallId"] === "string"
+        ? payload["parentCallId"]
+        : "";
+    if (!parentCallId) continue;
     const operationId =
-      typeof payload["operationId"] === "string" ? payload["operationId"] : "";
+      typeof payload?.["operationId"] === "string"
+        ? payload["operationId"]
+        : "";
     if (!operationId) continue;
-    operationIds.add(operationId);
-    if (payload["role"] === "execution_authority") authorityId = operationId;
+    const bucket = candidates.get(parentCallId) ?? {
+      operationIds: new Set<string>(),
+    };
+    bucket.operationIds.add(operationId);
+    if (payload?.["role"] === "execution_authority") {
+      bucket.authorityId = operationId;
+    }
+    candidates.set(parentCallId, bucket);
   }
-  const chosen = authorityId ?? [...operationIds].sort()[0];
-  if (!chosen) return undefined;
-  return { operationId: chosen, state: toolOperationLedgerState(events, chosen) };
+  const journals = new Map<
+    string,
+    { operationId: string; state: ToolOperationLedgerState }
+  >();
+  for (const [parentCallId, bucket] of candidates) {
+    const chosen =
+      bucket.authorityId ?? [...bucket.operationIds].sort()[0];
+    if (!chosen) continue;
+    journals.set(parentCallId, {
+      operationId: chosen,
+      state: toolOperationLedgerState(events, chosen),
+    });
+  }
+  return journals;
 }
 
 function classifyRow(input: {

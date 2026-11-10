@@ -90,18 +90,30 @@ function useBrowserPausePolling(
   setPauseState: (state: BrowserSessionPauseState | undefined) => void,
 ): void {
   useEffect(() => {
-    let active = true;
-    const read = () =>
-      getBrowserSessionPauseState(threadId, runId)
-        .then((state) => {
-          if (active && !controlBusyRef.current) setPauseState(state);
-        })
-        .catch(() => active && setPauseState(undefined));
+    const controller = new AbortController();
+    let timer: number | undefined;
+    const read = async (): Promise<void> => {
+      try {
+        const state = await getBrowserSessionPauseState(
+          threadId,
+          runId,
+          controller.signal,
+        );
+        if (!controller.signal.aborted && !controlBusyRef.current) {
+          setPauseState(state);
+        }
+      } catch {
+        if (!controller.signal.aborted) setPauseState(undefined);
+      } finally {
+        if (!controller.signal.aborted) {
+          timer = window.setTimeout(() => void read(), PAUSE_REFRESH_MS);
+        }
+      }
+    };
     void read();
-    const timer = window.setInterval(() => void read(), PAUSE_REFRESH_MS);
     return () => {
-      active = false;
-      window.clearInterval(timer);
+      controller.abort();
+      if (timer !== undefined) window.clearTimeout(timer);
     };
   }, [controlBusyRef, runId, setPauseState, threadId]);
 }

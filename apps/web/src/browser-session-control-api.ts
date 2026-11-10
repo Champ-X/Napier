@@ -8,10 +8,12 @@ import { requestJson } from "./api-client";
 export async function getBrowserSessionPauseState(
   threadId: string,
   runId: string,
+  signal?: AbortSignal,
 ): Promise<BrowserSessionPauseState> {
   return validateState(
     await requestJson<unknown>(
       `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/browser-session-control`,
+      signal ? { signal } : undefined,
     ),
     threadId,
     runId,

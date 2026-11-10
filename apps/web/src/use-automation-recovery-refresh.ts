@@ -5,8 +5,10 @@ import type { AutomaticRecoveryAttempt } from "@napier/contracts";
 export interface UseAutomationRecoveryRefreshOptions {
   attempts: AutomaticRecoveryAttempt[];
   pending: boolean;
-  refresh: () => Promise<void>;
+  refresh: (signal?: AbortSignal) => Promise<void>;
 }
+
+const REFRESH_MS = 3_000;
 
 export function useAutomationRecoveryRefresh({
   attempts,
@@ -18,9 +20,23 @@ export function useAutomationRecoveryRefresh({
       (attempt) => attempt.status === "claimed" || attempt.status === "running",
     );
     if (!pending && !active) return;
-    const timer = window.setInterval(() => {
-      void refresh().catch(() => undefined);
-    }, 3_000);
-    return () => window.clearInterval(timer);
+    const controller = new AbortController();
+    let timer: number | undefined;
+    const tick = async (): Promise<void> => {
+      try {
+        await refresh(controller.signal);
+      } catch {
+        // Retry after settle; abort ends the loop.
+      } finally {
+        if (!controller.signal.aborted) {
+          timer = window.setTimeout(() => void tick(), REFRESH_MS);
+        }
+      }
+    };
+    timer = window.setTimeout(() => void tick(), REFRESH_MS);
+    return () => {
+      controller.abort();
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
   }, [attempts, pending, refresh]);
 }
