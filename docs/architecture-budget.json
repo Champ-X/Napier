@@ -18,18 +18,19 @@
     "apps/server/test/workflow.test.ts": 1408,
     "apps/web/src/api-error.ts": 986,
     "apps/web/src/api.ts": 1155,
-    "apps/web/src/copy.ts": 858,
+    "apps/web/src/copy.ts": 853,
     "apps/web/src/plan-blueprint-library-view-model.ts": 1058,
     "apps/web/src/tool-event-view.ts": 666,
     "apps/web/src/trace-event-summary-view.ts": 754,
-    "apps/web/src/use-workspace-view-model.ts": 1884,
+    "apps/web/src/use-extension-package-actions.ts": 717,
+    "apps/web/src/use-workspace-view-model.ts": 1464,
     "apps/web/src/workflow-event-view.ts": 773,
     "apps/web/test/api.test.ts": 2393,
     "apps/web/test/plan-blueprint-library-view-model.test.ts": 1464,
     "apps/web/test/receipt-trust-api.test.ts": 1607,
     "apps/web/test/stream-api.test.ts": 2372,
     "apps/web/test/tool-event-view.test.ts": 1690,
-    "packages/runtime/src/agent-runtime.ts": 2896,
+    "packages/runtime/src/agent-runtime.ts": 2966,
     "packages/runtime/src/agents.ts": 735,
     "packages/runtime/src/automatic-recovery.ts": 710,
     "packages/runtime/src/evaluation-casebooks.ts": 727,
@@ -46,7 +47,7 @@
     "packages/runtime/src/receipt-trust.ts": 1524,
     "packages/runtime/src/run-config.ts": 895,
     "packages/runtime/src/skill-packages.ts": 754,
-    "packages/runtime/src/store.ts": 3722,
+    "packages/runtime/src/store.ts": 3746,
     "packages/runtime/src/thread-bundles.ts": 2415,
     "packages/runtime/src/tools.ts": 1766,
     "packages/runtime/src/workflow-experiment-comparison-protocol.ts": 720,
@@ -119,7 +120,7 @@
     "apps/web/src/workspace-process-event-view.ts": 84,
     "apps/web/src/write-linked-test-event-view.ts": 49,
     "packages/runtime/src/agent-message-experiment-source.ts": 30,
-    "packages/runtime/src/agent-runtime.ts": 43,
+    "packages/runtime/src/agent-runtime.ts": 48,
     "packages/runtime/src/automatic-recovery.ts": 46,
     "packages/runtime/src/compaction.ts": 26,
     "packages/runtime/src/evaluation-casebook-qualification.ts": 36,
@@ -148,7 +149,7 @@
     "packages/runtime/src/skill-packages.ts": 27,
     "packages/runtime/src/sqlite-query.ts": 33,
     "packages/runtime/src/stateless-agent-tools.ts": 52,
-    "packages/runtime/src/store.ts": 91,
+    "packages/runtime/src/store.ts": 93,
     "packages/runtime/src/subagent-task-runner.ts": 33,
     "packages/runtime/src/thread-bundles.ts": 253,
     "packages/runtime/src/tool-invocation-experiment-run-gate.ts": 41,
@@ -178,30 +179,30 @@
     "apps/web/src/trace-event-summary-view.ts": 27,
     "packages/contracts/src/index.ts": 35,
     "packages/runtime/src/agent-capability-runtime.ts": 30,
-    "packages/runtime/src/agent-runtime.ts": 91,
+    "packages/runtime/src/agent-runtime.ts": 93,
     "packages/runtime/src/index.ts": 199,
     "packages/runtime/src/kernel.ts": 28,
     "packages/runtime/src/local-agent-runtime.ts": 35,
     "packages/runtime/src/stateless-agent-tools.ts": 39,
-    "packages/runtime/src/store.ts": 77,
+    "packages/runtime/src/store.ts": 78,
     "packages/runtime/src/thread-bundles.ts": 26
   },
   "sourceChangeCouplingOverrides": {
-    "apps/web/src/api.ts": 102,
-    "apps/web/src/copy.ts": 582,
+    "apps/web/src/api.ts": 114,
+    "apps/web/src/copy.ts": 588,
     "apps/web/src/trace-event-summary-view.ts": 135,
     "apps/web/src/use-context-panel-controller.ts": 171,
     "apps/web/src/use-receipt-trust-controller.ts": 144,
     "apps/web/src/use-workspace-view-model.ts": 736,
     "packages/contracts/src/index.ts": 105,
     "packages/runtime/src/agent-capability-runtime.ts": 180,
-    "packages/runtime/src/agent-runtime.ts": 819,
+    "packages/runtime/src/agent-runtime.ts": 837,
     "packages/runtime/src/agent-tool-ledger.ts": 147,
     "packages/runtime/src/browser-session-model.ts": 135,
     "packages/runtime/src/sandbox.ts": 429,
     "packages/runtime/src/stateless-agent-tools.ts": 117,
     "packages/runtime/src/store-repository-host.ts": 155,
-    "packages/runtime/src/store.ts": 9702,
+    "packages/runtime/src/store.ts": 9906,
     "packages/runtime/src/subagent-worktree-mutation.ts": 108,
     "packages/runtime/src/thread-bundles.ts": 104,
     "packages/runtime/src/workflow-ledger.ts": 528,
@@ -233,17 +234,33 @@
   },
   "allowedCycles": [],
   "allowedWorkspaceImports": {
-    "@napier/cli": ["@napier/contracts", "@napier/runtime"],
+    "@napier/cli": [
+      "@napier/contracts",
+      "@napier/runtime"
+    ],
     "@napier/benchmark-kit": [
       "@napier/cli",
       "@napier/contracts",
       "@napier/runtime"
     ],
     "@napier/contracts": [],
-    "@napier/harness-eval": ["@napier/contracts", "@napier/runtime"],
-    "@napier/runtime": ["@napier/contracts"],
-    "@napier/sdk": ["@napier/contracts", "@napier/runtime"],
-    "@napier/server": ["@napier/contracts", "@napier/runtime"],
-    "@napier/web": ["@napier/contracts"]
+    "@napier/harness-eval": [
+      "@napier/contracts",
+      "@napier/runtime"
+    ],
+    "@napier/runtime": [
+      "@napier/contracts"
+    ],
+    "@napier/sdk": [
+      "@napier/contracts",
+      "@napier/runtime"
+    ],
+    "@napier/server": [
+      "@napier/contracts",
+      "@napier/runtime"
+    ],
+    "@napier/web": [
+      "@napier/contracts"
+    ]
   }
 }

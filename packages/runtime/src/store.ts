@@ -343,8 +343,10 @@ import {
 import { aggregateLedgerRunUsage, assertLedgerEvidenceProjection, modelAccountingRepositoryForStore,
   readConsistentThreadDetail, readLedgerRunReplayView, type ModelAccountingRepository } from "./model-accounting-query.js";
 import { initialRunStatus } from "./run-state-machine.js";
-import { findRunByPromptRequestId } from "./prompt-request-admission.js";
-import { runPromptAdmissionAppendInput } from "./run-prompt-admission-event.js";
+import {
+  assertPromptAdmissionCreateInput,
+  runPromptAdmissionAppendInput,
+} from "./run-prompt-admission-event.js";
 import { SerialQueue } from "./serial-queue.js";
 import { SignedPackageRepository } from "./signed-package-repository.js";
 import {
@@ -3460,23 +3462,11 @@ export class LocalStore {
       }
       input = { ...input, triggerId };
     }
-    if (input.requestId || input.requestFingerprint) {
-      if (!input.requestId || !input.requestFingerprint) {
-        throw new Error(
-          "Prompt admission requires both requestId and requestFingerprint",
-        );
-      }
-      const admitted = findRunByPromptRequestId(
-        this.state.runs,
-        this.requireLedger().listEvents(thread.id),
-        input.requestId,
-      );
-      if (admitted) {
-        throw new Error(
-          `Prompt requestId was already admitted on run ${admitted.id}`,
-        );
-      }
-    }
+    assertPromptAdmissionCreateInput(
+      this.state.runs,
+      this.requireLedger().listEvents(thread.id),
+      input,
+    );
     const run: PersistedRunRecord = {
       id: createId("run"),
       threadId: input.threadId,
