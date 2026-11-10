@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type { OsSandboxAdapter } from "@napier/runtime";
 
-import { createApp, createServices } from "../src/app.js";
+import { createApp, createFauxServices as createServices } from "./faux-services-fixture.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];

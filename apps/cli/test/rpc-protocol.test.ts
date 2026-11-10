@@ -503,6 +503,34 @@ describe("Napier JSON-RPC protocol", () => {
     expect(released).toBe(true);
   });
 
+  it("decodes fragmented UTF-8 and isolates lines when the producer reuses its buffer", async () => {
+    const expected = ["工具调用🌍".repeat(512), "", "short", "尾部"];
+    const encoded = Buffer.from(expected.join("\r\n"));
+    const input = (async function* () {
+      const chunk = Buffer.alloc(7);
+      for (let offset = 0; offset < encoded.length; offset += chunk.length) {
+        const length = encoded.copy(chunk, 0, offset, offset + chunk.length);
+        yield chunk.subarray(0, length);
+      }
+    })();
+    expect(await collectLines(input)).toEqual(expected);
+  });
+
+  it("enforces the byte limit across fragments and resets it for each line", async () => {
+    async function collect(input: string[]) {
+      const lines = [];
+      for await (const line of readRpcLines(Readable.from(input), 4)) {
+        lines.push(line);
+      }
+      return lines;
+    }
+    expect(await collect(["ab", "cd\nx", "yz", "w\n", ""])).toEqual([
+      "abcd",
+      "xyzw",
+    ]);
+    await expect(collect(["ab", "cd", "e\n"])).rejects.toThrow("byte limit");
+  });
+
   it("serializes output with backpressure and hashes private errors", async () => {
     const output = new CaptureWritable();
     const writer = new RpcOutputWriter(output);

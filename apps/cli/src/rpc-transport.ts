@@ -18,6 +18,7 @@ export async function* readRpcLines(
     throw new Error("RPC line limit is invalid");
   }
   let pending = Buffer.alloc(0);
+  let pendingBytes = 0;
   const iterator = input[Symbol.asyncIterator]();
   try {
     while (true) {
@@ -31,22 +32,35 @@ export async function* readRpcLines(
         const newline = chunk.indexOf(0x0a, offset);
         const end = newline === -1 ? chunk.length : newline;
         const segment = chunk.subarray(offset, end);
-        if (pending.length + segment.length > maxLineBytes) {
+        const requiredBytes = pendingBytes + segment.length;
+        if (requiredBytes > maxLineBytes) {
           throw new RpcTransportError("RPC input line exceeds the byte limit");
         }
+        // Grow geometrically so fragmented input never recopies the whole
+        // accumulated line for every chunk. The byte limit also caps capacity.
+        if (requiredBytes > pending.length) {
+          const capacity = Math.min(
+            maxLineBytes,
+            Math.max(256, pending.length * 2, requiredBytes),
+          );
+          const grown = Buffer.allocUnsafe(capacity);
+          pending.copy(grown, 0, 0, pendingBytes);
+          pending = grown;
+        }
         if (segment.length > 0) {
-          pending = Buffer.concat([pending, segment]);
+          segment.copy(pending, pendingBytes);
+          pendingBytes = requiredBytes;
         }
         if (newline === -1) break;
-        yield decodeLine(pending);
-        pending = Buffer.alloc(0);
+        yield decodeLine(pending.subarray(0, pendingBytes));
+        pendingBytes = 0;
         offset = newline + 1;
       }
     }
   } finally {
     void iterator.return?.().catch(() => undefined);
   }
-  if (pending.length > 0) yield decodeLine(pending);
+  if (pendingBytes > 0) yield decodeLine(pending.subarray(0, pendingBytes));
 }
 
 export class RpcOutputWriter {

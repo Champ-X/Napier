@@ -250,6 +250,24 @@ describe("Thread execution HTTP validation", () => {
     ).toBeUndefined();
   });
 
+  it("accepts a Durable-style prompt requestId and rejects invalid identities", () => {
+    expect(
+      parsePromptRequest({
+        text: "Retry the same intent.",
+        requestId: "prompt-7d62ded0-6e33-4a06",
+      }),
+    ).toEqual({
+      text: "Retry the same intent.",
+      requestId: "prompt-7d62ded0-6e33-4a06",
+    });
+    expect(
+      parsePromptRequest({
+        text: "Reject spaces.",
+        requestId: "has spaces",
+      }),
+    ).toBeUndefined();
+  });
+
   it("accepts only a shared temporary capability preset ID", () => {
     expect(
       parsePromptRequest({

@@ -257,7 +257,12 @@ async function initializeDatabase(db: DatabaseSync): Promise<void> {
     try {
       // Concurrent first open can fail the journal-mode upgrade without invoking
       // SQLite's busy handler. Only this idempotent schema setup is retried.
-      db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
+      db.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;");
+      // Serialize schema inspection and migration across hosts. CREATE TABLE
+      // IF NOT EXISTS alone cannot upgrade a ledger from an older checkout.
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        db.exec(`
         CREATE TABLE IF NOT EXISTS resource_hosts(owner_id TEXT PRIMARY KEY, pid INTEGER NOT NULL,
           sandbox_execution INTEGER NOT NULL, browser_session INTEGER NOT NULL, browser_task INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS execution_resources(id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, workspace_id TEXT NOT NULL,
@@ -267,10 +272,22 @@ async function initializeDatabase(db: DatabaseSync): Promise<void> {
         CREATE INDEX IF NOT EXISTS execution_resources_owner ON execution_resources(owner_id,state);
         CREATE TABLE IF NOT EXISTS resource_recovery_tickets(resource_id TEXT PRIMARY KEY, ticket_json TEXT NOT NULL,
           pending INTEGER NOT NULL DEFAULT 1, receipt_sha256 TEXT, recovered_at TEXT);
-        CREATE INDEX IF NOT EXISTS resource_recovery_pending ON resource_recovery_tickets(resource_id) WHERE pending=1;
         CREATE TABLE IF NOT EXISTS resource_recovery_scan(singleton INTEGER PRIMARY KEY CHECK(singleton=1), after_resource_id TEXT NOT NULL,
-          revision INTEGER NOT NULL DEFAULT 0);
-        INSERT OR IGNORE INTO resource_recovery_scan(singleton,after_resource_id) VALUES(1,'');`);
+          revision INTEGER NOT NULL DEFAULT 0);`);
+        const ticketColumns = db.prepare("PRAGMA table_info(resource_recovery_tickets)").all();
+        if (!ticketColumns.some((column) => column["name"] === "pending")) {
+          db.exec(`ALTER TABLE resource_recovery_tickets ADD COLUMN pending INTEGER NOT NULL DEFAULT 1;
+            UPDATE resource_recovery_tickets SET pending=0 WHERE resource_id IN
+              (SELECT id FROM execution_resources WHERE state='released');`);
+        }
+        const scanColumns = db.prepare("PRAGMA table_info(resource_recovery_scan)").all();
+        if (!scanColumns.some((column) => column["name"] === "revision")) {
+          db.exec("ALTER TABLE resource_recovery_scan ADD COLUMN revision INTEGER NOT NULL DEFAULT 0");
+        }
+        db.exec(`CREATE INDEX IF NOT EXISTS resource_recovery_pending ON resource_recovery_tickets(resource_id) WHERE pending=1;
+          INSERT OR IGNORE INTO resource_recovery_scan(singleton,after_resource_id) VALUES(1,'');
+          COMMIT;`);
+      } catch (error) { db.exec("ROLLBACK"); throw error; }
       return;
     } catch (error) {
       const code = (error as { errcode?: number }).errcode;

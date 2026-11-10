@@ -12,7 +12,7 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { OsSandboxAdapter } from "@napier/runtime";
-import { createApp, createServices } from "../src/app.js";
+import { createApp, createFauxServices as createServices } from "./faux-services-fixture.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
@@ -204,6 +204,16 @@ describe("coder Subagent HTTP Agent path", () => {
     expect(stream).not.toContain(sourcePath);
     expect(stream).not.toContain("value=2");
     expect(stream).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
+    const publicDetail = await (
+      await app.request(`/api/threads/${thread.id}`)
+    ).json();
+    expect(JSON.stringify(publicDetail)).not.toContain(previewId);
+    expect(publicDetail.subagents[0].completionReservation).toBeUndefined();
+    expect(publicDetail.subagents[0].completion).toBeUndefined();
+    // The public projection must not destroy the private recovery capability.
+    const storedTask = services.store.listSubagentTasks(thread.id)[0]!;
+    expect(storedTask.completionReservation?.candidate?.id).toBe(previewId);
+    expect(storedTask.completion?.reservation.candidate?.id).toBe(previewId);
     expect(await readFile(path.join(workspaceRoot, sourcePath), "utf8")).toBe(
       "value=2\n",
     );

@@ -11,7 +11,7 @@ import type { StreamFrame } from "@napier/contracts";
 import { agentCapabilityPresetUpdate } from "@napier/contracts/agent-capabilities";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createApp, createServices } from "../src/app.js";
+import { createApp, createFauxServices as createServices } from "./faux-services-fixture.js";
 import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
 
 const roots: string[] = [];

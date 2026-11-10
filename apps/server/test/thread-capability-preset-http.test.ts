@@ -11,7 +11,7 @@ import {
   fauxToolCall,
 } from "@earendil-works/pi-ai";
 
-import { createApp, createServices } from "../src/app.js";
+import { createApp, createFauxServices as createServices } from "./faux-services-fixture.js";
 
 const roots: string[] = [];
 const servicesToClose: Awaited<ReturnType<typeof createServices>>[] = [];

@@ -248,6 +248,7 @@ function registerPromptHttp(
         ...(body.sourceContinuityRunId
           ? { sourceContinuityRunId: body.sourceContinuityRunId }
           : {}),
+        ...(body.requestId ? { requestId: body.requestId } : {}),
         onEvent,
       }),
     );

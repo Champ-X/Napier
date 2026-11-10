@@ -103,7 +103,7 @@ import {
   verifyThreadReplayBundle,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createApp, createServices as createNapierServices, inferWorkspaceRoot } from "../src/app.js";
+import { createApp, createFauxServices as createNapierServices, inferWorkspaceRoot } from "./faux-services-fixture.js";
 import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
 
 const POLICY_RETIREMENT_SIGNING_ENV = "NAPIER_TEST_POLICY_RETIREMENT_SIGNING_KEY";
@@ -186,7 +186,7 @@ describe("Napier HTTP goal flow", () => {
       String(LEDGER_SCHEMA_VERSION),
     );
     expect(response.headers.get("x-napier-ledger-latest-migration-name")).toBe(
-      "durable_tool_concurrency_leases",
+      "model_invocation_accounting",
     );
     expect(health).toEqual(
       expect.objectContaining({
@@ -209,10 +209,9 @@ describe("Napier HTTP goal flow", () => {
           schemaVersion: LEDGER_SCHEMA_VERSION,
           quickCheck: "ok",
           migrations: expect.arrayContaining([
-            expect.objectContaining({
-              version: LEDGER_SCHEMA_VERSION,
-              name: "durable_tool_concurrency_leases",
-            }),
+            expect.objectContaining({ version: 7, name: "durable_tool_concurrency_leases" }),
+            expect.objectContaining({ version: 8, name: "workflow_execution_locks" }),
+            expect.objectContaining({ version: LEDGER_SCHEMA_VERSION, name: "model_invocation_accounting" }),
           ]),
         }),
         store: {
@@ -7835,7 +7834,8 @@ describe("Napier HTTP goal flow", () => {
     expect(evaluations).toEqual([evaluation]);
     const refreshed = (await (await app.request(`/api/threads/${created.thread.id}`)).json()) as ThreadDetail;
     expect(refreshed.evaluations).toEqual([evaluation]);
-    expect(refreshed.events.at(-1)?.type).toBe("evaluation.completed");
+    expect(refreshed.events.slice(-2).map((event) => event.type)).toEqual(["evaluation.completed", "run.completed"]);
+    expect(refreshed.events.at(-2)).toMatchObject({ runId: refreshed.events.at(-1)!.runId, payload: { evaluationId: evaluation.id } });
 
     const invalidReviewResponse = await app.request(`/api/threads/${created.thread.id}/evaluations/${evaluation.id}/adjudication`, {
       method: "POST",
@@ -8303,7 +8303,7 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     );
-    expect(fixture.events.filter((event) => event.runId === fixtureEvaluationRun!.id).map((event) => event.type)).toEqual(["evaluation.completed"]);
+    expect(fixture.events.filter((event) => event.runId === fixtureEvaluationRun!.id).map((event) => event.type)).toEqual(["evaluation.completed", "run.completed"]);
     const fixtureQualificationRun = fixture.runs.find((run) => run.id !== left!.id && run.id !== right!.id && run.id !== fixtureEvaluationRun!.id);
     expect(fixtureQualificationRun).toEqual(
       expect.objectContaining({

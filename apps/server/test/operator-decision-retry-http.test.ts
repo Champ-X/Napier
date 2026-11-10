@@ -8,7 +8,7 @@ import {
   fauxToolCall,
 } from "@earendil-works/pi-ai";
 import { expect, it, vi } from "vitest";
-import { createApp, createServices } from "../src/app.js";
+import { createApp, createFauxServices as createServices } from "./faux-services-fixture.js";
 
 it("retries saved answers and concurrent SSE continuations without duplicate execution", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "napier-decision-http-"));

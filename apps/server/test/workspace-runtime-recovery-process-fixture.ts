@@ -8,7 +8,9 @@ import { processReadySandbox } from "./process-run-readiness-test-fixture.js";
 
 const [stateHome, workspaceRoot, mode] = process.argv.slice(2);
 if (!stateHome || !workspaceRoot || (mode !== "hold" && mode !== "recover")) throw new Error("Invalid recovery fixture arguments");
-const host = await createWorkspaceRuntimeHost({ workspaceRoot, stateHome }, async (options) => {
+const host = await createWorkspaceRuntimeHost({ workspaceRoot, stateHome,
+  modelBudget: { zeroCostModels: ["faux-workspace-recovery/faux-1"] },
+}, async (options) => {
   if (!options?.workspaceRoot) throw new Error("Missing fixture workspace identity");
   // Install a deterministic local provider before starting the actual workers.
   const services = await createServices({

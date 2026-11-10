@@ -67,7 +67,7 @@ function parseWorkspaceScope(url: URL, headers: Headers, defaultWorkspaceId: str
 
 /** Mutation SSE owns a finite execution. On disconnect, drain it without
  * buffering and keep the graph pinned even before a Run has been created.
- * Observer streams and downloads release on cancel; background obligations
+ * Observer streams and downloads release after cancellation settles; background obligations
  * must additionally be protected by the registry's canDispose predicate. */
 function retainResponseBody(
   body: ReadableStream<Uint8Array>,
@@ -78,6 +78,7 @@ function retainResponseBody(
   const reader = body.getReader();
   let ended = false;
   let detached = false;
+  let cancellation: Promise<void> | undefined;
   const finish = () => {
     if (ended) return;
     ended = true;
@@ -85,14 +86,16 @@ function retainResponseBody(
     release();
   };
   const disconnect = (reason: unknown) => {
-    if (ended || detached) return;
+    if (ended || detached) return cancellation;
+    detached = true;
+    signal.removeEventListener("abort", abort);
     if (keepExecution) {
-      detached = true;
-      signal.removeEventListener("abort", abort);
       void drainExecution(reader).finally(finish);
     } else {
-      finish();
-      void reader.cancel(reason).catch(() => undefined);
+      // A cancelled read can complete before the source's async cleanup. Keep
+      // its graph pinned until cancel settles, including rejection cleanup.
+      cancellation = reader.cancel(reason).catch(() => undefined).finally(finish);
+      return cancellation;
     }
   };
   const abort = () => disconnect(signal.reason);

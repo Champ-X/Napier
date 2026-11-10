@@ -1,4 +1,4 @@
-import type { ThreadDetail } from "@napier/contracts";
+import type { SubagentTask, ThreadDetail } from "@napier/contracts";
 import type { AgentKernel } from "@napier/runtime/agent";
 import type { SubagentHubControlService } from "@napier/runtime/subagents";
 
@@ -116,11 +116,19 @@ export async function attachKernelThreadProjections(
   detail.recoveries = projections.recoveries;
   detail.subagentCards = projections.subagentCards;
   detail.subagentHub = projections.subagentHub;
-  detail.subagents = detail.subagents.map(
-    ({ writePaths: _writePaths, ...task }) => task,
-  );
+  detail.subagents = detail.subagents.map(projectPublicSubagentTask);
   detail.operatorDecisions = projections.operatorDecisions;
   if (projections.activePlan) detail.activePlan = projections.activePlan;
   else delete detail.activePlan;
   return detail;
+}
+
+/** Public views retain lifecycle fields but exclude private recovery handles. */
+export function projectPublicSubagentTask({
+  writePaths: _writePaths,
+  completionReservation: _completionReservation,
+  completion: _completion,
+  ...task
+}: SubagentTask): SubagentTask {
+  return task;
 }

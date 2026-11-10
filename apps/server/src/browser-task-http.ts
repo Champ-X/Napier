@@ -98,18 +98,23 @@ export function registerBrowserTaskHttp(
 
   app.get("/api/browser-tasks/:taskId/stream", (context) => {
     const taskId = context.req.param("taskId");
+    const controller = new AbortController();
+    const signal = AbortSignal.any([context.req.raw.signal, controller.signal]);
     let backend: BrowserTaskBackend;
     let taskEvents: AsyncGenerator<BrowserTaskEvent>;
     try {
       backend = browserTasks.backend(taskId);
-      taskEvents = browserTasks.events(taskId, context.req.raw.signal);
+      taskEvents = browserTasks.events(taskId, signal);
     } catch (error) {
       return browserTaskError(context, error);
     }
     const response = streamSSE(context, async (stream) => {
+      // Disconnecting an observer releases its subscription, not the task.
+      stream.onAbort(() => controller.abort());
       let sequence = 0;
       try {
         for await (const event of taskEvents) {
+          signal.throwIfAborted();
           sequence += 1;
           await stream.writeSSE({
             event: event.type,
@@ -118,7 +123,7 @@ export function registerBrowserTaskHttp(
           });
         }
       } catch (error) {
-        if (!context.req.raw.signal.aborted) throw error;
+        if (!signal.aborted) throw error;
       }
     });
     setBrowserTaskHeaders(response.headers, taskId, backend);

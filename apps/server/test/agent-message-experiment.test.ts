@@ -15,7 +15,7 @@ import {
 } from "@napier/runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createApp, createServices } from "../src/app.js";
+import { createApp, createFauxServices as createServices } from "./faux-services-fixture.js";
 import {
   executeAgentMessageExperiment,
   previewAgentMessageExperiment,

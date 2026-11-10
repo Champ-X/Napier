@@ -37,6 +37,8 @@ export function parseResumeRunRequest(
   };
 }
 
+const PROMPT_REQUEST_ID = /^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$/;
+
 export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   const record = requestRecord(input, [
     "text",
@@ -46,6 +48,7 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
     "capabilityPreset",
     "harnessPolicyPreset",
     "sourceContinuityRunId",
+    "requestId",
   ]);
   if (!record) return undefined;
   const text = record?.["text"];
@@ -76,6 +79,13 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
   if (record["sourceContinuityRunId"] !== undefined && !sourceContinuityRunId) {
     return undefined;
   }
+  const requestId = record["requestId"];
+  if (
+    requestId !== undefined &&
+    (typeof requestId !== "string" || !PROMPT_REQUEST_ID.test(requestId))
+  ) {
+    return undefined;
+  }
   return {
     text,
     ...presets,
@@ -83,6 +93,7 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
     ...(model ? { model } : {}),
     ...(modelRoute ? { modelRoute } : {}),
     ...(sourceContinuityRunId ? { sourceContinuityRunId } : {}),
+    ...(typeof requestId === "string" ? { requestId } : {}),
   };
 }
 

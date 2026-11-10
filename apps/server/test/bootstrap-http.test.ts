@@ -23,6 +23,42 @@ import { describe, expect, it, vi } from "vitest";
 import { registerBootstrapHttp } from "../src/bootstrap-http.js";
 
 describe("Bootstrap HTTP", () => {
+  it("omits private subagent recovery handles even without Kernel projections", async () => {
+    const agent = seedAgent();
+    const thread = threadSummary();
+    const detail = threadDetail(agent, thread);
+    const candidate = {
+      id: "subworkpreview_private",
+      sourceSha256: "a".repeat(64),
+    };
+    const task = {
+      id: "task_private",
+      status: "completed",
+      finishedAt: "2026-11-07T00:00:01.000Z",
+      writePaths: ["private/path.txt"],
+      completionReservation: { candidate },
+      completion: { reservation: { candidate } },
+    } as unknown as ThreadDetail["subagents"][number];
+    detail.subagents = [task];
+    const app = new Hono();
+    registerBootstrapHttp(app, {
+      store: bootstrapStore(agent, thread, detail) as never,
+      models: {
+        list: vi.fn(async () => []),
+        recommendDefaultRunModel: vi.fn(async () => agent.model),
+      } as never,
+    });
+    const response = await app.request("/api/bootstrap");
+    const bootstrap = (await response.json()) as BootstrapResponse;
+    expect(response.status).toBe(200);
+    expect(bootstrap.activeThread?.subagents).toEqual([
+      { id: task.id, status: task.status, finishedAt: task.finishedAt },
+    ]);
+    expect(JSON.stringify(bootstrap)).not.toContain(candidate.id);
+    expect(JSON.stringify(bootstrap)).not.toContain("private/path.txt");
+    expect(task.completion?.reservation.candidate).toBe(candidate);
+  });
+
   it("keeps the extracted no-store projection body-hash bound", async () => {
     const source = await readFile(
       new URL("../src/bootstrap-http.ts", import.meta.url),

@@ -18,7 +18,7 @@ import {
 } from "@napier/runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createApp, createServices } from "../src/app.js";
+import { createApp, createFauxServices as createServices } from "./faux-services-fixture.js";
 import { continueWorkflowBreakpoint } from "../../web/src/workflow-api.js";
 import { projectWorkflowBreakpoint } from "../../web/src/workflow-breakpoint-view-model.js";
 

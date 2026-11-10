@@ -96,6 +96,37 @@ describe("workspace-addressed transport", () => {
     } finally { await f.cleanup(); }
   });
 
+  it.each(["body", "request"] as const)("retains the observer pin until async cancellation settles (%s)", async (source) => {
+    const f = await runtimeFixture({ maxIdle: 0 });
+    const controller = new AbortController();
+    const cancelling = deferred<void>();
+    const cleaned = deferred<void>();
+    const fetch = createWorkspaceRuntimeFetch({
+      registry: f.registry, defaultWorkspaceId: f.a.workspaceId,
+      fetch: () => new Response(new ReadableStream({
+        async cancel() { cancelling.resolve(); await cleaned.promise; },
+      })),
+    });
+    const response = await fetch(new Request("http://localhost/api/events", { signal: controller.signal }));
+    let cancellation: Promise<void> | undefined;
+    try {
+      if (source === "request") controller.abort();
+      else cancellation = response.body!.cancel();
+      await cancelling.promise;
+      expect(await f.registry.reclaimIdle()).toEqual([]);
+      const shutdown = f.registry.shutdown();
+      expect(f.disposed).toEqual([]);
+      cleaned.resolve();
+      await cancellation;
+      await shutdown;
+      expect(f.disposed).toEqual(["a"]);
+    } finally {
+      cleaned.resolve();
+      await response.body!.cancel();
+      await f.cleanup();
+    }
+  });
+
   it("releases leases after handler errors, empty responses, and stream errors", async () => {
     const f = await runtimeFixture({ maxIdle: 0 });
     let mode = "throw";

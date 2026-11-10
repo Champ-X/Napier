@@ -9,7 +9,7 @@ import type {
 } from "@napier/contracts/context-compaction";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createApp, createServices } from "../src/app.js";
+import { createApp, createFauxServices as createServices } from "./faux-services-fixture.js";
 
 const roots: string[] = [];
 const servicesToClose: Awaited<ReturnType<typeof createServices>>[] = [];

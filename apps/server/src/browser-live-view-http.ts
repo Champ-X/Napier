@@ -33,14 +33,20 @@ export function registerBrowserLiveViewHttp(
         return jsonError(context, errorMessage(error), 409);
       }
       const response = streamSSE(context, async (stream) => {
+        const controller = new AbortController();
+        const signal = AbortSignal.any([context.req.raw.signal, controller.signal]);
+        // Cancelling the response body does not necessarily abort the Request.
+        // Stop capture/sleep work before returning this Run's admission slot.
+        stream.onAbort(() => controller.abort());
         try {
           for await (const event of streamBrowserLiveView(
             browserLiveViews,
             context.req.param("threadId"),
             context.req.param("runId"),
-            context.req.raw.signal,
+            signal,
             streamOptions,
           )) {
+            signal.throwIfAborted();
             await stream.writeSSE({
               event: event.type,
               data: JSON.stringify(event),
@@ -49,6 +55,8 @@ export function registerBrowserLiveViewHttp(
                 : {}),
             });
           }
+        } catch (error) {
+          if (!signal.aborted) throw error;
         } finally {
           release();
         }

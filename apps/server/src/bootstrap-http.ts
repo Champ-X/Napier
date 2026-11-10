@@ -14,7 +14,10 @@ import {
   setBodyContentSha256Header,
   jsonByteLength,
 } from "./http-response-evidence.js";
-import { attachKernelThreadProjections } from "./kernel-thread-projections.js";
+import {
+  attachKernelThreadProjections,
+  projectPublicSubagentTask,
+} from "./kernel-thread-projections.js";
 import {
   inboundChannelAdapterCatalog,
   inboundChannelAdapterIdsSha256,
@@ -123,6 +126,8 @@ async function createBootstrapResponse(
       services.kernel,
       services.subagentHubControls,
     );
+  } else if (activeThread) {
+    activeThread.subagents = activeThread.subagents.map(projectPublicSubagentTask);
   }
   const agents = services.store.listAgents();
   const credentials = services.store.listCredentialReferences();
