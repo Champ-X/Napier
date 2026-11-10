@@ -187,7 +187,11 @@ export function Composer({
               <button
                 className="run-button control"
                 type="submit"
-                disabled={!vm.activeRunId}
+                disabled={
+                  !vm.activeRunId ||
+                  Boolean(vm.openOperatorDecision) ||
+                  Boolean(vm.browserInteractionConfirmation)
+                }
                 aria-label={
                   vm.controlMessageMode === "steering"
                     ? composerCopy.interaction.sendSteering

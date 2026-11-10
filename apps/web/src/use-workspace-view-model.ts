@@ -81,6 +81,7 @@ import type {
 } from "./extension-package-types";
 import { signedExtensionPackageFilename } from "./extension-package-artifact-view-model";
 import { formatApiErrorMessage } from "./api-error";
+import { openBrowserInteractionConfirmation } from "./browser-interaction-confirmation-view";
 import { latestManuallyResumableRun } from "./manual-run-recovery";
 import { selectedModelAvailability } from "./model-selection-view-model";
 import { openTelemetryTraceArtifactFilename } from "./otel-trace-export-view";
@@ -520,6 +521,10 @@ export function useWorkspaceViewModel() {
     [],
   );
 
+  const pendingBrowserInteraction = useMemo(
+    () => openBrowserInteractionConfirmation(detail?.events ?? []),
+    [detail?.events],
+  );
   const { submit, controlOutbox } = useThreadSubmission({
     workspaceKey: bootstrap ? JSON.stringify([bootstrap.workspace.root, bootstrap.workspace.dataRoot]) : undefined,
     threadId: selectedThreadId,
@@ -527,11 +532,12 @@ export function useWorkspaceViewModel() {
     composer: composerDraft,
     activeRunId,
     isRunning,
-    blocked: Boolean(openOperatorDecision),
+    blocked: Boolean(openOperatorDecision || pendingBrowserInteraction),
     modelConfigured: selectedModel.configured,
     modelUnavailableHint: copy.modelUnavailableHint,
     model: parseModelKey(selectedModelKey),
     capabilityPreset: nextRunCapabilityPreset,
+    harnessPolicyPreset: nextRunHarnessPolicy.preset,
     execute: nextRunHarnessPolicy.execute,
     onStart: startRunUi,
     onFinish: finishRunUi,

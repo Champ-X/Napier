@@ -85,11 +85,29 @@ beforeEach(() => {
     "<html><body><div id=app></div></body></html>",
   );
   data = new Map();
+  const session = new Map<string, string>();
   storage = {
     setItem: vi.fn((key: string, value: string) => {
       data.set(key, value);
     }),
   };
+  Object.defineProperty(window, "sessionStorage", {
+    configurable: true,
+    value: {
+      get length() {
+        return session.size;
+      },
+      key: (i: number) => [...session.keys()][i] ?? null,
+      getItem: (key: string) => session.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        session.set(key, value);
+      },
+      removeItem: (key: string) => {
+        session.delete(key);
+      },
+      clear: () => session.clear(),
+    },
+  });
   Object.defineProperty(window, "localStorage", {
     configurable: true,
     value: {
@@ -269,4 +287,27 @@ it("reuses the same prompt requestId after a failed submit restores the draft", 
     await vm.submit();
   });
   expect(requestIds[3]).not.toBe(requestIds[0]);
+});
+
+it("reuses a persisted prompt requestId after the submission hook remounts", async () => {
+  running = false;
+  draw();
+  act(() => composer.setComposer("Survive remount"));
+  const requestIds: string[] = [];
+  execute.mockImplementation(async (input) => {
+    requestIds.push(input.requestId);
+    input.restoreInput(input.text);
+    input.onFinish(false);
+  });
+  await act(async () => {
+    await vm.submit();
+  });
+  act(() => render(null, container));
+  draw();
+  act(() => composer.setComposer("Survive remount"));
+  await act(async () => {
+    await vm.submit();
+  });
+  expect(requestIds).toHaveLength(2);
+  expect(requestIds[0]).toBe(requestIds[1]);
 });

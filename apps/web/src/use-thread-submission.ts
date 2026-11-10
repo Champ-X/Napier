@@ -1,12 +1,18 @@
 import { useRef } from "react";
 import type { ModelRef, ThreadDetail, StreamFrame } from "@napier/contracts";
 import type { AgentCapabilityPresetId } from "@napier/contracts/agent-capabilities";
+import type { HarnessPolicyPresetId } from "@napier/contracts/harness-experiments";
 import type { NextRunPromptInput } from "./next-run-capability-preset-execution";
 import type { useThreadComposer } from "./use-thread-composer";
 import { useRunControlOutbox } from "./use-run-control-outbox";
 import { promptImagesFromAttachments } from "./composer-image-attachments";
 import { validText } from "./run-control-outbox-actions";
 import { controlOutboxCopy } from "./run-control-outbox-copy";
+import {
+  clearPromptRequestDraft,
+  readPromptRequestDraft,
+  writePromptRequestDraft,
+} from "./prompt-request-draft";
 
 export function useThreadSubmission(input: {
   workspaceKey: string | undefined;
@@ -20,6 +26,7 @@ export function useThreadSubmission(input: {
   modelUnavailableHint: string;
   model: ModelRef;
   capabilityPreset: AgentCapabilityPresetId | undefined;
+  harnessPolicyPreset?: HarnessPolicyPresetId | undefined;
   execute(input: NextRunPromptInput): Promise<void>;
   onStart(threadId: string, detail: ThreadDetail): void;
   onFinish(threadId: string): void;
@@ -83,13 +90,20 @@ export function useThreadSubmission(input: {
         imageAttachments.map((image) => image.id),
         input.model,
         input.capabilityPreset ?? null,
+        input.harnessPolicyPreset ?? null,
       ]);
-      const pending = pendingPrompt.current;
-      const requestId =
-        pending?.fingerprint === fingerprint
-          ? pending.requestId
-          : crypto.randomUUID();
-      pendingPrompt.current = { fingerprint, requestId };
+      const memory = pendingPrompt.current;
+      const stored = readPromptRequestDraft(input.workspaceKey, threadId);
+      const pending =
+        memory?.fingerprint === fingerprint
+          ? memory
+          : stored?.fingerprint === fingerprint
+            ? stored
+            : null;
+      const requestId = pending?.requestId ?? crypto.randomUUID();
+      const nextDraft = { fingerprint, requestId };
+      pendingPrompt.current = nextDraft;
+      writePromptRequestDraft(input.workspaceKey, threadId, nextDraft);
       draft.setComposer("");
       draft.setComposerImages([]);
       await input.execute({
@@ -110,6 +124,7 @@ export function useThreadSubmission(input: {
           // Keep the draft requestId until a Run is proven so retries coalesce.
           if (accepted && pendingPrompt.current?.requestId === requestId) {
             pendingPrompt.current = null;
+            clearPromptRequestDraft(input.workspaceKey, threadId);
           }
           input.onFinish(threadId);
         },
