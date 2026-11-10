@@ -43,6 +43,7 @@ export function App() {
     text: vm.composer,
     hasThread: Boolean(vm.detail),
     hasOpenDecision: Boolean(vm.openOperatorDecision),
+    hasBrowserConfirmation: Boolean(vm.browserInteractionConfirmation),
     model: activeModel,
   });
   return (
