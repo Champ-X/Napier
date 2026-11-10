@@ -17,6 +17,8 @@ export interface NextRunPromptInput {
   harnessPolicyPreset?: HarnessPolicyPresetId;
   /** Durable admission identity; retries of the same send reuse this value. */
   requestId?: string;
+  /** Aborts the client SSE reader without cancelling the durable Run by itself. */
+  signal?: AbortSignal;
   onStart: () => void;
   onRefresh: () => Promise<void>;
   onError: (error: unknown) => void;
@@ -53,6 +55,7 @@ export async function executeNextRunPrompt(
         if (isAcceptedPromptRunFrame(frame, input.threadId)) runAccepted = true;
         input.onFrame(frame);
       },
+      input.signal,
     );
     await input.onRefresh();
   } catch (error) {
@@ -60,10 +63,21 @@ export async function executeNextRunPrompt(
       input.restoreInput(input.text);
       input.restoreImages?.();
     }
-    input.onError(error);
+    if (isAbortError(error)) {
+      await input.onRefresh().catch(() => undefined);
+    } else {
+      input.onError(error);
+    }
   } finally {
     input.onFinish(runAccepted);
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && error.name === "AbortError") ||
+    (error instanceof Error && error.name === "AbortError")
+  );
 }
 
 /** Only called with frames already accepted by the stream protocol verifier.

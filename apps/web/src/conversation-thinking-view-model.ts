@@ -102,93 +102,137 @@ export function conversationThinkingActivities(
     if (!thinkingDelta(event) || consumedThinkingEventIds.has(event.id)) {
       continue;
     }
-
-    const first = event;
-    const turnStart = turnStarts.get(event.runId) ?? first;
-    let last = event;
-    let chunkCount = boundedInteger(event.payload["chunkCount"]);
-    let deltaBytes = boundedInteger(event.payload["deltaBytes"]);
-    const transcript: string[] = [];
-    let redactedChunkCount = 0;
-    collectThinkingContent(event.payload, transcript, () => {
-      redactedChunkCount += 1;
-    });
-    let lastIndex = index;
-    for (let cursor = index + 1; cursor < ordered.length; cursor += 1) {
-      const candidate = ordered[cursor]!;
-      if (candidate.runId !== event.runId) continue;
-      if (
-        candidate.type === "turn.started" ||
-        candidate.type === "turn.completed" ||
-        candidate.type === "message.user" ||
-        publicActionKind(candidate)
-      ) {
-        break;
-      }
-      if (!thinkingDelta(candidate, event.runId)) continue;
-      consumedThinkingEventIds.add(candidate.id);
-      last = candidate;
-      lastIndex = cursor;
-      chunkCount = sumBounded(
-        chunkCount,
-        boundedInteger(last.payload["chunkCount"]),
-      );
-      deltaBytes = sumBounded(
-        deltaBytes,
-        boundedInteger(last.payload["deltaBytes"]),
-      );
-      collectThinkingContent(last.payload, transcript, () => {
-        redactedChunkCount += 1;
-      });
-    }
-
-    const localDisplay = findLocalThinkingDisplay(
-      ordered,
-      lastIndex,
-      event.runId,
+    activities.push(
+      buildThinkingActivity(
+        ordered,
+        event,
+        index,
+        turnStarts.get(event.runId) ?? event,
+        consumedThinkingEventIds,
+      ),
     );
-    const restoredFromLocal = Boolean(
-      localDisplay && (redactedChunkCount > 0 || transcript.length === 0),
-    );
-    if (localDisplay && restoredFromLocal) {
-      transcript.splice(0, transcript.length, localDisplay.thinking);
-    }
-
-    const followingActionKind = findFollowingAction(
-      ordered,
-      lastIndex,
-      event.runId,
-    );
-    const durationSeconds = durationBetween(
-      turnStarts.get(event.runId) ?? first,
-      last,
-    );
-    activities.push({
-      // Bind the activity to the turn rather than its first persisted batch.
-      // This keeps the live placeholder mounted when the first delta arrives.
-      id: turnStart.id,
-      runId: first.runId,
-      // Providers emit turn.started before they echo the triggering user
-      // message. Anchor the visual activity to that message so the feed keeps
-      // the causal order: prompt, then thinking.
-      seq: thinkingDisplaySeq(ordered, turnStart, first.seq),
-      lastSeq: last.seq,
-      createdAt: last.createdAt,
-      startedAt: turnStart.createdAt,
-      turnSeq: turnStart.seq,
-      summaryKind: summaryKind(followingActionKind),
-      ...(followingActionKind ? { followingActionKind } : {}),
-      ...(durationSeconds !== undefined ? { durationSeconds } : {}),
-      ...(chunkCount !== undefined ? { chunkCount } : {}),
-      ...(deltaBytes !== undefined ? { deltaBytes } : {}),
-      ...(transcript.length > 0 ? { transcript: transcript.join("") } : {}),
-      ...(redactedChunkCount > 0 ? { redactedChunkCount } : {}),
-      ...(localDisplay && restoredFromLocal
-        ? { localDisplayOrigin: localDisplay.origin }
-        : {}),
-    });
   }
   return activities;
+}
+
+function buildThinkingActivity(
+  ordered: readonly RunEvent[],
+  first: RunEvent & { payload: Record<string, unknown> },
+  index: number,
+  turnStart: RunEvent,
+  consumedThinkingEventIds: Set<string>,
+): ConversationThinkingActivity {
+  const batch = absorbThinkingBatch(
+    ordered,
+    first,
+    index,
+    consumedThinkingEventIds,
+  );
+  const localDisplay = findLocalThinkingDisplay(
+    ordered,
+    batch.lastIndex,
+    first.runId,
+  );
+  const restoredFromLocal = Boolean(
+    localDisplay &&
+      (batch.redactedChunkCount > 0 || batch.transcript.length === 0),
+  );
+  if (localDisplay && restoredFromLocal) {
+    batch.transcript.splice(0, batch.transcript.length, localDisplay.thinking);
+  }
+  const followingActionKind = findFollowingAction(
+    ordered,
+    batch.lastIndex,
+    first.runId,
+  );
+  const durationSeconds = durationBetween(turnStart, batch.last);
+  return {
+    // Bind the activity to the turn rather than its first persisted batch.
+    // This keeps the live placeholder mounted when the first delta arrives.
+    id: turnStart.id,
+    runId: first.runId,
+    // Providers emit turn.started before they echo the triggering user
+    // message. Anchor the visual activity to that message so the feed keeps
+    // the causal order: prompt, then thinking.
+    seq: thinkingDisplaySeq(ordered, turnStart, first.seq),
+    lastSeq: batch.last.seq,
+    createdAt: batch.last.createdAt,
+    startedAt: turnStart.createdAt,
+    turnSeq: turnStart.seq,
+    summaryKind: summaryKind(followingActionKind),
+    ...(followingActionKind ? { followingActionKind } : {}),
+    ...(durationSeconds !== undefined ? { durationSeconds } : {}),
+    ...(batch.chunkCount !== undefined ? { chunkCount: batch.chunkCount } : {}),
+    ...(batch.deltaBytes !== undefined ? { deltaBytes: batch.deltaBytes } : {}),
+    ...(batch.transcript.length > 0
+      ? { transcript: batch.transcript.join("") }
+      : {}),
+    ...(batch.redactedChunkCount > 0
+      ? { redactedChunkCount: batch.redactedChunkCount }
+      : {}),
+    ...(localDisplay && restoredFromLocal
+      ? { localDisplayOrigin: localDisplay.origin }
+      : {}),
+  };
+}
+
+function absorbThinkingBatch(
+  ordered: readonly RunEvent[],
+  first: RunEvent & { payload: Record<string, unknown> },
+  index: number,
+  consumedThinkingEventIds: Set<string>,
+): {
+  last: RunEvent;
+  lastIndex: number;
+  chunkCount: number | undefined;
+  deltaBytes: number | undefined;
+  transcript: string[];
+  redactedChunkCount: number;
+} {
+  let last: RunEvent & { payload: Record<string, unknown> } = first;
+  let chunkCount = boundedInteger(first.payload["chunkCount"]);
+  let deltaBytes = boundedInteger(first.payload["deltaBytes"]);
+  const transcript: string[] = [];
+  let redactedChunkCount = 0;
+  collectThinkingContent(first.payload, transcript, () => {
+    redactedChunkCount += 1;
+  });
+  let lastIndex = index;
+  for (let cursor = index + 1; cursor < ordered.length; cursor += 1) {
+    const candidate = ordered[cursor]!;
+    if (candidate.runId !== first.runId) continue;
+    if (
+      candidate.type === "turn.started" ||
+      candidate.type === "turn.completed" ||
+      candidate.type === "message.user" ||
+      publicActionKind(candidate)
+    ) {
+      break;
+    }
+    if (!thinkingDelta(candidate, first.runId)) continue;
+    consumedThinkingEventIds.add(candidate.id);
+    last = candidate;
+    lastIndex = cursor;
+    chunkCount = sumBounded(
+      chunkCount,
+      boundedInteger(last.payload["chunkCount"]),
+    );
+    deltaBytes = sumBounded(
+      deltaBytes,
+      boundedInteger(last.payload["deltaBytes"]),
+    );
+    collectThinkingContent(last.payload, transcript, () => {
+      redactedChunkCount += 1;
+    });
+  }
+  return {
+    last,
+    lastIndex,
+    chunkCount,
+    deltaBytes,
+    transcript,
+    redactedChunkCount,
+  };
 }
 
 function findLocalThinkingDisplay(

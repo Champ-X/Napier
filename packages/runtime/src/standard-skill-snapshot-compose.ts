@@ -8,7 +8,6 @@ import type {
   StandardSkillRequestRecord,
   StandardSkillRootKind,
 } from "@napier/contracts/skill-load-standard";
-import { STANDARD_SKILL_ROOT_KINDS } from "@napier/contracts/skill-load-standard";
 import {
   isStandardSkillCatalogBindingV2,
   isStandardSkillLoadFailureV2,
@@ -21,6 +20,16 @@ import {
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  check,
+  compare,
+  compareRootKinds,
+  countNames,
+  deepFreeze,
+  rootKinds,
+  unavailable,
+  validName,
+} from "./standard-skill-snapshot-compose-helpers.js";
 import type {
   StandardSkillCandidate,
   StandardSkillResolution,
@@ -29,7 +38,6 @@ import type {
   StandardSkillSnapshotEntry,
 } from "./standard-skill-snapshot-types.js";
 
-const NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const MAX_TOTAL_BYTES = 8 * 1024 * 1024;
 const STANDARD_TRUST_POLICY = {
   roots: ["project_legacy", "project_standard", "user_standard"],
@@ -449,58 +457,5 @@ function publicEntry(
     formattedInvocation: _invocation,
     ...value
   } = entry;
-  return value;
-}
-
-function unavailable(
-  code: StandardSkillLoadFailureV2["failureCode"],
-  roots: StandardSkillRootKind[],
-  diagnostic: string,
-): StandardSkillResolution {
-  return { state: "unavailable", code, roots, diagnostic };
-}
-function rootKinds(
-  candidates: readonly StandardSkillCandidate[],
-): StandardSkillRootKind[] {
-  return [...new Set(candidates.map((item) => item.root.kind))].sort(
-    compareRootKinds,
-  );
-}
-function compareRootKinds(
-  left: StandardSkillRootKind,
-  right: StandardSkillRootKind,
-): number {
-  return (
-    STANDARD_SKILL_ROOT_KINDS.indexOf(left) -
-    STANDARD_SKILL_ROOT_KINDS.indexOf(right)
-  );
-}
-function countNames(values: readonly string[]) {
-  const counts = new Map<string, number>();
-  for (const value of values) {
-    if (validName(value)) counts.set(value, (counts.get(value) ?? 0) + 1);
-  }
-  return counts;
-}
-function validName(value: unknown): value is string {
-  return typeof value === "string" && value.length <= 64 && NAME.test(value);
-}
-function compare(left: string, right: string): number {
-  return left < right ? -1 : left > right ? 1 : 0;
-}
-function check(signal?: AbortSignal): void {
-  if (signal?.aborted) {
-    throw signal.reason instanceof Error
-      ? signal.reason
-      : new DOMException("Operation aborted", "AbortError");
-  }
-}
-function deepFreeze<T>(value: T): T {
-  if (value && typeof value === "object" && !Object.isFrozen(value)) {
-    Object.freeze(value);
-    for (const item of Object.values(value as Record<string, unknown>)) {
-      deepFreeze(item);
-    }
-  }
   return value;
 }

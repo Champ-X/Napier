@@ -19,6 +19,8 @@ export interface ThreadRecoveryOptions {
   onError: (threadId: string, error: unknown) => void;
   onFrame: (threadId: string) => (frame: StreamFrame) => void;
   onUnavailable: () => void;
+  beginStreamSignal?: () => AbortSignal;
+  releaseStreamSignal?: (signal: AbortSignal) => void;
 }
 
 export function useThreadRecovery(options: ThreadRecoveryOptions) {
@@ -39,6 +41,7 @@ export function useThreadRecovery(options: ThreadRecoveryOptions) {
       }
       const threadId = detail.thread.id;
       inFlight.current.add(threadId);
+      const signal = options.beginStreamSignal?.();
       try {
         options.onStart(threadId, detail);
         await resumeInterruptedRun(
@@ -49,17 +52,26 @@ export function useThreadRecovery(options: ThreadRecoveryOptions) {
             ...(readOnly ? { readOnly: true } : {}),
           },
           options.onFrame(threadId),
+          signal,
         );
         await options.onRefresh(threadId);
       } catch (error) {
         // A lost response may still have created a Run. Reconcile before retry UI.
         await options.onRefresh(threadId).catch(() => undefined);
-        options.onError(threadId, error);
+        if (!isAbortError(error)) options.onError(threadId, error);
       } finally {
+        if (signal) options.releaseStreamSignal?.(signal);
         inFlight.current.delete(threadId);
         options.onFinish(threadId);
       }
     },
     [options],
+  );
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && error.name === "AbortError") ||
+    (error instanceof Error && error.name === "AbortError")
   );
 }

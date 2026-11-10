@@ -51,15 +51,8 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
     "requestId",
   ]);
   if (!record) return undefined;
-  const text = record?.["text"];
-  if (
-    typeof text !== "string" ||
-    text.length < 1 ||
-    text.length > 60_000 ||
-    !text.trim()
-  ) {
-    return undefined;
-  }
+  const text = parsePromptText(record["text"]);
+  if (!text) return undefined;
   const model =
     record["model"] === undefined ? undefined : parseModelRef(record["model"]);
   if (record["model"] !== undefined && !model) return undefined;
@@ -95,6 +88,18 @@ export function parsePromptRequest(input: unknown): PromptRequest | undefined {
     ...(sourceContinuityRunId ? { sourceContinuityRunId } : {}),
     ...(typeof requestId === "string" ? { requestId } : {}),
   };
+}
+
+function parsePromptText(value: unknown): string | undefined {
+  if (
+    typeof value !== "string" ||
+    value.length < 1 ||
+    value.length > 60_000 ||
+    !value.trim()
+  ) {
+    return undefined;
+  }
+  return value;
 }
 
 function parsePromptPresets(

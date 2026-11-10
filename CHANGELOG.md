@@ -8,6 +8,10 @@ source baselines preserved.
 
 ### Runtime
 
+- Fold conversation detail projections in one event pass, and load kernel
+  projection deltas through typed `listEventsRange` when the ledger supports it.
+- Extract plan-field normalize, exact tool-result replay, skill-load predicates,
+  and standard-skill snapshot compose helpers to shrink plans/skill hotspots.
 - Bind prompt retries to a payload fingerprint, coalesce matching in-flight
   requests within a store, and reject conflicting request IDs. Reuse one
   orchestration projection when producing recovery details. Distinguish local
@@ -47,6 +51,10 @@ source baselines preserved.
 
 ### Workbench
 
+- Abort in-flight prompt/resume SSE readers when the operator stops a Run;
+  treat client AbortError as a soft disconnect after refreshing thread state.
+- Split thinking-activity batch absorption to stay under complexity budget, and
+  accept React keyboard events in the shared focus trap.
 - Reuse the draft prompt `requestId` until a Run is proven accepted (failures
   keep the identity; success clears it), fingerprint model/capability with the
   draft, localize recovery tool phases, align the evidence overlay with the

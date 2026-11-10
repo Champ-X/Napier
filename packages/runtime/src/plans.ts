@@ -1,5 +1,3 @@
-import path from "node:path";
-
 import type {
   ArtifactManifestEntry,
   CreateExecutionPlanRequest,
@@ -23,6 +21,15 @@ import {
   isPlanArtifactProjectionPayloadValid,
   PLAN_ARTIFACT_EVENT_PROJECTION_KEYS,
 } from "./plan-artifact-event-projection.js";
+import {
+  normalizeArtifactPath,
+  normalizeDependencyUpdates,
+  normalizeEntityId,
+  normalizeEntityIdList,
+  normalizeText,
+  replanArtifactDigestInput,
+  replanStepDigestInput,
+} from "./plan-field-normalize.js";
 import { runPlanProgressEventPayload } from "./run-progress-plan-state.js";
 import { artifactRequiresEvidence } from "./artifact-status.js";
 import {
@@ -179,6 +186,7 @@ export function replanExecutionPlan(
   );
   const dependencyUpdates = normalizeDependencyUpdates(
     request.dependencyUpdates,
+    MAX_PLAN_STEPS,
   );
   const addSteps = request.addSteps ?? [];
   const addArtifacts = request.addArtifacts ?? [];
@@ -1258,121 +1266,4 @@ function assertArtifactTransition(
   if (!allowed[current].includes(next)) {
     throw new Error(`Cannot transition artifact from ${current} to ${next}`);
   }
-}
-
-function normalizeEntityIdList(
-  values: string[] | undefined,
-  label: string,
-  maxItems: number,
-): string[] {
-  if (!values) return [];
-  if (values.length > maxItems) {
-    throw new Error(`Too many ${label} IDs`);
-  }
-  return [...new Set(values.map((value) => normalizeEntityId(value, label)))];
-}
-
-function normalizeDependencyUpdates(
-  updates: ReplanExecutionPlanRequest["dependencyUpdates"] | undefined,
-): Array<{ stepId: string; dependsOn: string[] }> {
-  if (!updates) return [];
-  if (updates.length > MAX_PLAN_STEPS) {
-    throw new Error(`Plans allow at most ${MAX_PLAN_STEPS} dependency updates`);
-  }
-  const seen = new Set<string>();
-  return updates.map((update) => {
-    const stepId = normalizeEntityId(update.stepId, "step");
-    if (seen.has(stepId)) {
-      throw new Error(`Duplicate dependency update for plan step: ${stepId}`);
-    }
-    seen.add(stepId);
-    return {
-      stepId,
-      dependsOn: [
-        ...new Set(
-          update.dependsOn.map((dependency) =>
-            normalizeEntityId(dependency, "step"),
-          ),
-        ),
-      ],
-    };
-  });
-}
-
-function replanStepDigestInput(step: PlanStep): {
-  id: string;
-  title: string;
-  description: string;
-  verification: string;
-  dependsOn: string[];
-} {
-  return {
-    id: step.id,
-    title: step.title,
-    description: step.description,
-    verification: step.verification,
-    dependsOn: step.dependsOn,
-  };
-}
-
-function replanArtifactDigestInput(artifact: ArtifactManifestEntry): {
-  id: string;
-  path: string;
-  kind: ArtifactManifestEntry["kind"];
-  description: string;
-} {
-  return {
-    id: artifact.id,
-    path: artifact.path,
-    kind: artifact.kind,
-    description: artifact.description,
-  };
-}
-
-function normalizeEntityId(value: string, label: string): string {
-  const normalized = value.trim().toLowerCase();
-  if (!/^[a-z][a-z0-9_-]{0,63}$/.test(normalized)) {
-    throw new Error(`Invalid ${label} ID: ${value}`);
-  }
-  return normalized;
-}
-
-function normalizeArtifactPath(
-  value: string,
-  kind: ArtifactManifestEntry["kind"],
-): string {
-  const normalized = value.trim();
-  if (!normalized) throw new Error("Artifact path is required");
-  if (kind === "url") {
-    const url = new URL(normalized);
-    if (
-      (url.protocol !== "https:" && url.protocol !== "http:") ||
-      url.username ||
-      url.password
-    ) {
-      throw new Error("Artifact URLs must be credential-free HTTP(S) URLs");
-    }
-    return url.toString();
-  }
-  if (kind === "file" || kind === "directory") {
-    if (path.isAbsolute(normalized)) {
-      throw new Error("Artifact paths must be workspace-relative");
-    }
-    const relative = path.normalize(normalized);
-    if (
-      relative === ".." ||
-      relative.startsWith(`..${path.sep}`) ||
-      relative === "."
-    ) {
-      throw new Error("Artifact path escapes the workspace");
-    }
-    return relative;
-  }
-  return normalizeText(normalized, 500);
-}
-
-function normalizeText(value: unknown, maxLength: number): string {
-  return typeof value === "string"
-    ? value.replace(/\s+/g, " ").trim().slice(0, maxLength)
-    : "";
 }

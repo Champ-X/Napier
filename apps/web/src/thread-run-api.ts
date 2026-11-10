@@ -15,6 +15,7 @@ export function streamPrompt(
   threadId: string,
   body: PromptRequest,
   onFrame: (frame: StreamFrame) => void,
+  signal?: AbortSignal,
 ): Promise<void> {
   return streamRunFrames(
     `/api/threads/${encodeURIComponent(threadId)}/messages`,
@@ -31,6 +32,7 @@ export function streamPrompt(
         : {}),
     },
     onFrame,
+    signal,
   );
 }
 
@@ -38,6 +40,7 @@ export function resumeInterruptedRun(
   threadId: string,
   body: ResumeRunRequest,
   onFrame: (frame: StreamFrame) => void,
+  signal?: AbortSignal,
 ): Promise<void> {
   return streamRunFrames(
     `/api/threads/${encodeURIComponent(threadId)}/resume`,
@@ -50,6 +53,7 @@ export function resumeInterruptedRun(
       ...(body.model ? { model: body.model } : {}),
     },
     onFrame,
+    signal,
   );
 }
 
@@ -57,6 +61,7 @@ export function continueOperatorDecision(
   threadId: string,
   decisionId: string,
   onFrame: (frame: StreamFrame) => void,
+  signal?: AbortSignal,
 ): Promise<void> {
   return streamRunFrames(
     `/api/threads/${encodeURIComponent(threadId)}/operator-decisions/${encodeURIComponent(decisionId)}/continue`,
@@ -67,6 +72,7 @@ export function continueOperatorDecision(
       decisionId,
     },
     onFrame,
+    signal,
   );
 }
 

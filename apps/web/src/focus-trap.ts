@@ -14,9 +14,11 @@ export function focusableElements(container: HTMLElement): HTMLElement[] {
   );
 }
 
+type TrapKeyEvent = Pick<KeyboardEvent, "key" | "shiftKey" | "preventDefault">;
+
 /** Trap Tab within `container` while the listener is attached. Escape is left to the caller. */
 export function trapFocusKeyDown(
-  event: KeyboardEvent,
+  event: TrapKeyEvent,
   container: HTMLElement,
 ): void {
   if (event.key !== "Tab") return;

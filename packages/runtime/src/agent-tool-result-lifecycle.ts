@@ -16,20 +16,16 @@ import { isSkillResourceLoadFailureV1 } from "@napier/contracts/skill-resource";
 import type { FrozenToolResultReplayController } from "./agent-message-tool-result-replay.js";
 import { preserveAgentToolIdentity } from "./agent-tool-metadata.js";
 import { wrapToolsWithFailureCapture } from "./agent-tool-failure-capture.js";
-import { replayedToolFailureReceipt } from "./agent-tool-failure-replay.js";
 import {
   agentToolDisplayOwner,
   type AgentToolDisplayStore,
 } from "./agent-tool-display-store.js";
+import { resolveExactToolResultReplay } from "./agent-tool-result-exact-replay.js";
 import { agentToolResultText } from "./agent-tool-result-text.js";
 import { captureToolInvocation } from "./tool-invocation-capture.js";
 import { toolInvocationArgumentsSha256 } from "./tool-invocation-capsule.js";
 import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 import { captureToolInvocationResult } from "./tool-invocation-result-capture.js";
-import {
-  replayableToolResult,
-  validateToolInvocationResultCapsuleReceipt,
-} from "./tool-invocation-result-capsule.js";
 import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 import type { LocalStore } from "./store.js";
 import { isSkillLoadFailure } from "./skill-load-contracts.js";
@@ -258,74 +254,31 @@ export class AgentToolResultLifecycle {
     const runEvents = await this.options.store.listRunEvents(
       this.options.run.id,
     );
-    const candidates = runEvents.filter((event) => {
-      const payload = jsonRecord(event.payload);
-      return (
-        event.type === "context.tool_result" &&
-        payload?.["callId"] === toolCallId
-      );
+    const replay = await resolveExactToolResultReplay({
+      runEvents,
+      toolCallId,
+      toolName,
+      args,
+      protocol,
+      resultCapsules: this.options.resultCapsules,
+      run: this.options.run,
     });
-    if (candidates.length === 0) return undefined;
-    try {
-      const receipts = candidates.map((event) =>
-        validateToolInvocationResultCapsuleReceipt(event.payload),
-      );
-      const receipt = receipts[0]!;
-      // Accept duplicate historical receipts only when content-identical.
-      if (
-        receipts.some(
-          (candidate) => candidate.contentSha256 !== receipt.contentSha256,
-        )
-      ) {
-        return undefined;
-      }
-      if (
-        receipt.toolName !== toolName ||
-        !protocol.matchesReplayIdentitySha256(receipt.toolDefinitionSha256) ||
-        receipt.argumentsSha256 !== toolInvocationArgumentsSha256(args)
-      ) {
-        return undefined;
-      }
-      const capsule = await this.options.resultCapsules.read(
-        receipt.capsuleSha256,
-      );
-      if (
-        capsule.sourceThreadId !== this.options.run.threadId ||
-        capsule.sourceRunId !== this.options.run.id ||
-        capsule.callId !== toolCallId ||
-        capsule.toolName !== toolName ||
-        capsule.contentSha256 !== receipt.capsuleSha256 ||
-        capsule.invocationCapsuleSha256 !== receipt.invocationCapsuleSha256 ||
-        capsule.toolDefinitionSha256 !== receipt.toolDefinitionSha256 ||
-        capsule.argumentsSha256 !== receipt.argumentsSha256 ||
-        capsule.resultSha256 !== receipt.resultSha256 ||
-        capsule.outputTextSha256 !== receipt.outputTextSha256 ||
-        capsule.outputTextBytes !== receipt.outputTextBytes ||
-        capsule.isError !== receipt.isError
-      ) {
-        return undefined;
-      }
-      const replay = {
-        result: replayableToolResult(capsule),
-        isError: capsule.isError,
-        resultEvidenceSha256: receipt.contentSha256,
-      };
-      const failure = replayedToolFailureReceipt(runEvents, toolCallId);
-      if (capsule.isError && failure)
-        this.failureReceipts.set(toolCallId, failure);
-      // Seed finalization because Pi still invokes afterToolCall on replay.
-      if (!this.finalizations.has(toolCallId)) {
-        this.finalizations.set(toolCallId, {
-          toolName,
-          result: Promise.resolve(
-            capsule.isError ? { isError: true } : undefined,
-          ),
-        });
-      }
-      return replay;
-    } catch {
-      return undefined;
+    if (!replay) return undefined;
+    if (replay.failure) this.failureReceipts.set(toolCallId, replay.failure);
+    // Seed finalization because Pi still invokes afterToolCall on replay.
+    if (!this.finalizations.has(toolCallId)) {
+      this.finalizations.set(toolCallId, {
+        toolName,
+        result: Promise.resolve(
+          replay.isError ? { isError: true } : undefined,
+        ),
+      });
     }
+    return {
+      result: replay.result,
+      isError: replay.isError,
+      resultEvidenceSha256: replay.resultEvidenceSha256,
+    };
   }
 
   private async finalizeOnce(input: {
@@ -502,12 +455,4 @@ export class AgentToolResultLifecycle {
       // Durable evidence survives a disconnected observer.
     }
   }
-}
-
-function jsonRecord(
-  value: JsonValue | undefined,
-): Record<string, JsonValue> | undefined {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value
-    : undefined;
 }

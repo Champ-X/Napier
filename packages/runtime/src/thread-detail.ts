@@ -25,8 +25,8 @@ import { projectOperatorDecisions } from "./operator-decisions.js";
 import { projectRunControlMessages } from "./run-control-messages.js";
 import { projectTaskNarrative } from "./task-narrative-projection.js";
 import {
+  activePlanEventWatermark,
   projectActivePlan,
-  projectActivePlanEventWatermark,
 } from "./active-plan-projection.js";
 import { projectConversationMessages } from "./conversation-messages-projection.js";
 import {
@@ -73,6 +73,31 @@ interface ThreadDetailSource {
   listAutomaticRecoveryAttempts(threadId: string): AutomaticRecoveryAttempt[];
   listSubagentTasks(threadId: string): SubagentTask[];
   listEvents(threadId: string): Promise<RunEvent[]>;
+}
+
+function foldConversationProjectionStates(events: readonly RunEvent[]) {
+  let artifactState = createConversationArtifactEventState();
+  let recoveryState = createConversationRecoveryEventState();
+  let subagentState = createConversationSubagentEventState();
+  let conversationPlanState = createConversationPlanEventState();
+  let activePlanWatermark = 0;
+  for (const event of events) {
+    artifactState = applyConversationArtifactEvent(artifactState, event);
+    recoveryState = applyConversationRecoveryEvent(recoveryState, event);
+    subagentState = applyConversationSubagentEvent(subagentState, event);
+    conversationPlanState = applyConversationPlanEvent(
+      conversationPlanState,
+      event,
+    );
+    activePlanWatermark = activePlanEventWatermark(activePlanWatermark, event);
+  }
+  return {
+    artifactState,
+    recoveryState,
+    subagentState,
+    conversationPlanState,
+    activePlanWatermark,
+  };
 }
 
 export async function loadThreadDetail(
@@ -156,26 +181,12 @@ export function createThreadDetail(
     ),
   };
   if (options?.kernelProjections === false) return detail;
-  const activePlan = projectActivePlan(
-    input.plans,
-    projectActivePlanEventWatermark(input.events),
-  );
-  const artifactState = input.events.reduce(
-    applyConversationArtifactEvent,
-    createConversationArtifactEventState(),
-  );
-  const recoveryState = input.events.reduce(
-    applyConversationRecoveryEvent,
-    createConversationRecoveryEventState(),
-  );
-  const subagentState = input.events.reduce(
-    applyConversationSubagentEvent,
-    createConversationSubagentEventState(),
-  );
-  const conversationPlanState = input.events.reduce(
-    applyConversationPlanEvent,
-    createConversationPlanEventState(),
-  );
+  const folded = foldConversationProjectionStates(input.events);
+  const activePlan = projectActivePlan(input.plans, folded.activePlanWatermark);
+  const artifactState = folded.artifactState;
+  const recoveryState = folded.recoveryState;
+  const subagentState = folded.subagentState;
+  const conversationPlanState = folded.conversationPlanState;
   return {
     ...detail,
     messages: projectConversationMessages(input.events),

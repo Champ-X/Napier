@@ -1,5 +1,6 @@
 import { useThreadSubmission, useThreadRecovery } from "./use-thread-submission";
 import { useThreadDecisionActions } from "./use-thread-decision-actions";
+import { useActiveRunStream } from "./use-active-run-stream";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
@@ -193,6 +194,7 @@ export function useWorkspaceViewModel() {
   const [error, setError] = useState<string>();
   const selectedThreadIdRef = useRef<string | undefined>(undefined);
   const threadDetailCacheRef = useRef(new Map<string, WebThreadDetail>());
+  const activeRunStream = useActiveRunStream();
   selectedThreadIdRef.current = selectedThreadId;
 
 
@@ -490,7 +492,7 @@ export function useWorkspaceViewModel() {
     model: parseModelKey(selectedModelKey),
     capabilityPreset: nextRunCapabilityPreset,
     harnessPolicyPreset: nextRunHarnessPolicy.preset,
-    execute: nextRunHarnessPolicy.execute,
+    execute: activeRunStream.wrapExecute(nextRunHarnessPolicy.execute),
     onStart: startRunUi,
     onFinish: finishRunUi,
     onRefresh: refreshBootstrap,
@@ -507,16 +509,18 @@ export function useWorkspaceViewModel() {
     onRefresh: refreshBootstrap, onError: setRunError,
     onFrame: streamFrameHandler,
     onUnavailable: () => setError(copy.modelUnavailableHint),
+    ...activeRunStream.streamSignalBindings,
   });
 
   const stop = useCallback(async () => {
     if (!detail) return;
+    activeRunStream.abort();
     try {
       await stopRun(detail.thread.id);
     } catch (stopError) {
       setError(toErrorMessage(stopError));
     }
-  }, [detail]);
+  }, [activeRunStream, detail]);
 
   const operatorDecisionActions = useThreadDecisionActions({
     loadThread: getThread,

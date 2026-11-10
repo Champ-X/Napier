@@ -38,11 +38,14 @@ export async function streamRunFrames(
   body: PromptRequest | ResumeRunRequest | Record<string, never>,
   expectation: StreamRunExpectation,
   onFrame: (frame: StreamFrame) => void,
+  signal?: AbortSignal,
 ): Promise<void> {
+  if (signal?.aborted) throw abortError();
   const response = await workspaceFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    ...(signal ? { signal } : {}),
   });
   if (!response.ok) {
     await throwNapierApiError(response, "Run failed", path);
@@ -62,16 +65,22 @@ export async function streamRunFrames(
       ? harnessPolicyEvidence(path, expectation.harnessPolicyPreset)
       : async () => {};
   for await (const record of readSseJsonRecords(path, response.body)) {
+    if (signal?.aborted) throw abortError();
     const parsed = await validateStreamFrameRecord(path, record);
     await verifyPolicy(parsed.frame);
     await dispatchFrame(path, state, expectation, parsed, onFrame);
   }
+  if (signal?.aborted) throw abortError();
   if (!state.terminalFrameType) {
     throw new NapierStreamTerminationError(path, {
       frameCount: state.frameCount,
       ...(state.lastFrameType ? { lastFrameType: state.lastFrameType } : {}),
     });
   }
+}
+
+function abortError(): DOMException {
+  return new DOMException("The operation was aborted.", "AbortError");
 }
 
 interface StreamState {

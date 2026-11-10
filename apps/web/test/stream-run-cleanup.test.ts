@@ -27,3 +27,30 @@ it.each([false, true])(
     expect(onFrame).not.toHaveBeenCalled();
   },
 );
+
+it("forwards AbortSignal to the workspace fetch", async () => {
+  const controller = new AbortController();
+  const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+    expect(init?.signal).toBe(controller.signal);
+    throw new DOMException("The operation was aborted.", "AbortError");
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  await expect(
+    streamPrompt("thread_1", { text: "hello" }, vi.fn(), controller.signal),
+  ).rejects.toMatchObject({ name: "AbortError" });
+  expect(fetchMock).toHaveBeenCalledOnce();
+});
+
+it("rejects immediately when the AbortSignal is already aborted", async () => {
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  await expect(
+    streamPrompt(
+      "thread_1",
+      { text: "hello" },
+      vi.fn(),
+      AbortSignal.abort(),
+    ),
+  ).rejects.toMatchObject({ name: "AbortError" });
+  expect(fetchMock).not.toHaveBeenCalled();
+});
