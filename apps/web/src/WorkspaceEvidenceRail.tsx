@@ -5,6 +5,7 @@ import type { BootstrapResponse, ThreadDetail } from "@napier/contracts";
 import { taskArtifactTargets } from "./task-completion-output-paths";
 import { taskNarrative } from "./task-narrative-view-model";
 import { workspaceEvidenceCopy as t } from "./workspace-evidence-copy";
+import { trapFocusKeyDown } from "./focus-trap";
 import { WorkspaceEvidenceFiles } from "./WorkspaceEvidenceFiles";
 import { WorkspaceEvidenceResults } from "./WorkspaceEvidenceResults";
 import "./workspace-evidence-rail.css";
@@ -52,18 +53,7 @@ export function WorkspaceEvidenceRail({
         onClose();
         return;
       }
-      if (event.key !== "Tab" || !railRef.current) return;
-      const focusable = focusableElements(railRef.current);
-      if (focusable.length === 0) return;
-      const first = focusable[0]!;
-      const last = focusable.at(-1)!;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      if (railRef.current) trapFocusKeyDown(event, railRef.current);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -121,20 +111,4 @@ export function WorkspaceEvidenceRail({
       </div>
     </aside>
   );
-}
-
-function focusableElements(container: HTMLElement): HTMLElement[] {
-  return [
-    ...container.querySelectorAll<HTMLElement>(
-      [
-        "a[href]",
-        "button:not([disabled])",
-        "input:not([disabled]):not([type='hidden'])",
-        "select:not([disabled])",
-        "textarea:not([disabled])",
-        "summary",
-        '[tabindex]:not([tabindex="-1"])',
-      ].join(", "),
-    ),
-  ].filter((element) => !element.closest("[hidden]"));
 }

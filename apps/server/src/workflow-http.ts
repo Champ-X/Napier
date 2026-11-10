@@ -26,6 +26,7 @@ import {
   attachKernelThreadProjections,
   projectKernelThreadProjections,
 } from "./kernel-thread-projections.js";
+import { streamEventNeedsProjections } from "./stream-event-projections.js";
 
 export interface WorkflowHttpServices {
   store: ThreadWorkflowHttpStore;
@@ -138,15 +139,19 @@ export async function executeWorkflowHttp(
     const eventWriter = new OrderedRunEventWriter(
       threadId,
       services.store.getThread(threadId).eventCount + 1,
-      async (event) =>
-        projectKernelThreadProjections(
-          threadId,
-          services.kernel,
-          services.subagentHubControls,
-        ).then(
-          (projections) =>
-            writeFrame(streamEventFrame(event, projections), String(event.seq)),
-        ),
+      async (event) => {
+        const projections = streamEventNeedsProjections(event)
+          ? await projectKernelThreadProjections(
+              threadId,
+              services.kernel,
+              services.subagentHubControls,
+            )
+          : undefined;
+        await writeFrame(
+          streamEventFrame(event, projections),
+          String(event.seq),
+        );
+      },
     );
     try {
       const result = await services.workflows.run({

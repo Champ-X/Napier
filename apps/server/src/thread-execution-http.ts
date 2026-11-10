@@ -35,6 +35,7 @@ import {
   attachKernelThreadProjections,
   projectKernelThreadProjections,
 } from "./kernel-thread-projections.js";
+import { streamEventNeedsProjections } from "./stream-event-projections.js";
 
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
 
@@ -275,40 +276,58 @@ function streamAgentRun(
       });
     };
     try {
-      const run = await execute(async (event) => {
-        const projections = await projectKernelThreadProjections(
-          threadId,
+      const observer = new AbortController();
+      const onAbort = () => observer.abort();
+      context.req.raw.signal.addEventListener("abort", onAbort, {
+        once: true,
+      });
+      if (context.req.raw.signal.aborted) observer.abort();
+      try {
+        const run = await execute(async (event) => {
+          if (observer.signal.aborted) return;
+          const projections = streamEventNeedsProjections(event)
+            ? await projectKernelThreadProjections(
+                threadId,
+                services.kernel,
+                services.subagentHubControls,
+              )
+            : undefined;
+          if (observer.signal.aborted) return;
+          await writeFrame(
+            streamEventFrame(event, projections),
+            String(event.seq),
+          );
+        });
+        if (observer.signal.aborted) return;
+        const detail = await services.store.getDetail(threadId, {
+          kernelProjections: false,
+        });
+        await attachKernelThreadProjections(
+          detail,
           services.kernel,
           services.subagentHubControls,
         );
-        await writeFrame(
-          streamEventFrame(event, projections),
-          String(event.seq),
+        if (observer.signal.aborted) return;
+        const snapshotFrame = streamSnapshotFrame(detail);
+        const doneFrame = streamRunDoneFrame(
+          threadId,
+          run.id,
+          run.status,
+          snapshotFrame.detailSha256,
+          snapshotFrame.detailBytes,
+          snapshotFrame.detail.thread.eventCount,
+          snapshotFrame.eventBytes,
+          hashEventStream(snapshotFrame.detail.events),
         );
-      });
-      const detail = await services.store.getDetail(threadId, {
-        kernelProjections: false,
-      });
-      await attachKernelThreadProjections(
-        detail,
-        services.kernel,
-        services.subagentHubControls,
-      );
-      const snapshotFrame = streamSnapshotFrame(detail);
-      const doneFrame = streamRunDoneFrame(
-        threadId,
-        run.id,
-        run.status,
-        snapshotFrame.detailSha256,
-        snapshotFrame.detailBytes,
-        snapshotFrame.detail.thread.eventCount,
-        snapshotFrame.eventBytes,
-        hashEventStream(snapshotFrame.detail.events),
-      );
-      await writeFrame(snapshotFrame);
-      await writeFrame(doneFrame);
+        await writeFrame(snapshotFrame);
+        await writeFrame(doneFrame);
+      } finally {
+        context.req.raw.signal.removeEventListener("abort", onAbort);
+      }
     } catch (error) {
-      await writeFrame(streamRunErrorFrame(threadId, error));
+      if (!context.req.raw.signal.aborted) {
+        await writeFrame(streamRunErrorFrame(threadId, error));
+      }
     }
   });
 }

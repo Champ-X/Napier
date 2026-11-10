@@ -82,7 +82,7 @@ npm run test -w @napier/server -- --maxWorkers=2
 
 | 优先级 | 尚未完成 | 关闭标准 |
 | --- | --- | --- |
-| P1 | Prompt Run 创建与 `run.started` 事件之间仍有进程崩溃空窗；合并范围是共享 store 对象 | 把 admission identity/指纹与 Run 创建放入同一 SQLite 事务，再通过独立进程并发与故障注入验证 |
+| P1 | Prompt Run 创建与 `run.started` 事件之间仍有进程崩溃空窗；合并范围是共享 store 对象 | **部分关闭**：`createLeasedRun` 同事务写入 `run.prompt.admitted`；重开 store 后同 `requestId` 复用 admitted Run。跨进程并发故障注入仍可加强 |
 | P1 | Web 失败后手动重新提交会生成新 UUID | **关闭（同会话 + sessionStorage）**：失败未 accepted 前保留 `requestId`，指纹含 model/capability/harness；跨标签刷新复用 session draft；“先查询再重试”的显式 GET 仍可加强 |
 | P1 | 发布源码证据、公共 API 与现实现不一致 | 明确预期发布源码和公共符号变更后，走实际验收流程；不以更新摘要替代验收 |
 | P2 | 巨型模块、复杂度和依赖耦合超限 | 优先拆分 `use-workspace-view-model.ts` 和 `agent-runtime.ts` 的职责边界，保持行为回归，按原预算重新检查 |

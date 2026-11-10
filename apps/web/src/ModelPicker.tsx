@@ -3,6 +3,7 @@ import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { copy } from "./copy";
+import { trapFocusKeyDown } from "./focus-trap";
 import {
   modelPickerGroups,
   selectedModelAvailability,
@@ -149,7 +150,13 @@ export function ModelPicker({
               event.preventDefault();
               event.stopPropagation();
               closeAndRestoreFocus();
-            } else if (event.key === "ArrowDown" && options.length > 0) {
+              return;
+            }
+            if (event.key === "Tab") {
+              trapFocusKeyDown(event, event.currentTarget);
+              return;
+            }
+            if (event.key === "ArrowDown" && options.length > 0) {
               event.preventDefault();
               setActiveIndex((current) => (current + 1) % options.length);
             } else if (event.key === "ArrowUp" && options.length > 0) {

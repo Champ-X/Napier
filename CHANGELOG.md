@@ -16,6 +16,9 @@ source baselines preserved.
   budget timeout, and lease failure; derive orchestration tool ops only from the
   recovery eligibility table. Look up prior prompt admissions with a typed
   `run.started` range instead of scanning the full thread history.
+- Write durable `run.prompt.admitted` with `requestId` + fingerprint in the same
+  create-leased-run transaction, so retries after a crash before `run.started`
+  still resolve to the admitted Run.
 - Remove the unused draft `run-admission` contract vocabulary; prompt admission
   stays on `requestId` + fingerprint.
 - Align orchestration with Pi Durable patterns without adopting the experimental
@@ -49,6 +52,10 @@ source baselines preserved.
   draft, localize recovery tool phases, align the evidence overlay with the
   results-rail width, clarify empty results vs file browser copy, and remove
   dead composer-mode / welcome card styles that fought the live chrome.
+- Skip full conversation projections on non-surface SSE events; stop writing
+  frames after the prompt stream observer disconnects without cancelling the
+  Run. Share one focus-trap helper across evidence, settings, developer, and
+  model-picker dialogs.
 - Release SSE readers and browser subscriptions on cancellation or protocol
   failure; retain workspace pins until asynchronous cleanup finishes. Poll
   active delivery channels independently without overlapping requests.

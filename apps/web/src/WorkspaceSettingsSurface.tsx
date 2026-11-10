@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 import { copy } from "./copy";
+import { trapFocusKeyDown } from "./focus-trap";
 import { ExtensionInspectorSurface } from "./ExtensionInspectorSurface";
 import {
   moveSettingsSection,
@@ -54,18 +55,7 @@ export function WorkspaceSettingsSurface({
         onClose();
         return;
       }
-      if (event.key !== "Tab" || !surfaceRef.current) return;
-      const focusable = focusableElements(surfaceRef.current);
-      if (focusable.length === 0) return;
-      const first = focusable[0]!;
-      const last = focusable.at(-1)!;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      if (surfaceRef.current) trapFocusKeyDown(event, surfaceRef.current);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -220,14 +210,6 @@ export function WorkspaceSettingsSurface({
       </aside>
     </>
   );
-}
-
-function focusableElements(container: HTMLElement): HTMLElement[] {
-  return [
-    ...container.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), details > summary, [tabindex]:not([tabindex="-1"])',
-    ),
-  ].filter((element) => element.getClientRects().length > 0);
 }
 
 function Loading({ label }: { label: string }) {
