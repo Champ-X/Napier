@@ -14,7 +14,10 @@ source baselines preserved.
   model budget rejection from provider failures without exposing diagnostics.
 - Persist `run.cancel.requested` before abort for operator stop, parent abort,
   budget timeout, and lease failure; derive orchestration tool ops only from the
-  recovery eligibility table.
+  recovery eligibility table. Look up prior prompt admissions with a typed
+  `run.started` range instead of scanning the full thread history.
+- Remove the unused draft `run-admission` contract vocabulary; prompt admission
+  stays on `requestId` + fingerprint.
 - Align orchestration with Pi Durable patterns without adopting the experimental
   package: projected `RunOrchestrationStateV1` program counter, tool replay
   class map, recovery checkpoint derived from the register, recovery UI

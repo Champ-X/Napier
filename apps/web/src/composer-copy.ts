@@ -39,7 +39,6 @@ export const composerCopyEn = {
     readOnly: "Read only",
     workspaceChanges: "Workspace changes",
     fullAccess: "Full access",
-    externalConfirm: "External confirm",
     checking: "Checking",
     searchFetch: "Search + Fetch",
   },
@@ -62,7 +61,6 @@ export const composerCopyEn = {
       "Workspace changes are enabled; high-impact external effects still require confirmation.",
     permissionFullAccess:
       "Workspace changes, commands, network access, and delegated work are enabled.",
-    permissionExternal: "External interaction is confirmation-bound.",
     pending: "Effective capability readiness has not loaded.",
   },
   messages: {
@@ -104,7 +102,6 @@ export const composerCopyEn = {
     policyReadOnly: "Read only",
     policyWorkspace: "Workspace changes",
     policyFullAccess: "Full access",
-    policyExternal: "External interaction",
   },
   permission: {
     title: "Permissions",
@@ -129,7 +126,6 @@ export const composerCopyEn = {
       total_too_large: "Attached images must total 16 MiB or less.",
     },
   },
-  nextRunBadge: "NEXT RUN ONLY",
 } as const;
 
 export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
@@ -167,7 +163,6 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
     readOnly: "只读",
     workspaceChanges: "工作区写入",
     fullAccess: "完全访问",
-    externalConfirm: "外部需确认",
     checking: "检查中",
     searchFetch: "搜索 + 抓取",
   },
@@ -186,7 +181,6 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
     permissionObserve: "本次运行可以观察，但不能修改工作区或产生外部副作用。",
     permissionWorkspace: "已开启工作区写入；高影响的外部副作用仍需确认。",
     permissionFullAccess: "已开启工作区写入、命令、网络访问与委派执行。",
-    permissionExternal: "外部交互需要逐次确认。",
     pending: "有效能力就绪状态尚未加载。",
   },
   messages: {
@@ -224,7 +218,6 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
     policyReadOnly: "只读",
     policyWorkspace: "工作区写入",
     policyFullAccess: "完全访问",
-    policyExternal: "外部交互",
   },
   permission: {
     title: "权限",
@@ -248,7 +241,6 @@ export const composerCopyZh: LocaleOverride<typeof composerCopyEn> = {
       total_too_large: "图片总大小不能超过 16 MiB。",
     },
   },
-  nextRunBadge: "仅下一次运行",
 };
 
 export const composerCopy = deepMergeCopy(

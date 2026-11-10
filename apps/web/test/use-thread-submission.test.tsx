@@ -242,6 +242,8 @@ it("reuses the same prompt requestId after a failed submit restores the draft", 
     requestIds.push(input.requestId);
     input.restoreInput(input.text);
     input.onError(new Error("transport failed"));
+    // Match executeNextRunPrompt: finish(false) on failed restores.
+    input.onFinish(false);
   });
   await act(async () => {
     await vm.submit();
@@ -253,4 +255,18 @@ it("reuses the same prompt requestId after a failed submit restores the draft", 
   expect(execute).toHaveBeenCalledTimes(2);
   expect(requestIds).toHaveLength(2);
   expect(requestIds[0]).toBe(requestIds[1]);
+  execute.mockImplementation(async (input) => {
+    requestIds.push(input.requestId);
+    input.onFinish(true);
+  });
+  act(() => composer.setComposer("Retry this prompt"));
+  await act(async () => {
+    await vm.submit();
+  });
+  expect(requestIds[2]).toBe(requestIds[0]);
+  act(() => composer.setComposer("Retry this prompt"));
+  await act(async () => {
+    await vm.submit();
+  });
+  expect(requestIds[3]).not.toBe(requestIds[0]);
 });

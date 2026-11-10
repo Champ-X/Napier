@@ -22,7 +22,8 @@ export interface NextRunPromptInput {
   onError: (error: unknown) => void;
   restoreInput: (text: string) => void;
   restoreImages?: () => void;
-  onFinish: () => void;
+  /** Called after stream settlement. `accepted` is true once a Run was proven. */
+  onFinish: (accepted: boolean) => void;
   onFrame: (frame: StreamFrame) => void;
 }
 
@@ -61,7 +62,7 @@ export async function executeNextRunPrompt(
     }
     input.onError(error);
   } finally {
-    input.onFinish();
+    input.onFinish(runAccepted);
   }
 }
 

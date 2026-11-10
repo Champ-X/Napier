@@ -44,10 +44,6 @@
       "types": "./dist/tool-replay-class.d.ts",
       "import": "./dist/tool-replay-class.js"
     },
-    "./run-admission": {
-      "types": "./dist/run-admission.d.ts",
-      "import": "./dist/run-admission.js"
-    },
     "./tool-operation-recovery-eligibility": {
       "types": "./dist/tool-operation-recovery-eligibility.d.ts",
       "import": "./dist/tool-operation-recovery-eligibility.js"

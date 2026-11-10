@@ -81,6 +81,8 @@ export function useThreadSubmission(input: {
         threadId,
         text,
         imageAttachments.map((image) => image.id),
+        input.model,
+        input.capabilityPreset ?? null,
       ]);
       const pending = pendingPrompt.current;
       const requestId =
@@ -104,8 +106,9 @@ export function useThreadSubmission(input: {
         onError: (error) => input.onError(threadId, error),
         restoreInput: draft.restoreComposer,
         restoreImages: () => draft.setComposerImages(imageAttachments),
-        onFinish: () => {
-          if (pendingPrompt.current?.requestId === requestId) {
+        onFinish: (accepted) => {
+          // Keep the draft requestId until a Run is proven so retries coalesce.
+          if (accepted && pendingPrompt.current?.requestId === requestId) {
             pendingPrompt.current = null;
           }
           input.onFinish(threadId);

@@ -396,10 +396,16 @@ export class AgentRuntime {
       [],
     );
     const thread = this.store.getThread(options.threadId);
-    if (options.requestId) {
+    if (options.requestId && thread.eventCount >= 1) {
+      const started = await this.store.listEventsRange(
+        thread.id,
+        1,
+        thread.eventCount,
+        ["run.started"],
+      );
       const existing = findRunByPromptRequestId(
         this.store.listRuns(thread.id),
-        await this.store.listEvents(thread.id),
+        started,
         options.requestId,
         requestFingerprint,
       );

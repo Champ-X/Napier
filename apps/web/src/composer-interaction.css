@@ -75,6 +75,11 @@
   border-color: var(--color-border-strong);
 }
 
+.composer.composer-interactive .composer-interaction-mode:focus-visible {
+  outline: var(--control-focus-width) solid var(--color-focus-ring);
+  outline-offset: var(--control-focus-offset);
+}
+
 .composer.composer-interactive .composer-interaction-bar p {
   margin: var(--space-1) 0 0;
   font-size: var(--text-xs);

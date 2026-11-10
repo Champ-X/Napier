@@ -13,6 +13,7 @@ describe("persistent Composer permission", () => {
     const onFrame = vi.fn();
     const onRefresh = vi.fn(async () => undefined);
     const restoreInput = vi.fn();
+    const onFinish = vi.fn();
     const stream = vi.fn(async (_threadId, body, dispatch) => {
       expect(body).toEqual({
         text: "Use Browser once.",
@@ -35,7 +36,7 @@ describe("persistent Composer permission", () => {
         onRefresh,
         onError: vi.fn(),
         restoreInput,
-        onFinish: vi.fn(),
+        onFinish,
         onFrame,
       },
       stream,
@@ -44,6 +45,7 @@ describe("persistent Composer permission", () => {
     expect(onFrame).toHaveBeenCalledTimes(2);
     expect(onRefresh).toHaveBeenCalledOnce();
     expect(restoreInput).not.toHaveBeenCalled();
+    expect(onFinish).toHaveBeenCalledWith(true);
   });
 
   it("restores the prompt when the Run is rejected before creation", async () => {
@@ -51,6 +53,7 @@ describe("persistent Composer permission", () => {
     const onRefresh = vi.fn();
     const restoreInput = vi.fn();
     const restoreImages = vi.fn();
+    const onFinish = vi.fn();
     const failure = new Error("Model unavailable");
 
     await executeNextRunPrompt(
@@ -65,7 +68,7 @@ describe("persistent Composer permission", () => {
         onError,
         restoreInput,
         restoreImages,
-        onFinish: vi.fn(),
+        onFinish,
         onFrame: vi.fn(),
       },
       vi.fn(async () => {
@@ -77,6 +80,7 @@ describe("persistent Composer permission", () => {
     expect(onError).toHaveBeenCalledWith(failure);
     expect(restoreInput).toHaveBeenCalledWith("Retry after setup.");
     expect(restoreImages).toHaveBeenCalledOnce();
+    expect(onFinish).toHaveBeenCalledWith(false);
   });
 
   it("forwards pre-start frames without changing the selected permission", async () => {
