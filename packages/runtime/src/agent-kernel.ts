@@ -198,7 +198,7 @@ export class AgentKernel {
     });
   }
 
-  stop(threadId: string): boolean {
+  stop(threadId: string): Promise<boolean> {
     return this.services.require(KERNEL_AGENT_RUNTIME).stop(threadId);
   }
 

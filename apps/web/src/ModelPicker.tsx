@@ -144,6 +144,7 @@ export function ModelPicker({
         <div
           className="model-picker-popover"
           role="dialog"
+          aria-modal="true"
           aria-label={copy.modelPicker.title}
           onKeyDown={(event) => {
             if (event.key === "Escape") {

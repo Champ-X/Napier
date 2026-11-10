@@ -325,19 +325,7 @@ export const zh: LocaleOverride<typeof en> = {
   goal: goalCopyZh,
   memory: memoryCopyZh,
   recovery: {
-    eyebrow: "恢复检查点",
-    title: "有一次运行在结算前中断。",
-    body: "沿用中断运行的模型、Agent 版本与能力边界恢复。Napier 会先核对持久证据和当前状态，再重复任何可能有副作用的操作。",
-    action: "安全恢复",
-    run: "中断的运行",
     failureReason: "查看停止原因",
-    partial: {
-      eyebrow: "部分完成检查点",
-      title: "此任务已保留部分进展。",
-      body: "计划与已有结果已保存。继续此任务会先核对已完成步骤，再处理剩余工作。若相同错误再次发生，可查看停止原因，修复后继续。",
-      action: "继续此任务",
-      run: "部分完成的运行",
-    },
   },
   context: {
     loading: "正在打开智能体配置……",

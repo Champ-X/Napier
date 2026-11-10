@@ -172,8 +172,13 @@ function importReceiptFromHeaders(
   return { seq, payloadSha256 };
 }
 
-export function getThread(threadId: string): Promise<WebThreadDetail> {
-  return requestThreadDetail(`/api/threads/${encodeURIComponent(threadId)}`);
+export function getThread(
+  threadId: string,
+  signal?: AbortSignal,
+): Promise<WebThreadDetail> {
+  return requestThreadDetail(`/api/threads/${encodeURIComponent(threadId)}`, {
+    ...(signal ? { signal } : {}),
+  });
 }
 
 export function getRunReplay(

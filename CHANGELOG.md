@@ -51,6 +51,10 @@ source baselines preserved.
 
 ### Workbench
 
+- Await durable `run.cancel.requested` before acknowledging HTTP stop; skip
+  disconnected SSE snapshot/done frames; poll recovered active runs without
+  overlap; drop dead recovery-banner CSS; slim unused recovery copy; mark the
+  model picker dialog as `aria-modal`.
 - Abort in-flight prompt/resume SSE readers when the operator stops a Run;
   treat client AbortError as a soft disconnect after refreshing thread state.
 - Split thinking-activity batch absorption to stay under complexity budget, and

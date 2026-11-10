@@ -25,24 +25,28 @@ export function useRecoveredActiveRun(
     if (streamAttached) return;
     if (!state.activeRunId || !threadId) return;
 
-    let disposed = false;
-    const refresh = async () => {
+    const controller = new AbortController();
+    let timer: number | undefined;
+    const refresh = async (): Promise<void> => {
       try {
-        const refreshed = await getThread(threadId);
-        if (disposed) return;
+        const refreshed = await getThread(threadId, controller.signal);
+        if (controller.signal.aborted) return;
         setBootstrap((current) =>
           mergeBackgroundThreadDetail(current, refreshed),
         );
         if (selectedThreadIdRef.current === threadId) setDetail(refreshed);
-      } catch {}
+      } catch {
+        // Retry after settle; abort ends the loop.
+      } finally {
+        if (!controller.signal.aborted) {
+          timer = window.setTimeout(() => void refresh(), RECOVERED_RUN_REFRESH_MS);
+        }
+      }
     };
-    const timer = window.setInterval(
-      () => void refresh(),
-      RECOVERED_RUN_REFRESH_MS,
-    );
+    timer = window.setTimeout(() => void refresh(), RECOVERED_RUN_REFRESH_MS);
     return () => {
-      disposed = true;
-      window.clearInterval(timer);
+      controller.abort();
+      if (timer !== undefined) window.clearTimeout(timer);
     };
   }, [
     selectedThreadIdRef,

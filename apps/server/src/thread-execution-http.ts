@@ -108,9 +108,9 @@ function registerDecisionContinuationHttp(
 }
 
 function registerStopHttp(app: Hono, runtime: ThreadExecutionRuntime): void {
-  app.post("/api/threads/:threadId/stop", (context) => {
+  app.post("/api/threads/:threadId/stop", async (context) => {
     const threadId = context.req.param("threadId");
-    const receipt = { stopped: runtime.stop(threadId) };
+    const receipt = { stopped: await runtime.stop(threadId) };
     setThreadStopHeaders(context, threadId, receipt);
     return context.json(receipt, receipt.stopped ? 202 : 409);
   });
@@ -319,7 +319,9 @@ function streamAgentRun(
           snapshotFrame.eventBytes,
           hashEventStream(snapshotFrame.detail.events),
         );
+        if (observer.signal.aborted) return;
         await writeFrame(snapshotFrame);
+        if (observer.signal.aborted) return;
         await writeFrame(doneFrame);
       } finally {
         context.req.raw.signal.removeEventListener("abort", onAbort);

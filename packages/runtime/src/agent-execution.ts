@@ -27,5 +27,5 @@ export interface AgentExecutionPort {
   resumeInterruptedRunAutomatically(
     options: ResumeInterruptedRunAutomaticallyOptions,
   ): Promise<RunRecord>;
-  stop(threadId: string): boolean;
+  stop(threadId: string): Promise<boolean>;
 }

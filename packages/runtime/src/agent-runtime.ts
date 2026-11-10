@@ -1043,18 +1043,21 @@ export class AgentRuntime {
       options,
     );
   }
-  stop(threadId: string): boolean {
+  async stop(threadId: string): Promise<boolean> {
     const activeRuns = this.activeRuns.get(threadId);
     if (!activeRuns || activeRuns.size === 0) return false;
-    for (const active of activeRuns.values()) {
-      // Pi Durable: persist cancel control before pulling the abort signal.
-      void requestCancelThenAbort(this.store, {
-        threadId,
-        runId: active.runId,
-        abort: active.abort,
-        reason: "operator_stop",
-      });
-    }
+    // Await cancel evidence before HTTP acknowledges the stop, so clients
+    // never treat a 202 as durable before `run.cancel.requested` exists.
+    await Promise.all(
+      [...activeRuns.values()].map((active) =>
+        requestCancelThenAbort(this.store, {
+          threadId,
+          runId: active.runId,
+          abort: active.abort,
+          reason: "operator_stop",
+        }),
+      ),
+    );
     return true;
   }
   private async runDemo(

@@ -66,7 +66,7 @@ describe("Agent model stream cancellation", () => {
 
     expect(run.status).toBe("cancelled");
     expect(Date.now() - cancelledAt).toBeLessThan(1_000);
-    expect(runtime.stop(thread.id)).toBe(false);
+    await expect(runtime.stop(thread.id)).resolves.toBe(false);
 
     release.resolve();
     await vi.waitFor(() => expect(release.settled()).toBe(true));
@@ -207,7 +207,7 @@ describe("Agent model stream cancellation", () => {
     expect(run.status).toBe("failed");
     expect(run.outcome).toBe("partial");
     expect(run.error).toContain("wall time ms");
-    expect(runtime.stop(fixture.threadId)).toBe(false);
+    await expect(runtime.stop(fixture.threadId)).resolves.toBe(false);
     expect(fixture.store.getThread(fixture.threadId).status).toBe("idle");
     const events = await fixture.store.listEvents(fixture.threadId);
     expect(events.map((event) => event.type)).toEqual(
