@@ -82,6 +82,7 @@ export function useRunControlOutbox(input: {
   useEffect(() => {
     if (!actions) return;
     let disposed = false;
+    let inFlight = false;
     let timer: number | undefined;
     const needsRefresh = () =>
       actions
@@ -93,18 +94,23 @@ export function useRunControlOutbox(input: {
             entry.cancelRequested,
         );
     const refresh = async (): Promise<void> => {
+      if (inFlight) return;
+      inFlight = true;
       try {
         await actions.refresh();
       } catch {
         // Retry after settle while control messages remain pending.
       } finally {
+        inFlight = false;
         if (!disposed && needsRefresh()) {
+          if (timer !== undefined) window.clearTimeout(timer);
           timer = window.setTimeout(() => void refresh(), 3_000);
         }
       }
     };
     const kick = () => {
       if (timer !== undefined) window.clearTimeout(timer);
+      timer = undefined;
       void refresh();
     };
     void refresh();

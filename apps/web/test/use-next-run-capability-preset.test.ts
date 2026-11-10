@@ -104,6 +104,35 @@ describe("persistent Composer permission", () => {
     );
     expect(onFrame).toHaveBeenCalledOnce();
   });
+
+  it("treats a verified snapshot as Run acceptance", async () => {
+    const restoreInput = vi.fn();
+    const onFinish = vi.fn();
+    await executeNextRunPrompt(
+      {
+        threadId: "thread_1",
+        text: "Coalesced waiter.",
+        model: { provider: "faux", id: "faux-1" },
+        onStart: vi.fn(),
+        onRefresh: vi.fn(async () => undefined),
+        onError: vi.fn(),
+        restoreInput,
+        onFinish,
+        onFrame: vi.fn(),
+      },
+      vi.fn(async (_threadId, _body, dispatch) => {
+        dispatch({
+          type: "snapshot",
+          detail: {
+            thread: { id: "thread_1" },
+          },
+        } as StreamFrame);
+        throw new DOMException("The operation was aborted.", "AbortError");
+      }),
+    );
+    expect(restoreInput).not.toHaveBeenCalled();
+    expect(onFinish).toHaveBeenCalledWith(true);
+  });
 });
 
 function eventFrame(type: string, payload: RunEvent["payload"]): StreamFrame {

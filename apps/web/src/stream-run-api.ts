@@ -64,8 +64,9 @@ export async function streamRunFrames(
     expectation.kind === "prompt"
       ? harnessPolicyEvidence(path, expectation.harnessPolicyPreset)
       : async () => {};
-  for await (const record of readSseJsonRecords(path, response.body)) {
-    if (signal?.aborted) throw abortError();
+  for await (const record of readSseJsonRecords(path, response.body, {
+    ...(signal ? { signal } : {}),
+  })) {
     const parsed = await validateStreamFrameRecord(path, record);
     await verifyPolicy(parsed.frame);
     await dispatchFrame(path, state, expectation, parsed, onFrame);

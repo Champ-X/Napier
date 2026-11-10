@@ -170,6 +170,7 @@ export async function executeWorkflowExperiment(
   for await (const record of readSseJsonRecords(path, response.body, {
     maxTotalBytes: MAX_STREAM_DATA_BYTES,
     maxRecordBytes: MAX_STREAM_RECORD_BYTES,
+    ...(signal ? { signal } : {}),
   })) {
     if (terminal) {
       throw new Error(

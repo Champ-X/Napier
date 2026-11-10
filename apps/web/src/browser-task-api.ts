@@ -117,6 +117,7 @@ export async function streamBrowserTask(
     {
       maxTotalBytes: MAX_BROWSER_TASK_STREAM_BYTES,
       maxRecordBytes: MAX_BROWSER_TASK_RECORD_BYTES,
+      ...(signal ? { signal } : {}),
     },
   )) {
     if (terminal || record.id !== String(expectedSequence)) {

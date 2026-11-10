@@ -84,9 +84,11 @@ function isAbortError(error: unknown): boolean {
  * A verified terminal snapshot/done also proves Run creation if live events
  * were absent; a subsequent refresh failure must not restore a duplicate prompt. */
 export function isAcceptedPromptRunFrame(frame: StreamFrame, threadId: string) {
-  return frame.type === "done"
-    ? frame.threadId === threadId
-    : frame.type === "event" &&
-        frame.event.type === "run.started" &&
-        frame.event.threadId === threadId;
+  if (frame.type === "done") return frame.threadId === threadId;
+  if (frame.type === "snapshot") return frame.detail.thread.id === threadId;
+  return (
+    frame.type === "event" &&
+    frame.event.type === "run.started" &&
+    frame.event.threadId === threadId
+  );
 }

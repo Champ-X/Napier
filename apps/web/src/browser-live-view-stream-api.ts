@@ -55,10 +55,8 @@ export async function streamBrowserLiveViews(
   for await (const record of readSseJsonRecords(path, response.body, {
     maxTotalBytes: MAX_STREAM_DATA_BYTES,
     maxRecordBytes: MAX_STREAM_RECORD_BYTES,
+    ...(signal ? { signal } : {}),
   })) {
-    if (signal?.aborted) {
-      throw new DOMException("The operation was aborted.", "AbortError");
-    }
     if (terminal) {
       throw new Error(`Browser live stream emitted after terminal for ${path}`);
     }

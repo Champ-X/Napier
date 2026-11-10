@@ -12,6 +12,7 @@ export interface ParsedSseJsonRecord {
 export interface ReadSseJsonRecordsOptions {
   maxTotalBytes?: number;
   maxRecordBytes?: number;
+  signal?: AbortSignal;
 }
 
 export async function* readSseJsonRecords(
@@ -23,11 +24,13 @@ export async function* readSseJsonRecords(
   const decoder = new TextDecoder();
   const maxTotalBytes = options.maxTotalBytes;
   const maxRecordBytes = options.maxRecordBytes;
+  const signal = options.signal;
   let totalBytes = 0;
   let buffer = "";
   let completed = false;
   try {
     for (;;) {
+      if (signal?.aborted) throw abortError();
       const { value, done } = await reader.read();
       if (done) {
         completed = true;
@@ -41,6 +44,7 @@ export async function* readSseJsonRecords(
       const records = buffer.split(/\r?\n\r?\n/u);
       buffer = records.pop() ?? "";
       for (const record of records) {
+        if (signal?.aborted) throw abortError();
         assertRecordBytes(path, record, maxRecordBytes);
         const parsed = await parseSseJsonRecord(path, record);
         if (parsed) yield parsed;
@@ -49,6 +53,7 @@ export async function* readSseJsonRecords(
     }
     buffer += decoder.decode();
     if (buffer.trim()) {
+      if (signal?.aborted) throw abortError();
       assertRecordBytes(path, buffer, maxRecordBytes);
       const parsed = await parseSseJsonRecord(path, buffer);
       if (parsed) yield parsed;
@@ -118,4 +123,8 @@ function assertRecordBytes(
   ) {
     throw new Error(`SSE record exceeds its byte limit for ${path}`);
   }
+}
+
+function abortError(): DOMException {
+  return new DOMException("The operation was aborted.", "AbortError");
 }
