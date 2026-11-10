@@ -44,10 +44,11 @@ source baselines preserved.
 
 ### Workbench
 
-- Reuse the draft prompt `requestId` after a failed submit restores the same
-  text and images; localize recovery tool phases; align the evidence overlay
-  with the results-rail width; clarify empty results vs file browser copy; and
-  remove dead composer-mode / welcome card styles that fought the live chrome.
+- Reuse the draft prompt `requestId` until a Run is proven accepted (failures
+  keep the identity; success clears it), fingerprint model/capability with the
+  draft, localize recovery tool phases, align the evidence overlay with the
+  results-rail width, clarify empty results vs file browser copy, and remove
+  dead composer-mode / welcome card styles that fought the live chrome.
 - Release SSE readers and browser subscriptions on cancellation or protocol
   failure; retain workspace pins until asynchronous cleanup finishes. Poll
   active delivery channels independently without overlapping requests.
