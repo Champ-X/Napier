@@ -55,6 +55,9 @@ source baselines preserved.
   disconnected SSE snapshot/done frames; poll recovered active runs without
   overlap; drop dead recovery-banner CSS; slim unused recovery copy; mark the
   model picker dialog as `aria-modal`.
+- Settle-then-schedule browser pause and automation recovery polling so slow
+  refreshes cannot overlap; index tool-operation journals once per recovery
+  eligibility projection.
 - Abort in-flight prompt/resume SSE readers when the operator stops a Run;
   treat client AbortError as a soft disconnect after refreshing thread state.
 - Split thinking-activity batch absorption to stay under complexity budget, and

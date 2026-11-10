@@ -178,7 +178,7 @@
     "apps/server/src/app.ts": 56,
     "apps/web/src/trace-event-summary-view.ts": 27,
     "packages/contracts/src/index.ts": 35,
-    "packages/runtime/src/agent-capability-runtime.ts": 30,
+    "packages/runtime/src/agent-capability-runtime.ts": 31,
     "packages/runtime/src/agent-runtime.ts": 93,
     "packages/runtime/src/index.ts": 199,
     "packages/runtime/src/kernel.ts": 28,
