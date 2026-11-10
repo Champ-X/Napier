@@ -195,7 +195,7 @@
     "apps/web/src/use-receipt-trust-controller.ts": 144,
     "apps/web/src/use-workspace-view-model.ts": 768,
     "packages/contracts/src/index.ts": 105,
-    "packages/runtime/src/agent-capability-runtime.ts": 180,
+    "packages/runtime/src/agent-capability-runtime.ts": 186,
     "packages/runtime/src/agent-runtime.ts": 837,
     "packages/runtime/src/agent-tool-ledger.ts": 147,
     "packages/runtime/src/browser-session-model.ts": 135,
