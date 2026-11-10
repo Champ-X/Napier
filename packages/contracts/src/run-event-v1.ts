@@ -140,6 +140,7 @@ export const RUN_EVENT_DEFINITION_GROUPS_V1 = [
     runAnyTypes: [
       "branch.created",
       "run.budget.exhausted",
+      "run.cancel.requested",
       "run.no_progress",
       "model.stream.watchdog_triggered",
       "model.thinking_loop.finalized",

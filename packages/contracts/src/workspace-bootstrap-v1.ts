@@ -15,6 +15,7 @@ import type { SubagentOutcomeItemKind, SubagentOutcomeSeverity, SubagentStopReas
 import type { SubagentHubProjectionV1 } from "./subagent-hub-v1.js";
 import type { AutomationSchedule, ContextCheckpointCalibrationReport } from "./workspace-control-v1.js";
 import type { RunRecoveryCheckpoint } from "./manual-run-recovery.js";
+import type { RunOrchestrationStateV1 } from "./run-orchestration-state.js";
 
 export interface WorkspaceSummary {
   /** Stable address when served by the multi-workspace runtime host. */
@@ -119,6 +120,8 @@ export interface BootstrapResponse {
 
 export interface ThreadDetail {
   recoveryCheckpoint?: RunRecoveryCheckpoint;
+  /** Total Run orchestration program counter; recovery reads this before ad-hoc scans. */
+  orchestrationState?: RunOrchestrationStateV1;
   thread: ThreadRecord;
   agent: AgentProfile;
   runs: RunRecord[];

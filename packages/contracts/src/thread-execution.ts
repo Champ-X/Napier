@@ -23,6 +23,11 @@ export interface PromptRequest {
   capabilityPreset?: AgentCapabilityPresetId;
   harnessPolicyPreset?: HarnessPolicyPresetId;
   sourceContinuityRunId?: string;
+  /**
+   * Stable client admission identity (Pi Durable submission requestId).
+   * Retries of the same intent reuse this value within the Thread.
+   */
+  requestId?: string;
 }
 
 export interface ResumeRunRequest {

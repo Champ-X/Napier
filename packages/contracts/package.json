@@ -36,6 +36,22 @@
       "types": "./dist/manual-run-recovery.d.ts",
       "import": "./dist/manual-run-recovery.js"
     },
+    "./run-orchestration-state": {
+      "types": "./dist/run-orchestration-state.d.ts",
+      "import": "./dist/run-orchestration-state.js"
+    },
+    "./tool-replay-class": {
+      "types": "./dist/tool-replay-class.d.ts",
+      "import": "./dist/tool-replay-class.js"
+    },
+    "./run-admission": {
+      "types": "./dist/run-admission.d.ts",
+      "import": "./dist/run-admission.js"
+    },
+    "./tool-operation-recovery-eligibility": {
+      "types": "./dist/tool-operation-recovery-eligibility.d.ts",
+      "import": "./dist/tool-operation-recovery-eligibility.js"
+    },
     "./kernel-plugins": {
       "types": "./dist/kernel-plugins.d.ts",
       "import": "./dist/kernel-plugins.js"

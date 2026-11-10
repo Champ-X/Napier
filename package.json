@@ -163,9 +163,11 @@
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "0.82.0",
+    "@hono/node-server": "2.0.11",
     "@lydell/node-pty": "1.2.0-beta.15",
     "@types/node": "24.12.4",
     "concurrently": "9.2.4",
+    "hono": "4.13.4",
     "jscpd": "5.0.16",
     "knip": "6.32.2",
     "playwright-core": "1.62.1",
