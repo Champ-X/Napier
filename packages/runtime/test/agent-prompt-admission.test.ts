@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, expect, it } from "vitest";
 import { ModelRegistry } from "../src/models.js";
+import { promptRequestFingerprint } from "../src/prompt-request-admission.js";
 import { LocalStore } from "../src/store.js";
 import { processReadyAgentRuntime } from "./process-run-readiness-test-fixture.js";
 
@@ -153,6 +154,50 @@ it("reuses completed request evidence after reopening the store and rejects chan
     await expect(
       restarted.runPrompt({ ...options, text: "Changed request" }),
     ).rejects.toThrow(/requestId.*different/i);
+    expect(reopened.listRuns(thread.id)).toHaveLength(1);
+  } finally {
+    reopened.close();
+  }
+});
+
+it("reuses create-time admission after a crash before run.started", async () => {
+  const { store, thread } = await fixture();
+  const options = {
+    threadId: thread.id,
+    text: "Interrupted before started",
+    requestId: "crash-window",
+  };
+  const fingerprint = promptRequestFingerprint(options);
+  const leased = await store.createLeasedRun(
+    {
+      threadId: thread.id,
+      agentId: thread.agentId,
+      requestId: options.requestId,
+      requestFingerprint: fingerprint,
+    },
+    { ownerId: "crash-fixture", ttlMs: 60_000 },
+  );
+  expect(
+    (await store.listEvents(thread.id)).filter(
+      (event) => event.type === "run.prompt.admitted",
+    ),
+  ).toHaveLength(1);
+  expect(
+    (await store.listEvents(thread.id)).some(
+      (event) => event.type === "run.started",
+    ),
+  ).toBe(false);
+
+  store.close();
+  const reopened = new LocalStore({
+    dataRoot: store.dataRoot,
+    workspaceRoot: store.workspaceRoot,
+  });
+  await reopened.initialize();
+  try {
+    const restarted = processReadyAgentRuntime(reopened, new ModelRegistry());
+    const replay = await restarted.runPrompt(options);
+    expect(replay.id).toBe(leased.run.id);
     expect(reopened.listRuns(thread.id)).toHaveLength(1);
   } finally {
     reopened.close();

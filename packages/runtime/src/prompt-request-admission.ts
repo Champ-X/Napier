@@ -63,8 +63,9 @@ export async function coalescePromptRequest(
 }
 
 /**
- * Find durable start evidence for an already admitted request. A fingerprint is
- * required by the runtime so a reused identity cannot silently change intent.
+ * Find durable admission evidence for an already admitted request. Prefers the
+ * create-time `run.prompt.admitted` marker, then falls back to `run.started`.
+ * A fingerprint is required so a reused identity cannot silently change intent.
  */
 export function findRunByPromptRequestId(
   runs: readonly RunRecord[],
@@ -74,8 +75,14 @@ export function findRunByPromptRequestId(
 ): RunRecord | undefined {
   if (!isPromptRequestId(requestId)) return undefined;
   const runsById = new Map(runs.map((run) => [run.id, run]));
+  let startedMatch: RunRecord | undefined;
   for (const event of events) {
-    if (event.type !== "run.started") continue;
+    if (
+      event.type !== "run.prompt.admitted" &&
+      event.type !== "run.started"
+    ) {
+      continue;
+    }
     const payload =
       event.payload &&
       typeof event.payload === "object" &&
@@ -87,14 +94,23 @@ export function findRunByPromptRequestId(
       payload?.["requestId"] !== requestId ||
       !run ||
       event.threadId !== run.threadId
-    )
+    ) {
       continue;
+    }
     if (fingerprint !== undefined) {
       assertMatchingFingerprint(payload["requestFingerprint"], fingerprint);
     }
-    return run;
+    if (event.type === "run.prompt.admitted") return run;
+    startedMatch ??= run;
   }
-  return undefined;
+  return startedMatch;
+}
+
+export function assertPromptRequestFingerprint(
+  actual: unknown,
+  expected: string,
+): void {
+  assertMatchingFingerprint(actual, expected);
 }
 
 function assertMatchingFingerprint(actual: unknown, expected: string): void {

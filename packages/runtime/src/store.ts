@@ -343,6 +343,8 @@ import {
 import { aggregateLedgerRunUsage, assertLedgerEvidenceProjection, modelAccountingRepositoryForStore,
   readConsistentThreadDetail, readLedgerRunReplayView, type ModelAccountingRepository } from "./model-accounting-query.js";
 import { initialRunStatus } from "./run-state-machine.js";
+import { findRunByPromptRequestId } from "./prompt-request-admission.js";
+import { runPromptAdmissionAppendInput } from "./run-prompt-admission-event.js";
 import { SerialQueue } from "./serial-queue.js";
 import { SignedPackageRepository } from "./signed-package-repository.js";
 import {
@@ -445,6 +447,9 @@ export interface CreateRunInput {
   branchFromSeq?: number;
   source?: RunInvocationSource;
   triggerId?: string;
+  /** Durable prompt admission identity written in the same create transaction. */
+  requestId?: string;
+  requestFingerprint?: string;
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
   [WORKFLOW_SIMULATION_EXECUTION]?: WorkflowSimulationExecution;
   [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
@@ -3455,6 +3460,23 @@ export class LocalStore {
       }
       input = { ...input, triggerId };
     }
+    if (input.requestId || input.requestFingerprint) {
+      if (!input.requestId || !input.requestFingerprint) {
+        throw new Error(
+          "Prompt admission requires both requestId and requestFingerprint",
+        );
+      }
+      const admitted = findRunByPromptRequestId(
+        this.state.runs,
+        this.requireLedger().listEvents(thread.id),
+        input.requestId,
+      );
+      if (admitted) {
+        throw new Error(
+          `Prompt requestId was already admitted on run ${admitted.id}`,
+        );
+      }
+    }
     const run: PersistedRunRecord = {
       id: createId("run"),
       threadId: input.threadId,
@@ -3510,6 +3532,18 @@ export class LocalStore {
       threadId: thread.id, runId: run.id, type: "workspace.patch.recovery_planned",
       category: "tool", visibility: "debug", payload: patchRecoveryPlan,
     }]));
+    if (input.requestId && input.requestFingerprint) {
+      events.push(
+        ...this.appendEventsToThread(thread, [
+          runPromptAdmissionAppendInput({
+            threadId: thread.id,
+            runId: run.id,
+            requestId: input.requestId,
+            requestFingerprint: input.requestFingerprint,
+          }),
+        ]),
+      );
+    }
     return { run, events };
   }
 

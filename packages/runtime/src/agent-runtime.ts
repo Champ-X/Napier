@@ -397,15 +397,15 @@ export class AgentRuntime {
     );
     const thread = this.store.getThread(options.threadId);
     if (options.requestId && thread.eventCount >= 1) {
-      const started = await this.store.listEventsRange(
+      const admitted = await this.store.listEventsRange(
         thread.id,
         1,
         thread.eventCount,
-        ["run.started"],
+        ["run.prompt.admitted", "run.started"],
       );
       const existing = findRunByPromptRequestId(
         this.store.listRuns(thread.id),
-        started,
+        admitted,
         options.requestId,
         requestFingerprint,
       );
@@ -517,6 +517,12 @@ export class AgentRuntime {
       ...(options.parentRunId ? { parentRunId: options.parentRunId } : {}),
       ...(options.operatorDecisionId
         ? { operatorDecisionId: options.operatorDecisionId }
+        : {}),
+      ...(options.requestId && requestFingerprint
+        ? {
+            requestId: options.requestId,
+            requestFingerprint,
+          }
         : {}),
     };
     const leasedRun = await this.store.createLeasedRun(
