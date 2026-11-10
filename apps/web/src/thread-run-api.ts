@@ -1,4 +1,5 @@
 import { requestJson } from "./api-client";
+import { NapierApiError } from "./api-error";
 import type {
   QueueRunControlMessageRequest,
   RunControlMessage,
@@ -10,6 +11,23 @@ import type {
 } from "@napier/contracts";
 
 import { streamRunFrames } from "./stream-run-api";
+
+export async function stopRun(
+  threadId: string,
+): Promise<{ stopped: boolean }> {
+  try {
+    return await requestJson(
+      `/api/threads/${encodeURIComponent(threadId)}/stop`,
+      { method: "POST" },
+    );
+  } catch (error) {
+    // No active Run is already stopped from the operator's perspective.
+    if (error instanceof NapierApiError && error.status === 409) {
+      return { stopped: false };
+    }
+    throw error;
+  }
+}
 
 export function streamPrompt(
   threadId: string,

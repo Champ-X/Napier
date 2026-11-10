@@ -71,4 +71,29 @@ describe("loadKernelProjectionEvents", () => {
       ),
     ).resolves.toEqual([{ seq: 3 }, { seq: 4 }]);
   });
+
+  it("applies the type filter on the listEvents fallback", async () => {
+    const listEvents = vi.fn(async () => [
+      { seq: 3, type: "message.user" },
+      { seq: 4, type: "tool.started" },
+      { seq: 5, type: "message.assistant" },
+    ] as never[]);
+    await expect(
+      loadKernelProjectionEvents(
+        {
+          getThread: () => {
+            throw new Error("unused");
+          },
+          listEvents,
+        },
+        "thread_1",
+        2,
+        5,
+        ["message.user", "message.assistant"],
+      ),
+    ).resolves.toEqual([
+      { seq: 3, type: "message.user" },
+      { seq: 5, type: "message.assistant" },
+    ]);
+  });
 });

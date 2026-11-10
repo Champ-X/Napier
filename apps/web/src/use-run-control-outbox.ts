@@ -81,29 +81,40 @@ export function useRunControlOutbox(input: {
   }, [actions, input.detail, input.threadId]);
   useEffect(() => {
     if (!actions) return;
-    void actions.refresh();
-    const refresh = () => {
-      void actions.refresh();
+    let disposed = false;
+    let timer: number | undefined;
+    const needsRefresh = () =>
+      actions
+        .list()
+        .some(
+          (entry) =>
+            entry.state === "queued" ||
+            entry.state === "uncertain" ||
+            entry.cancelRequested,
+        );
+    const refresh = async (): Promise<void> => {
+      try {
+        await actions.refresh();
+      } catch {
+        // Retry after settle while control messages remain pending.
+      } finally {
+        if (!disposed && needsRefresh()) {
+          timer = window.setTimeout(() => void refresh(), 3_000);
+        }
+      }
     };
-    const timer = window.setInterval(() => {
-      if (
-        actions
-          .list()
-          .some(
-            (entry) =>
-              entry.state === "queued" ||
-              entry.state === "uncertain" ||
-              entry.cancelRequested,
-          )
-      )
-        refresh();
-    }, 3000);
-    window.addEventListener("online", refresh);
-    window.addEventListener("focus", refresh);
+    const kick = () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      void refresh();
+    };
+    void refresh();
+    window.addEventListener("online", kick);
+    window.addEventListener("focus", kick);
     return () => {
-      window.clearInterval(timer);
-      window.removeEventListener("online", refresh);
-      window.removeEventListener("focus", refresh);
+      disposed = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+      window.removeEventListener("online", kick);
+      window.removeEventListener("focus", kick);
     };
   }, [actions]);
   return {

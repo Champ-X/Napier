@@ -29,8 +29,12 @@ import { requestJson } from "./api-client";
 
 export function getAutomationBootstrap(
   threadId: string,
+  signal?: AbortSignal,
 ): Promise<LiveReadyBootstrapResponse> {
-  return requestJson(`/api/bootstrap?thread=${encodeURIComponent(threadId)}`);
+  return requestJson(
+    `/api/bootstrap?thread=${encodeURIComponent(threadId)}`,
+    signal ? { signal } : undefined,
+  );
 }
 
 export function createSchedule(

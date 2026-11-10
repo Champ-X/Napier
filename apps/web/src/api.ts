@@ -870,12 +870,6 @@ export function createBranch(
   );
 }
 
-export function stopRun(threadId: string): Promise<{ stopped: boolean }> {
-  return requestJson(`/api/threads/${encodeURIComponent(threadId)}/stop`, {
-    method: "POST",
-  });
-}
-
 export function rebindWorkspaceRoot(root: string): Promise<WorkspaceSummary> {
   return requestJson("/api/workspace/root", {
     method: "POST",
@@ -1155,6 +1149,7 @@ export {
   continueOperatorDecision,
   resumeInterruptedRun,
   streamPrompt,
+  stopRun,
   queueRunControlMessage,
   cancelRunControlMessage,
 } from "./thread-run-api";

@@ -40,9 +40,12 @@ export function useAutomationPanelController({
     (channel) => channel.threadId === threadId,
   );
   const operation = useAutomationOperation();
-  const refresh = useCallback(async (): Promise<void> => {
-    onBootstrapUpdated(await getAutomationBootstrap(threadId));
-  }, [onBootstrapUpdated, threadId]);
+  const refresh = useCallback(
+    async (signal?: AbortSignal): Promise<void> => {
+      onBootstrapUpdated(await getAutomationBootstrap(threadId, signal));
+    },
+    [onBootstrapUpdated, threadId],
+  );
   const schedule = useAutomationScheduleController({
     threadId,
     operation,

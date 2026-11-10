@@ -514,13 +514,15 @@ export function useWorkspaceViewModel() {
 
   const stop = useCallback(async () => {
     if (!detail) return;
+    const threadId = detail.thread.id;
     activeRunStream.abort();
     try {
-      await stopRun(detail.thread.id);
+      await stopRun(threadId);
+      await refreshBootstrap(threadId);
     } catch (stopError) {
       setError(toErrorMessage(stopError));
     }
-  }, [activeRunStream, detail]);
+  }, [activeRunStream, detail, refreshBootstrap]);
 
   const operatorDecisionActions = useThreadDecisionActions({
     loadThread: getThread,
@@ -534,6 +536,7 @@ export function useWorkspaceViewModel() {
     onFrame: streamFrameHandler,
     onCommit: commitRefreshedThreadDetail,
     onRunError: setRunError,
+    ...activeRunStream.streamSignalBindings,
   });
 
   const saveGoal = useCallback(async () => {

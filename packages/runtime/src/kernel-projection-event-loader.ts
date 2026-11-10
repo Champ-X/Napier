@@ -24,7 +24,10 @@ export async function loadKernelProjectionEvents(
   if (typeof store.listEventsRange === "function") {
     return store.listEventsRange(threadId, fromSeq, eventCount, types);
   }
+  const allowed = types ? new Set(types) : undefined;
   return (await store.listEvents(threadId, afterSeq)).filter(
-    (event) => event.seq <= eventCount,
+    (event) =>
+      event.seq <= eventCount &&
+      (allowed === undefined || allowed.has(event.type)),
   );
 }

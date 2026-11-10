@@ -58,6 +58,9 @@ source baselines preserved.
 - Settle-then-schedule browser pause and automation recovery polling so slow
   refreshes cannot overlap; index tool-operation journals once per recovery
   eligibility projection.
+- Soft-handle Stop 409, refresh thread state after stop, abort operator-continue
+  SSE with the shared stream owner, settle control-outbox polls, project
+  `run.cancel.requested` on live SSE, and type-filter kernel projection fallbacks.
 - Abort in-flight prompt/resume SSE readers when the operator stops a Run;
   treat client AbortError as a soft disconnect after refreshing thread state.
 - Split thinking-activity batch absorption to stay under complexity budget, and

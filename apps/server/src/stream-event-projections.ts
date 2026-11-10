@@ -21,6 +21,7 @@ export function streamEventNeedsProjections(event: RunEvent): boolean {
         event.type === "run.completed" ||
         event.type === "run.failed" ||
         event.type === "run.cancelled" ||
+        event.type === "run.cancel.requested" ||
         event.type === "run.interrupted" ||
         event.type === "run.waiting_for_operator" ||
         event.type === "run.recovery.started" ||

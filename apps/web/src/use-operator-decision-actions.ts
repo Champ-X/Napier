@@ -31,6 +31,8 @@ interface Input {
   onCommit(threadId: string, detail: ThreadDetail): void;
   loadThread(threadId: string): Promise<ThreadDetail>;
   onRunError(threadId: string, error: unknown): void;
+  beginStreamSignal?: () => AbortSignal;
+  releaseStreamSignal?: (signal: AbortSignal) => void;
 }
 
 export function useOperatorDecisionActions(input: Input) {
@@ -109,10 +111,14 @@ export function useOperatorDecisionActions(input: Input) {
         }
       }
     } catch (error) {
-      failed = true;
-      const message = decisionFailureMessage(action, saved, error);
-      update(key, { error: message });
-      if (started) runError = message;
+      if (isAbortError(error)) {
+        // Operator stop disconnected the continue SSE; reconcile without a hard error.
+      } else {
+        failed = true;
+        const message = decisionFailureMessage(action, saved, error);
+        update(key, { error: message });
+        if (started) runError = message;
+      }
     } finally {
       if (sameWorkspace()) {
         const refreshed = await refreshDecision(
@@ -197,9 +203,26 @@ async function continueSaved(
   };
   input.onStart(detail.thread.id, source);
   onStarted();
-  await continueOperatorDecision(detail.thread.id, saved.id, (frame) => {
-    if (sameWorkspace()) input.onFrame(detail.thread.id)(frame);
-  });
+  const signal = input.beginStreamSignal?.();
+  try {
+    await continueOperatorDecision(
+      detail.thread.id,
+      saved.id,
+      (frame) => {
+        if (sameWorkspace()) input.onFrame(detail.thread.id)(frame);
+      },
+      signal,
+    );
+  } finally {
+    if (signal) input.releaseStreamSignal?.(signal);
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && error.name === "AbortError") ||
+    (error instanceof Error && error.name === "AbortError")
+  );
 }
 
 function decisionFailureMessage(
