@@ -58,12 +58,12 @@ export const WEB_UI_NARRATIVE_EXPECTATION = Object.freeze({
 });
 export const WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION = Object.freeze({
   title: "Synthesize long-running evidence",
-  phase: "Settled",
-  currentAction: "Latest run completed",
+  phase: "Run ended",
+  currentAction: "Run ended; objective acceptance is unverified",
   completedItem:
     "Read 12 files · Searched the web 5 times · Completed 3 browser steps",
   blocker: "",
-  nextStep: "Start a follow-up task or inspect the evidence.",
+  nextStep: "Inspect the result and its verification evidence.",
   artifactPath: "",
 });
 

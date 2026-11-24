@@ -30,14 +30,14 @@
         "conversation": {
           "x": 252,
           "y": 88,
-          "width": 756,
-          "height": 250
+          "width": 721,
+          "height": 205
         },
         "composer": {
           "x": 276,
-          "y": 741,
-          "width": 708,
-          "height": 143
+          "y": 677,
+          "width": 673,
+          "height": 207
         },
         "views": {
           "x": 252,
@@ -79,14 +79,14 @@
         "conversation": {
           "x": 252,
           "y": 88,
-          "width": 916,
-          "height": 250
+          "width": 852,
+          "height": 205
         },
         "composer": {
-          "x": 330,
-          "y": 741,
+          "x": 298,
+          "y": 677,
           "width": 760,
-          "height": 143
+          "height": 207
         },
         "views": {
           "x": 252,
@@ -128,14 +128,14 @@
         "conversation": {
           "x": 252,
           "y": 88,
-          "width": 1396,
-          "height": 430
+          "width": 1332,
+          "height": 385
         },
         "composer": {
-          "x": 570,
-          "y": 921,
+          "x": 538,
+          "y": 857,
           "width": 760,
-          "height": 143
+          "height": 207
         },
         "views": {
           "x": 252,

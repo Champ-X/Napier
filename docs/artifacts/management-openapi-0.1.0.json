@@ -14103,6 +14103,38 @@
         "x-napier-source-route": "GET /api/workspace/recent"
       }
     },
+    "/api/workspace/resources": {
+      "get": {
+        "operationId": "get-workspace-resources",
+        "tags": [
+          "workspace"
+        ],
+        "summary": "GET /api/workspace/resources",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/workspace/resources"
+      }
+    },
     "/api/workspace/root": {
       "post": {
         "operationId": "post-workspace-root",
@@ -14141,6 +14173,38 @@
           }
         },
         "x-napier-source-route": "POST /api/workspace/root"
+      }
+    },
+    "/api/workspace/runtimes": {
+      "get": {
+        "operationId": "get-workspace-runtimes",
+        "tags": [
+          "workspace"
+        ],
+        "summary": "GET /api/workspace/runtimes",
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/workspace/runtimes"
       }
     },
     "/api/workspace/threads": {
@@ -17130,9 +17194,10 @@
     "apps/server/src/workflow-recovery-http.ts",
     "apps/server/src/workspace-directories-http.ts",
     "apps/server/src/workspace-process-http.ts",
-    "apps/server/src/workspace-root-http.ts"
+    "apps/server/src/workspace-root-http.ts",
+    "apps/server/src/workspace-runtime-host.ts"
   ],
-  "x-napier-source-sha256": "4a5416c83f923ac02afc1bb0197323844cace652fc67952d95a8f40454c949ca",
-  "x-napier-route-count": 307,
-  "x-napier-route-set-sha256": "6c3d67bb6efa7c689327d6ed2046ee4e89ef54b0523122782749c703e5ba3fd2"
+  "x-napier-source-sha256": "7601357f3d17b4c746e25e0495e7cb7021ef89d6baea438839e7afa0b210294e",
+  "x-napier-route-count": 309,
+  "x-napier-route-set-sha256": "599abfacf6d517e981bd3c7480a48d1cfae8c6be6c19908749dc5d73ff8691c1"
 }

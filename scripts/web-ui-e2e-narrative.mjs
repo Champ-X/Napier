@@ -437,6 +437,7 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       expected.title,
       { timeout: WEB_UI_START_TIMEOUT_MS },
     );
+    await openCompletionRecord(page);
     const primaryOutput = page.locator(
       ".workspace-evidence-results .task-completion-primary-output",
     );
@@ -554,7 +555,6 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       state: "detached",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
-    const workspaceToggle = page.locator("#workspace-rail-toggle");
     await page.setViewportSize({ width: 1_920, height: 1_080 });
     const answerFile = page.locator(
       `.message-workspace-link[data-artifact-path="${interactivePath}"]`,
@@ -576,9 +576,7 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
       state: "detached",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
-    if ((await workspaceToggle.getAttribute("aria-pressed")) === "false") {
-      await workspaceToggle.click();
-    }
+    await openCompletionRecord(page);
     const completionToggle = page.locator(
       ".workspace-evidence-results .task-completion-toggle",
     );
@@ -605,11 +603,22 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
         timeout: WEB_UI_START_TIMEOUT_MS,
       });
       assert.equal(await inspection.count(), 1);
+      const heading =
+        path === interactivePath
+          ? inspection.frameLocator("iframe").getByRole("heading", {
+              name: "Interactive output report",
+              exact: true,
+            })
+          : inspection.getByRole("heading", {
+              name: "Source notes",
+              exact: true,
+            });
+      await heading.waitFor({ state: "visible" });
       previews.push({
         path,
         focused: true,
         openedInOneClick: true,
-        preview: await inspection.locator("pre").textContent(),
+        preview: await heading.textContent(),
       });
       await output
         .getByRole("button", { name: `Close artifact inspection ${path}` })
@@ -629,6 +638,14 @@ export async function verifyWebUiArtifactNavigation(browser, origin, expected) {
   } finally {
     await page.close();
   }
+}
+
+async function openCompletionRecord(page) {
+  const rail = page.locator("#workspace-rail-toggle");
+  if ((await rail.getAttribute("aria-pressed")) === "false") await rail.click();
+  const record = page.locator(".workspace-evidence-record-toggle");
+  if ((await record.getAttribute("aria-expanded")) === "false")
+    await record.click();
 }
 
 async function verifyArtifactInspectorInteraction(

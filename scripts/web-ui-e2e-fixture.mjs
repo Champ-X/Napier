@@ -12,6 +12,10 @@ import {
 import { AgentToolDisplayStore } from "../packages/runtime/dist/agent-tool-display-store.js";
 import { BrowserTaskJournal } from "../apps/server/dist/browser-task-journal.js";
 import { seedWebUiCasebook } from "./web-ui-e2e-casebook.mjs";
+import {
+  WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
+  WEB_UI_NARRATIVE_EXPECTATION,
+} from "./web-ui-e2e-contract.mjs";
 
 const execFile = promisify(execFileCallback);
 
@@ -417,13 +421,14 @@ export async function seedWebUiNarrativeFixture(root) {
       "-m",
       "fixture baseline",
     ]);
+    // The assistant links to the report at the final plan revision.
     const artifactFiles = [
-      ["report", "artifacts/interactive-report.html", interactiveReportAfter],
       [
         "notes",
         "artifacts/source-notes.md",
         "# Source notes\nEvidence index.\n",
       ],
+      ["report", "artifacts/interactive-report.html", interactiveReportAfter],
     ];
     for (const [artifactId, artifactPath, text] of artifactFiles) {
       const bytes = Buffer.from(text, "utf8");
@@ -479,16 +484,9 @@ export async function seedWebUiNarrativeFixture(root) {
         threadId: emptyThread.id,
         title: emptyThread.title,
       },
+      ...WEB_UI_NARRATIVE_EXPECTATION,
       threadId: thread.id,
       title: thread.title,
-      phase: "Waiting",
-      currentAction: "Approval",
-      completedItem: "Inspect source evidence",
-      blocker:
-        "The run has ended. Record an answer to unlock a linked continuation.",
-      nextStep: "Approve final delivery",
-      harness: "Generic · Focused · 18 / 42 tools",
-      artifactPath: "artifacts/research-brief.md",
       latestTerminalRunId: run.id,
       browserTask,
       casebook,
@@ -508,21 +506,15 @@ export async function seedWebUiNarrativeFixture(root) {
         nextStep: "Review the Retry card or resume manually.",
       },
       longRun: {
+        ...WEB_UI_LONG_RUN_NARRATIVE_EXPECTATION,
         threadId: longRunThread.id,
         title: longRunThread.title,
-        phase: "Settled",
-        currentAction: "Latest run completed",
-        completedItem:
-          "Read 12 files · Searched the web 5 times · Completed 3 browser steps",
-        blocker: "",
-        nextStep: "Start a follow-up task or inspect the evidence.",
-        artifactPath: "",
         progressText,
       },
       artifactNavigation: {
         threadId: artifactThread.id,
         title: artifactThread.title,
-        paths: artifactFiles.map(([, artifactPath]) => artifactPath),
+        paths: artifactPlan.artifacts.map((artifact) => artifact.path),
       },
     };
   } finally {

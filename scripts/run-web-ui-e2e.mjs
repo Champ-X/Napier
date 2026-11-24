@@ -817,9 +817,9 @@ async function verifyChineseCoreLocale(browser, origin, expected) {
     const workspaceLabels = await page
       .locator(".workspace-view-tabs strong")
       .allTextContents();
-    const composerPlaceholder =
-      (await page.locator(".composer textarea").getAttribute("placeholder")) ??
-      "";
+    await page
+      .getByPlaceholder("请先完成上方的选择…", { exact: true })
+      .waitFor();
     await page.locator("#workspace-view-task").click();
     await page.locator("#task-section-overview").waitFor({
       state: "visible",
@@ -890,26 +890,29 @@ async function verifyChineseCoreLocale(browser, origin, expected) {
       state: "visible",
       timeout: WEB_UI_START_TIMEOUT_MS,
     });
-    const planTitles = await page.evaluate(() => ({
-      studio:
-        document
-          .querySelector(".plan-studio-heading h2")
-          ?.textContent?.trim() ?? "",
-      library:
-        document
-          .querySelector("#plan-blueprint-library-title")
-          ?.textContent?.trim() ?? "",
-      refresh:
-        [...document.querySelectorAll(".plan-blueprint-library-card button")]
-          .find((button) => button.textContent?.includes("刷新模板库"))
-          ?.textContent?.trim() ?? "",
-    }));
+    const refreshLibrary = page
+      .locator(".plan-blueprint-library-card")
+      .getByRole("button", { name: "刷新模板库", exact: true });
+    const planTitles = {
+      studio: (
+        await page.locator(".plan-studio-heading h2").textContent()
+      )?.trim(),
+      library: (
+        await page.locator("#plan-blueprint-library-title").textContent()
+      )?.trim(),
+      refresh: (await refreshLibrary.textContent())?.trim(),
+    };
     const lang = await page.locator("html").getAttribute("lang");
     const developerLabels = await page
       .locator(".developer-workbench-surface .settings-navigation strong")
       .allTextContents();
     await page.keyboard.press("Escape");
     await waitForDeveloperWorkbenchClosed(page);
+    await page.goto(threadUrl(origin, expected.empty.threadId));
+    await waitForWorkbench(page);
+    const composerPlaceholder = await page
+      .locator(".composer textarea")
+      .getAttribute("placeholder");
     return {
       lang,
       workspaceLabels: workspaceLabels.map((label) => label.trim()),

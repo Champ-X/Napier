@@ -10,7 +10,7 @@ describe("recovered active Run Web sync", () => {
 
     expect(source).toContain("if (streamAttached) return");
     expect(source).toContain("if (!state.activeRunId || !threadId) return");
-    expect(source).toContain("await getThread(threadId)");
+    expect(source).toContain("await getThread(threadId, controller.signal)");
     expect(source).toContain("mergeBackgroundThreadDetail(current, refreshed)");
     expect(source).toContain("selectedThreadIdRef.current === threadId");
     expect(source).not.toContain("activeThread: refreshed");
