@@ -1,8 +1,0 @@
-{
-  "kind": "napier.archived-log",
-  "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-child-run-foundation-Slntis/public-api.log",
-  "originalBytes": 147,
-  "originalSha256": "cb665a0dd59af08132e9ee6469cafce1c2e1ecb345c83538f75610ec9610ca8f",
-  "encoding": "utf-8",
-  "text": "Public API audit failed:\n- runtimeRootSemanticExports 1897 exceeds 1896\n- runtimeRootSemanticExportSha256 does not match the compatibility surface\n"
-}

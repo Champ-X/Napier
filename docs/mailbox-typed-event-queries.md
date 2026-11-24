@@ -35,11 +35,13 @@ The multi-type queries still grow with irrelevant history. A separate read-only 
 
 ## Evidence and replay limits
 
-The [regression receipt](artifacts/mailbox-typed-event-queries-regression-2026-10-30.json), [member/hash index](artifacts/mailbox-typed-event-queries-evidence-index-2026-10-30.json) and [compressed archive](artifacts/mailbox-typed-event-queries-2026-10-30.tar.gz) preserve exact source overlays, configuration and lock hashes, runners, raw reports, three immutable seeds, root verification and failure records. They omit the twelve database copies and full repository snapshots.
+The [regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/mailbox-typed-event-queries-regression-2026-10-30.json), [member/hash index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/mailbox-typed-event-queries-evidence-index-2026-10-30.json) and [compressed archive](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/mailbox-typed-event-queries-2026-10-30.tar.gz) preserve exact source overlays, configuration and lock hashes, runners, raw reports, three immutable seeds, root verification and failure records. They omit the twelve database copies and full repository snapshots.
 
 Two probe setup failures remain explicit: the first seed omitted other threads' events; a later seed omitted the normalized lease overlay, allowing the snapshot lease to expire before candidate initialization. The corrected seed applies production thread-summary replay and normalized leases. The successful fixed-order exploratory run is retained separately from the final balanced comparison. Historical exploratory/failing databases and the SQL diagnostic's original database are not included in this portable archive.
 
 From any directory, with this repository at `REPO`:
+
+Run these evidence commands in the [archived checkout](archive/README.md#verification-snapshot).
 
 ```sh
 python3 REPO/docs/artifacts/mailbox-typed-event-queries-reconcile-2026-10-30.py

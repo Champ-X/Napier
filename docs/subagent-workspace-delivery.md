@@ -50,13 +50,13 @@ G05-A 的候选现在保留创建时的工作区基线，在交付时保存私�
 
 ## 本地验证与测量
 
-累计 13 个测试文件、64 个不同用例通过；最终交付／mutation 29 例覆盖最后的锁身份与事务排序修正。执行顺序与源码摘要见 `docs/artifacts/subagent-workspace-delivery-2026-10-29.json`，该收据明确保留累计验证的边界。
+累计 13 个测试文件、64 个不同用例通过；最终交付／mutation 29 例覆盖最后的锁身份与事务排序修正。执行顺序与源码摘要见 [执行收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-workspace-delivery-2026-10-29.json)，该收据明确保留累计验证的边界。
 
 真实文件系统测试覆盖：脏 Git index 不变、未跟踪内容保留、两个独立候选交付、同文件三方合并、冲突后重启重试、正／负读取依赖、目录发现、未知工具保守读取、符号链接拒绝、诊断后漂移、基线／候选篡改、跨工作区绑定、存储过期和回收、路径别名竞争。独立进程在 commit 前后实际 SIGKILL，保留 applying 状态；独立进程竞争只有一次提交，丢失响应后的重试不改变目标 inode / mtime。
 
 真实 Napier 仓库 smoke 使用两个同时创建的隔离候选，执行真实 TypeScript LSP、语义 rename、Node 调试器、命令和选中的 Vitest，再交付第二个候选并保留后来发生的无关修改。该 smoke 使用直接子进程 adapter，验证真实工具链和集成，没有重新证明 OS Sandbox 强制边界；本次没有修改生产 Sandbox 策略，没有模型请求。
 
-规模收据：`docs/artifacts/subagent-workspace-scale-2026-10-29.json`。每个规模／方案使用三个独立进程，4 KiB 合成文件、脏工作区与未跟踪文件、交替执行顺序。下表时间为三次中位数，RSS 为三次观测峰值最大值，磁盘为 candidate + baseline 的 `stat.blocks` 统计（不含目录块；共享 extent 不能由此推断独占物理空间）。
+规模收据：[规模测试数据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-workspace-scale-2026-10-29.json)。每个规模／方案使用三个独立进程，4 KiB 合成文件、脏工作区与未跟踪文件、交替执行顺序。下表时间为三次中位数，RSS 为三次观测峰值最大值，磁盘为 candidate + baseline 的 `stat.blocks` 统计（不含目录块；共享 extent 不能由此推断独占物理空间）。
 
 | 文件数 | 自动 COW／回退 | 强制复制 | Git worktree + 脏内容覆盖 | 自动路径 RSS | 自动路径磁盘 |
 | --- | --- | --- | --- | --- | --- |

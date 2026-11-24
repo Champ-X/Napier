@@ -34,9 +34,11 @@ All observations are retained. Smoke includes one adverse wall-time ratio of **1
 
 ## Retained evidence and limits
 
-The [regression receipt](artifacts/invocation-context-cursor-regression-2026-10-30.json), [member/hash index](artifacts/invocation-context-cursor-evidence-index-2026-10-30.json) and [compressed archive](artifacts/invocation-context-cursor-2026-10-30.tar.gz) preserve the original 82 artifacts, every failure and adverse sample, fixed SQLite seeds and workspace/fact fixtures, frozen source files and scripts, independent review, and the complete root setup/verification artifacts. Original bytes and historical absolute paths are unchanged. The index maps every archived member to its digest and origin.
+The [regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/invocation-context-cursor-regression-2026-10-30.json), [member/hash index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/invocation-context-cursor-evidence-index-2026-10-30.json) and [compressed archive](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/invocation-context-cursor-2026-10-30.tar.gz) preserve the original 82 artifacts, every failure and adverse sample, fixed SQLite seeds and workspace/fact fixtures, frozen source files and scripts, independent review, and the complete root setup/verification artifacts. Original bytes and historical absolute paths are unchanged. The index maps every archived member to its digest and origin.
 
 The portable verifier reads regular archive members without extracting or executing them. It checks all digests, original evidence bindings, raw paired outputs, native-read counts, fixed fixtures, the final regression and retained strict baseline. From any working directory, with this repository at `REPO`:
+
+Run these evidence commands in the [archived checkout](archive/README.md#verification-snapshot).
 
 ```sh
 python3 REPO/docs/artifacts/invocation-context-cursor-reconcile-2026-10-30.py

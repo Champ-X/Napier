@@ -45,6 +45,8 @@ This slice changes duplicate response metadata. It does not change canonical usa
 
 ## Portable reconciliation
 
+Run these evidence commands in the [archived checkout](archive/README.md#verification-snapshot).
+
 ```sh
 python3 docs/artifacts/model-accounting-duplicate-revision-reconcile-2026-10-30.py
 python3 docs/artifacts/model-accounting-duplicate-revision-reconcile-2026-10-30.py --workspace /path/to/candidate-or-integrated-checkout
@@ -54,4 +56,4 @@ The default verifier uses Python's standard library only. It verifies the archiv
 
 The source proof contains the raw base commit, all 421 reachable tree objects, the captured 6,424-file candidate identity manifest, previous frozen17 bytes, exact2 bytes, and selected unchanged context. It does not include all unchanged base blob bodies or installed dependencies; replay requires the named base checkout and dependencies. Snapshot/usage stability is supported by the retained test source, assertions and logs; this verifier does not rerun those tests or reconstruct their deleted fixture databases.
 
-Artifacts: [regression summary](artifacts/model-accounting-duplicate-revision-regression-2026-10-30.json), [evidence index](artifacts/model-accounting-duplicate-revision-evidence-index-2026-10-30.json), [reconciler](artifacts/model-accounting-duplicate-revision-reconcile-2026-10-30.py), and [raw archive](artifacts/model-accounting-duplicate-revision-2026-10-30.tar.gz). The version-controlled index binds the archive and summary/reconciler companions.
+Artifacts: [regression summary](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/model-accounting-duplicate-revision-regression-2026-10-30.json), [evidence index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/model-accounting-duplicate-revision-evidence-index-2026-10-30.json), [reconciler](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/model-accounting-duplicate-revision-reconcile-2026-10-30.py), and [raw archive](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/model-accounting-duplicate-revision-2026-10-30.tar.gz). The version-controlled index binds the archive and summary/reconciler companions.

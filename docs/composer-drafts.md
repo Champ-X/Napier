@@ -12,7 +12,7 @@
 
 ## 草稿切片的原始验收
 
-[浏览器收据](artifacts/composer-drafts-ui-2026-10-29.json)绑定相关源码和 Web 构建入口，使用真实隔离 HTTP 服务/Store 与 Chromium；只对一个队列请求注入传输失败，并对浏览器持久存储注入 quota failure，没有替换业务 API 响应。
+[浏览器收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/composer-drafts-ui-2026-10-29.json)绑定相关源码和 Web 构建入口，使用真实隔离 HTTP 服务/Store 与 Chromium；只对一个队列请求注入传输失败，并对浏览器持久存储注入 quota failure，没有替换业务 API 响应。
 
 - 多行中文草稿、follow_up 模式刷新后保留；实际导航 A/B 后各自文本独立。
 - 延迟 A 请求失败期间切换 B，B 输入不变；返回 A 后，新输入和失败旧文本都存在；切换恢复文本并再次刷新后两份仍在。
@@ -33,4 +33,4 @@ Server/Runtime/Contracts 的现有 dist 需与当前后端源码一致；原草�
 
 ## 发件箱接入后的回归
 
-当前脚本在验证运行中模式持久化后结算 fixture Run，再对普通 Prompt 注入延迟传输失败，继续验证新旧文本、刷新、存储失败与 7 种窗口尺寸。[新收据](artifacts/composer-drafts-prompt-ui-2026-10-29.json)绑定当前脚本和相关源码；0 模型调用。历史队列失败收据未重写。发件箱有独立的真实 Runtime/HTTP 浏览器验收，G01–G07 其余目标仍保持未完成。
+当前脚本在验证运行中模式持久化后结算 fixture Run，再对普通 Prompt 注入延迟传输失败，继续验证新旧文本、刷新、存储失败与 7 种窗口尺寸。[新收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/composer-drafts-prompt-ui-2026-10-29.json)绑定当前脚本和相关源码；0 模型调用。历史队列失败收据未重写。发件箱有独立的真实 Runtime/HTTP 浏览器验收，G01–G07 其余目标仍保持未完成。

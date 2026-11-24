@@ -1,8 +1,0 @@
-{
-  "kind": "napier.archived-log",
-  "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/historical-contract-verification.log",
-  "originalBytes": 243,
-  "originalSha256": "bf5f47d0c0172ebc9a37ef9edb8c4010f7c2e29c7580bfbf7f801ea28be5496e",
-  "encoding": "utf-8",
-  "text": "{\"valid\":true,\"claimScope\":\"historical_contract_only\",\"promotionReady\":false,\"blockers\":[\"corpus_provenance_missing\",\"evidence_does_not_support_live_quality\"],\"contentSha256\":\"5d924a31296fe9ee34b06212dc7ce97862eb5bb1553aa5b72bc7045f9315e70b\"}\n"
-}

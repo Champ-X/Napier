@@ -1,9 +1,0 @@
-
-> napier@0.1.0 check:public-api
-> node scripts/check-public-api.mjs
-
-Public API audit failed:
-- runtimeRootSemanticExports 1897 exceeds 1896
-- runtimeInternalSemanticExports 18 exceeds 16
-- runtimeRootSemanticExportSha256 does not match the compatibility surface
-- runtimeInternalSemanticExportSha256 does not match the reviewed internal surface

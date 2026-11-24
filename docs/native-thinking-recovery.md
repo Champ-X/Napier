@@ -24,9 +24,9 @@ checkpoint 和 transcript 不把被抑制响应当成交付内容，但原有物
 
 ## 验收范围
 
-[最终联合收据](artifacts/native-thinking-recovery-regression-2026-10-30.json) 为 **99 文件／777 测试通过**。Contracts／Runtime／CLI／Server 编译、Web／Harness／Benchmark 类型检查及新增／修改测试 strict 检查通过。验收使用精确 G03 staged blobs 的独立 checkout，排除同时进行的 G04 文件移动实现与用户原有未提交修改；4,009 源码、5,051 emitted 摘要稳定，原工作区 28 个受保护用户文件单独核对摘要。
+[最终联合收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/native-thinking-recovery-regression-2026-10-30.json) 为 **99 文件／777 测试通过**。Contracts／Runtime／CLI／Server 编译、Web／Harness／Benchmark 类型检查及新增／修改测试 strict 检查通过。验收使用精确 G03 staged blobs 的独立 checkout，排除同时进行的 G04 文件移动实现与用户原有未提交修改；4,009 源码、5,051 emitted 摘要稳定，原工作区 28 个受保护用户文件单独核对摘要。
 
-[独立证据索引](artifacts/native-thinking-recovery-evidence-index-2026-10-30.json) 保留首轮冻结 773／774 的失败：旧 fixture 用预算检查次数定位派发边界，新增正确的前置检查使其过早拒绝。现改为在 durable capture 后注入预算耗尽，保留 reservation、known-zero 响应、零派发／turn／step及 capture-before-response 断言。最终提交检查另发现一处 EOF 空行；仅移除此空行后重编译，全部 5,051 emitted 文件逐字节相同，实际 staged diff 检查通过，未重复行为测试。
+[独立证据索引](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/native-thinking-recovery-evidence-index-2026-10-30.json) 保留首轮冻结 773／774 的失败：旧 fixture 用预算检查次数定位派发边界，新增正确的前置检查使其过早拒绝。现改为在 durable capture 后注入预算耗尽，保留 reservation、known-zero 响应、零派发／turn／step及 capture-before-response 断言。最终提交检查另发现一处 EOF 空行；仅移除此空行后重编译，全部 5,051 emitted 文件逐字节相同，实际 staged diff 检查通过，未重复行为测试。
 
 隔离快照仍有 7 项既有架构失败；此前包含用户原改动的收据为 8 项，范围不同。root API 1897／1896、internal API 21／16 与两项 digest 门禁仍失败；旧 `agent-runtime.test.ts` 的 48 个严格类型错误与原 `d2e33ac3` 基线一致。历史 release manifest 未重写，不能据此宣称完整发布验收。
 

@@ -19,13 +19,13 @@ The initial approval-review capture exposed Settings and evidence overlapping at
 320px. The first capture of this fix found another real defect: collapsing the
 mobile navigation during suspension unmounted its search input. Its value
 survived, but focus returned to the first navigation button. The
-[failed capture](artifacts/workspace-overlay-capture-failure-2026-10-29.json)
+[failed capture](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-overlay-capture-failure-2026-10-29.json)
 retains that evidence. Navigation now preserves the search node and hides its
 mobile surface instead of changing its collapse preference.
 
 ## Verification
 
-The [final browser receipt](artifacts/workspace-overlay-ui-2026-10-29.json) records
+The [final browser receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-overlay-ui-2026-10-29.json) records
 five production browser scenarios and 17 screenshots at 1440px and 320px:
 
 - Settings and Developer Workbench opened above evidence, including resizing,

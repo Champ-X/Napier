@@ -1,3 +1,0 @@
-apps/web/src/use-plan-artifact-controller.ts(89,55): error TS2352: Conversion of type 'Awaited<T> & object & Record<"artifactId", unknown> & Record<"pathSha256", unknown>' to type 'ArtifactVersionReceipt' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
-  Type 'Awaited<T> & object & Record<"artifactId", unknown> & Record<"pathSha256", unknown>' is missing the following properties from type 'ArtifactVersionReceipt': planId, planRevision, status
-packages/contracts/src/conversation-artifact-projection.ts(1,25): error TS2305: Module '"./execution-core.js"' has no exported member 'RunRecord'.

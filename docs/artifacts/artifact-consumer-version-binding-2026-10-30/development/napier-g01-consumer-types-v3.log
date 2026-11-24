@@ -1,4 +1,0 @@
-apps/web/src/ConversationArtifactCard.tsx(72,9): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly expected: "Expected"; readonly candidate: "Candidate"; readonly produced: "Produced"; readonly verified: "Integrity recorded"; readonly missing: "Missing"; readonly superseded: "Superseded"; }'.
-apps/web/src/ConversationArtifactCard.tsx(120,16): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ readonly file: "File"; readonly directory: "Directory"; readonly url: "URL"; readonly other: "Other"; }'.
-packages/contracts/src/conversation-artifact-projection.ts(4,1): error TS6133: 'ArtifactManifestEntry' is declared but its value is never read.
-packages/contracts/src/conversation-artifact-projection.ts(13,3): error TS2304: Cannot find name 'ThreadDetail'.

@@ -2,7 +2,30 @@
 
 Historical narratives are preserved in Git instead of duplicated in the working
 tree. Use the [current documentation index](../README.md) for active behavior
-and constraints. Cleanup date: **2026-09-09**.
+and constraints.
+
+## Verification snapshot
+
+The September harness campaign reports, October verification bundles and
+November review microbenchmarks are available with their original scripts,
+failed attempts and measurements at commit `b18a1d7f`. The active roadmap
+and corpus fixtures live in the current checkout.
+
+- [Harness campaign log](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/harness-optimization-implementation.md)
+- [Roadmap implementation log](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/goal.md)
+- [Verification receipts, archives and reconcilers](https://github.com/Champ-X/Napier/tree/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts)
+- [Agent capability screenshots and Stage 7/8 acceptance records](https://github.com/Champ-X/Napier/tree/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/agent-capability-contract-stage7)
+- [Tessmora integration repair log](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/tessmora-thread-repair-2026-09-10.md)
+- [Review microbenchmarks and samples](https://github.com/Champ-X/Napier/tree/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/investigations/2026-11-07-review)
+
+A separate checkout supplies each historical verifier with its companion files.
+
+```sh
+git worktree add --detach ../napier-verification b18a1d7fef48161f0aba4815c7685b38bf09660b
+cd ../napier-verification
+```
+
+## September documentation archive
 
 The links below are pinned to `02ff34a551c2179a1edfaa785e539d1e4de9047f`, the source immediately before cleanup.
 Original dates, measurements and acceptance claims remain bound to that history.

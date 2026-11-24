@@ -66,8 +66,8 @@ scope, diagnostics, state and merge checks.
 The final combined checkout passed 594 tests across 81 files, required compilation
 and strict test type checks. Its 4,179 source/configuration hashes, 22 changed
 emitted modules and all 28 preserved user files remained unchanged. The regression
-receipt is [subagent-legacy-candidate-regression-2026-10-30.json](artifacts/subagent-legacy-candidate-regression-2026-10-30.json).
-The [evidence index](artifacts/subagent-legacy-candidate-evidence-index-2026-10-30.json)
+receipt is [subagent-legacy-candidate-regression-2026-10-30.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-legacy-candidate-regression-2026-10-30.json).
+The [evidence index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-legacy-candidate-evidence-index-2026-10-30.json)
 also retains the owner's 116-test slice, independent six-case boundary audit,
 two original-producer application cases and original child-terminal preservation
 checks. These overlapping test sets must not be summed as independent coverage.

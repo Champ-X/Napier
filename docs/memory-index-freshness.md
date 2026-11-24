@@ -38,7 +38,9 @@ Architecture 保留 7 个既有问题：三个普通文件行数、web view-mode
 
 `before/`、`initial-after/`、`final-isolated/`、`integrated/` 和 `independent/` 保留原始记录。`case-identity-overlap.json` 列出每条记录及精确交叠。原日志与配置中的绝对路径仅作为历史来源；归档的 `.mjs` / `.ts` 文件不由核验程序执行。
 
-[压缩包](artifacts/memory-index-freshness-2026-10-30.tar.gz)和[逐成员索引](artifacts/memory-index-freshness-evidence-index-2026-10-30.json)保存上述证据。无需解包或执行归档代码，运行以下命令核对哈希、失败保留、记录数量、多重集交叠与源码收据：
+[压缩包](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/memory-index-freshness-2026-10-30.tar.gz)和[逐成员索引](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/memory-index-freshness-evidence-index-2026-10-30.json)保存上述证据。无需解包或执行归档代码，运行以下命令核对哈希、失败保留、记录数量、多重集交叠与源码收据：
+
+以下历史核验命令在[归档检出目录](archive/README.md#verification-snapshot)中运行。
 
 ```sh
 python3 docs/artifacts/memory-index-freshness-reconcile-2026-10-30.py

@@ -20,11 +20,11 @@
 
 故障实验发现死进程的工具并发租约会残留 120 秒。现在仅对严格匹配本机进程 owner 格式、且 `process.kill(pid, 0)` 明确返回 ESRCH 的租约提前清理。活进程、未知 owner、EPERM 等未知状态不会被提前回收；清理资源租约不取代操作 fence 和补丁恢复证明。
 
-当前复现：`node scripts/check-verified-patch-recovery.mjs /tmp/napier-verified-patch-new.json`，输出独占创建。最终收据见 [verified-patch-recovery-verified-2026-10-29.json](artifacts/verified-patch-recovery-verified-2026-10-29.json)。31 个真实进程故障/拒绝用例覆盖 create/replace 的两个早期断点、五种恢复过程再次退出、最终响应丢失、双进程竞争、同文件多步补丁、权限/文件/Sandbox 漂移、缺失输入和晚到提交。没有重复目标提交；已有目标的 inode/mtime 在结果复用场景保持不变。0 外部模型请求，模型为显式 faux provider。
+当前复现：`node scripts/check-verified-patch-recovery.mjs /tmp/napier-verified-patch-new.json`，输出独占创建。最终收据见 [verified-patch-recovery-verified-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/verified-patch-recovery-verified-2026-10-29.json)。31 个真实进程故障/拒绝用例覆盖 create/replace 的两个早期断点、五种恢复过程再次退出、最终响应丢失、双进程竞争、同文件多步补丁、权限/文件/Sandbox 漂移、缺失输入和晚到提交。没有重复目标提交；已有目标的 inode/mtime 在结果复用场景保持不变。0 外部模型请求，模型为显式 faux provider。
 
-[补齐 Sandbox 后的 31 用例收据](artifacts/verified-patch-recovery-current-2026-10-29.json) 也保留；最终仅将 Sandbox 类型导入改为直接依赖类型模块，消除新引入的 barrel 耦合超限后重新验证。
+[补齐 Sandbox 后的 31 用例收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/verified-patch-recovery-current-2026-10-29.json) 也保留；最终仅将 Sandbox 类型导入改为直接依赖类型模块，消除新引入的 barrel 耦合超限后重新验证。
 
-[首份 30 用例收据](artifacts/verified-patch-recovery-2026-10-29.json) 保留添加 Sandbox 门槛之前的源码快照。测试过程中还发现 tsx 与 Vitest 的函数源码转换会产生不同工具定义摘要；恢复进程使用相同 tsx 入口验证，不放宽定义比较。耗时是本机单次 restart/continuation 采样，不包含策略 backoff，不代表真实模型性能改善。
+[首份 30 用例收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/verified-patch-recovery-2026-10-29.json) 保留添加 Sandbox 门槛之前的源码快照。测试过程中还发现 tsx 与 Vitest 的函数源码转换会产生不同工具定义摘要；恢复进程使用相同 tsx 入口验证，不放宽定义比较。耗时是本机单次 restart/continuation 采样，不包含策略 backoff，不代表真实模型性能改善。
 
 验证汇总：13 个 Runtime 文件共 125 个不同用例；Server 配置校验 8 个，Web 3 文件共 10 个用例。Contracts 构建、Runtime typecheck/build:compile、Web/SDK/Server typecheck、Web build 与 design contract 通过。架构为 10 项既有失败：将模式注册和恢复授权归回各自模块后，原 run-config 超限被消除；相应预算只下调。公开 API 仍为原 root 1897/1896 与 compatibility digest 两项失败。历史 release source manifest 未改，编译不等同完整发布验收。
 
@@ -45,7 +45,7 @@
 
 锁没有 TTL：活进程即使暂停也不能被另一个驱动者抢占。只有 ESRCH 证明原 PID 已不存在；权限错误或其他探测错误保守等待。该机制仅适用于本机 LocalStore；PID 复用可能保守阻塞，不支持跨主机 fencing。SQLite schema 从 7 迁到 8，只增加锁表和迁移记录；已有事件不改写，旧 Runtime 不能直接打开升级后的数据库。初始化的 busy_timeout 提前到首次读取 schema 之前，处理同时打开数据库时观察到的锁冲突。
 
-复现：`node scripts/check-workflow-approval-recovery.mjs /tmp/napier-workflow-approval-new.json`，输出独占创建。当前收据：[workflow-approval-recovery-verified-2026-10-29.json](artifacts/workflow-approval-recovery-verified-2026-10-29.json)。审批、SQLite 与 apply_patch 均真实执行，模型注册表为空，0 外部模型请求。
+复现：`node scripts/check-workflow-approval-recovery.mjs /tmp/napier-workflow-approval-new.json`，输出独占创建。当前收据：[workflow-approval-recovery-verified-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workflow-approval-recovery-verified-2026-10-29.json)。审批、SQLite 与 apply_patch 均真实执行，模型注册表为空，0 外部模型请求。
 
 | 故障或竞争 | 验证范围 |
 | --- | --- |
@@ -57,7 +57,7 @@
 
 固定 `610a8ef54426fb3408d43d1e33f1ce6f419cd7ca` 的旧嵌入式审批服务在同一个真实已保存答案上仍拒绝重试，当前服务可以完成。该对照仅冻结审批 API，支持模块使用当前实现；不是完整历史发行版基准。收据记录单次重启与续跑时间、Run/事件/写入数量；不将这组本机采样称为生产性能改善。最终响应丢失场景检查文件 inode/mtime 保持不变。
 
-此前的 [中间收据](artifacts/workflow-approval-recovery-current-2026-10-29.json) 保留其源码快照。随后补充反例发现：请求以已回答快照的摘要发起后，continued 状态会让同一请求再次被误判 stale。现已覆盖这一历史快照并验证重复调用没有新事件，最终收据包含该回归。一次更早的证据封装运行仅保留了测试进程 exit 1，没有保留具体失败项，原因无法据此确定；封装现已输出失败断言，后续当前源码的独立运行通过。未将中间结果当作最终验收。
+此前的 [中间收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workflow-approval-recovery-current-2026-10-29.json) 保留其源码快照。随后补充反例发现：请求以已回答快照的摘要发起后，continued 状态会让同一请求再次被误判 stale。现已覆盖这一历史快照并验证重复调用没有新事件，最终收据包含该回归。一次更早的证据封装运行仅保留了测试进程 exit 1，没有保留具体失败项，原因无法据此确定；封装现已输出失败断言，后续当前源码的独立运行通过。未将中间结果当作最终验收。
 
 相关检查共 14 文件 156 个不同用例通过，其中当前收据固定 3 文件 29 项；其他覆盖 Workflow 执行/恢复/重试/并行节点、实验/断点/循环/成果结算和 SDK。Runtime typecheck / build:compile 与 diff check 通过。架构回到原 11 项失败，公开 API 仍为 root 1897/1896 和 compatibility digest 不匹配；未提高预算，未修改历史 release source manifest，编译不等于完整发布验收。
 
@@ -73,7 +73,7 @@
 
 当前评估器识别完整对账链，调度资格仍不等于成功。新 Run/模型调用前再次读取私有意图和文件，检查最新版本链及身份；claim 后被替换为同内容新文件也会停止。续跑提示分别列出已结算和独立对账的操作数量，并说明写后诊断可能缺失，不补造原工具结果。权限保持 `safe_read_only`，不会重放补丁，也不扩展通用 exact-result replay 权限。
 
-验收收据：[unsettled-patch-recovery-current-2026-10-29.json](artifacts/unsettled-patch-recovery-current-2026-10-29.json)。复现：`node scripts/check-unsettled-patch-recovery.mjs /tmp/napier-unsettled-patch-new.json`，独占创建，保留旧收据。26 个独立进程场景使用真实 Runtime、SQLite 和文件系统，显式 faux provider，0 外部模型请求。覆盖原有 10 场景和新增 16 场景：
+验收收据：[unsettled-patch-recovery-current-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/unsettled-patch-recovery-current-2026-10-29.json)。复现：`node scripts/check-unsettled-patch-recovery.mjs /tmp/napier-unsettled-patch-new.json`，独占创建，保留旧收据。26 个独立进程场景使用真实 Runtime、SQLite 和文件系统，显式 faux provider，0 外部模型请求。覆盖原有 10 场景和新增 16 场景：
 
 - create/link 与 replace/rename 之后、返回/结果胶囊之前立即退出；原文件内容、inode、mtime 不变，只读 continuation 完成，0 次重写。
 - 写前意图已保存、目标尚未提交时停止；不凭意图推断成功。这个窗口留下的临时文件或新父目录不被当作正式成果。
@@ -83,7 +83,7 @@
 
 固定旧 `caf37eaf` 自动恢复评估器在相同实际事件流上仍拒绝恢复。该对照仅替换评估器，不是完整历史发行版；单次耗时仅为本机 fixture 采样。进程退出测试不证明断电持久性、跨主机 fencing 或真实模型质量提升。对账只确认文件后置条件，写后诊断和整体目标仍需后续验证。无写前记录的历史未结算操作、before-effect / before-target-commit 自动继续、Workflow 审批故障矩阵和统一恢复操作区仍未完成。
 
-相关 11 文件共 104 个不同用例通过；最终工具配置职责收敛后，进程矩阵及受影响的工具/Workflow/SQLite guard 用例再次通过。Contracts build、Runtime typecheck / build:compile 和 diff check 通过。架构维持原 11 项失败，公开 API 仍为 root 1897/1896 和 compatibility digest 两类失败；未提高预算、未更新历史 release source manifest，也不把 build:compile 称为完整发布验收。失联 Run 处理提取为独立模块；tools.ts 预算由 1776 降至 1766。初次 26 场景收据 [unsettled-patch-recovery-2026-10-29.json](artifacts/unsettled-patch-recovery-2026-10-29.json) 保留其源码快照；随后仅调整工具配置职责并重新生成当前收据，没有覆盖历史文件。
+相关 11 文件共 104 个不同用例通过；最终工具配置职责收敛后，进程矩阵及受影响的工具/Workflow/SQLite guard 用例再次通过。Contracts build、Runtime typecheck / build:compile 和 diff check 通过。架构维持原 11 项失败，公开 API 仍为 root 1897/1896 和 compatibility digest 两类失败；未提高预算、未更新历史 release source manifest，也不把 build:compile 称为完整发布验收。失联 Run 处理提取为独立模块；tools.ts 预算由 1776 降至 1766。初次 26 场景收据 [unsettled-patch-recovery-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/unsettled-patch-recovery-2026-10-29.json) 保留其源码快照；随后仅调整工具配置职责并重新生成当前收据，没有覆盖历史文件。
 
 以下已结算补丁和答案章节保留之前切片的历史证据与边界；其中旧表的未结算行已由上面的新切片部分推进。
 
@@ -103,7 +103,7 @@
 
 ## 已结算切片的历史进程故障验收
 
-复现：`node scripts/check-settled-patch-recovery.mjs /tmp/napier-patch-recovery-new.json`。输出以独占创建写入，不覆盖历史收据。此前 10 场景收据为 [settled-patch-result-recovery-current-2026-10-29.json](artifacts/settled-patch-result-recovery-current-2026-10-29.json)，绑定 16 个相关源码与复现文件。首切片的 [8 场景收据](artifacts/settled-patch-recovery-2026-10-29.json) 保持原样。测试使用真实 Runtime、SQLite、文件写入和独立子进程；在指定检查点 `process.exit(73)`，不执行正常清理。模型为显式 faux provider，外部模型请求为 0。
+当前可在 `packages/runtime` 下运行 `npx vitest run test/settled-patch-recovery.test.ts`。当时的单独采集命令见[历史脚本](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/scripts/check-settled-patch-recovery.mjs)。此前 10 场景收据为 [settled-patch-result-recovery-current-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/settled-patch-result-recovery-current-2026-10-29.json)，绑定 16 个相关源码与复现文件。首切片的 [8 场景收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/settled-patch-recovery-2026-10-29.json) 保持原样。测试使用真实 Runtime、SQLite、文件写入和独立子进程；在指定检查点 `process.exit(73)`，不执行正常清理。模型为显式 faux provider，外部模型请求为 0。
 
 | 断点或变化 | 当时结果 | 当时的后续缺口 |
 | --- | --- | --- |
@@ -115,7 +115,7 @@
 
 固定 `caf37eaf5e5a1ab1fae55b4a644d2ee460ed54d1` 的旧评估器，对两个同一实际事件流分别返回 unsafe_tool_effect，以及 unresolved_tool_call + unsafe_tool_effect。当前两种已结算断点均成功续跑；文件内容、inode、mtime 均未变。当前单次重启/continuation 为 28.68/131.73 ms（终态已落账）和 59.72/105.34 ms（响应丢失）；不含策略 backoff，使用 fixture 模型。它们是本地确定性采样，不是生产恢复率或真实模型性能改善声明。
 
-本轮两份中间收据也保留：[初次运行](artifacts/settled-patch-result-recovery-2026-10-29.json) 的进程测试通过，但随后类型检查发现结果 usage 类型不兼容；[第二次运行](artifacts/settled-patch-result-recovery-verified-2026-10-29.json) 的进程测试和编译通过，但架构检查发现类型导入环。当前实现已限制补丁结果元数据并将相关类型归入 model，消除这些新增问题。中间收据仅证明其各自源码快照的进程测试，不是完整验收结论。
+本轮两份中间收据也保留：[初次运行](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/settled-patch-result-recovery-2026-10-29.json) 的进程测试通过，但随后类型检查发现结果 usage 类型不兼容；[第二次运行](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/settled-patch-result-recovery-verified-2026-10-29.json) 的进程测试和编译通过，但架构检查发现类型导入环。当前实现已限制补丁结果元数据并将相关类型归入 model，消除这些新增问题。中间收据仅证明其各自源码快照的进程测试，不是完整验收结论。
 
 故障注入还发现并修复了旧恢复代码漏传 `failureDefinitionSha256` 的问题：真实工具的 descriptor hash 因此不匹配，重启无法写入 effect_indeterminate 记录。现在保留该字段，并仍将不确定副作用明确停止；没有把它改为成功。
 
@@ -136,7 +136,7 @@
 
 Run 已创建但提示尚未保存时退出，重启后仍返回该 Run 的 interrupted 状态，普通重试不会暗自发起另一轮。用户随后使用现有 Run 恢复入口时，Runtime 从父 Run 的验证后决策投影中读取与这个 continuation 精确匹配的原答案，将其加入恢复提示；不能仅凭数据库保存成功声称模型已继承答案。进程测试确认恢复模型实际收到原 customText，并只写文件一次。自动只读恢复也复用该上下文函数，但本切片没有新增自动恢复权限。
 
-复现：`node scripts/check-operator-decision-recovery.mjs /tmp/napier-decision-recovery-new.json`，输出独占创建。收据：[operator-decision-recovery-2026-10-29.json](artifacts/operator-decision-recovery-2026-10-29.json)，绑定 19 个源文件/测试/复现文件。它覆盖 7 个 Runtime 决策用例、2 个 Workflow 输出兼容用例和 1 个真实服务 HTTP/SSE 集成用例；外部模型请求 0。
+复现：`node scripts/check-operator-decision-recovery.mjs /tmp/napier-decision-recovery-new.json`，输出独占创建。收据：[operator-decision-recovery-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/operator-decision-recovery-2026-10-29.json)，绑定 19 个源文件/测试/复现文件。它覆盖 7 个 Runtime 决策用例、2 个 Workflow 输出兼容用例和 1 个真实服务 HTTP/SSE 集成用例；外部模型请求 0。
 
 | 断点 / 重试 | 观察结果 |
 | --- | --- |
@@ -163,7 +163,7 @@ Run 已创建但提示尚未保存时退出，重启后仍返回该 Run 的 inte
 
 只读核查结束按既有协议保存为 `failed / partial`，原因明确为核查结束、原任务仍需继续或对账；不记录原任务恢复完成，也不评估或自动续跑原目标；核查出错不改写原目标状态。后续投影沿只读恢复父链（上限 16）保留原操作事实，避免核查后隐藏尚未解决的副作用。父链缺失或循环会停止分类。Runtime 入口和创建 Run 的事务内都拒绝已被后续 Run 取代的检查点；Web 抑制同一会话的即时重复点击，网络错误后重新加载原会话账目。
 
-验证与复现见 `docs/artifacts/recovery-operations-ui-current-2026-10-29.json` 和 `scripts/check-recovery-operations-ui.mjs`。脚本要求先构建 Contracts、Runtime（`build:compile`）、Server、Web，然后使用独立临时目录与真实 HTTP/SQLite/Chromium。故障由真实子进程在目标文件提交后退出；只有模型是 faux provider，禁止浏览器访问外网。证据覆盖 7 种尺寸、键盘 disclosure、按钮实际命中检查、只读权限、恶意写调用被拒、原文件 inode/mtime 不变、部分状态和父检查点保留、旧请求重试不新建 Run。首轮 320px 截图被现有证据抽屉遮挡，已修改脚本关闭抽屉并检查按钮可点击；该首轮不算窄屏验收。
+验证与复现见 [历史 UI 收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/recovery-operations-ui-current-2026-10-29.json) 和 `scripts/check-recovery-operations-ui.mjs`。脚本要求先构建 Contracts、Runtime（`build:compile`）、Server、Web，然后使用独立临时目录与真实 HTTP/SQLite/Chromium。故障由真实子进程在目标文件提交后退出；只有模型是 faux provider，禁止浏览器访问外网。证据覆盖 7 种尺寸、键盘 disclosure、按钮实际命中检查、只读权限、恶意写调用被拒、原文件 inode/mtime 不变、部分状态和父检查点保留、旧请求重试不新建 Run。首轮 320px 截图被现有证据抽屉遮挡，已修改脚本关闭抽屉并检查按钮可点击；该首轮不算窄屏验收。
 
 范围：Workflow 在本区只能查看计划概览或转到已有审批区，尚未接通所有 Workflow 恢复变更操作；保存审批答案仍走既有决策服务。未增加通用写工具自动重放，也未完成完整恢复分类验收、历史活动卡终态统一或 SDK/CLI 的新只读开关。Hook 测试覆盖响应不确定后的刷新与原会话错误归属，不等同于真实 TCP 响应丢失故障注入。本轮保持 G04 与总目标 active。
 
@@ -178,7 +178,7 @@ Task 概览现在提供 Workflow 专用操作：查看待回答问题、从当�
 
 Web 按 workspace、thread、plan 隔离状态，抑制同一渲染内的重复提交；延迟读取不能替换较新的检查点。提交失败或响应不确定后，先查询持久状态再启用下一次操作；切换视图后旧操作不会写入新视图。原定义、计划和操作身份在 Runtime 校验，前端分类不成为执行权限。已完成步骤与整个任务验收分开表述；Workflow 区域不重复显示“重新回答”的通用提示。
 
-当前浏览器证据为 [workflow-recovery-ui-bound-2026-10-29.json](artifacts/workflow-recovery-ui-bound-2026-10-29.json)，绑定 30 个源码/测试/脚本摘要。复现：构建 Contracts、Runtime `build:compile`、Server、Web 后，运行 `node scripts/check-workflow-recovery-ui.mjs /tmp/new-workflow-receipt.json`，独占创建收据。脚本用真实 HTTP、SQLite、Chromium 和文件写入，零模型调用；检查保存答案后续跑、HTTP 提交成功后在浏览器丢弃响应、两断点之间的旧请求重试、定义消失、键盘操作和 7 种窗口尺寸。两次写入各只执行一次，响应丢失后的旧请求不改动文件 inode/mtime。该故障是浏览器在实际 HTTP 完成后 abort，并非 TCP 丢包注入。首份中间收据位于忽略的 benchmark-results，包含后来移除的重复提示，不作为当前截图。
+当前浏览器证据为 [workflow-recovery-ui-bound-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workflow-recovery-ui-bound-2026-10-29.json)，绑定 30 个源码/测试/脚本摘要。复现：构建 Contracts、Runtime `build:compile`、Server、Web 后，运行 `node scripts/check-workflow-recovery-ui.mjs /tmp/new-workflow-receipt.json`，独占创建收据。脚本用真实 HTTP、SQLite、Chromium 和文件写入，零模型调用；检查保存答案后续跑、HTTP 提交成功后在浏览器丢弃响应、两断点之间的旧请求重试、定义消失、键盘操作和 7 种窗口尺寸。两次写入各只执行一次，响应丢失后的旧请求不改动文件 inode/mtime。该故障是浏览器在实际 HTTP 完成后 abort，并非 TCP 丢包注入。首份中间收据位于忽略的 benchmark-results，包含后来移除的重复提示，不作为当前截图。
 
 新增 Runtime 测试还在 claim 落账后和 Workflow completed 落账后用独立子进程 SIGKILL，重启后保留答案、拒绝旧请求，并从新检查点继续或观察已完成结果；覆盖两个独立 Store 并发、定义缺失/篡改、跨线程/重复启动证据、创建目标的环境漂移。将账本复制到另一组 workspaceRoot/dataRoot 后，旧检查点摘要也会被拒绝，不能跨目录授权。目标在检查点后被用户创建时，原 apply_patch 的前置条件使节点 blocked，用户内容和文件身份保留。
 

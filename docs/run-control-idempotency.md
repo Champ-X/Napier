@@ -20,7 +20,7 @@ Web 普通 Composer 现已接入该协议，持久化、重试、撤回和替换
 
 ## 验证
 
-[当前收据](artifacts/run-control-idempotency-2026-10-29.json)绑定 14 个相关源文件、测试与复现脚本。最终共 101 项测试实际执行通过：Runtime 61，Server 40，覆盖 10 文件；过滤未执行的测试不计入通过数。
+[当前收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/run-control-idempotency-2026-10-29.json)绑定 14 个相关源文件、测试与复现脚本。最终共 101 项测试实际执行通过：Runtime 61，Server 40，覆盖 10 文件；过滤未执行的测试不计入通过数。
 
 - 五次并发相同请求只追加一个 run.control.queued 和一个投递后的 message.user。
 - 已投递、已取消、Run 结算后及重新打开 Store 的重试返回权威收据；不追加事件。

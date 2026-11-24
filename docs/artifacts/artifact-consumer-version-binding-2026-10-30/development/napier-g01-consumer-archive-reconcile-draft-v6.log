@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/Users/champ/orca/Napier/docs/artifacts/artifact-consumer-version-binding-2026-10-30/tools/reconcile.py", line 260, in <module>
-    raise SystemExit(main())
-                     ~~~~^^
-  File "/Users/champ/orca/Napier/docs/artifacts/artifact-consumer-version-binding-2026-10-30/tools/reconcile.py", line 83, in main
-    for name, expected in hashes.items():
-                          ^^^^^^^^^^^^
-AttributeError: 'list' object has no attribute 'items'

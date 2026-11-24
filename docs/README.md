@@ -1,6 +1,6 @@
 # Napier Documentation
 
-Index updated on **2026-09-26**. Individual guides and evidence retain their own
+Index updated on **2026-11-24**. Individual guides and evidence retain their own
 dates and baselines.
 
 ## Current guides and contracts
@@ -45,9 +45,9 @@ change their meaning or refresh their evidence.
 
 ## Historical material
 
-The [Git history index](archive/README.md) points to superseded designs, earlier
-acceptance narratives and implementation logs at a fixed commit. Historical
-bodies and redirect-only documents are omitted from the working tree.
+The [Git history index](archive/README.md) provides fixed revisions for earlier
+designs, campaign logs, benchmark samples and verification bundles. It includes
+the checkout command for running historical verifiers with their original inputs.
 
 ## Maintenance
 

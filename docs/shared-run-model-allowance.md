@@ -65,6 +65,8 @@ The optional root review receipt is a source read-through with probes pending at
 
 Run from a checkout containing these documentation artifacts:
 
+Run these evidence commands in the [archived checkout](archive/README.md#verification-snapshot).
+
 ```sh
 python3 docs/artifacts/shared-run-model-allowance-reconcile-2026-10-30.py
 python3 docs/artifacts/shared-run-model-allowance-reconcile-2026-10-30.py --workspace .
@@ -74,4 +76,4 @@ The default command uses Python's standard library only (Python 3.11+ with SQLit
 
 The databases were closed and checkpointed before archival, with no WAL files. To use SQLite's in-memory deserializer, the verifier changes only the journal-mode header bytes of a private in-memory copy; the archived originals remain unchanged and are hashed first.
 
-Artifacts: [regression summary](artifacts/shared-run-model-allowance-regression-2026-10-30.json), [evidence index](artifacts/shared-run-model-allowance-evidence-index-2026-10-30.json), [reconciler](artifacts/shared-run-model-allowance-reconcile-2026-10-30.py), and [raw archive](artifacts/shared-run-model-allowance-2026-10-30.tar.gz). The index binds each raw member and the reconciliation/summary companions; its repository history supplies the durable trust anchor.
+Artifacts: [regression summary](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/shared-run-model-allowance-regression-2026-10-30.json), [evidence index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/shared-run-model-allowance-evidence-index-2026-10-30.json), [reconciler](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/shared-run-model-allowance-reconcile-2026-10-30.py), and [raw archive](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/shared-run-model-allowance-2026-10-30.tar.gz). The index binds each raw member and the reconciliation/summary companions; its repository history supplies the durable trust anchor.

@@ -39,15 +39,7 @@ node scripts/verify-task-studio.mjs
 node scripts/run-web-ui-e2e.mjs --receipt benchmark-results/frontend-task-studio/e2e-verified.json
 ```
 
-浏览器截图与机器可读结果保存在 `benchmark-results/frontend-task-studio/`（本地产物，Git 忽略）：
-
-- [桌面首页](../benchmark-results/frontend-task-studio/welcome-desktop.png)
-- [320px 首页](../benchmark-results/frontend-task-studio/welcome-320.png)
-- [桌面设置](../benchmark-results/frontend-task-studio/settings-desktop.png)
-- [审批与证据](../benchmark-results/frontend-task-studio/conversation-evidence.png)
-- [开发者工作台](../benchmark-results/frontend-task-studio/developer-desktop.png)
-- [专项检查记录](../benchmark-results/frontend-task-studio/verification.json)
-- [完整端到端记录](../benchmark-results/frontend-task-studio/e2e-verified.json)
+上述命令会把截图、专项检查报告和端到端报告写入本地 `benchmark-results/frontend-task-studio/`。
 
 ## 基线变化与未纳入本次修复的告警
 

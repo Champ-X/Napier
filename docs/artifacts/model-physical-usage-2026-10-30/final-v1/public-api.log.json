@@ -1,7 +1,0 @@
-{
-  "archiveEncoding": "json-utf8-text",
-  "originalPath": "/tmp/napier-late-usage-final-v1-20261030/public-api.log",
-  "originalBytes": 277,
-  "originalSha256": "660e5f1e3e2db06207a2fad6283942d3655b80aba68d9eee838bd17c17a275d1",
-  "text": "Public API audit failed:\n- runtimeRootSemanticExports 1898 exceeds 1896\n- runtimeInternalSemanticExports 32 exceeds 16\n- runtimeRootSemanticExportSha256 does not match the compatibility surface\n- runtimeInternalSemanticExportSha256 does not match the reviewed internal surface\n"
-}

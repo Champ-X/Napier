@@ -39,7 +39,7 @@ node apps/cli/dist/index.js run \
 
 重点审查策略与权限、恢复配置哈希、编辑版本前提、测试选择及工作区新鲜度、任务记忆来源、实际输入与缓存指标、DeepSeek 字段兼容及模型调用预算，共 17 个关键集成文件。未发现新的阻断性代码问题；不声称逐行审查全部历史工件。
 
-Contracts、Runtime、CLI、Server、Web 五个包的类型检查均通过，`git diff --check` 通过。本次审查零模型调用；此前 48 项 v6 定向离线检查及其他模块证据见[验证索引](artifacts/bounded-thinking-test-report-index-2026-09-15.json)。不重复运行这些已完成的模型测试。
+Contracts、Runtime、CLI、Server、Web 五个包的类型检查均通过，`git diff --check` 通过。本次审查零模型调用；此前 48 项 v6 定向离线检查及其他模块证据见[验证索引](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/bounded-thinking-test-report-index-2026-09-15.json)。不重复运行这些已完成的模型测试。
 
 刚新增的完整统计收集模块和对应测试已移出交付，原文件及哈希本地归档。产品实现未改版，旧失败和用量记录未修改。没有 commit、push 或部署。
 
@@ -52,4 +52,4 @@ Contracts、Runtime、CLI、Server、Web 五个包的类型检查均通过，`gi
 
 最终本地保守预算占用 71.94 元，包含历史 20 元、已结算 21.94 元与未结算预留 30 元，不是官网实际扣款。所有付费队列已停止，不自动恢复。
 
-[审查与停止收尾记录](artifacts/harness-rapid-closeout-2026-09-15.json) · [当前状态](harness-optimization-status.md) · [历史实施记录](harness-optimization-implementation.md)
+[审查与停止收尾记录](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-rapid-closeout-2026-09-15.json) · [当前状态](harness-optimization-status.md) · [历史实施记录](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/harness-optimization-implementation.md)

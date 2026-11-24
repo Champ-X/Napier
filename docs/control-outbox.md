@@ -27,7 +27,7 @@
 
 ## 当前证据
 
-基线为 `baf8a50e`：已有按线程的草稿及服务端幂等协议，普通 Composer 尚未发送 clientMessageId。最终源码与构建摘要见 [浏览器收据](artifacts/control-outbox-ui-2026-10-29.json)。它使用实际 Chromium、HTTP、Runtime 和 SQLite，模型为显式 faux fixture；未调用外部或付费模型。
+基线为 `baf8a50e`：已有按线程的草稿及服务端幂等协议，普通 Composer 尚未发送 clientMessageId。最终源码与构建摘要见 [浏览器收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/control-outbox-ui-2026-10-29.json)。它使用实际 Chromium、HTTP、Runtime 和 SQLite，模型为显式 faux fixture；未调用外部或付费模型。
 
 - 发送成功后丢弃响应，重试同一身份，只出现一次排队；取消成功后丢弃响应，查到账本取消状态。
 - 撤回、编辑、刷新、键盘发送替换完整执行；原消息取消后，新身份只进入原 Run。
@@ -37,7 +37,7 @@
 - 无客户端身份的旧消息通过同一界面撤回；quota failure 留住输入且没有新 POST。
 - 该流程共 4 个排队事件、3 个取消事件、1 个消费事件。7 种窗口尺寸无 document 横向溢出，重试按钮通过点击可达性检查；桌面及 320px 截图已检查。
 - 7 文件 73 个 Web 测试通过，包括 15 个存储/协议测试和 5 个实际 Hook 测试，覆盖同渲染重复、跨线程返回、A→B→A workspace generation、普通 Prompt 恢复等。
-- [普通 Prompt 草稿回归](artifacts/composer-drafts-prompt-ui-2026-10-29.json)单独验证旧文本恢复、新文本保留、刷新、quota 和 7 种尺寸，0 模型调用。原草稿收据保持不变；复现脚本改用普通 Prompt 传输失败，因为运行中干预现在保留在发件箱。
+- [普通 Prompt 草稿回归](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/composer-drafts-prompt-ui-2026-10-29.json)单独验证旧文本恢复、新文本保留、刷新、quota 和 7 种尺寸，0 模型调用。原草稿收据保持不变；复现脚本改用普通 Prompt 传输失败，因为运行中干预现在保留在发件箱。
 - Web typecheck/build、设计契约、diff check 通过。架构仍为原 11 项失败；主 ViewModel 2226→2175 行，API 行数预算随职责提取由 1180 降至 1155，没有提高预算。
 
 ```sh

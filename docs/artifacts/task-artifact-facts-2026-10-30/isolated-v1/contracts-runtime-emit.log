@@ -1,1 +1,0 @@
-apps/server/src/kernel-thread-projections.ts(31,23): error TS2742: The inferred type of 'projectKernelThreadProjections' cannot be named without a reference to '../../../node_modules/@napier/contracts/dist/task-artifact-facts.js'. This is likely not portable. A type annotation is necessary.

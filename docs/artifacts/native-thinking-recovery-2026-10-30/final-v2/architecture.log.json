@@ -1,7 +1,0 @@
-{
-  "kind": "napier.preserved-command-log",
-  "encoding": "utf-8",
-  "originalBytes": 685,
-  "originalSha256": "73ba79d75b87fa81033d139b818f91b709ed654f29c0074eae42175ec8df53af",
-  "text": "Architecture audit failed:\n- apps/web/src/use-workspace-view-model.ts has 2101 lines, exceeding the 1884-line budget\n- packages/contracts/src/skill-load-standard.ts has 533 lines, exceeding the 500-line budget\n- packages/runtime/src/agent-tool-result-lifecycle.ts has 513 lines, exceeding the 500-line budget\n- packages/runtime/src/plans.ts has 1378 lines, exceeding the 1367-line budget\n- packages/runtime/src/standard-skill-snapshot-compose.ts has 506 lines, exceeding the 500-line budget\n- apps/web/src/conversation-thinking-view-model.ts has function complexity 26, exceeding the 25 budget\n- apps/web/src/api.ts has change coupling (fan-in * fan-out) 111, exceeding the 102 budget\n"
-}

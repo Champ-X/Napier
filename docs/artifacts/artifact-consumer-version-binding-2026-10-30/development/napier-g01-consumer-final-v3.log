@@ -1,9 +1,0 @@
-
- RUN  v4.1.9 /Users/champ/orca/Napier
-
-
- Test Files  14 passed (14)
-      Tests  131 passed (131)
-   Start at  06:55:18
-   Duration  2.72s (transform 2.24s, setup 0ms, import 3.61s, tests 290ms, environment 0ms)
-

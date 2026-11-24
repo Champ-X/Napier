@@ -2,7 +2,7 @@
 
 Recovery now retains a bounded batch of independent native file moves and patches. A restart inspects all unfinished and already settled participants before making a recovery decision. One union of path locks remains held through the atomic authority fence; read-only continuation acquires the complete set again and retains it until the recovery Run finishes. No original tool terminal, settlement or writing grant is fabricated.
 
-Implementation commit: **`bf6a34cdeede8e95e7932339de736f209954ecc5`**. The original frozen implementation was based on `e10a7bd39b71dc74dfb4bbd05f6c5254bedd5696`, with the same fifteen source/test files listed in the [regression receipt](artifacts/workspace-operation-batch-recovery-regression-2026-10-30.json). It has not been treated as acceptance of unrelated G04 recovery work.
+Implementation commit: **`bf6a34cdeede8e95e7932339de736f209954ecc5`**. The original frozen implementation was based on `e10a7bd39b71dc74dfb4bbd05f6c5254bedd5696`, with the same fifteen source/test files listed in the [regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-operation-batch-recovery-regression-2026-10-30.json). It has not been treated as acceptance of unrelated G04 recovery work.
 
 ## Actual before and after
 
@@ -54,9 +54,11 @@ These 75 focused cases are supplemental integration evidence and are **not added
 
 ## Portable evidence
 
-The [archive](artifacts/workspace-operation-batch-recovery-2026-10-30.tar.gz), [member/hash index](artifacts/workspace-operation-batch-recovery-evidence-index-2026-10-30.json), [regression receipt](artifacts/workspace-operation-batch-recovery-regression-2026-10-30.json), and [portable reconciler](artifacts/workspace-operation-batch-recovery-reconcile-2026-10-30.py) preserve the exact frozen owned sources, BEFORE/AFTER journals and private fixture evidence, six process cases, independent review, root integration, scripts, source/emitted manifests, final test reports, and every retained development log. Historical absolute fixture paths remain unchanged inside raw evidence.
+The [archive](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-operation-batch-recovery-2026-10-30.tar.gz), [member/hash index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-operation-batch-recovery-evidence-index-2026-10-30.json), [regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-operation-batch-recovery-regression-2026-10-30.json), and [portable reconciler](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-operation-batch-recovery-reconcile-2026-10-30.py) preserve the exact frozen owned sources, BEFORE/AFTER journals and private fixture evidence, six process cases, independent review, root integration, scripts, source/emitted manifests, final test reports, and every retained development log. Historical absolute fixture paths remain unchanged inside raw evidence.
 
 From any working directory, with this repository at `REPO`:
+
+Run these evidence commands in the [archived checkout](archive/README.md#verification-snapshot).
 
 ```sh
 python3 REPO/docs/artifacts/workspace-operation-batch-recovery-reconcile-2026-10-30.py

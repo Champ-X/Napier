@@ -23,7 +23,9 @@ The isolated architecture gate retains seven existing failures; the public API g
 
 ## Evidence and limits
 
-The [archive](artifacts/child-model-lifecycle-2026-10-30.tar.gz) and [member index](artifacts/child-model-lifecycle-evidence-index-2026-10-30.json) preserve original probes, intermediate failures, v1/v2/v3 patches and source manifests, raw tests, strict diagnostics and root integration/commit receipts. Verify hashes and exact case overlap without extracting or executing archive code:
+The [archive](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/child-model-lifecycle-2026-10-30.tar.gz) and [member index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/child-model-lifecycle-evidence-index-2026-10-30.json) preserve original probes, intermediate failures, v1/v2/v3 patches and source manifests, raw tests, strict diagnostics and root integration/commit receipts. Verify hashes and exact case overlap without extracting or executing archive code:
+
+Run these evidence commands in the [archived checkout](archive/README.md#verification-snapshot).
 
 ```sh
 python3 docs/artifacts/child-model-lifecycle-reconcile-2026-10-30.py

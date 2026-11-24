@@ -34,9 +34,9 @@ source 或 ledger 身份冲突会阻止该目标的整批恢复。身份预检�
 
 ## 验证与保留边界
 
-[冻结回归](artifacts/model-physical-usage-regression-2026-10-30.json) 为 78 文件／601 测试通过，覆盖本地 faux provider、真实 SQLite、loopback HTTP、SIGKILL、并发 replay、source／Store／ACK 故障窗口、主子取消、repair、compaction、evaluation、导入及续跑。Contracts／Runtime／Server 编译、Web／Harness／Benchmark 类型检查以及新增和其余修改测试的严格检查通过。4,004 个源码／配置文件、4,811 个 emitted 文件和 28 个用户文件摘要不变。测试计数不与各 owner 的重叠开发报告相加。
+[冻结回归](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/model-physical-usage-regression-2026-10-30.json) 为 78 文件／601 测试通过，覆盖本地 faux provider、真实 SQLite、loopback HTTP、SIGKILL、并发 replay、source／Store／ACK 故障窗口、主子取消、repair、compaction、evaluation、导入及续跑。Contracts／Runtime／Server 编译、Web／Harness／Benchmark 类型检查以及新增和其余修改测试的严格检查通过。4,004 个源码／配置文件、4,811 个 emitted 文件和 28 个用户文件摘要不变。测试计数不与各 owner 的重叠开发报告相加。
 
-[证据索引](artifacts/model-physical-usage-evidence-index-2026-10-30.json) 保留首次冻结验收 590／592 的失败：双 replayer 在 Store 初始化时读到不同 revision 的状态与事件统计，以及未声明免费 faux 模型导致 child 用量不完整。前者改为快照恢复、事件尾与损坏校验共享同步读取事务，确定性专项 9／9 通过；后者只给确切的合成 provider/id 添加免费声明，保留生产判定。复制未派发零值 DTO 绕过私有证明的独立反例、早期测试夹具错误和中途编译失败也保留。
+[证据索引](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/model-physical-usage-evidence-index-2026-10-30.json) 保留首次冻结验收 590／592 的失败：双 replayer 在 Store 初始化时读到不同 revision 的状态与事件统计，以及未声明免费 faux 模型导致 child 用量不完整。前者改为快照恢复、事件尾与损坏校验共享同步读取事务，确定性专项 9／9 通过；后者只给确切的合成 provider/id 添加免费声明，保留生产判定。复制未派发零值 DTO 绕过私有证明的独立反例、早期测试夹具错误和中途编译失败也保留。
 
 旧 `agent-runtime.test.ts` 的完整严格检查仍有 48 个错误；在原始 `d2e33ac3` 上复现完全相同的错误码、消息及多重集，路径和行列归一化后新增／消失均为零。这不是通过的类型覆盖。原有事件顺序测试也在旧 HEAD 失败；当前分别验证精确的父生命周期与 child checkpoint／reservation／response／terminal 绑定，原隔离断言保留。
 

@@ -55,10 +55,10 @@ and acceptance-generator rejection before collectors or artifact writes. The
 positive control does not make the overall release pass. Independent final
 boundary review passed 16 checks.
 
-The [final regression](artifacts/harness-corpus-regression-2026-10-30.json) records
+The [final regression](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-corpus-regression-2026-10-30.json) records
 compilation, strict test types, read-only inventory, historical verification,
 source/emitted hashes and preserved user files. The
-[evidence index](artifacts/harness-corpus-evidence-index-2026-10-30.json) retains
+[evidence index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-corpus-evidence-index-2026-10-30.json) retains
 earlier failed probes and an independently reproduced baseline: all 50 tests in
 `check-release-artifacts.test.mjs` fail during unchanged OCI fixture construction,
 before consumer assertions. Exact `31e9edb9` reproduces the same names, statuses,

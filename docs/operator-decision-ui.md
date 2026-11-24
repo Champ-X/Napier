@@ -10,9 +10,9 @@
 
 ## 当前证据
 
-- [浏览器收据](artifacts/operator-decision-ui-2026-10-29.json)：真实 HTTP、SQLite、Runtime、文件写工具和 Chromium，模型使用显式 faux provider。8 组观察覆盖正常、保存请求失败/响应丢失、继续请求失败/响应丢失、仅保存与跨会话后台完成。6 次续跑均各有一个答案事件、一个 continuation 和一次工具调用；每次结果文件内容核对一致。18 次 fixture 模型调用，0 外部模型请求。
+- [浏览器收据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/operator-decision-ui-2026-10-29.json)：真实 HTTP、SQLite、Runtime、文件写工具和 Chromium，模型使用显式 faux provider。8 组观察覆盖正常、保存请求失败/响应丢失、继续请求失败/响应丢失、仅保存与跨会话后台完成。6 次续跑均各有一个答案事件、一个 continuation 和一次工具调用；每次结果文件内容核对一致。18 次 fixture 模型调用，0 外部模型请求。
 - 1280×900、1440×900、1920×1080、1280×720、720×900、390×844、320×900 无 document 横向溢出，主操作通过 Playwright 的可达性检查；320px 下实际 Enter 提交并续跑成功。空输入提交焦点返回第一个选项。0 pageerror，0 外部页面请求。
-- [桌面截图](artifacts/operator-decision-ui-2026-10-29.json.screenshots/question-1440-900.png)与[窄窗口截图](artifacts/operator-decision-ui-2026-10-29.json.screenshots/question-320-900.png)保留原始捕获。窄截图处于滚动区域下半段并受固定工作台壳层裁剪，不能据其宣称整个问题同时可见或全部窄屏可用性完成。关闭文件侧栏后执行了实际主操作检查；工作台壳层与统一 overlay 的完整可用性验收仍归 G06-B。
+- [桌面截图](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/operator-decision-ui-2026-10-29.json.screenshots/question-1440-900.png)与[窄窗口截图](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/operator-decision-ui-2026-10-29.json.screenshots/question-320-900.png)保留原始捕获。窄截图处于滚动区域下半段并受固定工作台壳层裁剪，不能据其宣称整个问题同时可见或全部窄屏可用性完成。关闭文件侧栏后执行了实际主操作检查；工作台壳层与统一 overlay 的完整可用性验收仍归 G06-B。
 - 5 个相关 Web 测试文件共 107 个测试通过，包含 9 个真实 Hook/Panel 的异步与输入用例，以及已有 HTTP 请求封装、SSE 协议与线程流状态回归。Web 类型检查、生产构建、设计契约与 diff check 通过。
 - 架构检查仍有原 11 项；主 ViewModel 行数从 2317 降至 2238，仍高于 1884 预算。API 的答案/取消请求实现迁到已有 thread-run-api，公共 re-export 保持兼容，API 行数预算只下调至 1180。没有改写历史发布证据，也没有宣布全仓发布门槛通过。
 

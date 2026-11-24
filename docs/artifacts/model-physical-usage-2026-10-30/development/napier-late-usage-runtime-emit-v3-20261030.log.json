@@ -1,7 +1,0 @@
-{
-  "archiveEncoding": "json-utf8-text",
-  "originalPath": "/tmp/napier-late-usage-runtime-emit-v3-20261030.log",
-  "originalBytes": 103,
-  "originalSha256": "24cd54be06af130f6c5005e4a6f7c23ae4297e77acf4a22e6ddf7b8571f3a589",
-  "text": "packages/runtime/src/local-agent-runtime.ts(77,12): error TS2304: Cannot find name 'OsSandboxAdapter'.\n"
-}

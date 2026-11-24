@@ -1,7 +1,0 @@
-{
-  "kind": "napier.preserved-command-log",
-  "encoding": "utf-8",
-  "originalBytes": 1114,
-  "originalSha256": "a136fcbc33705d6cc4d8bdbd8b33d587df2798d0f9185dd8ee2905ca0b071fdd",
-  "text": "\n RUN  v4.1.9 /Users/champ/orca/Napier\n\n ✓ packages/runtime/test/agent-native-thinking-recovery.test.ts > recovers a native thinking-only terminal with fresh captures and exact physical usage 261ms\n ✓ packages/runtime/test/agent-native-thinking-recovery.test.ts > refreshes the physical debit before admitting a thinking retry under the Run hard budget 168ms\n ↓ packages/runtime/test/agent-native-thinking-recovery.test.ts > waits for this attempt's Store projection and ACK while quarantining late raw text and tools\n ↓ packages/runtime/test/agent-native-thinking-recovery.test.ts > does not retry when late physical readiness is incomplete\n ↓ packages/runtime/test/agent-native-thinking-recovery.test.ts > does not retry when late physical readiness is ack_failure\n ↓ packages/runtime/test/agent-native-thinking-recovery.test.ts > cancels a native recovery wait immediately and keeps later usage from reviving execution\n\n Test Files  1 passed (1)\n      Tests  2 passed | 4 skipped (6)\n   Start at  03:39:23\n   Duration  2.73s (transform 1.63s, setup 0ms, import 2.25s, tests 430ms, environment 0ms)\n\n"
-}

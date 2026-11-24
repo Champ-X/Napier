@@ -39,11 +39,13 @@ The records include process CPU, query plans, returned rows, complete output has
 
 ## Portable evidence
 
-The [regression receipt](artifacts/two-type-event-range-queries-regression-2026-10-30.json), [member/hash index](artifacts/two-type-event-range-queries-evidence-index-2026-10-30.json) and [compressed archive](artifacts/two-type-event-range-queries-2026-10-30.tar.gz) retain both source variants, selected emitted modules, complete source/emitted hash manifests, configs and lockfile, deterministic seed/measurement scripts, all raw timing records and plans, test reports, the rejected broad results and root verification.
+The [regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/two-type-event-range-queries-regression-2026-10-30.json), [member/hash index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/two-type-event-range-queries-evidence-index-2026-10-30.json) and [compressed archive](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/two-type-event-range-queries-2026-10-30.tar.gz) retain both source variants, selected emitted modules, complete source/emitted hash manifests, configs and lockfile, deterministic seed/measurement scripts, all raw timing records and plans, test reports, the rejected broad results and root verification.
 
 **No SQLite databases are archived.** The eight holdout database hashes, native event counts and exact payload byte checks are retained. The seed script deterministically regenerates the event data and refuses to overwrite prior measurements, but archived paths require rebasing and a fresh output directory. Database file bytes can vary with SQLite/runtime versions. Reconciliation checks recorded evidence; it cannot replay an omitted database or rerun timings.
 
 From any directory, with the repository at `REPO`:
+
+Run these evidence commands in the [archived checkout](archive/README.md#verification-snapshot).
 
 ```sh
 python3 REPO/docs/artifacts/two-type-event-range-queries-reconcile-2026-10-30.py

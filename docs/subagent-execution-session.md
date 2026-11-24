@@ -106,7 +106,7 @@ candidate merge. Tests of these future stages are still required.
 
 ## Verification of the first boundary fixes
 
-The [current regression receipt](artifacts/child-execution-boundaries-regression-2026-10-29.json)
+The [current regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/child-execution-boundaries-regression-2026-10-29.json)
 contains 10 files / 78 passing tests with exact source/test hashes. It includes
 real SQLite claim/reopen checks, fixture-provider tool catalogs, forbidden-call
 rejection, candidate patch/read/merge and the common admission structure audit.
@@ -187,7 +187,7 @@ candidate identity across crashes. The historical shared-session boundaries in
 this section describe that earlier stage; full compiler parity and late physical
 usage attribution remain open.
 
-The [shared-session regression receipt](artifacts/shared-model-session-regression-2026-10-29.json)
+The [shared-session regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/shared-model-session-regression-2026-10-29.json)
 binds 27 test files / 250 passing tests, no skips, and 1,971 unchanged source,
 test and configuration files across the final run. An independent 13-case
 actual main/child integration run binds another complete 2,246-file manifest.

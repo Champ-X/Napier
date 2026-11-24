@@ -104,17 +104,13 @@ state transitions. It is not full application or usability acceptance.
 
 ## Verification and remaining work
 
-Run `node scripts/check-subagent-child-runs.mjs OUTPUT.json` from the repository
-root. It compiles without deleting dist, runs the relevant Runtime/Web/benchmark
-and usage-campaign suites, checks new tests strictly, and records source/emitted
-hashes before/after plus the preserved user-file manifest. It separately retains
-the historical release source manifest, public API and architecture failures.
+Run `npm run test -w @napier/runtime -- test/subagent-child-execution-integration.test.ts` for the current regression. The October [capture script](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/scripts/check-subagent-child-runs.mjs) also recorded source and build hashes against a temporary manifest of 28 working files.
 
-The [final receipt](artifacts/subagent-child-runs-foundation-final-2026-10-29.json)
+The [final receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-child-runs-foundation-final-2026-10-29.json)
 records 381 passing tests across 57 files, zero failed/skipped tests, all required
 compilation/strict checks passing, 4,100 unchanged source/test/config files,
 67 unchanged emitted modules and all 28 preserved user files. The
-[first attempt](artifacts/subagent-child-runs-foundation-2026-10-29.json) retains
+[first attempt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-child-runs-foundation-2026-10-29.json) retains
 its strict-check command failure: it omitted the repository's exact optional
 property compiler semantics. The corrected command uses the project checking
 flags. The accidental helper reexport was removed; the two historical API
@@ -123,7 +119,7 @@ Eight existing architecture failures and the release source-manifest mismatch
 remain; no budgets were raised or manifests regenerated.
 
 Independent baseline and browser/effect evidence are linked in the
-[evidence index](artifacts/subagent-child-runs-evidence-index-2026-10-29.json).
+[evidence index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-child-runs-evidence-index-2026-10-29.json).
 These overlapping reports are not additive. Local `/tmp` raw evidence is
 ephemeral; embedded handoffs preserve its paths, hashes and interpretation. Failed
 intermediate attempts remain distinct from behavior failures on frozen

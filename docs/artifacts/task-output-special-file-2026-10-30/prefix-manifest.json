@@ -1,7 +1,0 @@
-{
-  "baseHead": "1d041856017773ec915d9e92f575df33c1d65afd",
-  "cwd": "/tmp/napier-candidate-inspection-verify-20261030",
-  "sourceBefore": "a860030d19a8c33ced5663cd219e0d5e1b1d7bf26790fd6c32d5dc0606b6dab2",
-  "testBefore": "6dacc0fcab41e17e207d9f1870ec2f28b2ab2dcc6d7e536dffedff96ac13064b",
-  "buildProvenance": "Unmodified exact emitted artifacts copied from accepted Host snapshot; source tests import current isolated TS source. Final source will be compiled separately."
-}

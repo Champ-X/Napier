@@ -7,7 +7,7 @@ model quality, billing, or end-to-end latency improvements.
 
 ```sh
 node scripts/profile-harness-preparation.mjs \
-  docs/artifacts/<new-profile>.json
+  benchmark-results/preparation-profile.json
 ```
 
 The standard scales are 10,000/100,000 synthetic events and 1,000/10,000 reviewed
@@ -56,7 +56,7 @@ remains open.
 
 ## Baseline captured on 2026-10-29
 
-The [bound baseline](artifacts/harness-preparation-baseline-2026-10-29.json)
+The [bound baseline](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-preparation-baseline-2026-10-29.json)
 completed all 12 observations with unchanged selected source/build bindings and
 zero model invocations. This is a local worktree snapshot, including compiled
 rotation-lifecycle work already present before capture, not a clean release.
@@ -109,7 +109,7 @@ remain authoritative. There is no cross-invocation freshness cache. Stable
 inputs preserve context and semantic receipts; a source changed during indexing
 is intentionally excluded even where the old implementation could retain it.
 
-The [candidate regression receipt](artifacts/incremental-preparation-regression-2026-10-29.json)
+The [candidate regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/incremental-preparation-regression-2026-10-29.json)
 records 8 files and 127 passing tests. These cover full-replay equality at each
 prefix, late/duplicate terminals, policy changes, failed or malformed deltas,
 serialized refreshes, real SQLite query isolation, the production Run/preflight
@@ -121,9 +121,12 @@ execution in those tests is not a live-model quality evaluation.
 Run `node scripts/compare-harness-preparation.mjs <new-receipt.json>` after
 compiling Runtime and Contracts. `--smoke` uses 300 events, enough to exercise
 the actual loop trigger. Every invocation refuses to overwrite its receipt and
-retains its private raw directory under ignored `benchmark-results/`.
+saves worker reports, logs, fixture seeds and the reference implementation in a
+private directory under `benchmark-results/`. After the receipt is written, a
+successful run removes the workers’ disposable SQLite and index copies. Pass
+`--keep-workdirs` to inspect those copies. Failed runs retain them for diagnosis.
 
-The [successful comparison](artifacts/harness-preparation-comparison-2026-10-29-v2.json)
+The [successful comparison](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-preparation-comparison-2026-10-29-v2.json)
 uses unchanged Runtime source from `0560f00944804b151086269b190377c6f8a0a7ce`,
 materialized with its complete 84-module relative import closure. Original Git
 blob IDs, source/emitted hashes and import edges are retained. Both arms share
@@ -139,7 +142,7 @@ cases cover stable and conflicting versions, inter-invocation edits/restoration,
 revoked/expired/foreign/unreviewed facts, missing/invalid/escaped sources and the
 intentional during-index freshness difference. The latter retains both unsafe
 old facts in the reference and excludes both from the candidate and its index.
-An [independent verification](artifacts/incremental-preparation-verification-2026-10-29.json)
+An [independent verification](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/incremental-preparation-verification-2026-10-29.json)
 checks the current source/build/script bindings, Git blobs, worker report hashes,
 all paired semantics, all 16 trigger stages and the 28 preserved user files.
 
@@ -184,7 +187,7 @@ claimed. CPU/JSON samples and unfavorable observations remain in the receipts.
 For example, probe-on cold 10k-fact preparation had a larger sampled RSS increase
 in the candidate (57.19–57.39 MiB) than in the reference (37.69–38.66 MiB).
 
-The [first full attempt](artifacts/harness-preparation-comparison-2026-10-29.json)
+The [first full attempt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-preparation-comparison-2026-10-29.json)
 is retained as failed evidence: the fixture assigned a model category to the
 system-category loop-trigger event, which the production registry rejected.
 After correcting the script and extending smoke coverage to that branch, the
@@ -193,11 +196,11 @@ faster successful trial. Mailbox cursors, broader memory-index maintenance,
 complete pre-call profiling and G02-bound model/task-family ablations remain
 unfinished; there were zero model requests in this comparison.
 
-Smoke history is also retained: [v1](artifacts/harness-preparation-comparison-smoke-2026-10-29-v1.json)
-used a nonexistent store accessor; [v2](artifacts/harness-preparation-comparison-smoke-2026-10-29-v2.json)
+Smoke history is also retained: [v1](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-preparation-comparison-smoke-2026-10-29-v1.json)
+used a nonexistent store accessor; [v2](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-preparation-comparison-smoke-2026-10-29-v2.json)
 had a cleanup exception that obscured its earlier failure. Its 50-fact read-count
 expectation was also corrected to account for only 18 reused paths.
-[v3](artifacts/harness-preparation-comparison-smoke-2026-10-29-v3.json) passed but
-did not exercise a trigger; [v4](artifacts/harness-preparation-comparison-smoke-2026-10-29-v4.json)
+[v3](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-preparation-comparison-smoke-2026-10-29-v3.json) passed but
+did not exercise a trigger; [v4](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-preparation-comparison-smoke-2026-10-29-v4.json)
 uses 300 events and covers it. These development receipts are not additional
 independent performance trials.

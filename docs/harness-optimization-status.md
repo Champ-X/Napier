@@ -24,8 +24,8 @@ Contracts、Runtime、CLI、Server、Web 五个包的类型检查均通过；`gi
 
 ## 证据
 
-- [本次审查、停止与费用收尾](artifacts/harness-rapid-closeout-2026-09-15.json)
+- [本次审查、停止与费用收尾](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/harness-rapid-closeout-2026-09-15.json)
 - [十一组统计](artifacts/bounded-eleven-pair-statistics-2026-09-15.json)
 - [异步队列失败与隔离复现](artifacts/bounded-queue-contract-failure-2026-09-15.json)
-- [既有定向离线验证索引](artifacts/bounded-thinking-test-report-index-2026-09-15.json)
-- [设计及历史实施记录](harness-optimization-implementation.md)
+- [既有定向离线验证索引](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/bounded-thinking-test-report-index-2026-09-15.json)
+- [设计及历史实施记录](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/harness-optimization-implementation.md)

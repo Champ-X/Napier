@@ -1,22 +1,29 @@
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
-import { access, mkdir, mkdtemp, open, readFile, readdir, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, open, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
+import { parseArgs, promisify } from "node:util";
 import { createComparisonFixture, digest } from "./harness-preparation-comparison-fixture.mjs";
 import { materializePreparationReference, REFERENCE_COMMIT, verifyPreparationReference } from "./harness-preparation-comparison-reference.mjs";
 import { comparePreparationSemantics } from "./harness-preparation-comparison-semantics.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const execute = promisify(execFile);
-const args = process.argv.slice(2), smoke = args[0] === "--smoke";
-if (smoke) args.shift();
-assert.equal(args.length, 1, "Usage: node scripts/compare-harness-preparation.mjs [--smoke] <new-receipt.json>");
-const output = path.resolve(args[0]);
+const { values, positionals } = parseArgs({
+  options: {
+    smoke: { type: "boolean", default: false },
+    "keep-workdirs": { type: "boolean", default: false },
+  },
+  allowPositionals: true,
+});
+assert.equal(positionals.length, 1, "Usage: node scripts/compare-harness-preparation.mjs [--smoke] [--keep-workdirs] <new-receipt.json>");
+const { smoke } = values;
+const output = path.resolve(positionals[0]);
 await access(output).then(() => { throw new Error("Refusing to overwrite evidence"); }, (error) => { if (error.code !== "ENOENT") throw error; });
 const before = await bindings();
 await mkdir(path.join(root, "benchmark-results"), { recursive: true });
 const raw = await mkdtemp(path.join(root, "benchmark-results", "harness-preparation-comparison-"));
+const workerCopies = path.join(raw, "worker-copies");
 const referenceDirectory = path.join(raw, "reference", "runtime");
 const runtime = path.join(root, "packages/runtime/dist");
 const workers = [], comparisons = [], overhead = [];
@@ -34,7 +41,7 @@ try {
         const id = `${instrumented ? "probe-on" : "probe-off"}-${order}-${arm}`;
         const workerOutput = path.join(raw, `${id}.json`);
         const options = { fixture: path.join(raw, "fixture", "fixture-manifest.json"), reference: referenceDirectory, runtime, arm, order, instrumented,
-          work: path.join(raw, id), output: workerOutput };
+          work: path.join(workerCopies, id), output: workerOutput };
         const processResult = await worker(options, id);
         let content;
         try { content = await readFile(workerOutput); } catch (error) {
@@ -101,6 +108,9 @@ const result = { kind: "napier.harness-preparation-comparison", schemaVersion: 1
   ...(failure ? { error: { message: String(failure), stack: failure.stack } } : {}),
 };
 await mkdir(path.dirname(output), { recursive: true }); await writeFile(output, JSON.stringify(result, null, 2) + "\n", { flag: "wx" });
+if (!failure && !values["keep-workdirs"]) {
+  await rm(workerCopies, { recursive: true, force: true });
+}
 console.log(JSON.stringify({ output, success: !failure, workers: workers.length, comparisons: comparisons.length, error: failure ? String(failure) : null }));
 if (failure) process.exitCode = 1;
 

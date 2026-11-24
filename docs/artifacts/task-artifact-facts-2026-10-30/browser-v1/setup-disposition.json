@@ -1,6 +1,0 @@
-{
-  "setupFailure": true,
-  "browserCasesExecuted": 0,
-  "reason": "Fixture appended plan.artifact.produced even when repeated produced update correctly retained verified state unchanged; persisted validation rejected mismatched event type. Fixture now mirrors revision guard and actual status used by HTTP handler.",
-  "productionSourceChanged": false
-}

@@ -103,14 +103,10 @@ are never removed to repair a later quota/sync failure.
 
 ## Verification and remaining work
 
-`node scripts/check-subagent-child-runs.mjs OUTPUT.json` records compilation,
-strict types, local fixture regressions, before/after source and emitted hashes,
-the preserved user files, and separate historical release/API/architecture
-failures. Independent receipts retain failed fixture setup separately from
-behavioral failures and do not add overlapping test counts.
+Run `npm run test -w @napier/runtime -- test/subagent-working-set-integration.test.ts` for the current regression. The October [capture script](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/scripts/check-subagent-child-runs.mjs) also recorded source and build hashes against a temporary manifest of 28 working files.
 
-The [combined receipt](artifacts/subagent-working-set-regression-final-v2-2026-10-29.json)
-and [independent evidence index](artifacts/subagent-working-set-evidence-index-2026-10-29.json)
+The [combined receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-working-set-regression-final-v2-2026-10-29.json)
+and [independent evidence index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-working-set-evidence-index-2026-10-29.json)
 bind the implementation and test snapshots. The first combined attempt retained
 an invalid supervisor-tool fixture and a real main-session cancellation race.
 The fixture now extracts Task/execution IDs instead of spreading a handle's

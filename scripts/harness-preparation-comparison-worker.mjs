@@ -98,8 +98,11 @@ try {
       if (previousContext) assert.equal(sample.outputSha256, previousContext, "Warm context changed");
       previousContext = sample.outputSha256;
       if (probe) {
-        const expectedReads = options.arm === "baseline" && !options.baselineDependencyReuse
-          ? workload.factCount : workload.uniquePaths + workload.reusedPaths;
+        const referenceReads = options.baselineDependencyReuse
+          ? workload.uniquePaths + workload.reusedPaths
+          : workload.factCount;
+        // The current runtime rechecks every observed path after ranking.
+        const expectedReads = options.arm === "baseline" ? referenceReads : 2 * workload.uniquePaths;
         assert.equal(sample.metrics.fileReadCalls, expectedReads, "Observed dependency read count differs from the declared workload");
       }
     }

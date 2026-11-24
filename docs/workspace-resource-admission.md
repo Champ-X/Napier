@@ -179,7 +179,7 @@ readiness-only sandbox. No external model requests are made. Historical receipts
 remain unchanged; current worktree evidence includes retained user Web changes
 and is not a clean release receipt.
 
-The current [receipt](artifacts/workspace-resource-coordination-current-2026-10-29.json)
+The current [receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-resource-coordination-current-2026-10-29.json)
 records **170 passed tests across 19 files** (110 Runtime and 60 Server), plus
 1440px/320px browser verification with no page errors, response-identity mismatch
 or horizontal overflow. Runtime/Server compilation and strict admission-test
@@ -187,20 +187,20 @@ typechecking passed. Architecture retains its ten existing failures and public
 API its two existing root-surface failures; no budgets or compatibility baselines
 were raised.
 
-The [first receipt](artifacts/workspace-resource-coordination-2026-10-29.json)
+The [first receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-resource-coordination-2026-10-29.json)
 preserves the earlier 167-test snapshot before long-cache/reasoning/cost-component
 partial-observation handling was completed. A subsequent capture exposed a test
 race: Run completion preceded the scheduler's persisted `lastRunId`. The fixture
 now waits for both durable outcomes; production scheduling was unchanged. The
-[failed capture record](artifacts/workspace-resource-coordination-capture-failure-2026-10-29.json)
+[failed capture record](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-resource-coordination-capture-failure-2026-10-29.json)
 preserves the assertion and source bindings, and points to retained raw diagnostics.
 
 ## Execution resource verification
 
-The [unit snapshot](artifacts/execution-resource-unit-regression-2026-10-29.json)
+The [unit snapshot](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/execution-resource-unit-regression-2026-10-29.json)
 records 296 passed tests across 42 files (237 Runtime, 59 Server) before the final
 malformed-proof fixes. It is preserved unchanged. The
-[final targeted regression](artifacts/execution-resource-final-regression-2026-10-29.json)
+[final targeted regression](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/execution-resource-final-regression-2026-10-29.json)
 records 44 passed tests across four Server files after those fixes, including
 real SQLite shutdown, two-process capacity contention and malformed evidence.
 Three added cases failed on the earlier source: regular-expression coercion
@@ -221,7 +221,7 @@ host shutdown, and SIGKILL followed by independent target observation and durabl
 quarantine after reopen. HostDirect supplies no OS isolation. BrowserUse local
 and cloud tasks have no live physical/provider acceptance in this capture.
 
-The [final physical v2 receipt](artifacts/execution-resource-physical-coordination-2026-10-29-v2.json)
+The [final physical v2 receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/execution-resource-physical-coordination-2026-10-29-v2.json)
 records 11 passed assertions and three inspected A/B/A preview screenshots, with
 six source/build trees bound independently and unchanged. It observes 22 Chromium
 background attempts at the local proxy, all 22 rejected. After all three proxies
@@ -230,10 +230,10 @@ bytes are zero; model invocations are zero. This is production proxy evidence,
 not a system-wide packet trace. Targets were Chromium time/account/search
 background endpoints; they were not workspace asset requests.
 
-The [first failed capture](artifacts/execution-resource-physical-coordination-2026-10-29.json.failure-ed910cc3-9893-479e-85f2-d66d075dd8fc.json)
+The [first failed capture](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/execution-resource-physical-coordination-2026-10-29.json.failure-ed910cc3-9893-479e-85f2-d66d075dd8fc.json)
 used an incorrect total-proxy-request-equals-zero assertion; the exact attempted
 targets were not returned before that helper failure. The
-[first successful capture](artifacts/execution-resource-physical-coordination-2026-10-29.json)
+[first successful capture](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/execution-resource-physical-coordination-2026-10-29.json)
 passed the physical resource assertions but sampled network counters before
 close. V2 adds final post-close accounting of every passively recorded request;
 all prior receipts and raw diagnostics remain unchanged.
@@ -262,7 +262,7 @@ other siblings finish. Ordinary discovery errors still follow existing persisted
 outcome semantics. A rejected manual claim that created no owned work does not
 permanently pin the graph.
 
-The [regression receipt](artifacts/rotation-reclamation-regression-2026-10-29.json)
+The [regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/rotation-reclamation-regression-2026-10-29.json)
 records 38 unique passed tests in seven files. Two delayed-sibling cases fail on
 the fixed earlier source because stop finishes before the sibling; the exact
 same tests pass after the change. The raw red/green reports, old/restored source
@@ -271,7 +271,7 @@ test TypeScript pass. Architecture retains nine failures, with the old server
 subscription line allowance lowered from 919 to 909; public API retains its two
 existing failures.
 
-The [physical reclaim receipt](artifacts/workspace-resource-reclaim-2026-10-29.json)
+The [physical reclaim receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-resource-reclaim-2026-10-29.json)
 passes ten checks using a real guarded process and native Chromium. After their
 affirmative cleanup, `maxIdle: 0` retires A and the old SQLite store rejects reads.
 Scoped loopback TCP HTTP then creates a new graph for A at the same custom data
@@ -298,9 +298,9 @@ existing POSIX Guardian boundary. The direct target exits with code zero while
 its quickly detached child remains alive. The fixture subsequently verifies the
 owned child's exact script/nonce/birth identity, kills only that PID and confirms
 its absence, then removes the temporary directory. The final
-[source/build-bound receipt](artifacts/sandbox-execution-lifetime-final-2026-10-29.json)
+[source/build-bound receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/sandbox-execution-lifetime-final-2026-10-29.json)
 records that counterexample and completed cleanup. The initial
-[baseline receipt](artifacts/sandbox-execution-lifetime-baseline-2026-10-29.json)
+[baseline receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/sandbox-execution-lifetime-baseline-2026-10-29.json)
 is preserved before the verifier's exceptional cleanup was strengthened. The
 final verifier was also checked with an injected post-observation assertion
 failure and an existing output path; both cleaned up the owned descendant.
@@ -362,7 +362,7 @@ file and directory fsync, maintaining a simple validation/publish/release order.
 This can increase writer waiting during slow I/O; latency has not been measured.
 The new protocol does not claim a performance improvement.
 
-The [current regression receipt](artifacts/resource-complete-receipt-recovery-2026-10-29.json)
+The [current regression receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/resource-complete-receipt-recovery-2026-10-29.json)
 contains 4 files / 57 passing tests, including 27 recovery cases. It covers real
 owner/target subprocesses, SQLite failure injection, live-owner retention,
 malformed and non-private files, symlink/hardlink rejection, invalid UTF-8,

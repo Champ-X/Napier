@@ -1,3 +1,0 @@
-error TS2688: Cannot find type definition file for '/Users/champ/orca/Napier/apps/web/node_modules/vite/client'.
-  The file is in the program because:
-    Entry point of type library '/Users/champ/orca/Napier/apps/web/node_modules/vite/client' specified in compilerOptions

@@ -1,8 +1,0 @@
-{
-  "kind": "napier.archived-log",
-  "originalPath": "/var/folders/8m/cpn6ln_s0s7_ng882hksjphm0000gn/T/napier-g02-root-final-h5umr22j/new-local-contract-evidence.log",
-  "originalBytes": 178,
-  "originalSha256": "190b9452aa6a114c09724b30d95f6460a15b58633ec85bf39568014334b8187c",
-  "encoding": "utf-8",
-  "text": "{\"outputPath\":\"docs/artifacts/harness-experiment-contract-evidence-0.1.5.json\",\"runCount\":360,\"contentSha256\":\"869d2ab0282011ee48c295f0ff99ef2700e2babf255c45faeddc1d0fea5253eb\"}\n"
-}

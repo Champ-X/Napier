@@ -121,7 +121,7 @@ timer/Runtime/SQLite/HTTP interactions are real; it is not a browser navigation
 acceptance test. Its disposal predicate covers its Runs and schedules only.
 Process death tests cover registry ownership, not general interrupted execution
 recovery. The source-bound receipt is
-[workspace-runtime-registry-2026-10-29.json](artifacts/workspace-runtime-registry-2026-10-29.json).
+[workspace-runtime-registry-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-runtime-registry-2026-10-29.json).
 
 ## Remaining G05-B integration
 
@@ -155,7 +155,7 @@ finishes, and an independent production `index.ts` process reopens both complete
 ledgers with their custom data roots. HTML interaction uses a DOM button click.
 
 The source/build-bound receipt is
-[workspace-runtime-integration-2026-10-29.json](artifacts/workspace-runtime-integration-2026-10-29.json).
+[workspace-runtime-integration-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-runtime-integration-2026-10-29.json).
 It includes retained user Web changes, so it is worktree evidence rather than a
 clean-commit release receipt. Fixture models make zero external model requests.
 The earlier foundational receipt remains unchanged and accurately describes its
@@ -173,7 +173,7 @@ each response identity, restored custom data root, workspace-specific answer, an
 persisted assessment/attempt records.
 
 The receipt is
-[workspace-runtime-recovery-2026-10-29.json](artifacts/workspace-runtime-recovery-2026-10-29.json).
+[workspace-runtime-recovery-2026-10-29.json](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-runtime-recovery-2026-10-29.json).
 It records three independent child PIDs and an observed 3209 ms from SIGKILL to A/B
 completion (one observation). This uses the production host and real recovery
 workers with a locally injected faux provider and readiness-only sandbox. The
@@ -183,7 +183,7 @@ isolation, or live-model quality. External model requests: zero.
 
 ## Approval and extension trust-review isolation
 
-The [approval/review receipt](artifacts/workspace-approval-review-2026-10-29.json)
+The [approval/review receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/workspace-approval-review-2026-10-29.json)
 covers actual production `index.ts` across three clean process launches. Closed
 SQLite copies deliberately retain the same thread, decision, Workflow plan and
 extension IDs. The real sidebar moves A to B; B's source approval, saved answer

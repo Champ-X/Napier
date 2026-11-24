@@ -107,17 +107,13 @@ unavailable; imported copies do not inherit write authority.
 
 ## Evidence and remaining work
 
-Run `node scripts/check-subagent-child-runs.mjs OUTPUT.json` from the repository
-root. The runner records the complete required compilation, strict-test checks,
-local regression suites, source/emitted hashes and the 28 preserved user files.
-Historical architecture, public API and release-manifest failures remain separate
-and are not regenerated as acceptance evidence.
+Run `npm run test -w @napier/runtime -- test/subagent-continuation-process.test.ts` for the current regression. The October [capture script](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/scripts/check-subagent-child-runs.mjs) also recorded source and build hashes against a temporary manifest of 28 working files.
 
-The [final combined receipt](artifacts/subagent-safe-continuation-regression-final-2026-10-30.json)
+The [final combined receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-safe-continuation-regression-final-2026-10-30.json)
 records 566 passing tests across 80 files, no failures/skips, passing required
 compilation/strict checks, 4,158 stable source/test/config hashes, 65 stable emitted
 module hashes and all 28 preserved user files. The
-[evidence index](artifacts/subagent-safe-continuation-evidence-index-2026-10-30.json)
+[evidence index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/subagent-safe-continuation-evidence-index-2026-10-30.json)
 retains independent handoffs, review counterexamples and earlier failed attempts;
 overlapping focused counts are not added together.
 

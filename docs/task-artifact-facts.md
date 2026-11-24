@@ -14,7 +14,7 @@ Different artifact identities are selected by creation/declaration order. A late
 
 ## Verification and retained counterexamples
 
-The [delivery receipt](artifacts/task-artifact-facts-regression-2026-10-30.json) binds the 20 committed source/test/CSS files to tree `070547477f6d97d73639110d66b654b192a448e5`. The 19-file logical candidate was independently compiled and tested in tree `2429b60835e78659eccf1ea3812c1e56f2fda83d`; the additional CSS file has separate production-build and browser evidence.
+The [delivery receipt](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/task-artifact-facts-regression-2026-10-30.json) binds the 20 committed source/test/CSS files to tree `070547477f6d97d73639110d66b654b192a448e5`. The 19-file logical candidate was independently compiled and tested in tree `2429b60835e78659eccf1ea3812c1e56f2fda83d`; the additional CSS file has separate production-build and browser evidence.
 
 | Evidence | Recorded result and scope |
 | --- | --- |
@@ -31,13 +31,15 @@ Browser v1 and v2 failed during fixture setup and executed zero browser cases. B
 
 Seven preexisting isolated architecture findings remain, plus Runtime root exports 1897/1896, internal exports 18/16 and both semantic-digest mismatches. The 48 old `agent-runtime.test.ts` strict diagnostics still match baseline `d2e33ac3` after normalization. The UI detector retains one unrelated preexisting diff-pane accent-border warning. No budgets, compatibility digests or old release records were rewritten.
 
-The [documentation check](artifacts/task-artifact-facts-documentation-check-2026-10-30.json) retains five whitespace findings in three raw historical evidence files. Their original bytes and hashes are preserved; the final evidence commit was not whitespace-clean. The authored source/CSS diff check passed before its separate implementation commit.
+The [documentation check](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/task-artifact-facts-documentation-check-2026-10-30.json) retains five whitespace findings in three raw historical evidence files. Their original bytes and hashes are preserved; the final evidence commit was not whitespace-clean. The authored source/CSS diff check passed before its separate implementation commit.
 
 ## Remaining boundaries
 
 A current observation establishes bytes seen while producing that response. It does not establish future immutability or whole-objective acceptance. Directories and URLs are unchecked in this slice. Whole-objective status remains unverified/partial as appropriate, with no new mandatory operator acceptance gate. Tool-only discovery, a complete historical byte archive, independent whole-goal acceptance sources, migration of every artifact-card consumer, and full G01 acceptance remain unfinished. Physical mobile, dark mode, screen-reader acceptance, model quality and general performance improvement are not claimed.
 
-The [hash index](artifacts/task-artifact-facts-evidence-index-2026-10-30.json) maps unchanged raw receipts to their historical temporary paths. The archived [reconciliation script](artifacts/task-artifact-facts-2026-10-30/reconcile.py) verifies the committed source hashes, receipt relationships and every archived byte without requiring temporary files:
+The [hash index](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/task-artifact-facts-evidence-index-2026-10-30.json) maps unchanged raw receipts to their historical temporary paths. The archived [reconciliation script](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/artifacts/task-artifact-facts-2026-10-30/reconcile.py) verifies the committed source hashes, receipt relationships and every archived byte without requiring temporary files:
+
+Run these evidence commands in the [archived checkout](archive/README.md#verification-snapshot).
 
 ```sh
 python3 docs/artifacts/task-artifact-facts-2026-10-30/reconcile.py --check

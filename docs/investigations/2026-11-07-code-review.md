@@ -42,14 +42,9 @@ Napier 已有相当完整的本地 Agent 执行、SQLite 账本、恢复、工�
 | RPC：单个 1 MiB 块 | 0.068 ms | 0.061 ms | 同上；单块原本没有反复复制 |
 | 恢复检查点＋orchestration，1000 事件 | 2.639 ms | 1.300 ms | 5 次预热、30 对交替样本，结果相同 |
 
-完整样本见 [RPC 数据](2026-11-07-review/rpc-benchmark.json)、[恢复投影数据](2026-11-07-review/recovery-projection-benchmark.json)。RPC 每个活跃连接最多保留已增长的缓冲容量（默认上限 1 MiB），以换取碎片处理的线性复制开销。
+完整样本见 [RPC 数据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/investigations/2026-11-07-review/rpc-benchmark.json)、[恢复投影数据](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/investigations/2026-11-07-review/recovery-projection-benchmark.json)。RPC 每个活跃连接最多保留已增长的缓冲容量（默认上限 1 MiB），以换取碎片处理的线性复制开销。
 
-从仓库根目录复测（省略输出文件参数时不会覆盖留档数据）：
-
-```sh
-node docs/investigations/2026-11-07-review/benchmark-rpc.mjs
-node --import tsx docs/investigations/2026-11-07-review/benchmark-recovery.mjs
-```
+两项微基准的脚本、完整样本和运行命令见[原始审查记录](https://github.com/Champ-X/Napier/blob/b18a1d7fef48161f0aba4815c7685b38bf09660b/docs/investigations/2026-11-07-code-review.md)。
 
 ## 验证记录
 
