@@ -202,7 +202,195 @@ describe("Kernel projection registry", () => {
     ).rejects.toThrow("watermark mismatch");
     expect(registry.inspect()).toEqual([]);
   });
+
+  it("rejects a sequence gap without advancing a cached watermark", async () => {
+    const registry = new KernelProjectionRegistry();
+    const definition = counterProjection(1, 0);
+    registry.register(definition);
+    const input = {
+      definition,
+      subjectId: THREAD_ID,
+      seed: undefined,
+      sourceIdentity: { threadId: THREAD_ID },
+    };
+    await registry.project({
+      ...input,
+      sourceWatermark: 1,
+      loadEvents: async () => [event(1, "projection.incremented", {})],
+    });
+
+    await expect(
+      registry.project({
+        ...input,
+        sourceWatermark: 3,
+        loadEvents: async () => [event(3, "projection.incremented", {})],
+      }),
+    ).rejects.toThrow("tail is not contiguous");
+    expect(registry.inspect()).toEqual([
+      expect.objectContaining({ eventWatermark: 1 }),
+    ]);
+  });
 });
+
+describe.each(["bounded range", "listEvents fallback"] as const)(
+  "Detail projections with interleaved history through %s",
+  (reader) => {
+    it.each([
+      ["active plan", ActivePlanProjectionService],
+      ["messages", ConversationMessagesProjectionService],
+      ["artifacts", ConversationArtifactsProjectionService],
+      ["operator decisions", OperatorDecisionsProjectionService],
+      ["activity events", ConversationActivityEventsProjectionService],
+      ["citations", ConversationCitationsProjectionService],
+    ] as const)(
+      "preserves cold, warm, and irrelevant-only tails for %s",
+      async (name, Service) => {
+        const registry = new KernelProjectionRegistry();
+        const thread = projectionThread();
+        const events = [
+          event(1, "run.started", { status: "running" }),
+          event(2, "message.user", {
+            role: "user",
+            text: "Keep this message.",
+          }),
+          event(3, "plan.created", { planId: "plan_projection" }),
+          event(
+            4,
+            "operator.decision.requested",
+            createOperatorDecisionRequestedPayload({
+              decisionId: "decision_interleaved",
+              request: {
+                header: "Scope",
+                question: "Which scope?",
+                options: [
+                  { label: "One", description: "First scope." },
+                  { label: "Two", description: "Second scope." },
+                ],
+                multiSelect: false,
+              },
+            }),
+          ),
+          event(5, "tool.started", {
+            callId: "call_read",
+            toolName: "read_file",
+          }),
+          citationEvent(6),
+          event(7, "run.completed", { status: "completed" }),
+          // Readers can observe a later append than the captured source watermark.
+          event(8, "message.user", {
+            role: "user",
+            text: "Outside this snapshot.",
+          }),
+        ];
+        thread.eventCount = 7;
+        const listEvents = vi.fn(async (_threadId: string, afterSeq = 0) =>
+          events.filter((candidate) => candidate.seq > afterSeq),
+        );
+        const listEventsRange = vi.fn(
+          async (
+            _threadId: string,
+            fromSeq: number,
+            toSeq: number,
+            types?: readonly string[],
+          ) =>
+            events.filter(
+              (candidate) =>
+                candidate.seq >= fromSeq &&
+                candidate.seq <= toSeq &&
+                (types === undefined || types.includes(candidate.type)),
+            ),
+        );
+        const store = {
+          getThread: () => structuredClone(thread),
+          listEvents,
+          ...(reader === "bounded range" ? { listEventsRange } : {}),
+          listPlans: () => [],
+          listRuns: () => [],
+        };
+        const service = new Service(registry, store);
+
+        try {
+          const cold = await service.project(thread.id);
+          expect(cold).toEqual(
+            expect.objectContaining({
+              cacheHit: false,
+              eventWatermark: 7,
+              appliedEventCount: 7,
+            }),
+          );
+          const expectedViews = {
+            "active plan": undefined,
+            messages: [
+              expect.objectContaining({ seq: 2, text: "Keep this message." }),
+            ],
+            artifacts: [],
+            "operator decisions": [
+              expect.objectContaining({
+                id: "decision_interleaved",
+                status: "pending",
+              }),
+            ],
+            "activity events": [events[4], events[5]],
+            citations: [
+              expect.objectContaining({
+                seq: 6,
+                citationId: "citation_projection1",
+              }),
+            ],
+          };
+          expect(cold.view).toEqual(expectedViews[name]);
+          await expect(service.project(thread.id)).resolves.toEqual(
+            expect.objectContaining({
+              cacheHit: true,
+              eventWatermark: 7,
+              appliedEventCount: 0,
+              view: cold.view,
+            }),
+          );
+
+          events.splice(
+            7,
+            1,
+            event(8, "projection.ignored", {}),
+            event(9, "projection.ignored", {}),
+          );
+          thread.eventCount = 9;
+          await expect(service.project(thread.id)).resolves.toEqual(
+            expect.objectContaining({
+              cacheHit: true,
+              eventWatermark: 9,
+              appliedEventCount: 2,
+              view: cold.view,
+            }),
+          );
+          await expect(service.project(thread.id)).resolves.toEqual(
+            expect.objectContaining({
+              cacheHit: true,
+              eventWatermark: 9,
+              appliedEventCount: 0,
+              view: cold.view,
+            }),
+          );
+
+          if (reader === "bounded range") {
+            expect(listEvents).not.toHaveBeenCalled();
+            expect(listEventsRange.mock.calls).toEqual([
+              [thread.id, 1, 7],
+              [thread.id, 8, 9],
+            ]);
+          } else {
+            expect(listEvents.mock.calls).toEqual([
+              [thread.id, 0],
+              [thread.id, 7],
+            ]);
+          }
+        } finally {
+          registry.shutdown();
+        }
+      },
+    );
+  },
+);
 
 describe("Thread summary projection", () => {
   it("matches the Store summary contract and follows trash visibility by tail replay", async () => {

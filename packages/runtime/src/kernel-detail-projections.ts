@@ -32,55 +32,8 @@ import {
 } from "./kernel-projection-event-loader.js";
 import {
   applyOperatorDecisionEvent,
-  OPERATOR_DECISION_ANSWERED_EVENT,
-  OPERATOR_DECISION_CANCELLED_EVENT,
-  OPERATOR_DECISION_CONTINUED_EVENT,
-  OPERATOR_DECISION_REQUESTED_EVENT,
   operatorDecisionProjectionView,
 } from "./operator-decisions.js";
-
-const ACTIVE_PLAN_EVENT_TYPES = [
-  "plan.artifact.candidate",
-  "plan.artifact.missing",
-  "plan.artifact.produced",
-  "plan.artifact.expected",
-  "plan.artifact.superseded",
-  "plan.artifact.verified",
-  "plan.blueprint.reused",
-  "plan.blueprint.saved",
-  "plan.created",
-  "plan.replanned",
-  "plan.step.blocked",
-  "plan.step.completed",
-  "plan.step.partial",
-  "plan.step.reopened",
-  "plan.step.skipped",
-  "plan.step.started",
-] as const;
-
-const CONVERSATION_ARTIFACT_EVENT_TYPES = [
-  "run.started",
-  ...ACTIVE_PLAN_EVENT_TYPES,
-] as const;
-
-const CONVERSATION_MESSAGE_EVENT_TYPES = [
-  "message.user",
-  "message.assistant",
-] as const;
-
-const CONVERSATION_ACTIVITY_EVENT_TYPES = [
-  "tool.started",
-  "tool.completed",
-  "tool.failed",
-  "tool.blocked",
-] as const;
-
-const OPERATOR_DECISION_EVENT_TYPES = [
-  OPERATOR_DECISION_REQUESTED_EVENT,
-  OPERATOR_DECISION_ANSWERED_EVENT,
-  OPERATOR_DECISION_CONTINUED_EVENT,
-  OPERATOR_DECISION_CANCELLED_EVENT,
-] as const;
 
 export const ACTIVE_PLAN_PROJECTION: KernelProjectionDefinition<
   undefined,
@@ -120,7 +73,6 @@ export class ActivePlanProjectionService {
           threadId,
           afterSeq,
           thread.eventCount,
-          ACTIVE_PLAN_EVENT_TYPES,
         ),
     });
     return {
@@ -166,7 +118,6 @@ export class ConversationMessagesProjectionService {
           threadId,
           afterSeq,
           thread.eventCount,
-          CONVERSATION_MESSAGE_EVENT_TYPES,
         ),
     });
   }
@@ -212,7 +163,6 @@ export class ConversationArtifactsProjectionService {
           threadId,
           afterSeq,
           thread.eventCount,
-          CONVERSATION_ARTIFACT_EVENT_TYPES,
         ),
     });
     return {
@@ -268,7 +218,6 @@ export class OperatorDecisionsProjectionService {
           threadId,
           afterSeq,
           thread.eventCount,
-          OPERATOR_DECISION_EVENT_TYPES,
         ),
     });
   }
@@ -310,7 +259,6 @@ export class ConversationActivityEventsProjectionService {
           threadId,
           afterSeq,
           thread.eventCount,
-          CONVERSATION_ACTIVITY_EVENT_TYPES,
         ),
     });
   }
@@ -352,7 +300,6 @@ export class ConversationCitationsProjectionService {
           threadId,
           afterSeq,
           thread.eventCount,
-          ["tool.completed"],
         ),
     });
   }

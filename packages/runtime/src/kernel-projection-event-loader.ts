@@ -11,23 +11,19 @@ export interface KernelProjectionEventStore {
   ): Promise<RunEvent[]>;
 }
 
-/** Prefer a typed/bounded ledger range when the store exposes it. */
+/** Load a complete bounded tail so the registry can verify sequence continuity. */
 export async function loadKernelProjectionEvents(
   store: KernelProjectionEventStore,
   threadId: string,
   afterSeq: number,
   eventCount: number,
-  types?: readonly string[],
 ): Promise<RunEvent[]> {
   const fromSeq = afterSeq + 1;
   if (fromSeq > eventCount) return [];
   if (typeof store.listEventsRange === "function") {
-    return store.listEventsRange(threadId, fromSeq, eventCount, types);
+    return store.listEventsRange(threadId, fromSeq, eventCount);
   }
-  const allowed = types ? new Set(types) : undefined;
   return (await store.listEvents(threadId, afterSeq)).filter(
-    (event) =>
-      event.seq <= eventCount &&
-      (allowed === undefined || allowed.has(event.type)),
+    (event) => event.seq <= eventCount,
   );
 }

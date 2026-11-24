@@ -8,8 +8,8 @@ source baselines preserved.
 
 ### Runtime
 
-- Fold conversation detail projections in one event pass, and load kernel
-  projection deltas through typed `listEventsRange` when the ledger supports it.
+- Fold conversation detail projections in one event pass. Replay the complete,
+  bounded event range so mixed event types advance the projection watermark.
 - Extract plan-field normalize, exact tool-result replay, skill-load predicates,
   and standard-skill snapshot compose helpers to shrink plans/skill hotspots.
 - Bind prompt retries to a payload fingerprint, coalesce matching in-flight

@@ -18,14 +18,13 @@ describe("loadKernelProjectionEvents", () => {
         "thread_1",
         4,
         4,
-        ["message.user"],
       ),
     ).resolves.toEqual([]);
     expect(listEvents).not.toHaveBeenCalled();
     expect(listEventsRange).not.toHaveBeenCalled();
   });
 
-  it("prefers a typed listEventsRange when available", async () => {
+  it("prefers a complete bounded listEventsRange when available", async () => {
     const events = [{ seq: 3 } as never];
     const listEventsRange = vi.fn(async () => events);
     await expect(
@@ -40,23 +39,15 @@ describe("loadKernelProjectionEvents", () => {
         "thread_1",
         2,
         9,
-        ["message.user"],
       ),
     ).resolves.toBe(events);
-    expect(listEventsRange).toHaveBeenCalledWith(
-      "thread_1",
-      3,
-      9,
-      ["message.user"],
-    );
+    expect(listEventsRange).toHaveBeenCalledWith("thread_1", 3, 9);
   });
 
   it("falls back to listEvents and clips to the watermark", async () => {
-    const listEvents = vi.fn(async () => [
-      { seq: 3 },
-      { seq: 4 },
-      { seq: 5 },
-    ] as never[]);
+    const listEvents = vi.fn(
+      async () => [{ seq: 3 }, { seq: 4 }, { seq: 5 }] as never[],
+    );
     await expect(
       loadKernelProjectionEvents(
         {
@@ -72,12 +63,15 @@ describe("loadKernelProjectionEvents", () => {
     ).resolves.toEqual([{ seq: 3 }, { seq: 4 }]);
   });
 
-  it("applies the type filter on the listEvents fallback", async () => {
-    const listEvents = vi.fn(async () => [
-      { seq: 3, type: "message.user" },
-      { seq: 4, type: "tool.started" },
-      { seq: 5, type: "message.assistant" },
-    ] as never[]);
+  it("preserves interleaved event types on the listEvents fallback", async () => {
+    const listEvents = vi.fn(
+      async () =>
+        [
+          { seq: 3, type: "message.user" },
+          { seq: 4, type: "tool.started" },
+          { seq: 5, type: "message.assistant" },
+        ] as never[],
+    );
     await expect(
       loadKernelProjectionEvents(
         {
@@ -89,10 +83,10 @@ describe("loadKernelProjectionEvents", () => {
         "thread_1",
         2,
         5,
-        ["message.user", "message.assistant"],
       ),
     ).resolves.toEqual([
       { seq: 3, type: "message.user" },
+      { seq: 4, type: "tool.started" },
       { seq: 5, type: "message.assistant" },
     ]);
   });
